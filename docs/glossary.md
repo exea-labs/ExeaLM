@@ -2,7 +2,7 @@
 
 Every term the docs and the blog use, defined once. The same list, with Japanese, is at https://blog.exealabs.org/glossary/.
 
-- **Agent board (AG)**: The circuit agents use to talk. After each chunk an agent posts a message (a value, a key and a strength); later it reads teammates' earlier posts with attention.
+- **Agent board (AG)**: The circuit agents use to talk. After each chunk an agent posts a message (a value, a key and a strength); in later chunks it reads the earlier posts on the board, its teammates' and its own, with attention.
 - **Architecture search**: During training, TONN measures how much each group of circuits is worth (how much the loss rises when that group is switched off) and redraws the weakest slots.
 - **Bits per byte**: How surprised the model is by held-out text, averaged per byte of that text. Lower is better. Counting per byte instead of per token lets models with different tokenizers be compared fairly.
 - **Bits per token**: The same measure counted per token. Used when every model in a comparison shares one tokenizer.
