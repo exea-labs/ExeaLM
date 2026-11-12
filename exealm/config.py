@@ -45,6 +45,9 @@ class ModelConfig:
     rag_lexical: int = 0             # extra lexical part of retrieval keys: rare-word codes of this size (0: off)
     swarm_size: int = 4              # agents that share one board (a swarm); a training batch holds many swarms
     board_read_self: bool = True     # may an agent read its own earlier posts?
+    board_chunk: int = 0             # AG posts once per this many tokens (0: every `chunk`, like RG)
+    chunk_pool: str = "mean"         # how a chunk becomes one board post or one retrieval key: "mean" of its positions,
+                                     # or "attn", a learned softmax over them that starts as the mean
 
     @property
     def ffn_width(self):

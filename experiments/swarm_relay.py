@@ -80,7 +80,7 @@ def score(model, batches, swarm_size, dev):
 
 def run(arm, a, dev):
     torch.manual_seed(a.seed)
-    cfg = get_config("tiny", vocab_size=256, d=a.d, n_layers=a.layers, slots=a.slots, h=a.h, chunk=a.chunk,
+    cfg = get_config("tiny", vocab_size=256, chunk_pool=a.pool, board_chunk=a.board_chunk, d=a.d, n_layers=a.layers, slots=a.slots, h=a.h, chunk=a.chunk,
                      swarm_size=a.agents, seed=a.seed)
     model = ExeaLM(cfg).to(dev)
     opt = torch.optim.AdamW(model.parameters(), lr=a.lr, betas=(0.9, 0.95), weight_decay=0.0)
@@ -124,6 +124,8 @@ def main():
     ap.add_argument("--eval_every", type=int, default=250)
     ap.add_argument("--eval_batches", type=int, default=16)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--board_chunk", type=int, default=0, help="AG posts every this many tokens (0: every chunk)")
+    ap.add_argument("--pool", default="mean", choices=["mean", "attn"], help="how a chunk becomes a post or a key")
     ap.add_argument("--device", default="auto")
     ap.add_argument("--out", default="results/swarm_relay")
     a = ap.parse_args()

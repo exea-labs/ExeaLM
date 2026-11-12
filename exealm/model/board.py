@@ -1,6 +1,6 @@
 """AG: the agent-board circuit. Agents (copies of the model) talk to each other through a shared read-write board.
 
-Once per chunk of `cfg.chunk` tokens, every AG slot POSTS one message to its channel of the board:
+Once per chunk of `cfg.board_chunk` tokens (default: `cfg.chunk`), every AG slot POSTS one message to its channel of the board:
     value     = the chunk's average of stream A          (what the message says)
     key       = the chunk's average of stream B, unit length   (what it is about)
     strength  = sigmoid(w . average of stream C + b)      (how much the agent wants it read; the model can stay quiet)
@@ -29,10 +29,11 @@ class BoardCircuit(nn.Module):
 
     def __init__(self, cfg):
         super().__init__()
-        self.chunk, self.read_self = cfg.chunk, cfg.board_read_self
+        self.chunk, self.read_self = cfg.board_chunk or cfg.chunk, cfg.board_read_self
         self.post_w = nn.Parameter(torch.zeros(cfg.h))
         self.post_b = nn.Parameter(torch.zeros(()))
         self.log_tau = nn.Parameter(torch.tensor(math.log(10.0)))
+        self.pool_w = nn.Parameter(torch.zeros(cfg.h)) if cfg.chunk_pool == "attn" else None   # which positions to post
         self.record = False                                               # if True, keep usage_stats(...) in self.last
         self.last = None
 
@@ -46,8 +47,15 @@ class BoardCircuit(nn.Module):
             sw = 1
         ns = B // sw                                                    # swarms in this batch
         chunks = lambda u: F.pad(u, (0, 0, 0, 0, 0, n * C - T)).view(B, n, C, g, h).float()
-        val = chunks(A).mean(2)                                           # (B, n, g, h) one post per chunk
-        key = F.normalize(chunks(K).mean(2), dim=-1)
+        if self.pool_w is None:
+            val = chunks(A).mean(2)                                       # (B, n, g, h) one post per chunk
+            key = F.normalize(chunks(K).mean(2), dim=-1)
+        else:                                                             # learned weights over the chunk, from stream C
+            sc = chunks(G) @ self.pool_w.float()                          # (B, n, C, g)
+            pad = (torch.arange(n * C, device=A.device) >= T).view(1, n, C, 1)
+            a = sc.masked_fill(pad, float("-inf")).softmax(2).unsqueeze(-1)
+            val = (a * chunks(A)).sum(2)
+            key = F.normalize((a * chunks(K)).sum(2), dim=-1)
         log_w = F.logsigmoid(chunks(G).mean(2) @ self.post_w.float() + self.post_b.float())   # (B, n, g)
         q = F.normalize(K.float(), dim=-1)
         tau = self.log_tau.exp()

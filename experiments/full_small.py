@@ -44,7 +44,7 @@ from exealm.model.baseline import Llama  # noqa: E402
 from exealm.train.pretrain import lr_at, make_optimizer, pick_device  # noqa: E402
 from rag_wiki_split import TEXT_DOC_OFFSET, hit_rate, split_articles, text_batch  # noqa: E402
 from swarm_relay import make_batch as relay_batch  # noqa: E402
-from rag_lookup import make_kb, make_questions  # noqa: E402
+from rag_lookup import make_kb, make_kb_dense, make_questions, make_questions_dense  # noqa: E402
 
 VAL = ("val_en", "val_ja_wiki", "val_ja_web", "val_code")
 VAL_DOC_OFFSET = 2 * 10 ** 9            # held-out documents never share an id with the library
@@ -59,19 +59,25 @@ def lib_of(arts):
 
 
 def relay(B, C, rng, base, n_facts=4):
-    """The relay task in swarms of 2, its tokens moved to the top of the vocabulary (rare BPE ids)."""
+    """The relay task in swarms of 2, its tokens moved to the top of the vocabulary (rare BPE ids). One fact per C
+    tokens; rows are (n_facts + n_facts) * C long."""
     x, y = relay_batch(B // 2, n_facts, C, rng, agents=2)
     return x + base, torch.where(y >= 0, y + base, y)
 
 
-def lookup(B, C, n_facts, rng, base, model, dev):
+def lookup(B, C, n_facts, rng, base, model, dev, dense=False):
     """The lookup task, its tokens moved below the relay's (vocab-512 .. vocab-256): a fresh datastore of n_facts
-    facts and B rows of 4 question/answer pairs about them. The datastore is None for the Llama (it has no search)."""
-    kb = make_kb(n_facts, C, rng)
-    x, y = make_questions(B, 4, C, kb, rng)
+    facts and B rows of 4 question/answer pairs about them. dense: the datastore chunks are tables of C/4 facts and
+    each pair asks about a whole table (rag_lookup.make_kb_dense). The datastore is None for the Llama (no search)."""
+    if dense:
+        kb = make_kb_dense(max(1, n_facts // (C // 4)), C, rng)
+        x, y = make_questions_dense(B, 4, C, kb, rng)
+    else:
+        kb = make_kb(n_facts, C, rng)
+        x, y = make_questions(B, 4, C, kb, rng)
     ds = None
     if model is not None:
-        ds = Datastore(torch.from_numpy(kb[0] + base), torch.arange(n_facts)).to(dev)
+        ds = Datastore(torch.from_numpy(kb[0] + base), torch.arange(len(kb[0]))).to(dev)
         ds.refresh(model.encoder, model.emb)
     return x + base, torch.where(y >= 0, y + base, y), ds
 
@@ -108,7 +114,7 @@ def batch(kind, data, a, rng):
     if kind == "wiki":
         x, y, d = text_batch(data.train_arts, a.batch, a.seq, rng)
         return x, y, d, 4
-    x, y = relay(a.batch, a.chunk, rng, data.vocab - 256)
+    x, y = relay(a.batch, a.relay_chunk or a.chunk, rng, data.vocab - 256, a.relay_facts)
     return x, y, None, 2
 
 
@@ -157,7 +163,7 @@ def evaluate(model, a, data, dev, mk):
     hits = {"shared": 0, "cut": 0}
     n = 0
     for _ in range(max(2, a.eval_batches // 2)):
-        x, y = relay(a.batch, a.chunk, rrng, data.vocab - 256)
+        x, y = relay(a.batch, a.relay_chunk or a.chunk, rrng, data.vocab - 256, a.relay_facts)
         m = y >= 0
         for k in hits:
             logits = model(x.to(dev), mem_for(mk, None, None, 2, dev, cut=(k == "cut")))[0].float()
@@ -169,7 +175,7 @@ def evaluate(model, a, data, dev, mk):
     hits = {"attached": 0, "removed": 0} if mk == "exealm" else {"removed": 0}
     n = 0
     for _ in range(max(2, a.eval_batches // 2)):
-        x, y, ds = lookup(a.batch, a.chunk, a.facts, lrng, data.vocab - 512, model if mk == "exealm" else None, dev)
+        x, y, ds = lookup(a.batch, a.chunk, a.facts, lrng, data.vocab - 512, model if mk == "exealm" else None, dev, a.dense)
         m = y >= 0
         for k in hits:
             mem = mem_for(mk, ds if k == "attached" else None, torch.full(x.shape, -1), 1, dev)
@@ -227,6 +233,9 @@ def main():
     ap.add_argument("--warm_kinds", default="0.2,0,0.4,0.4")
     ap.add_argument("--facts", type=int, default=1024, help="lookup datastore size (at evaluation, and the cap)")
     ap.add_argument("--grow", type=int, default=16, help="lookup datastore starts this small and doubles (0: off)")
+    ap.add_argument("--dense", type=int, default=0, help="1: lookup datastore chunks are tables of chunk/4 facts")
+    ap.add_argument("--relay_chunk", type=int, default=0, help="relay: one fact per this many tokens (0: chunk)")
+    ap.add_argument("--relay_facts", type=int, default=4, help="relay: facts per holder")
     ap.add_argument("--grow_every", type=int, default=150, help="lookup batches between doublings")
     ap.add_argument("--d", type=int, default=320)
     ap.add_argument("--slots", type=int, default=10)
@@ -247,6 +256,8 @@ def main():
     ap.add_argument("--prompts", default="The history of the city begins||Photosynthesis is the process by which||日本の首都は||def fibonacci(n):")
     ap.add_argument("--tokenizer", default="results/tokenizer/bpe32k/tokenizer.json")
     ap.add_argument("--lib_on", default="all", choices=["all", "wiki"], help="training batches that get the library")
+    ap.add_argument("--board_chunk", type=int, default=0, help="AG posts every this many tokens (0: every chunk)")
+    ap.add_argument("--pool", default="mean", choices=["mean", "attn"], help="how a chunk becomes a board post or a retrieval key")
     ap.add_argument("--tag", default="")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--smoke", type=int, default=0)
@@ -262,7 +273,7 @@ def main():
     torch.manual_seed(a.seed)
     data = Data(a)
     cfg = get_config("small", vocab_size=data.vocab, d=a.d, slots=a.slots, h=a.d // a.slots, chunk=a.chunk, rag_chunk_len=a.chunk,
-                     rag_key_dim=a.key_dim, rag_lexical=a.lexical, seed=a.seed, **({"enc_dim": 32, "n_layers": 3, "attn_layers": (1,)} if a.smoke else {}))
+                     rag_key_dim=a.key_dim, rag_lexical=a.lexical, chunk_pool=a.pool, board_chunk=a.board_chunk, seed=a.seed, **({"enc_dim": 32, "n_layers": 3, "attn_layers": (1,)} if a.smoke else {}))
     model = (ExeaLM(cfg) if a.model == "exealm" else Llama(cfg)).to(dev)
     opt = make_optimizer(model, a.lr, 0.1)
     tok = None
@@ -291,7 +302,7 @@ def main():
         kind = KINDS[int(rng.choice(len(KINDS), p=p_warm if step < a.warm_steps else p))]
         if kind == "lookup":
             n_facts = min(a.facts, a.grow * 2 ** (counts["lookup"] // a.grow_every)) if a.grow else a.facts
-            x, y, ds = lookup(a.batch, a.chunk, n_facts, rng, data.vocab - 512, model if a.model == "exealm" else None, dev)
+            x, y, ds = lookup(a.batch, a.chunk, n_facts, rng, data.vocab - 512, model if a.model == "exealm" else None, dev, a.dense)
             mem = mem_for(a.model, ds, torch.full(x.shape, -1), 1, dev)
         else:
             x, y, d, swarm = batch(kind, data, a, rng)

@@ -66,6 +66,38 @@ def make_questions(B, n_q, C, kb, rng, restate=False):
     return torch.from_numpy(x), torch.from_numpy(y)
 
 
+def make_kb_dense(n_chunks, C, rng):
+    """Tables: every datastore chunk holds C // 4 facts back to back, [k1, k2, value, FACT] each, the way a chunk of
+    real text holds many facts. Returns the chunks (n_chunks, C) and per chunk its facts' keys and values."""
+    F = C // 4
+    flat = rng.choice(N_KEY * N_KEY, n_chunks * F, replace=False).reshape(n_chunks, F)
+    k1, k2 = flat // N_KEY, flat % N_KEY
+    vals = rng.integers(0, N_VAL, (n_chunks, F))
+    toks = np.stack([KEY0 + k1, KEY0 + k2, VAL0 + vals, np.full_like(k1, FACT)], -1).reshape(n_chunks, C)
+    return toks, k1, k2, vals
+
+
+def make_questions_dense(B, n_q, C, kb, rng):
+    """Rows of n_q (question chunk, answer chunk) pairs, each pair about every fact of one random table. The question
+    chunk lists the keys, [ASK, k1, k2, filler] per fact; the answer chunk restates them with the values,
+    [ANS, k1, k2, value], and the value is predicted at k2. The search for the answer chunk is made from the
+    question chunk, so it has to find the table; the read then finds the key in it and reads the value after it."""
+    _, k1, k2, vals = kb
+    F = C // 4
+    T = 2 * n_q * C
+    x = rng.integers(0, N_FILL, size=(B, T))
+    y = np.full((B, T), -100)
+    for b in range(B):
+        for i, t in enumerate(rng.integers(0, len(vals), n_q)):
+            p = 2 * i * C
+            for j, f in enumerate(rng.permutation(F)):
+                q, a_ = p + 4 * j, p + C + 4 * j
+                x[b, q:q + 3] = (ASK, KEY0 + k1[t, f], KEY0 + k2[t, f])
+                x[b, a_:a_ + 4] = (ANS, KEY0 + k1[t, f], KEY0 + k2[t, f], VAL0 + vals[t, f])
+                y[b, a_ + 2] = VAL0 + vals[t, f]
+    return torch.from_numpy(x), torch.from_numpy(y)
+
+
 @torch.no_grad()
 def score(model, kbs, batches, attach, dev):
     model.eval()
@@ -94,22 +126,32 @@ def kb_size(step, a):
     return min(a.facts, a.grow * 2 ** (step // a.grow_every))
 
 
+def new_kb(n_facts, a, rng):
+    return make_kb_dense(max(1, n_facts // (a.chunk // 4)), a.chunk, rng) if a.dense else make_kb(n_facts, a.chunk, rng)
+
+
+def new_questions(kb, a, rng):
+    if a.dense:
+        return make_questions_dense(a.batch, a.questions, a.chunk, kb, rng)
+    return make_questions(a.batch, a.questions, a.chunk, kb, rng, a.restate)
+
+
 def run(arm, a, dev):
     torch.manual_seed(a.seed)
-    cfg = get_config("tiny", vocab_size=256, d=a.d, n_layers=a.layers, slots=a.slots, h=a.h, chunk=a.chunk,
+    cfg = get_config("tiny", vocab_size=256, chunk_pool=a.pool, d=a.d, n_layers=a.layers, slots=a.slots, h=a.h, chunk=a.chunk,
                      rag_chunk_len=a.chunk, rag_topk=a.topk, enc_dim=a.enc_dim, rag_query=a.query, seed=a.seed)
     model = ExeaLM(cfg).to(dev)
     opt = torch.optim.AdamW(model.parameters(), lr=a.lr, betas=(0.9, 0.95), weight_decay=0.0)
     rng = np.random.default_rng(a.seed)
     erng = np.random.default_rng(10_000)
-    ekbs = [make_kb(a.facts, a.chunk, erng) for _ in range(a.eval_batches)]
-    evals = [make_questions(a.batch, a.questions, a.chunk, kb, erng, a.restate) for kb in ekbs]
+    ekbs = [new_kb(a.facts, a, erng) for _ in range(a.eval_batches)]
+    evals = [new_questions(kb, a, erng) for kb in ekbs]
     curve, t0 = [], time.time()
     for step in range(a.steps):
         for g in opt.param_groups:
             g["lr"] = a.lr * min(1.0, (step + 1) / 200)
-        kb = make_kb(kb_size(step, a), a.chunk, rng)
-        x, y = make_questions(a.batch, a.questions, a.chunk, kb, rng, a.restate)
+        kb = new_kb(kb_size(step, a), a, rng)
+        x, y = new_questions(kb, a, rng)
         mem = MemoryContext()
         if arm == "rag":
             ds = Datastore(torch.from_numpy(kb[0]), torch.arange(len(kb[0]))).to(dev)
@@ -150,6 +192,8 @@ def main():
     ap.add_argument("--eval_every", type=int, default=250)
     ap.add_argument("--eval_batches", type=int, default=8)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--dense", type=int, default=0, help="1: datastore chunks are tables of chunk/4 facts (make_kb_dense)")
+    ap.add_argument("--pool", default="mean", choices=["mean", "attn"], help="how a chunk becomes a post or a key")
     ap.add_argument("--device", default="auto")
     ap.add_argument("--out", default="results/rag_lookup")
     a = ap.parse_args()

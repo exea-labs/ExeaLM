@@ -44,6 +44,10 @@ class ChunkEncoder(nn.Module):
         self.mlp = MLP(e, 2 * e)
         self.norm = RMSNorm(e)
         self.key = nn.Linear(e, cfg.rag_key_dim or cfg.h, bias=False)
+        self.pool = None
+        if cfg.chunk_pool == "attn":                         # learned weights over the chunk's tokens, start as the mean
+            self.pool = nn.Linear(e, 1, bias=False)
+            nn.init.zeros_(self.pool.weight)
         self.lexical = cfg.rag_lexical
         if self.lexical:                                     # fixed random code per token, weighted by rarity (idf)
             g = torch.Generator().manual_seed(1234)
@@ -57,7 +61,10 @@ class ChunkEncoder(nn.Module):
         q, k, v = self.qkv(self.mix_norm(z)).view(N, Lc, 3, self.heads, -1).permute(2, 0, 3, 1, 4)
         z = z + self.mix_out(F.scaled_dot_product_attention(q, k, v).transpose(1, 2).reshape(N, Lc, -1))
         z = self.norm(self.mlp(z))
-        key = F.normalize(self.key(z.mean(1)), dim=-1)
+        if self.pool is None:
+            key = F.normalize(self.key(z.mean(1)), dim=-1)
+        else:
+            key = F.normalize(self.key((self.pool(z).softmax(1) * z).sum(1)), dim=-1)
         if self.lexical:                                     # a bag of rare-word codes: same words, similar key
             lex = F.normalize((self.lex[tokens] * self.idf[tokens].unsqueeze(-1)).sum(1), dim=-1)
             key = torch.cat([key, lex.to(key.dtype)], -1) / math.sqrt(2)

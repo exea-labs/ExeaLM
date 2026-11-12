@@ -63,7 +63,7 @@ def slot_cost(spec, cfg, T):
         e, k, Lc = cfg.enc_dim, cfg.rag_topk, cfg.rag_chunk_len
         return proj + k * Lc * (d * e + 4 * e * e + 2 * e * h) / cfg.chunk + 2 * k * Lc * h
     if t == "AG":
-        return proj + 2 * h * cfg.swarm_size * T / cfg.chunk
+        return proj + 2 * h * cfg.swarm_size * T / (cfg.board_chunk or cfg.chunk)
     return proj + 6 * h
 
 
