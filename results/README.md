@@ -555,10 +555,17 @@ TONN at layers 0, 3, 6, 9, 12; 3,000 seconds; seed 0):
 | ExeaLM 2:1 hybrid (1.5e-3) | 3,151 | 1.386 | 1.462 | 1.347 | 1.702 | 1.474 |
 | Llama (1e-3) | 3,491 | 1.392 | 1.468 | 1.352 | 1.713 | 1.481 |
 
-At the size we plan to train, the default ExeaLM beats a same-size Llama at equal compute on every kind of text. At
-the same learning rate as Llama (1e-3) the margin is 0.017 bits per byte; at 1.5e-3 it is 0.007, the same margin as at
-48M. Caveats: one seed, Llama was run only at 1e-3 (its best rate at 27M and 48M), and both models are badly
-under-trained here (about 50M tokens for 90M parameters). Seed 1 of both is running.
+**Seed 1** (same settings; both runs got about 8% fewer steps than seed 0 because the Mac ran slower during them):
+
+| Same training time, seed 1 | Steps | English | Japanese wiki | Japanese web | Code | Mean |
+|---|---|---|---|---|---|---|
+| **ExeaLM 2:1 hybrid** (1.5e-3) | 2,902 | **1.398** | **1.468** | **1.359** | **1.702** | **1.482** |
+| Llama (1e-3) | 3,231 | 1.406 | 1.481 | 1.365 | 1.741 | 1.498 |
+
+At the size we plan to train, the default ExeaLM beats a same-size Llama at equal compute on every kind of text, on
+both seeds. At 1.5e-3 the margin is 0.007 (seed 0) and 0.016 (seed 1), 0.012 on average. At Llama's learning rate
+(1e-3) it is 0.017 on seed 0; seed 1 at 1e-3 is running. Caveats: Llama was run only at 1e-3 (its best rate at 27M
+and 48M), and both models are badly under-trained here (about 50M tokens for 90M parameters).
 
 **Layouts at 13M** (equal steps, convolution-heavy start, 2 seeds each):
 

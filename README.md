@@ -66,8 +66,8 @@ That's small scale and short training. At 6,000 steps the hybrid is still ahead 
 (0.006). After the speed work the hybrid costs 1.13 times a Llama per token at 0.1B. Given the same training time on
 the same GPU, it ties Llama at 13M and wins at 27M. At 48M the half-attention layout lost (0.014), but the 2:1 layout
 (two attention layers per TONN layer) **wins at equal compute at 48M: 1.445 vs 1.452, both seeds, every kind of
-text.** That layout is now the default. At 0.1B, with the same training time and the same learning rate, it leads
-Llama by 0.017 on every kind of text (one seed so far; seed 1 is running). Details:
+text.** That layout is now the default. At 0.1B, with the same training time, it leads Llama on every kind of text on
+both seeds (0.007 and 0.016 at its 1.5e-3 rate; 0.017 at Llama's 1e-3 on seed 0, seed 1 running). Details:
 [results/README.md](results/README.md#8-overnight-sweep-making-tonn-beat-llama-experimentsrun_queuesh-resultssweep).
 
 Nobody picks which circuit goes where. While the model trains, TONN switches each kind of circuit off on text it has not trained on and keeps it only if the error goes up. Useless circuits are replaced by new ones, drawn more often from the kinds that have proven useful. Early in training the architecture changes; later it is frozen.
