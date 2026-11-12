@@ -76,8 +76,9 @@ swarms) and posted to selectively (`quiet_posts` above zero) is the first sign a
 
 ## What we don't know yet
 
-- Does a split swarm predict its text better than solo agents reading the same text? This is the first experiment, and
-  until it works, swarms are a design, not a result. The harness: train once with swarms and once with
+- Does a split swarm predict its text better than solo agents reading the same text? At 5M to 13M parameters, yes, by a
+  little: on the hybrid, swarms beat a matched control by about 0.012 to 0.014 bits per byte (results/README.md section
+  2, with the seam-leak correction). Whether that grows with model size and longer training is open. The harness: train once with swarms and once with
   `--config solo.json` (`{"swarm_size": 1}`), same data and steps, then
   `python -m exealm.eval.swarm_vs_solo --ckpt <swarm run>/model.pt --baseline <solo run>/model.pt --data <val>`. It
   scores the same windows as a swarm, solo, and with the solo-trained model, on split swarms and on random swarms as

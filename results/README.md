@@ -77,6 +77,19 @@ All arms are scored on the same held-out split swarms.
 - The swarm-trained model is better than the control even with its board cut, by 0.010 on average: training as a swarm
   improves each agent on its own, beyond what it reads from the board.
 
+**Correction (2026-11-11, found by @aarochu in PR #7): a target leaked through the board in split swarms.** In a split
+swarm, agent i's last target is the first token agent i+1 reads, and agent i+1's first board post (the mean of its
+first chunk) is readable by agent i in its last chunk. One target in 512 per agent, for agents 1 to 3, could be read
+off the board; the matched control (swarm size 1) could not do this.
+- How much it can explain: at most about 0.002 bits per byte of the 0.014 (all of the seam byte given away), and about
+  0.001 by the data: agents 1 to 3 gain about 0.001 more from the board than agent 4, which has no seam.
+- What holds without it: agent 4 alone beats the control by 0.012 (seed 0) and 0.009 (seed 1). The board-cut gain
+  (0.010) is not exposed at evaluation.
+- The pure-TONN gain above (0.006) is the most exposed: the same ceiling of 0.002 is a third of it.
+- The loader now hides seam targets in split swarms (`mask_seams`), and `experiments/swarm_text.py` scores only the
+  targets it keeps. Both swarm experiments are queued to rerun with the fix; the numbers above stay as measured until
+  then.
+
 Next steps toward the bet (a 0.1B model that takes on large problems with its swarm):
 - swarms of related documents instead of consecutive windows;
 - tasks that need collaboration (post-training);

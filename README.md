@@ -153,7 +153,7 @@ Small-scale tests on a Mac Studio, all in [results/README.md](results/README.md)
   The first design never learned; the report says what broke and why. On real text retrieval is not yet a net win:
   with a perfect search it would gain 0.040 bits per token on a Wikipedia knowledge task, but the model's own search
   finds the right article only about 30% of the time.
-- **On real text the board helps:** on the hybrid, swarms beat a matched control by 0.014 bits per byte (0.8%, both seeds; 0.006 on pure TONN), and training as a swarm makes each agent better even with its board cut (0.010).
+- **On real text the board helps:** on the hybrid, swarms beat a matched control by 0.014 bits per byte (0.8%, both seeds; 0.006 on pure TONN; a seam leak found in PR #7 can explain up to 0.002 of each, and the fixed reruns are queued), and training as a swarm makes each agent better even with its board cut (0.010).
 - **Tokenizer: 32k.** It wins or ties 49k and 64k on English, Japanese and code at a fixed token budget.
 - **Speed:** the default 0.1B model (2:1 hybrid) trains at the same speed as a same-size Llama (1.01x per token), 1.49x with retrieval on.
 - **Pure TONN lost to Llama on real tokens; the hybrid wins.** Pure TONN trailed a same-size Llama, mostly on code. A
@@ -217,7 +217,7 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [ ] One scan call for all running-sum circuits in a layer
 - [ ] Recurrent state cache, so generating a token doesn't re-read the whole context
 - [ ] `torch.compile` support
-- [x] Training-speed benchmark: TONN 1.5x a same-size Llama per token, 2.7x with retrieval on ([results](results/README.md#5-speed-of-the-real-model-experimentsspeedpy), `experiments/speed.py`)
+- [x] Training-speed benchmark: the default 2:1 hybrid costs 1.01x a same-size Llama per token, 1.49x with retrieval on (pure TONN was 1.5x) ([results](results/README.md#5-speed-of-the-real-model-experimentsspeedpy), `experiments/speed.py`)
 - [x] (starter) Generation speed: `python -m exealm.eval.speed` times training and generation tokens per second against a same-size Llama
 - [ ] (GPU) Run the tests and a short training run on an MI300X and report what breaks
 
