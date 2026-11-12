@@ -191,6 +191,19 @@ def evaluate(model, a, data, dev, mk):
 
 
 @torch.no_grad()
+def generate(model, ids, n, temperature, top_k, mem):
+    """model.generate if it has one (ExeaLM); otherwise plain sampling, one token at a time (the Llama baseline)."""
+    if hasattr(model, "generate"):
+        return model.generate(ids, n, temperature=temperature, top_k=top_k, mem=mem)
+    for _ in range(n):
+        logits = model(ids, mem)[0][:, -1].float() / temperature
+        v, _ = logits.topk(top_k)
+        logits[logits < v[:, -1:]] = float("-inf")
+        ids = torch.cat([ids, torch.multinomial(logits.softmax(-1), 1)], 1)
+    return ids
+
+
+@torch.no_grad()
 def samples(model, a, data, dev, mk, tok):
     """Text the model writes, and the retrieval demo: the same prompt with and without the library."""
     if tok is None:
@@ -202,7 +215,7 @@ def samples(model, a, data, dev, mk, tok):
     out = {"free": [], "retrieval": []}
     for p in a.prompts.split("||"):
         ids = enc(p)
-        g = model.generate(ids, a.gen_tokens, temperature=0.8, top_k=40, mem=mem_for(mk, data.lib_train, torch.full_like(ids, VAL_DOC_OFFSET).cpu(), 1, dev))
+        g = generate(model, ids, a.gen_tokens, 0.8, 40, mem_for(mk, data.lib_train, torch.full_like(ids, VAL_DOC_OFFSET).cpu(), 1, dev))
         out["free"].append(dict(prompt=p, text=dec(g[0, ids.shape[1]:])))
     if mk == "exealm":
         data.lib_eval.refresh(model.encoder, model.emb)
@@ -216,7 +229,7 @@ def samples(model, a, data, dev, mk, tok):
                 continue
             torch.manual_seed(0)
             docs = torch.full_like(ids, d + TEXT_DOC_OFFSET).cpu()
-            g = model.generate(ids, a.gen_tokens, temperature=0.7, top_k=20, mem=mem_for(mk, ds, docs, 1, dev))
+            g = generate(model, ids, a.gen_tokens, 0.7, 20, mem_for(mk, ds, docs, 1, dev))
             rec[name] = dec(g[0, ids.shape[1]:])
         rec["truth"] = dec(torch.tensor(second[a.chunk * 2: a.chunk * 2 + a.gen_tokens].astype(np.int64)))
         out["retrieval"].append(rec)

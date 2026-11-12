@@ -738,6 +738,24 @@ gives the values from a library of 1,024 facts it has never seen.
   right article about 26% of the time. That is #22.
 - The lookup and relay tasks are synthetic.
 - Language is a little behind the first recipe (English 1.316 vs 1.294, code 1.606 vs 1.581), which spent 80% of its
-  steps on text instead of 70%. The fair comparison is a same-size Llama on the same batches (`skills_llama`,
-  running).
+  steps on text instead of 70%.
 - One seed.
+
+**Against a same-size Llama on the same batches** (`--model llama`, same arguments; the Llama can't do relay or
+lookup, so those batches only teach it the token statistics). Bits per byte, lower is better:
+
+| Step | English | Japanese Wikipedia | Japanese web | Code |
+|---|---|---|---|---|
+| 3,000 | **1.767** / 1.974 | **2.047** / 2.240 | **1.731** / 1.887 | **3.239** / 3.532 |
+| 12,000 | **1.464** / 1.510 | **1.603** / 1.647 | **1.465** / 1.502 | **1.879** / 1.981 |
+| 24,000 | **1.316** / 1.339 | **1.422** / 1.444 | **1.319** / 1.336 | **1.606** / 1.641 |
+
+ExeaLM first, Llama second. Held-out Wikipedia with no library: 4.818 vs 4.906 bits per token.
+
+- At equal steps ExeaLM is ahead on every kind of text, by 0.017 to 0.035 bits per byte at the end (0.024 on
+  average). The lead shrinks with training: 0.21 on English at step 3,000, 0.023 at step 24,000.
+- **This is equal steps, not equal compute.** ExeaLM, with both memory circuits and board posts every 8 tokens, took
+  6,414 seconds against the Llama's 4,942 (1.30 times as long, evaluations included). In the same time the Llama
+  could have run about 30% more steps. Section 7's equal-compute comparisons are the fair test of the architecture;
+  this one asks whether adding the memory skills costs language quality. It doesn't, at equal steps.
+- ExeaLM has 18.08M parameters, the Llama 17.83M.
