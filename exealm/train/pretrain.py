@@ -61,6 +61,17 @@ def lr_at(step, total, peak, warmup, decay_frac, floor=0.1):
     return peak * (floor + (1 - floor) * (1 - (step - d0) / max(1, total - d0)))
 
 
+def board_summary(usage):
+    """usage: per layer, a list of exealm.model.board.usage_stats dicts (one per validation batch). Returns each stat
+    averaged over everything, plus read_nothing and post_strength per layer (where the board is used differs a lot
+    between layers)."""
+    flat = [d for per_layer in usage for d in per_layer]
+    out = {k: round(sum(d[k] for d in flat) / len(flat), 4) for k in flat[0]}
+    for k in ("read_nothing", "post_strength"):
+        out[k + "_per_layer"] = [round(sum(d[k] for d in u) / len(u), 4) if u else None for u in usage]
+    return out
+
+
 def make_optimizer(model, lr, wd):
     decay = [p for n, p in model.named_parameters() if p.dim() >= 2 and "emb" not in n]
     rest = [p for n, p in model.named_parameters() if not (p.dim() >= 2 and "emb" not in n)]
@@ -177,8 +188,19 @@ def main(argv=None):
         agents gained from each other."""
         model.eval()
         bpt = float(data.meta.get("bytes_per_token", 1.0))
+        boards = [lay.ag for lay in model.layers] if a.model == "tonn" else []
+        usage = [[] for _ in boards]                                     # per layer, per batch: board_usage stats
+        loss = 0.0
+        for b in boards:                                                 # recorded on the shared-board pass only
+            b.record = True
         with torch.autocast(**amp) if amp else torch.no_grad():
-            loss = sum(float(model(x, m, y)[1]) for x, y, m in val_batches) / len(val_batches)
+            for x, y, m in val_batches:
+                loss += float(model(x, m, y)[1]) / len(val_batches)
+                for u, b in zip(usage, boards):
+                    if b.last is not None:
+                        u.append(b.last)
+            for b in boards:
+                b.record, b.last = False, None
             cut = None
             if swarm > 1:
                 cut = sum(float(model(x, replace(m, swarm_size=1), y)[1]) for x, y, m in val_batches) / len(val_batches)
@@ -188,6 +210,8 @@ def main(argv=None):
         if cut is not None:
             out["val_bits_per_token_board_cut"] = round(cut / math.log(2), 4)
             out["board_gain_bits_per_token"] = round((cut - loss) / math.log(2), 4)
+        if any(usage):
+            out["board"] = board_summary(usage)
         return out
 
     os.makedirs(a.out, exist_ok=True)

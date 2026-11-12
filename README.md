@@ -169,7 +169,7 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [x] Proof of mechanism: agents learn to pass facts over the board during training, 99.8% vs 1.5% with the board cut ([results](results/README.md#1-agents-learn-to-talk-through-the-board-during-training-experimentsswarm_relaypy))
 - [x] First real-text experiment: split swarms beat a matched control by 0.006 bits per byte at 5M parameters; split batches cost 0.021 ([results](results/README.md#2-swarms-on-real-text-experimentsswarm_textpy))
 - [ ] Swarm batches that keep as many independent stretches of text as solo batches (the 0.021 cost above)
-- [ ] (starter) Measure board use during training: AG worth in the search log, how often agents read nothing, post strength
+- [x] (starter) Measure board use during training: AG worth in the search log, how often agents read nothing, post strength (`board` in eval records, `board_worth` in search records)
 - [ ] Related swarms: group documents that are near each other in the model's own retrieval space
 - [ ] Cross-lingual swarms: pair Japanese and English Wikipedia articles on the same topic (interlanguage links)
 - [ ] Swarm sizes that vary within a run (2 to 8)

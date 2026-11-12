@@ -50,6 +50,16 @@ def group_worth(model, batches):
     return W, per_type, base
 
 
+def type_worth_per_layer(model, W, t):
+    """Mean worth (bits per token) of the slots of type t in each layer, None for a layer without one. For "AG" this is
+    how much each layer's agent board is worth: the loss rise when that layer stops reading and posting."""
+    out = []
+    for i, lay in enumerate(model.layers):
+        ks = [k for k, s in enumerate(lay.specs) if s["tmpl"] == t]
+        out.append(round(float(W[i, ks].mean()), 5) if ks else None)
+    return out
+
+
 def steer_weights(per_type, menu, explore=0.2):
     tw = {t: max(0.0, sum(v) / len(v)) for t, v in per_type.items()}
     mean = sum(tw.values()) / max(1, len(tw))
@@ -122,6 +132,7 @@ class Searcher:
             return None
         sigma = self.sigma0 * (1 - step / (self.until * total))
         W, per_type, base = group_worth(model, batches)
+        board = type_worth_per_layer(model, W, "AG")                       # before any slot is replaced
         weights = steer_weights(per_type, model.cfg.menu, self.explore)
         protected = {s for s, r in self.born.items() if self.round - r < self.grace}
         changed = denoise_step(model, opt, W, sigma, self.rng, T, weights, protected, p_mutate=self.p_mutate)
@@ -130,4 +141,5 @@ class Searcher:
         self.round += 1
         worth = {t: round(sum(v) / len(v), 5) for t, v in per_type.items()}
         return dict(step=step, sigma=round(sigma, 4), selection_bits=round(base, 4), replaced=len(changed),
-                    type_worth=dict(sorted(worth.items(), key=lambda kv: -kv[1])))
+                    type_worth=dict(sorted(worth.items(), key=lambda kv: -kv[1])),
+                    board_worth=board)

@@ -59,6 +59,21 @@ Rules that keep it honest:
 - **Different times or machines:** a persistent `AgentBoard` (`exealm/memory/board.py`). Today it is a file; a small
   board server (HTTP or Redis) is a to-do.
 
+## Measuring board use
+
+Every eval record in `log.jsonl` carries a `board` entry, measured on the validation batches, averaged over layers:
+- `read_nothing`, `read_others`, `read_self`, `read_board`: where the agents' attention goes once there is something
+  to read (they add up to 1);
+- `post_strength`: the mean write strength;
+- `quiet_posts`: the share of posts with strength under 0.1;
+- `read_nothing_per_layer` and `post_strength_per_layer`.
+
+Every search record carries `board_worth`: for each layer, how many bits per token the loss rises when that layer's AG
+slots are switched off. The per-layer lists have one entry per TONN layer (in a hybrid, attention layers have no
+board). Eval records also carry `board_gain_bits_per_token`: the loss with the board cut (every agent alone) minus the
+loss with it shared. A board that is worth something, read selectively (`read_nothing` well above zero on random
+swarms) and posted to selectively (`quiet_posts` above zero) is the first sign agents are learning to talk.
+
 ## What we don't know yet
 
 - Does a split swarm predict its text better than solo agents reading the same text? This is the first experiment, and
