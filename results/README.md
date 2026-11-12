@@ -759,3 +759,16 @@ ExeaLM first, Llama second. Held-out Wikipedia with no library: 4.818 vs 4.906 b
   could have run about 30% more steps. Section 7's equal-compute comparisons are the fair test of the architecture;
   this one asks whether adding the memory skills costs language quality. It doesn't, at equal steps.
 - ExeaLM has 18.08M parameters, the Llama 17.83M.
+
+**Which skill to teach first** (`--stop_at 2000` on the same 24,000-step schedule, `results/full_small/*sched*`). The
+first 400 steps differ; steps 400 to 2,000 are the same warm mix. At step 2,000:
+
+| First 400 steps | Relay, shared / cut | Lookup, attached / removed | English |
+|---|---|---|---|
+| Relay alone (the second recipe) | 99.95% / 1.6% | 1.4% / 1.4% | 2.007 |
+| Lookup alone, then relay alone (300 steps each) | 2.1% / 2.1% | 74.6% / 1.4% | 2.077 |
+| **Relay and lookup together** | **94.2% / 1.0%** | **67.9% / 1.5%** | 2.024 |
+
+Whichever skill is learned alone first blocks the other for a long time: the relay never started after lookup, and
+in the full run lookup started only after step 6,000. Teaching both together learns both by step 1,000. A full run
+with that schedule is queued (`skillsA_exealm`).

@@ -1,0 +1,292 @@
+{
+ "model": "exealm",
+ "params": 18080796,
+ "library_chunks": 483270,
+ "eval_library_chunks": 53467,
+ "train_articles": 14209,
+ "eval_articles": 1578,
+ "args": {
+  "model": "exealm",
+  "root": "data/tokpack",
+  "toks": "bpe32k",
+  "train": "train_en_big,train_ja_big,train_code_big",
+  "mix": "0.5,0.3,0.2",
+  "p_kinds": "0.7,0.15,0.075,0.075",
+  "warm_steps": 0,
+  "warm_kinds": "0.2,0,0.4,0.4",
+  "schedule": "400:0,0,0.5,0.5;2000:0.3,0.2,0.25,0.25",
+  "facts": 1024,
+  "grow": 16,
+  "dense": 1,
+  "relay_chunk": 8,
+  "relay_facts": 4,
+  "grow_every": 150,
+  "d": 320,
+  "slots": 10,
+  "steps": 24000,
+  "batch": 32,
+  "seq": 512,
+  "chunk": 64,
+  "min_tokens": 1024,
+  "lr": 0.002,
+  "warmup": 500,
+  "refresh_every": 1000,
+  "eval_every": 500,
+  "eval_batches": 8,
+  "save_every": 0,
+  "key_dim": 128,
+  "lexical": 128,
+  "gen_tokens": 60,
+  "prompts": "The history of the city begins||Photosynthesis is the process by which||日本の首都は||def fibonacci(n):",
+  "tokenizer": "results/tokenizer/bpe32k/tokenizer.json",
+  "lib_on": "wiki",
+  "board_chunk": 8,
+  "pool": "mean",
+  "tag": "schedA",
+  "stop_at": 2000,
+  "seed": 0,
+  "smoke": 0,
+  "device": "auto",
+  "out": "results/full_small_check"
+ },
+ "curve": [
+  {
+   "step": 500,
+   "secs": 124.7,
+   "tokens": 8192000,
+   "train_loss": 1.3855,
+   "batches": {
+    "text": 29,
+    "wiki": 16,
+    "relay": 229,
+    "lookup": 226
+   },
+   "val_en": {
+    "removed": 2.6238,
+    "attached": 2.6214
+   },
+   "val_ja_wiki": {
+    "removed": 3.3744,
+    "attached": 3.3846
+   },
+   "val_ja_web": {
+    "removed": 2.7563,
+    "attached": 2.7666
+   },
+   "val_code": {
+    "removed": 4.6789,
+    "attached": 4.677
+   },
+   "swarm": {
+    "shared": 2.6156,
+    "cut": 2.6156,
+    "board_gain": -0.0
+   },
+   "knowledge": {
+    "removed": 11.053,
+    "attached": 11.0245,
+    "retrieval_gain": 0.0285,
+    "same_article_hits": 0.2485
+   },
+   "relay": {
+    "shared": 0.4912,
+    "cut": 0.0132
+   },
+   "lookup": {
+    "attached": 0.3533,
+    "removed": 0.0117
+   }
+  },
+  {
+   "step": 1000,
+   "secs": 268.8,
+   "tokens": 16384000,
+   "train_loss": 0.088,
+   "batches": {
+    "text": 187,
+    "wiki": 111,
+    "relay": 355,
+    "lookup": 347
+   },
+   "val_en": {
+    "removed": 2.2656,
+    "attached": 2.3197
+   },
+   "val_ja_wiki": {
+    "removed": 2.6012,
+    "attached": 2.6187
+   },
+   "val_ja_web": {
+    "removed": 2.1344,
+    "attached": 2.1466
+   },
+   "val_code": {
+    "removed": 3.9388,
+    "attached": 4.072
+   },
+   "swarm": {
+    "shared": 2.2552,
+    "cut": 2.2574,
+    "board_gain": 0.0022
+   },
+   "knowledge": {
+    "removed": 9.4118,
+    "attached": 9.3344,
+    "retrieval_gain": 0.0774,
+    "same_article_hits": 0.249
+   },
+   "relay": {
+    "shared": 0.9907,
+    "cut": 0.0142
+   },
+   "lookup": {
+    "attached": 0.5078,
+    "removed": 0.0148
+   }
+  },
+  {
+   "step": 1500,
+   "secs": 421.3,
+   "tokens": 24576000,
+   "train_loss": 1.6183,
+   "batches": {
+    "text": 340,
+    "wiki": 211,
+    "relay": 470,
+    "lookup": 479
+   },
+   "val_en": {
+    "removed": 2.1159,
+    "attached": 2.137
+   },
+   "val_ja_wiki": {
+    "removed": 2.5871,
+    "attached": 2.5726
+   },
+   "val_ja_web": {
+    "removed": 2.0702,
+    "attached": 2.0636
+   },
+   "val_code": {
+    "removed": 3.8292,
+    "attached": 3.9653
+   },
+   "swarm": {
+    "shared": 2.1058,
+    "cut": 2.1066,
+    "board_gain": 0.0009
+   },
+   "knowledge": {
+    "removed": 8.0905,
+    "attached": 8.0616,
+    "retrieval_gain": 0.0289,
+    "same_article_hits": 0.2441
+   },
+   "relay": {
+    "shared": 0.9937,
+    "cut": 0.0112
+   },
+   "lookup": {
+    "attached": 0.434,
+    "removed": 0.0165
+   }
+  },
+  {
+   "step": 2000,
+   "secs": 568.4,
+   "tokens": 32768000,
+   "train_loss": 5.6214,
+   "batches": {
+    "text": 496,
+    "wiki": 306,
+    "relay": 592,
+    "lookup": 606
+   },
+   "val_en": {
+    "removed": 2.0235,
+    "attached": 2.0423
+   },
+   "val_ja_wiki": {
+    "removed": 2.3553,
+    "attached": 2.3539
+   },
+   "val_ja_web": {
+    "removed": 1.9644,
+    "attached": 1.9635
+   },
+   "val_code": {
+    "removed": 3.6541,
+    "attached": 3.6617
+   },
+   "swarm": {
+    "shared": 2.0105,
+    "cut": 2.0107,
+    "board_gain": 0.0002
+   },
+   "knowledge": {
+    "removed": 7.6383,
+    "attached": 7.5812,
+    "retrieval_gain": 0.0571,
+    "same_article_hits": 0.1772
+   },
+   "relay": {
+    "shared": 0.9419,
+    "cut": 0.0103
+   },
+   "lookup": {
+    "attached": 0.6791,
+    "removed": 0.015
+   }
+  }
+ ],
+ "samples": {
+  "free": [
+   {
+    "prompt": "The history of the city begins",
+    "text": " in the village. This there is the most school with the United States. It was also there, and is the median income for a family density was 3,000, and 24.3% of the age of 18 and 24.3% of those under the town, 18.0% were"
+   },
+   {
+    "prompt": "Photosynthesis is the process by which",
+    "text": " are the main, the city, as the most of the same, the second-day-up of the county's American Party. The Mug was the same and in the world with the state. Mew, the only was the same-time of the same-inum, it is"
+   },
+   {
+    "prompt": "日本の首都は",
+    "text": "が、何十年（明治二の学校。『古田人 - と長「「オカド・スと、ハブ・ブカリ・ワーク・ザド・リブ・クク・バイ・ムーリ・エメロミラ（"
+   },
+   {
+    "prompt": "def fibonacci(n):",
+    "text": " 16\"] 4):  . 1C2: 3b,8,0,24,9,000:5\nlpb a per square mile of a couple of a total of two-foot-uper (t) 16,5) to 2,5,000 (c."
+   }
+  ],
+  "retrieval": [
+   {
+    "article_start": "Boonsboro is a town in Washington County, Maryland, United States, located at the foot of South Mountain. It nearly borders Frederick County and is proximate to the Antietam National Battlefield. The population was 3,336",
+    "prompt": " body of the Town. In Boonsboro, from 1831 through 1939, Mayors (originally called Burgesses) were elected annually. From 1940 through 1975, they served two-year terms. Since 1976, Mayors have been chosen for four-year terms, except for the previous mayor, who had been in office from 1988 through 2016.\n\nBoonsboro's current Mayor is Howard W. Long.\n\nPrevious Mayors include:\n\n 1831–1835 Jonathan Shafer\n 1835–1836 David Brookhart\n 1836–1837 Lewis F",
+    "with_library": "artus, a total-year number of the first-mictes of the county, the area is the most of the first-to-day and in a \"s of the United States\". In the most of the first of the following, the United States, with a state in the",
+    "without_library": "art, Part, and Dewat, who was a long-gad-tred to the world, but he was used as a great and in a \"s of the same-termist and the first-fould of the following-to-up of the state in the",
+    "truth": "letcher\n 1837–1838 Joseph O'neal\n 1838–1839 Anthony McBride\n 1839–1840 Joseph Knox\n 1840–1841 Charles Perry\n 1841–1843 Jacob Smith\n 1843–1845 James Chambers\n"
+   },
+   {
+    "article_start": "A macrobiotic diet (or macrobiotics) is a fad diet based on ideas about types of food drawn from Zen Buddhism. The diet tries to balance the supposed yin and yang elements of food and cookware.",
+    "prompt": " and nut butters, seasonings, sweeteners, fruits, and beverages may be enjoyed occasionally, two to three times per week. Other naturally-raised animal products may be included if needed during dietary transition or according to individual needs.\n\nKitchenware \nCooking utensils should be made from certain materials such as wood or glass, while some materials including plastic, copper, and non-stick coatings are to be avoided. Electric ovens should not be used.\n\nJapanese popularity and influence\nThe macrobiotic way of eating was developed and popularized by the Japanese. During",
+    "with_library": " the world's most common may not be used for a great range of the same and its own world.\n\nMalkal, the same is that there are a very important of the same time from the time to be different.\n\nThe following-termized, with a process in the",
+    "without_library": " the world, the first-year-t and the first, is a result of its world, and is the most of the first-to-day and in a \"s of the same-term and and to the same period of the following, the United States, with a more than the",
+    "truth": " the Edo period in Japan peasants had a diet based on staples of rice and soybeans. According to some macrobiotic advocates, a majority of the world population in the past ate a diet based primarily on grains, vegetables, and other plants. Because the macrobiotic diet was"
+   },
+   {
+    "article_start": "The BNC connector (initialism of \"Bayonet Neill–Concelman\") is a miniature quick connect/disconnect radio frequency connector used for coaxial cable. It is designed to maintain the same",
+    "prompt": " not mate with standard interface connectors. The SHV connector is a high-voltage BNC variant that uses this reverse polarity configuration.\n\nSmaller versions of the BNC connector, called Mini BNC and High Density BNC (HD BNC), are manufactured by Amphenol. While retaining the electrical characteristics of the original specification, they have smaller footprints giving a higher packing density on circuit boards and equipment backplanes. These connectors have true 75 ohm impedance making them suitable for HD video applications.\n\nCompatibility\nThe different",
+    "with_library": " of the same number of the following time of the first time, including the Radm, the same is the most of the first-to-day and in a \"s of the United States\". In the most of the first of the two other election (the city), as the most popular",
+    "without_library": " of the same number of the following time of the first time, including the next time, and the same is the most of the first-to-day and in a \"s of the same-term and \"the-c. The following-d. (The city was a result in the",
+    "truth": " versions are designed to mate with each other,\nand a 75 ohm and a 50 ohm BNC connector which both comply with the 2007 IEC standard, IEC 61169-8, will mate non-destructively. At least one manufacturer claims"
+   },
+   {
+    "article_start": "Salvation (from Latin: salvatio, from salva, 'safe, saved') is the state of being saved or protected from harm or a dire situation. In religion and theology, salvation generally refers to",
+    "prompt": " of Jesus Christ of Latter-day Saints, the plan of salvation is God's plan to save, redeem, and exalt all humankind who chose, either in this life, or in the world of spirits of the dead, to accept the grace of Jesus Christ by exercising faith in Him, repenting of their sins, and by making and keeping sacred covenants (including baptism). Since the vast majority of God's children depart this life without that opportunity, Christ's gospel is preached to the unbelieving spirits in spirit prison (1 Peter 3: 19) so that they",
+    "with_library": " were used as a total of the town of the first-mage. It was a total of the same-gat. The main-tel was used as a number of the vote of the city and to the C.S. The only the United States, with a more in the",
+    "without_library": " were used as a total of the town of the first-mage. It was not used in the same-gatic. The main-tel and in a \"s of the same-l” and the first-fang and the following the United States, with a more than the",
+    "truth": " might be judged by the same standards as the living and live by following God in their spirit form (1 Peter 4: 6). If they accept Christ, sincerely repent of their sins, and accept ordinances done on their behalf, they can, by the grace of Christ"
+   }
+  ]
+ }
+}
