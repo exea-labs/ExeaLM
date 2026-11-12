@@ -724,12 +724,29 @@ Wikipedia, 7.5% relay, 7.5% lookup.
 
 `experiments/show_skills.py` prints both skills in readable form (output in `results/full_small/`): agent A reads
 four facts, agent B answers all four through the board and none with it cut; the model reads a list of keys and
-gives the values from a library of 1,024 facts it has never seen.
+gives the values from a library of 1,024 facts it has never seen. (That output is from the seed-0 checkpoint, which
+the seed-1 run then overwrote. Checkpoints now carry the seed in their name.)
+
+**Second seed: lookup did not form.** Same recipe, seed 1:
+
+| Seed | English | Japanese Wikipedia | Japanese web | Code | Relay, shared / cut | Lookup, attached / removed |
+|---|---|---|---|---|---|---|
+| 0 | 1.316 | 1.422 | 1.319 | 1.606 | 100.0% / 0.5% | 90.3% / 0.6% |
+| 1 | 1.326 | 1.426 | 1.316 | 1.644 | 100.0% / 1.8% | **1.4% / 1.4%** |
+
+The relay formed on both seeds. Lookup stayed at chance on seed 1 for all 24,000 steps. On the final seed-1
+checkpoint the search works but the read doesn't:
+- With 64 tables in the library, the right table is in the search's top 4 for 70% of questions (random: 6%).
+- With a single table, which is always retrieved, the model still gets 0% of the values.
+
+So the model finds the table but never learned to take the value from it. On seed 0 the read formed between steps
+6,000 and 9,000. Teaching relay and lookup together from step 0 learned both by step 1,000 on seed 0 (below). That
+schedule is queued on both seeds (`schedA_s1`, `skillsA_exealm`, `skillsA_exealm_s1`).
 
 **What it shows.**
-- One 18M model trained mostly on real text also passes facts between agents (100% vs 0.5% with the board cut) and
-  looks up facts in an unseen library (90% vs 0.6% without it). Both skills are used, and both come from the circuits
-  we built for them.
+- One 18M model trained mostly on real text also passes facts between agents (100% vs 0.5% with the board cut) and,
+  on seed 0, looks up facts in an unseen library (90% vs 0.6% without it). Both skills come from the circuits we
+  built for them.
 - Lookup was learned late, between steps 6,000 and 9,000. Inspecting the step-4,000 checkpoint, the search already
   found the right table more often than chance, but the read had not formed yet.
 
@@ -739,7 +756,7 @@ gives the values from a library of 1,024 facts it has never seen.
 - The lookup and relay tasks are synthetic.
 - Language is a little behind the first recipe (English 1.316 vs 1.294, code 1.606 vs 1.581), which spent 80% of its
   steps on text instead of 70%.
-- One seed.
+- Lookup is not reliable with this recipe: it formed on one seed of two.
 
 **Against a same-size Llama on the same batches** (`--model llama`, same arguments; the Llama can't do relay or
 lookup, so those batches only teach it the token statistics). Bits per byte, lower is better:
@@ -785,5 +802,5 @@ first 400 steps differ; steps 400 to 2,000 are the same warm mix. At step 2,000:
 | **Relay and lookup together** | **94.2% / 1.0%** | **67.9% / 1.5%** | 2.024 |
 
 Whichever skill is learned alone first blocks the other for a long time: the relay never started after lookup, and
-in the full run lookup started only after step 6,000. Teaching both together learns both by step 1,000. A full run
-with that schedule is queued (`skillsA_exealm`).
+in the full run lookup started only after step 6,000. Teaching both together learns both by step 1,000. Full runs
+with that schedule are queued on seeds 0 and 1 (`skillsA_exealm`, `skillsA_exealm_s1`).

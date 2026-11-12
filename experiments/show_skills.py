@@ -8,7 +8,7 @@ person can read. Two demos, each run twice, with the circuit on and off:
 
 Keys and values are synthetic tokens, printed as K00..K63 and V00..V63.
 
-python experiments/show_skills.py --ckpt results/full_small/exealm_skills_ckpt.pt
+python experiments/show_skills.py --ckpt results/full_small/exealm_skills_seed0_ckpt.pt
 """
 import argparse
 import os
@@ -96,7 +96,7 @@ def lookup_demo(model, cfg, dev, rng, n_facts, show=8):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--ckpt", default="results/full_small/exealm_skills_ckpt.pt")
+    ap.add_argument("--ckpt", default="results/full_small/exealm_skills_seed0_ckpt.pt")
     ap.add_argument("--relay_chunk", type=int, default=8)
     ap.add_argument("--relay_facts", type=int, default=4)
     ap.add_argument("--facts", type=int, default=1024)

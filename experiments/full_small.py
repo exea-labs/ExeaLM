@@ -346,8 +346,8 @@ def main():
             print(json.dumps(rec), flush=True)
             json.dump(dict(info, curve=curve), open(path, "w"), indent=1)
         if a.save_every and (step + 1) % a.save_every == 0:
-            torch.save(dict(model=model.state_dict(), cfg=vars(cfg), step=step + 1, specs=getattr(model, "specs", None)), os.path.join(a.out, f"{name}_ckpt.pt"))
-    torch.save(dict(model=model.state_dict(), cfg=vars(cfg), step=last, specs=getattr(model, "specs", None)), os.path.join(a.out, f"{name}_ckpt.pt"))
+            torch.save(dict(model=model.state_dict(), cfg=vars(cfg), step=step + 1, specs=getattr(model, "specs", None)), os.path.join(a.out, f"{name}_seed{a.seed}_ckpt.pt"))
+    torch.save(dict(model=model.state_dict(), cfg=vars(cfg), step=last, specs=getattr(model, "specs", None)), os.path.join(a.out, f"{name}_seed{a.seed}_ckpt.pt"))
     s = samples(model, a, data, dev, a.model, tok)
     json.dump(dict(info, curve=curve, samples=s), open(path, "w"), indent=1, ensure_ascii=False)
     print(json.dumps(dict(samples=s), ensure_ascii=False), flush=True)
