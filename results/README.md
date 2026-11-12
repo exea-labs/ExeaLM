@@ -754,11 +754,26 @@ ExeaLM first, Llama second. Held-out Wikipedia with no library: 4.818 vs 4.906 b
 
 - At equal steps ExeaLM is ahead on every kind of text, by 0.017 to 0.035 bits per byte at the end (0.024 on
   average). The lead shrinks with training: 0.21 on English at step 3,000, 0.023 at step 24,000.
-- **This is equal steps, not equal compute.** ExeaLM, with both memory circuits and board posts every 8 tokens, took
-  6,414 seconds against the Llama's 4,942 (1.30 times as long, evaluations included). In the same time the Llama
-  could have run about 30% more steps. Section 7's equal-compute comparisons are the fair test of the architecture;
-  this one asks whether adding the memory skills costs language quality. It doesn't, at equal steps.
+- That is equal steps. ExeaLM, with both memory circuits and board posts every 8 tokens, took 6,414 seconds against
+  the Llama's 4,942 (1.30 times as long, evaluations included).
 - ExeaLM has 18.08M parameters, the Llama 17.83M.
+
+**At equal compute** the Llama ran 31,200 steps (1.30 times as many, with its learning-rate schedule stretched to
+match), which took 6,414 seconds, the same as ExeaLM's 24,000. Same batches, same schedule by step:
+
+| Model | Steps | English | Japanese Wikipedia | Japanese web | Code | Mean |
+|---|---|---|---|---|---|---|
+| ExeaLM | 24,000 | 1.316 | 1.422 | 1.319 | **1.606** | 1.416 |
+| Llama, same time | 31,200 | **1.314** | **1.417** | **1.315** | 1.609 | **1.414** |
+
+- **A tie on language.** The Llama is ahead on the three prose sets by 0.002 to 0.005 bits per byte, ExeaLM on code
+  by 0.003. The mean differs by 0.002. Held-out Wikipedia with no library: 4.818 (ExeaLM) vs 4.833 bits per token.
+- At the same time cost, ExeaLM also does the relay (100% vs the Llama's 1.8%) and the lookup (90.3% vs 3.2%).
+  So the two memory skills come at no cost in language at equal steps. At equal compute they cost the 30% extra
+  time, which buys the Llama back about 0.002.
+- We haven't profiled where the 30% goes. The likely places are the board posts every 8 tokens and the search, both
+  plain PyTorch on the Mac's GPU, while attention uses a fused kernel. Making those faster is the way to win at
+  equal compute here.
 
 **Which skill to teach first** (`--stop_at 2000` on the same 24,000-step schedule, `results/full_small/*sched*`). The
 first 400 steps differ; steps 400 to 2,000 are the same warm mix. At step 2,000:
