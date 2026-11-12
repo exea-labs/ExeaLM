@@ -181,3 +181,39 @@ def test_swarm_text_scores_only_the_targets_that_count():
                                                 reduction="none", ignore_index=-100)
     rows = nll.sum(1) / (y != -100).sum(1) / math.log(2)
     assert np.allclose(got, [float(rows[[0, 2]].mean()), float(rows[[1, 3]].mean())], atol=1e-4)
+
+
+def _randomize_pools(m):
+    """chunk_pool='attn' starts as the mean (zero weights); give the pools real weights so the test means something."""
+    with torch.no_grad():
+        for name, p in m.named_parameters():
+            if "pool" in name:
+                p.normal_(0, 1.0)
+
+
+@pytest.mark.parametrize("kw", [dict(chunk_pool="attn"), dict(board_chunk=4), dict(chunk_pool="attn", board_chunk=4)])
+def test_pooling_and_board_chunk_stay_causal(kw):
+    cfg, m, x, mem = setup(**kw)
+    _randomize_pools(m)
+    t = 21
+    x2 = x.clone()
+    x2[0, t] = (x2[0, t] + 1) % cfg.vocab_size
+    with torch.no_grad():
+        a, b = m(x, mem)[0], m(x2, mem)[0]
+    assert torch.allclose(a[:, :t], b[:, :t], atol=1e-5)
+    assert not torch.allclose(a[0, t:], b[0, t:])
+
+
+@pytest.mark.parametrize("kw", [dict(chunk_pool="attn"), dict(board_chunk=4), dict(chunk_pool="attn", board_chunk=4)])
+def test_pooled_posts_are_heard_only_after_their_chunk(kw):
+    cfg, m, x, mem = setup(swarm_size=2, **kw)
+    _randomize_pools(m)
+    t = 13
+    x2 = x.clone()
+    x2[0, t] = (x2[0, t] + 1) % cfg.vocab_size
+    with torch.no_grad():
+        a, b = m(x, mem)[0], m(x2, mem)[0]
+    bc = cfg.board_chunk or cfg.chunk
+    c_end = (t // bc + 1) * bc                   # the post made in t's board chunk is readable from here on
+    assert torch.allclose(a[0, :t], b[0, :t], atol=1e-5)
+    assert torch.allclose(a[1, :c_end], b[1, :c_end], atol=1e-5)

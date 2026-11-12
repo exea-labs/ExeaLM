@@ -58,9 +58,12 @@ def lib_of(arts):
     return Datastore(tokens, docs)
 
 
-def relay(B, C, rng, base, n_facts=4):
+def relay(B, C, rng, base, n_facts=4, tokens=0):
     """The relay task in swarms of 2, its tokens moved to the top of the vocabulary (rare BPE ids). One fact per C
-    tokens; rows are (n_facts + n_facts) * C long."""
+    tokens; rows are (n_facts + n_facts) * C long. tokens: if set, use as many rows as fit that many tokens (so a
+    short relay batch costs about what a text batch does) instead of B."""
+    if tokens:
+        B = max(2, tokens // (2 * n_facts * C))
     x, y = relay_batch(B // 2, n_facts, C, rng, agents=2)
     return x + base, torch.where(y >= 0, y + base, y)
 
@@ -114,7 +117,7 @@ def batch(kind, data, a, rng):
     if kind == "wiki":
         x, y, d = text_batch(data.train_arts, a.batch, a.seq, rng)
         return x, y, d, 4
-    x, y = relay(a.batch, a.relay_chunk or a.chunk, rng, data.vocab - 256, a.relay_facts)
+    x, y = relay(a.batch, a.relay_chunk or a.chunk, rng, data.vocab - 256, a.relay_facts, a.batch * a.seq)
     return x, y, None, 2
 
 
@@ -163,7 +166,7 @@ def evaluate(model, a, data, dev, mk):
     hits = {"shared": 0, "cut": 0}
     n = 0
     for _ in range(max(2, a.eval_batches // 2)):
-        x, y = relay(a.batch, a.relay_chunk or a.chunk, rrng, data.vocab - 256, a.relay_facts)
+        x, y = relay(a.batch, a.relay_chunk or a.chunk, rrng, data.vocab - 256, a.relay_facts, a.batch * a.seq)
         m = y >= 0
         for k in hits:
             logits = model(x.to(dev), mem_for(mk, None, None, 2, dev, cut=(k == "cut")))[0].float()
@@ -231,6 +234,8 @@ def main():
     ap.add_argument("--p_kinds", default="0.8,0.15,0.05,0", help="share of steps for text, wiki, relay and lookup batches")
     ap.add_argument("--warm_steps", type=int, default=0, help="first phase with --warm_kinds instead of --p_kinds")
     ap.add_argument("--warm_kinds", default="0.2,0,0.4,0.4")
+    ap.add_argument("--schedule", default="", help="phases before --p_kinds, 'until_step:shares;...', e.g. "
+                    "'400:0,0,1,0;2000:0.3,0.2,0.25,0.25' (relay alone first, then a warm mix); overrides --warm_steps")
     ap.add_argument("--facts", type=int, default=1024, help="lookup datastore size (at evaluation, and the cap)")
     ap.add_argument("--grow", type=int, default=16, help="lookup datastore starts this small and doubles (0: off)")
     ap.add_argument("--dense", type=int, default=0, help="1: lookup datastore chunks are tables of chunk/4 facts")
@@ -290,7 +295,9 @@ def main():
         data.lib_train = data.lib_train.to(dev)
         data.lib_eval = data.lib_eval.to(dev)
         data.lib_train.refresh(model.encoder, model.emb, step=0)
-    p, p_warm = kinds_p(a.p_kinds), kinds_p(a.warm_kinds)
+    p = kinds_p(a.p_kinds)
+    phases = [(int(u), kinds_p(sh)) for u, sh in (ph.split(":") for ph in a.schedule.split(";") if ph)] if a.schedule \
+        else [(a.warm_steps, kinds_p(a.warm_kinds))]
     rng = np.random.default_rng(a.seed)
     curve, t0, tokens = [], time.time(), 0
     counts = dict.fromkeys(KINDS, 0)
@@ -299,7 +306,7 @@ def main():
             data.lib_train.refresh(model.encoder, model.emb, step=step)
         for g in opt.param_groups:
             g["lr"] = lr_at(step, a.steps, a.lr, a.warmup, 0.2)
-        kind = KINDS[int(rng.choice(len(KINDS), p=p_warm if step < a.warm_steps else p))]
+        kind = KINDS[int(rng.choice(len(KINDS), p=next((q for u, q in phases if step < u), p)))]
         if kind == "lookup":
             n_facts = min(a.facts, a.grow * 2 ** (counts["lookup"] // a.grow_every)) if a.grow else a.facts
             x, y, ds = lookup(a.batch, a.chunk, n_facts, rng, data.vocab - 512, model if a.model == "exealm" else None, dev, a.dense)
