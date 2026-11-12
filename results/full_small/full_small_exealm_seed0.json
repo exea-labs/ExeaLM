@@ -1,0 +1,426 @@
+{
+ "model": "exealm",
+ "params": 18080796,
+ "library_chunks": 483270,
+ "eval_library_chunks": 53467,
+ "train_articles": 14209,
+ "eval_articles": 1578,
+ "args": {
+  "model": "exealm",
+  "root": "data/tokpack",
+  "toks": "bpe32k",
+  "train": "train_en_big,train_ja_big,train_code_big",
+  "mix": "0.5,0.3,0.2",
+  "p_kinds": "0.8,0.15,0.05",
+  "d": 320,
+  "slots": 10,
+  "steps": 24000,
+  "batch": 32,
+  "seq": 512,
+  "chunk": 64,
+  "min_tokens": 1024,
+  "lr": 0.002,
+  "warmup": 500,
+  "refresh_every": 1000,
+  "eval_every": 3000,
+  "eval_batches": 12,
+  "save_every": 4000,
+  "key_dim": 128,
+  "lexical": 128,
+  "gen_tokens": 60,
+  "prompts": "The history of the city begins||Photosynthesis is the process by which||日本の首都は||def fibonacci(n):",
+  "tokenizer": "results/tokenizer/bpe32k/tokenizer.json",
+  "seed": 0,
+  "smoke": 0,
+  "device": "auto",
+  "out": "results/full_small"
+ },
+ "curve": [
+  {
+   "step": 3000,
+   "secs": 1085.2,
+   "tokens": 49152000,
+   "train_loss": 3.5827,
+   "batches": {
+    "text": 2356,
+    "wiki": 493,
+    "relay": 151
+   },
+   "val_en": {
+    "removed": 1.5329,
+    "attached": 1.5338
+   },
+   "val_ja_wiki": {
+    "removed": 1.6895,
+    "attached": 1.689
+   },
+   "val_ja_web": {
+    "removed": 1.535,
+    "attached": 1.5356
+   },
+   "val_code": {
+    "removed": 2.0,
+    "attached": 1.9979
+   },
+   "swarm": {
+    "shared": 1.5375,
+    "cut": 1.5377,
+    "board_gain": 0.0002
+   },
+   "knowledge": {
+    "removed": 5.761,
+    "attached": 5.7643,
+    "retrieval_gain": -0.0033,
+    "same_article_hits": 0.2598
+   },
+   "relay": {
+    "shared": 0.0052,
+    "cut": 0.0052
+   }
+  },
+  {
+   "step": 6000,
+   "secs": 2184.0,
+   "tokens": 98304000,
+   "train_loss": 4.2392,
+   "batches": {
+    "text": 4712,
+    "wiki": 967,
+    "relay": 321
+   },
+   "val_en": {
+    "removed": 1.4534,
+    "attached": 1.4545
+   },
+   "val_ja_wiki": {
+    "removed": 1.5911,
+    "attached": 1.593
+   },
+   "val_ja_web": {
+    "removed": 1.4587,
+    "attached": 1.4603
+   },
+   "val_code": {
+    "removed": 1.8837,
+    "attached": 1.8848
+   },
+   "swarm": {
+    "shared": 1.4563,
+    "cut": 1.4565,
+    "board_gain": 0.0001
+   },
+   "knowledge": {
+    "removed": 5.3925,
+    "attached": 5.3963,
+    "retrieval_gain": -0.0038,
+    "same_article_hits": 0.2604
+   },
+   "relay": {
+    "shared": 0.0104,
+    "cut": 0.0104
+   }
+  },
+  {
+   "step": 9000,
+   "secs": 3285.2,
+   "tokens": 147456000,
+   "train_loss": 3.7379,
+   "batches": {
+    "text": 7106,
+    "wiki": 1419,
+    "relay": 475
+   },
+   "val_en": {
+    "removed": 1.4317,
+    "attached": 1.4327
+   },
+   "val_ja_wiki": {
+    "removed": 1.551,
+    "attached": 1.5517
+   },
+   "val_ja_web": {
+    "removed": 1.4233,
+    "attached": 1.4239
+   },
+   "val_code": {
+    "removed": 1.7691,
+    "attached": 1.7688
+   },
+   "swarm": {
+    "shared": 1.4326,
+    "cut": 1.433,
+    "board_gain": 0.0003
+   },
+   "knowledge": {
+    "removed": 5.3497,
+    "attached": 5.3581,
+    "retrieval_gain": -0.0084,
+    "same_article_hits": 0.2503
+   },
+   "relay": {
+    "shared": 0.0104,
+    "cut": 0.0104
+   }
+  },
+  {
+   "step": 12000,
+   "secs": 4385.7,
+   "tokens": 196608000,
+   "train_loss": 3.9679,
+   "batches": {
+    "text": 9486,
+    "wiki": 1888,
+    "relay": 626
+   },
+   "val_en": {
+    "removed": 1.4102,
+    "attached": 1.4113
+   },
+   "val_ja_wiki": {
+    "removed": 1.5235,
+    "attached": 1.5246
+   },
+   "val_ja_web": {
+    "removed": 1.4026,
+    "attached": 1.4035
+   },
+   "val_code": {
+    "removed": 1.7528,
+    "attached": 1.754
+   },
+   "swarm": {
+    "shared": 1.4124,
+    "cut": 1.4128,
+    "board_gain": 0.0004
+   },
+   "knowledge": {
+    "removed": 5.2336,
+    "attached": 5.2516,
+    "retrieval_gain": -0.018,
+    "same_article_hits": 0.2575
+   },
+   "relay": {
+    "shared": 0.013,
+    "cut": 0.013
+   }
+  },
+  {
+   "step": 15000,
+   "secs": 6707.7,
+   "tokens": 245760000,
+   "train_loss": 4.1664,
+   "batches": {
+    "text": 11906,
+    "wiki": 2330,
+    "relay": 764
+   },
+   "val_en": {
+    "removed": 1.4021,
+    "attached": 1.4038
+   },
+   "val_ja_wiki": {
+    "removed": 1.5243,
+    "attached": 1.526
+   },
+   "val_ja_web": {
+    "removed": 1.408,
+    "attached": 1.4094
+   },
+   "val_code": {
+    "removed": 1.7575,
+    "attached": 1.7559
+   },
+   "swarm": {
+    "shared": 1.4043,
+    "cut": 1.4046,
+    "board_gain": 0.0003
+   },
+   "knowledge": {
+    "removed": 5.2006,
+    "attached": 5.282,
+    "retrieval_gain": -0.0814,
+    "same_article_hits": 0.2604
+   },
+   "relay": {
+    "shared": 0.013,
+    "cut": 0.013
+   }
+  },
+  {
+   "step": 18000,
+   "secs": 8321.5,
+   "tokens": 294912000,
+   "train_loss": 3.8248,
+   "batches": {
+    "text": 14322,
+    "wiki": 2763,
+    "relay": 915
+   },
+   "val_en": {
+    "removed": 1.3926,
+    "attached": 1.3947
+   },
+   "val_ja_wiki": {
+    "removed": 1.5108,
+    "attached": 1.5119
+   },
+   "val_ja_web": {
+    "removed": 1.3778,
+    "attached": 1.3781
+   },
+   "val_code": {
+    "removed": 1.7463,
+    "attached": 1.7492
+   },
+   "swarm": {
+    "shared": 1.3952,
+    "cut": 1.3955,
+    "board_gain": 0.0004
+   },
+   "knowledge": {
+    "removed": 5.1664,
+    "attached": 5.3125,
+    "retrieval_gain": -0.1461,
+    "same_article_hits": 0.2617
+   },
+   "relay": {
+    "shared": 0.0182,
+    "cut": 0.0182
+   }
+  },
+  {
+   "step": 21000,
+   "secs": 9423.7,
+   "tokens": 344064000,
+   "train_loss": 4.234,
+   "batches": {
+    "text": 16754,
+    "wiki": 3185,
+    "relay": 1061
+   },
+   "val_en": {
+    "removed": 1.3548,
+    "attached": 1.3558
+   },
+   "val_ja_wiki": {
+    "removed": 1.4661,
+    "attached": 1.4666
+   },
+   "val_ja_web": {
+    "removed": 1.3448,
+    "attached": 1.345
+   },
+   "val_code": {
+    "removed": 1.6812,
+    "attached": 1.6839
+   },
+   "swarm": {
+    "shared": 1.3589,
+    "cut": 1.3592,
+    "board_gain": 0.0003
+   },
+   "knowledge": {
+    "removed": 5.0566,
+    "attached": 6.1794,
+    "retrieval_gain": -1.1228,
+    "same_article_hits": 0.2601
+   },
+   "relay": {
+    "shared": 0.0182,
+    "cut": 0.0182
+   }
+  },
+  {
+   "step": 24000,
+   "secs": 10523.6,
+   "tokens": 393216000,
+   "train_loss": 3.6611,
+   "batches": {
+    "text": 19126,
+    "wiki": 3660,
+    "relay": 1214
+   },
+   "val_en": {
+    "removed": 1.2941,
+    "attached": 1.2943
+   },
+   "val_ja_wiki": {
+    "removed": 1.3874,
+    "attached": 1.3875
+   },
+   "val_ja_web": {
+    "removed": 1.2863,
+    "attached": 1.2864
+   },
+   "val_code": {
+    "removed": 1.5812,
+    "attached": 1.5817
+   },
+   "swarm": {
+    "shared": 1.2983,
+    "cut": 1.2988,
+    "board_gain": 0.0005
+   },
+   "knowledge": {
+    "removed": 4.7678,
+    "attached": 4.8082,
+    "retrieval_gain": -0.0404,
+    "same_article_hits": 0.2575
+   },
+   "relay": {
+    "shared": 0.0104,
+    "cut": 0.0104
+   }
+  }
+ ],
+ "samples": {
+  "free": [
+   {
+    "prompt": "The history of the city begins",
+    "text": " with an earthquake of the same age as the sun was. This is a history of the city’s ancient history, because it is quite a part of the church’s history, and it’s still a popular place for the Roman Catholic church.\nThe city has been a popular culture in"
+   },
+   {
+    "prompt": "Photosynthesis is the process by which",
+    "text": " any of these atoms are filled together.\nThe researchers at Leiden University from Leiden University were able to use their models to track the composition of the molecule in the laboratory with a total amount of energy, the size was determined by the experimental techniques required by the laboratory and then using their"
+   },
+   {
+    "prompt": "日本の首都は",
+    "text": "ほぼ、\n\n日本 \n 日本\n 全国\n 都市環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境環境"
+   },
+   {
+    "prompt": "def fibonacci(n):",
+    "text": "\n    1e39:\t6a 02                \tld\ta5,0x2\n    1e3b:\t6b02                \tld\ta5,0(a0)\n    1e3d:\t00f71703          \tsd\ta5,"
+   }
+  ],
+  "retrieval": [
+   {
+    "article_start": "Boonsboro is a town in Washington County, Maryland, United States, located at the foot of South Mountain. It nearly borders Frederick County and is proximate to the Antietam National Battlefield. The population was 3,336",
+    "prompt": " body of the Town. In Boonsboro, from 1831 through 1939, Mayors (originally called Burgesses) were elected annually. From 1940 through 1975, they served two-year terms. Since 1976, Mayors have been chosen for four-year terms, except for the previous mayor, who had been in office from 1988 through 2016.\n\nBoonsboro's current Mayor is Howard W. Long.\n\nPrevious Mayors include:\n\n 1831–1835 Jonathan Shafer\n 1835–1836 David Brookhart\n 1836–1837 Lewis F",
+    "with_library": ". Eagle\n 1837–1841 George B. Dew\n 1848–1841 John B. Knight\n 1851–1842 John B. Knight\n 1903–1845 John B. Knight\n 1852–1853 Jack Knight\n 1837–",
+    "without_library": ". Taylor\n 1838–1841 Steven Smith\n 1836–1917 Steven Smith\n 1836–1845 J. H. Smith\n 1836–1880 G. H. Smith\n 1838–1891 William McGrath (1886–1903)\n",
+    "truth": "letcher\n 1837–1838 Joseph O'neal\n 1838–1839 Anthony McBride\n 1839–1840 Joseph Knox\n 1840–1841 Charles Perry\n 1841–1843 Jacob Smith\n 1843–1845 James Chambers\n"
+   },
+   {
+    "article_start": "A macrobiotic diet (or macrobiotics) is a fad diet based on ideas about types of food drawn from Zen Buddhism. The diet tries to balance the supposed yin and yang elements of food and cookware.",
+    "prompt": " and nut butters, seasonings, sweeteners, fruits, and beverages may be enjoyed occasionally, two to three times per week. Other naturally-raised animal products may be included if needed during dietary transition or according to individual needs.\n\nKitchenware \nCooking utensils should be made from certain materials such as wood or glass, while some materials including plastic, copper, and non-stick coatings are to be avoided. Electric ovens should not be used.\n\nJapanese popularity and influence\nThe macrobiotic way of eating was developed and popularized by the Japanese. During",
+    "with_library": " the early 20th century, when the sun was sunk, the sun fell to its host base. In the 1970s, the sun was sunk and sunk, but the sun was sunk and sunk.\n\nIn many Japanese, the sun was sunk when sunk,",
+    "without_library": " the Korean War, the Japanese had several negative effects on the environment, including the elimination of bacteria, the release of the bacteria, and the production of antibiotics. The Japanese had a negative effect on human health and the environment. Japan was the second most effective source of bacteria, as well as the",
+    "truth": " the Edo period in Japan peasants had a diet based on staples of rice and soybeans. According to some macrobiotic advocates, a majority of the world population in the past ate a diet based primarily on grains, vegetables, and other plants. Because the macrobiotic diet was"
+   },
+   {
+    "article_start": "The BNC connector (initialism of \"Bayonet Neill–Concelman\") is a miniature quick connect/disconnect radio frequency connector used for coaxial cable. It is designed to maintain the same",
+    "prompt": " not mate with standard interface connectors. The SHV connector is a high-voltage BNC variant that uses this reverse polarity configuration.\n\nSmaller versions of the BNC connector, called Mini BNC and High Density BNC (HD BNC), are manufactured by Amphenol. While retaining the electrical characteristics of the original specification, they have smaller footprints giving a higher packing density on circuit boards and equipment backplanes. These connectors have true 75 ohm impedance making them suitable for HD video applications.\n\nCompatibility\nThe different",
+    "with_library": " parts of the X-axis are connected to the X-axis by the RC-A, and is the most commonly used subset of the X-axis through a single X-axis.\n\nThe X-axis is an ideal option for the X-axis with lower packing values",
+    "without_library": " parts of the X-axis are used in the BNC connector. It is used in many different ways, with the most important in the design that was used. It is used in several applications, but it is not used.\n\nThe PCB (P) is a non-line",
+    "truth": " versions are designed to mate with each other,\nand a 75 ohm and a 50 ohm BNC connector which both comply with the 2007 IEC standard, IEC 61169-8, will mate non-destructively. At least one manufacturer claims"
+   },
+   {
+    "article_start": "Salvation (from Latin: salvatio, from salva, 'safe, saved') is the state of being saved or protected from harm or a dire situation. In religion and theology, salvation generally refers to",
+    "prompt": " of Jesus Christ of Latter-day Saints, the plan of salvation is God's plan to save, redeem, and exalt all humankind who chose, either in this life, or in the world of spirits of the dead, to accept the grace of Jesus Christ by exercising faith in Him, repenting of their sins, and by making and keeping sacred covenants (including baptism). Since the vast majority of God's children depart this life without that opportunity, Christ's gospel is preached to the unbelieving spirits in spirit prison (1 Peter 3: 19) so that they",
+    "with_library": " do not have any special faith in the Holy Spirit. The Christian saints of the saints, who are the Father's most important saints, are all in their life. They are also the Father's and the Son of the Apostle, the Son of God, and the Son of",
+    "without_library": " do not have any special faith (1 Peter 6: 19).\n\nThe first recorded Christian Christian mission is the Christian church. The Church of St Peter and the Holy Roman Emperor are the Church of Jesus Christ and the Church of Jesus Christ. The Church of Jesus Christ is the Holy Roman Emperor in",
+    "truth": " might be judged by the same standards as the living and live by following God in their spirit form (1 Peter 4: 6). If they accept Christ, sincerely repent of their sins, and accept ordinances done on their behalf, they can, by the grace of Christ"
+   }
+  ]
+ }
+}

@@ -1,0 +1,26 @@
+model: 18.1M parameters, results/full_small/exealm_skills_ckpt.pt
+
+RELAY: agent A reads the facts, agent B is asked for them. Only the board connects them.
+  agent A reads:  K01 -> V39   K57 -> V35   K24 -> V60   K27 -> V26
+  agent B is asked     answer   board shared   board cut
+  K27 ?                V26      V26 ok         (other)
+  K01 ?                V39      V39 ok         V26 --
+  K24 ?                V60      V60 ok         (other)
+  K57 ?                V35      V35 ok         (other)
+
+LOOKUP: a library of 64 tables (1024 facts) the model has never seen. It reads a list of keys
+  and must give each value. The values are in the library and nowhere else.
+  key        answer   library attached   library removed
+  K02 K46    V63      V63 ok             (other)
+  K46 K14    V15      V15 ok             (other)
+  K61 K56    V00      V00 ok             V20 --
+  K17 K40    V25      V08 --             (other)
+  K39 K60    V10      V10 ok             V11 --
+  K29 K23    V63      V63 ok             (other)
+  K07 K39    V15      V15 ok             (other)
+  K01 K29    V21      V24 --             (other)
+  ... 8 more keys in this list
+
+over 50 more examples of each (chance is 1 in 64):
+  relay:  board shared 100.0%, board cut 0.5%
+  lookup: library attached 90.6%, library removed 0.2%

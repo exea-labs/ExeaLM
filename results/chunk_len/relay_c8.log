@@ -1,0 +1,5 @@
+{"arm": "swarm", "step": 250, "secs": 42.9, "shared": {"acc": 0.9736, "bits": 0.481}, "cut": {"acc": 0.0142, "bits": 9.013}}
+{"arm": "swarm", "step": 500, "secs": 86.8, "shared": {"acc": 0.9878, "bits": 0.089}, "cut": {"acc": 0.0186, "bits": 13.053}}
+{"arm": "swarm", "step": 750, "secs": 129.5, "shared": {"acc": 0.9785, "bits": 0.102}, "cut": {"acc": 0.0186, "bits": 15.839}}
+{"arm": "swarm", "step": 1000, "secs": 175.3, "shared": {"acc": 0.9946, "bits": 0.032}, "cut": {"acc": 0.019, "bits": 16.692}}
+WROTE runs/c64/relay_c8/relay_seed0.json

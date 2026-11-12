@@ -1,0 +1,9 @@
+{"arm": "rag", "step": 250, "kb": 16, "secs": 156.5, "attached": {"acc": 0.0766, "bits": 8.779}, "removed": {"acc": 0.0165, "bits": 8.648}}
+{"arm": "rag", "step": 500, "kb": 32, "secs": 326.7, "attached": {"acc": 0.2609, "bits": 7.857}, "removed": {"acc": 0.0173, "bits": 9.966}}
+{"arm": "rag", "step": 750, "kb": 32, "secs": 485.4, "attached": {"acc": 0.238, "bits": 9.023}, "removed": {"acc": 0.0141, "bits": 10.572}}
+{"arm": "rag", "step": 1000, "kb": 64, "secs": 628.9, "attached": {"acc": 0.5087, "bits": 4.202}, "removed": {"acc": 0.0156, "bits": 10.812}}
+{"arm": "rag", "step": 1250, "kb": 128, "secs": 779.5, "attached": {"acc": 0.7318, "bits": 1.333}, "removed": {"acc": 0.0159, "bits": 11.067}}
+{"arm": "rag", "step": 1500, "kb": 128, "secs": 930.4, "attached": {"acc": 0.8354, "bits": 0.699}, "removed": {"acc": 0.0173, "bits": 11.507}}
+{"arm": "rag", "step": 1750, "kb": 256, "secs": 1080.2, "attached": {"acc": 0.8863, "bits": 0.413}, "removed": {"acc": 0.0139, "bits": 11.873}}
+{"arm": "rag", "step": 2000, "kb": 256, "secs": 1229.6, "attached": {"acc": 0.8961, "bits": 0.377}, "removed": {"acc": 0.0137, "bits": 12.077}}
+WROTE runs/c64/lookup_dense/lookup_f1024_qlast_r0_seed0.json

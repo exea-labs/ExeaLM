@@ -1,0 +1,3 @@
+{"arm": "rag", "step": 250, "kb": 16, "secs": 197.9, "attached": {"acc": 0.0146, "bits": 6.151}, "removed": {"acc": 0.0146, "bits": 6.152}}
+{"arm": "rag", "step": 500, "kb": 32, "secs": 401.3, "attached": {"acc": 0.0176, "bits": 6.026}, "removed": {"acc": 0.0176, "bits": 6.025}}
+{"arm": "rag", "step": 750, "kb": 32, "secs": 625.3, "attached": {"acc": 0.0166, "bits": 6.014}, "removed": {"acc": 0.0215, "bits": 6.014}}

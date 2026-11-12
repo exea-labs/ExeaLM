@@ -1,0 +1,146 @@
+{
+ "model": "exealm",
+ "params": 18080796,
+ "library_chunks": 483270,
+ "eval_library_chunks": 53467,
+ "train_articles": 14209,
+ "eval_articles": 1578,
+ "args": {
+  "model": "exealm",
+  "root": "data/tokpack",
+  "toks": "bpe32k",
+  "train": "train_en_big,train_ja_big,train_code_big",
+  "mix": "0.5,0.3,0.2",
+  "p_kinds": "0,0,1,0",
+  "warm_steps": 0,
+  "warm_kinds": "0.2,0,0.4,0.4",
+  "facts": 1024,
+  "grow": 16,
+  "dense": 0,
+  "relay_chunk": 8,
+  "relay_facts": 4,
+  "grow_every": 150,
+  "d": 320,
+  "slots": 10,
+  "steps": 1000,
+  "batch": 32,
+  "seq": 512,
+  "chunk": 64,
+  "min_tokens": 1024,
+  "lr": 0.002,
+  "warmup": 200,
+  "refresh_every": 1000,
+  "eval_every": 250,
+  "eval_batches": 4,
+  "save_every": 0,
+  "key_dim": 128,
+  "lexical": 128,
+  "gen_tokens": 60,
+  "prompts": "The history of the city begins||Photosynthesis is the process by which||\u65e5\u672c\u306e\u9996\u90fd\u306f||def fibonacci(n):",
+  "tokenizer": "results/tokenizer/bpe32k/tokenizer.json",
+  "lib_on": "all",
+  "board_chunk": 8,
+  "pool": "mean",
+  "tag": "relayonly",
+  "seed": 0,
+  "smoke": 0,
+  "device": "auto",
+  "out": "results/full_small_check"
+ },
+ "curve": [
+  {
+   "step": 250,
+   "secs": 144.3,
+   "tokens": 4096000,
+   "train_loss": 0.0299,
+   "batches": {
+    "text": 0,
+    "wiki": 0,
+    "relay": 250,
+    "lookup": 0
+   },
+   "val_en": {
+    "removed": 5.4559,
+    "attached": 5.4598
+   },
+   "val_ja_wiki": {
+    "removed": 5.5708,
+    "attached": 5.5753
+   },
+   "val_ja_web": {
+    "removed": 4.4805,
+    "attached": 4.4837
+   },
+   "val_code": {
+    "removed": 8.8776,
+    "attached": 8.8848
+   },
+   "swarm": {
+    "shared": 5.4726,
+    "cut": 5.4692,
+    "board_gain": -0.0034
+   },
+   "knowledge": {
+    "removed": 23.8411,
+    "attached": 23.8588,
+    "retrieval_gain": -0.0178,
+    "same_article_hits": 0.2656
+   },
+   "relay": {
+    "shared": 0.9932,
+    "cut": 0.0156
+   },
+   "lookup": {
+    "attached": 0.0,
+    "removed": 0.0
+   }
+  },
+  {
+   "step": 500,
+   "secs": 292.7,
+   "tokens": 8192000,
+   "train_loss": 0.0127,
+   "batches": {
+    "text": 0,
+    "wiki": 0,
+    "relay": 500,
+    "lookup": 0
+   },
+   "val_en": {
+    "removed": 6.7627,
+    "attached": 6.7614
+   },
+   "val_ja_wiki": {
+    "removed": 6.9558,
+    "attached": 6.9544
+   },
+   "val_ja_web": {
+    "removed": 5.5701,
+    "attached": 5.5688
+   },
+   "val_code": {
+    "removed": 11.0968,
+    "attached": 11.0938
+   },
+   "swarm": {
+    "shared": 6.7821,
+    "cut": 6.7799,
+    "board_gain": -0.0022
+   },
+   "knowledge": {
+    "removed": 29.6483,
+    "attached": 29.642,
+    "retrieval_gain": 0.0063,
+    "same_article_hits": 0.2627
+   },
+   "relay": {
+    "shared": 0.999,
+    "cut": 0.0215
+   },
+   "lookup": {
+    "attached": 0.0,
+    "removed": 0.0
+   }
+  }
+ ]
+}

@@ -651,3 +651,93 @@ is why two attention layers per TONN layer won at equal compute.
 
 Llama baseline (lr 2e-3, 7 seeds): mean 1.530 bits per byte.
 
+
+## 9. Chunk length: what the board and the search need (`results/chunk_len/`)
+
+The board posts, and the search runs, once per chunk. Each turns the chunk into one message or one key by averaging
+its positions. These runs vary the chunk with everything else fixed (tiny TONN, sections 1 and 3).
+
+**Relay** (`swarm_relay.py --chunk N`, 2 agents, 4 facts). Accuracy with the board shared / cut; chance is 1.6%:
+
+| Chunk (tokens) | Step 250 | Step 1,000 | Step 2,000 |
+|---|---|---|---|
+| 8 | 97.4% / 1.4% | **99.5% / 1.9%** | |
+| 16 | 1.6% / 1.6% | 1.1% / 1.1% | |
+| 32 | 1.6% / 1.6% | 1.1% / 1.1% (step 750) | |
+| 64 | 1.5% / 1.5% | 1.6% / 1.6% | 1.2% / 1.2% (step 1,750) |
+| 64, learned pooling (`--pool attn`) | 1.5% / 1.5% | 2.4% / 1.6% | 12.1% / 8.1% |
+| facts 64 tokens apart, posts every 8 (`--board_chunk 8`) | 1.5% / 1.5% | 1.7% / 1.7% (step 750) | |
+| 8, 32 facts per agent | 1.6% / 1.6% | 1.6% / 1.6% (step 750) | |
+
+- A relay fact is 3 tokens. In a 64-token chunk the average is mostly filler, and the board never starts to learn.
+- It learns fast only with short posts and few posts to choose from. Posting every 8 tokens doesn't help when the
+  facts are far apart, and 32 facts per agent don't learn in 750 steps even at 8 tokens.
+- Learned pooling helps a little at 64. With it, the cut board scores 8.1%, above chance. The causality tests pass
+  for both new options (`tests/test_memory.py`), so this isn't a look at the future; it is not explained yet, and the
+  main runs don't use learned pooling.
+
+**Lookup** (`rag_lookup.py --chunk 64`). With one fact and 60 filler tokens per stored chunk, it stayed at chance with
+both poolings (step 750). With dense chunks (`--dense 1`: every stored chunk is a table of 16 facts, and a question
+chunk asks about a whole table, which is closer to how real text packs facts), on 1,024 facts never seen in training:
+
+| Step | Library attached | Removed |
+|---|---|---|
+| 500 | 26.1% | 1.7% |
+| 1,000 | 50.9% | 1.6% |
+| 1,500 | 83.5% | 1.7% |
+| 2,000 | **89.6%** | 1.4% |
+
+## 10. The whole model at 17M, with the board and the library on (`experiments/full_small.py`, `results/full_small/`)
+
+**Setup.** The `small` hybrid at width 320 (18.1M parameters): every TONN layer has an RG and an AG circuit. 24,000
+steps of 32 × 512 tokens. Batches are text (English, Japanese and code, read in swarms of 4), Wikipedia second halves
+with the first halves in the library, relay and lookup. Scored on held-out data only.
+
+**First recipe** (80% text, 15% Wikipedia, 5% relay; library on every text batch; board posts every 64 tokens).
+Language improved steadily, but the memory circuits were never used:
+
+| Step | English, bits per byte | Library on held-out Wikipedia (bits per token) | Board gain | Relay |
+|---|---|---|---|---|
+| 3,000 | 1.533 | -0.003 | 0.0002 | 0.5% |
+| 12,000 | 1.410 | -0.018 | 0.0004 | 1.3% |
+| 24,000 | 1.294 | -0.040 | 0.0005 | 1.0% |
+
+**What fixed it**, from short checks (`results/full_small/*check*`, `*relayonly*`):
+- Posts every 8 tokens and one relay fact per 8 tokens (section 9).
+- Dense lookup tables (section 9).
+- **The relay first, alone.** The 17M model learns the relay in 250 steps when trained on it alone (99.3% shared,
+  1.6% cut), but stays at chance after 380 relay batches mixed with text from the start.
+- The Wikipedia library only on Wikipedia batches, and Wikipedia in the warm-up. A warm-up without it made the library
+  hurt Wikipedia text by 2.7 to 4.3 bits per token.
+
+**Second recipe** (`--schedule "400:0,0,1,0;2000:0.3,0.2,0.25,0.25" --p_kinds 0.7,0.15,0.075,0.075 --board_chunk 8
+--relay_chunk 8 --dense 1 --lib_on wiki`): relay alone for 400 steps, a warm mix to step 2,000, then 70% text, 15%
+Wikipedia, 7.5% relay, 7.5% lookup.
+
+| Step | English | Code | Relay, shared / cut | Lookup, library attached / removed | Library on held-out Wikipedia |
+|---|---|---|---|---|---|
+| 3,000 | 1.767 | 3.239 | 94.0% / 1.2% | 1.5% / 1.4% | +0.024 |
+| 6,000 | 1.550 | 2.122 | 99.7% / 0.5% | 1.5% / 0.8% | +0.008 |
+| 9,000 | 1.493 | 1.939 | 99.4% / 0.6% | 53.3% / 1.7% | -0.008 |
+| 12,000 | 1.464 | 1.879 | 99.9% / 0.5% | 85.3% / 0.4% | -0.019 |
+| 24,000 | **1.316** | **1.606** | **100.0% / 0.5%** | **90.3% / 0.6%** | -0.003 |
+
+`experiments/show_skills.py` prints both skills in readable form (output in `results/full_small/`): agent A reads
+four facts, agent B answers all four through the board and none with it cut; the model reads a list of keys and
+gives the values from a library of 1,024 facts it has never seen.
+
+**What it shows.**
+- One 18M model trained mostly on real text also passes facts between agents (100% vs 0.5% with the board cut) and
+  looks up facts in an unseen library (90% vs 0.6% without it). Both skills are used, and both come from the circuits
+  we built for them.
+- Lookup was learned late, between steps 6,000 and 9,000. Inspecting the step-4,000 checkpoint, the search already
+  found the right table more often than chance, but the read had not formed yet.
+
+**What it doesn't show.**
+- The library still doesn't help real Wikipedia text: about zero at the end (-0.003), with the search finding the
+  right article about 26% of the time. That is #22.
+- The lookup and relay tasks are synthetic.
+- Language is a little behind the first recipe (English 1.316 vs 1.294, code 1.606 vs 1.581), which spent 80% of its
+  steps on text instead of 70%. The fair comparison is a same-size Llama on the same batches (`skills_llama`,
+  running).
+- One seed.
