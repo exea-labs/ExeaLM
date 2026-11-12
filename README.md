@@ -193,7 +193,7 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [ ] Re-indexing schedule: how stale can the stored keys get? (`small` preset)
 - [ ] Cheaper retrieval: cache encodings, share retrievals across layers, tune top-k and chunk length
 - [ ] Key size: 32 vs 64 vs 128 numbers (`small` preset)
-- [ ] (starter) Script that prints what RG retrieved for a prompt
+- [x] (starter) Script that prints what RG retrieved for a prompt (`python -m exealm.eval.show_retrieval`)
 - [ ] Swap the datastore at inference: can the model use new facts without retraining?
 - [ ] Make retrieval pay off on real text. A perfect search would gain 0.040 bits per token on a Wikipedia knowledge task. Rare-word codes in the keys raise the search's hit rate from 12% to 30%, but the net gain over a no-retrieval model is not yet established (+0.026 and -0.002 on two seeds; results §6). Next: better pooling, hard negatives, a bigger encoder, larger models
 

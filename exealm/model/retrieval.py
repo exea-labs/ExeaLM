@@ -99,6 +99,8 @@ class RetrievalCircuit(nn.Module):
         kd = (cfg.rag_key_dim or cfg.h) + cfg.rag_lexical
         self.own = nn.Linear(cfg.h, kd, bias=False) if kd != cfg.h else None   # the slot's stream into key space
         self.log_tau = nn.Parameter(torch.zeros(()))                       # sharpness of "which result to trust" (starts at 1)
+        self.record = False         # if True, keep what the last forward pass retrieved in self.last (for inspection)
+        self.last = None
 
     @staticmethod
     def context_keys(mem, C, n):
@@ -116,6 +118,7 @@ class RetrievalCircuit(nn.Module):
         C = self.chunk
         n = -(-T // C)
         ds = None if mem is None else mem.datastore
+        self.last = None
         if ds is None or ds.keys is None or mem.encoder is None or mem.tokens is None or n < 2:
             return A * 0.0                                                 # zeros, still attached to the graph
         ends = torch.arange(1, n, device=A.device) * C - 1                 # last position of chunks 0 .. n-2
@@ -140,6 +143,9 @@ class RetrievalCircuit(nn.Module):
         Lc = tok.shape[1]
         score = self.log_tau.exp() * (qf.unsqueeze(1) * keys.view(M, k, kd).float()).sum(-1)
         logp = torch.log_softmax(score.masked_fill(~valid, -1e4), dim=1)   # (M, k)
+        if self.record:                                                    # see exealm/eval/show_retrieval.py
+            self.last = dict(idx=idx.view(B, n - 1, g, k).cpu(), weight=logp.detach().exp().view(B, n - 1, g, k).cpu(),
+                             valid=valid.view(B, n - 1, g, k).cpu())
         # Retrieved tokens in this layer's own stream space, through this slot's own input rows. Plain token
         # embeddings: an earlier version also added the encoder's in-chunk states through a zero-initialised matrix,
         # and within ~100 steps that term swamped the token identity the match relies on (retrieval accuracy 1.5% with

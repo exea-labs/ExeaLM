@@ -45,6 +45,10 @@ Rules that keep it honest:
 - **Stale index, fresh gradients.** The stored keys only *find* candidates. The chosen chunks are re-encoded live so the
   encoder trains, and the whole index is re-encoded every `--refresh_every` steps (the approach REALM used).
 
+To see what a checkpoint actually retrieves, `python -m exealm.eval.show_retrieval --ckpt runs/<run>/model.pt --data
+<packed dir> --tokenizer tokenizer --prompt "..."` prints, for each chunk of the prompt, every RG slot's picks with
+their weights and text. Random-looking picks mean retrieval hasn't learned much yet.
+
 Open problems:
 - **Scale.** Brute-force search is fine for a few million chunks. Billions of tokens need FAISS (IVF-PQ), sharded
   across GPUs, and re-encoding them costs real compute. How often is often enough?
