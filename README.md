@@ -163,15 +163,15 @@ Small-scale tests on a Mac Studio, all in [results/README.md](results/README.md)
 
 ## To-do list
 
-Starting points. Almost everything here runs on a laptop or a free Google Colab GPU, using the `tiny` preset or the 17M-parameter `small` preset. Items marked **(starter)** are good first tasks. Items marked **(GPU)** need bigger GPUs: maintainers run those on Exea's compute, and you can still write and test the code on a small model. To claim an item, say so in #exealm or open a draft pull request. Anything that changes the model or the training has to win a fair small-scale comparison first ([CONTRIBUTING.md](CONTRIBUTING.md)).
+Starting points. Almost everything here runs on a laptop or a free Google Colab GPU, using the `tiny` preset or the 17M-parameter `small` preset. Items marked **(starter)** are good first tasks. Items marked **(GPU)** need bigger GPUs: maintainers run those on Exea's compute, and you can still write and test the code on a small model. Many items are GitHub issues with details and a definition of done: [good first issues](https://github.com/exea-labs/ExeaLM/issues?q=is%3Aopen+label%3A%22good+first+issue%22) and [help wanted](https://github.com/exea-labs/ExeaLM/issues?q=is%3Aopen+label%3A%22help+wanted%22). To claim an item, comment on its issue, say so in #exealm, or open a draft pull request. Anything that changes the model or the training has to win a fair small-scale comparison first ([CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ### Swarms and agents (`exealm/model/board.py`, `exealm/data/loader.py`, [docs/swarms.md](docs/swarms.md))
 - [x] Proof of mechanism: agents learn to pass facts over the board during training, 99.8% vs 1.5% with the board cut ([results](results/README.md#1-agents-learn-to-talk-through-the-board-during-training-experimentsswarm_relaypy))
 - [x] First real-text experiment: split swarms beat a matched control by 0.006 bits per byte at 5M parameters; split batches cost 0.021 ([results](results/README.md#2-swarms-on-real-text-experimentsswarm_textpy))
-- [ ] Swarm batches that keep as many independent stretches of text as solo batches (the 0.021 cost above)
+- [ ] Swarm batches that keep as many independent stretches of text as solo batches (the 0.021 cost above) ([#19](https://github.com/exea-labs/ExeaLM/issues/19))
 - [x] (starter) Measure board use during training: AG worth in the search log, how often agents read nothing, post strength (`board` in eval records, `board_worth` in search records)
 - [ ] Related swarms: group documents that are near each other in the model's own retrieval space
-- [ ] Cross-lingual swarms: pair Japanese and English Wikipedia articles on the same topic (interlanguage links)
+- [ ] Cross-lingual swarms: pair Japanese and English Wikipedia articles on the same topic (interlanguage links) ([#23](https://github.com/exea-labs/ExeaLM/issues/23))
 - [ ] Swarm sizes that vary within a run (2 to 8)
 - [ ] Agent identity: a role or id signal on posts so agents can specialize
 - [ ] Retrieval division of labor: do agents in a swarm pull different chunks? Try rewarding it
@@ -188,14 +188,14 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [ ] Headline eval: a swarm of 0.1B agents with retrieval vs a single larger open model (for example 1B) on the same large tasks at the same inference compute. Build and test the harness now on `tiny` checkpoints and small open models
 
 ### Retrieval (`exealm/model/retrieval.py`, `exealm/memory/datastore.py`)
-- [ ] FAISS (IVF-PQ) index for the datastore (FAISS runs on a CPU, so start there)
+- [ ] FAISS (IVF-PQ) index for the datastore (FAISS runs on a CPU, so start there) ([#15](https://github.com/exea-labs/ExeaLM/issues/15))
 - [ ] Choose what goes in the datastore: a curated few billion tokens of reference text
 - [ ] Re-indexing schedule: how stale can the stored keys get? (`small` preset)
 - [ ] Cheaper retrieval: cache encodings, share retrievals across layers, tune top-k and chunk length
 - [ ] Key size: 32 vs 64 vs 128 numbers (`small` preset)
 - [x] (starter) Script that prints what RG retrieved for a prompt (`python -m exealm.eval.show_retrieval`)
 - [ ] Swap the datastore at inference: can the model use new facts without retraining?
-- [ ] Make retrieval pay off on real text. A perfect search would gain 0.040 bits per token on a Wikipedia knowledge task. Rare-word codes in the keys raise the search's hit rate from 12% to 30%, but the net gain over a no-retrieval model is not yet established (+0.026 and -0.002 on two seeds; results §6). Next: better pooling, hard negatives, a bigger encoder, larger models
+- [ ] Make retrieval pay off on real text. A perfect search would gain 0.040 bits per token on a Wikipedia knowledge task. Rare-word codes in the keys raise the search's hit rate from 12% to 30%, but the net gain over a no-retrieval model is not yet established (+0.026 and -0.002 on two seeds; results §6). Next: better pooling, hard negatives, a bigger encoder, larger models ([#22](https://github.com/exea-labs/ExeaLM/issues/22))
 
 ### Architecture (`exealm/model/`)
 - [x] TONN vs Llama with the `small` preset on real tokens, two seeds each: Llama ahead, most of all on code ([results](results/README.md#7-tonn-vs-llama-on-real-tokens-experimentstokenizer_lmpy---models-))
@@ -208,12 +208,12 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [ ] Shape sweep at fixed parameters: depth, width, slots per layer, channels per slot
 - [ ] Search schedule: how long to search, how much to replace, how long new circuits are protected (on the hybrid with a good start it adds about 0.001 today)
 - [ ] Which circuit types survive the search, and does that change from `tiny` to `small`?
-- [ ] (starter) Plot the architecture the search chose, layer by layer, over training
+- [ ] (starter) Plot the architecture the search chose, layer by layer, over training ([#11](https://github.com/exea-labs/ExeaLM/issues/11))
 - [ ] (GPU) Confirm the winners at the full 0.1B size
 
 ### Speed (`exealm/model/scan.py`)
-- [ ] Fused Triton kernels for `decay_scan` and `gated_scan` (any NVIDIA GPU works, including a free Colab T4; must also run on AMD MI300X)
-- [ ] A compile-friendly TONN layer: one code path for every circuit type, so `torch.compile` can fuse it (today it gains 8% for the hybrid and 20% for Llama)
+- [ ] Fused Triton kernels for `decay_scan` and `gated_scan` (any NVIDIA GPU works, including a free Colab T4; must also run on AMD MI300X) ([#16](https://github.com/exea-labs/ExeaLM/issues/16))
+- [ ] A compile-friendly TONN layer: one code path for every circuit type, so `torch.compile` can fuse it (today it gains 8% for the hybrid and 20% for Llama) ([#24](https://github.com/exea-labs/ExeaLM/issues/24))
 - [ ] One scan call for all running-sum circuits in a layer
 - [ ] Recurrent state cache, so generating a token doesn't re-read the whole context
 - [ ] `torch.compile` support
@@ -223,15 +223,15 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 
 ### Data ([DATA.md](DATA.md), `exealm/data/`)
 - [ ] Download and stage every DATA.md source: parallel, resumable, checksummed (build and test it on samples)
-- [ ] (starter) Count tokens in each K2 Horizon subset (streams, no big download)
-- [ ] (starter) Write a formatter for each K2 Horizon subset, since their fields differ
+- [ ] (starter) Count tokens in each K2 Horizon subset (streams, no big download) ([#8](https://github.com/exea-labs/ExeaLM/issues/8))
+- [ ] (starter) Write a formatter for each K2 Horizon subset, since their fields differ ([#9](https://github.com/exea-labs/ExeaLM/issues/9))
 - [x] Remove near-duplicates across all sources (MinHash LSH, runs on a CPU): `python -m exealm.data.dedup`
-- [ ] Decontaminate against every benchmark we report
+- [ ] Decontaminate against every benchmark we report ([#20](https://github.com/exea-labs/ExeaLM/issues/20))
 - [ ] Filter personal data and toxicity
-- [ ] Quality classifier for Japanese web text (small classifier, Colab-sized)
+- [ ] Quality classifier for Japanese web text (small classifier, Colab-sized) ([#25](https://github.com/exea-labs/ExeaLM/issues/25))
 - [ ] Mix ablations: three or four versions of the mix with the `small` preset; the best two get confirmed at 0.1B **(GPU)**
 - [ ] Streaming loader with per-source weights over many shard files (`MultiShards` in `loader.py` mixes one file per source)
-- [ ] (starter) Data card: every source, license, filter and token count
+- [ ] (starter) Data card: every source, license, filter and token count ([#10](https://github.com/exea-labs/ExeaLM/issues/10))
 
 ### Tokenizer (`exealm/data/tokenizer.py`)
 - [x] Train 32k, 49k and 64k candidates and compare them by bytes per token and small-model loss: 32k wins or ties ([results](results/README.md#4-tokenizer-size-experimentstokenizer_comparepy-experimentstokenizer_lmpy))
@@ -239,14 +239,14 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [ ] Final special tokens: chat roles, agent roles, board
 
 ### Training (`exealm/train/pretrain.py`)
-- [ ] Multi-GPU: DDP, then FSDP (DDP is testable on a CPU with two processes)
+- [ ] Multi-GPU: DDP, then FSDP (DDP is testable on a CPU with two processes) ([#17](https://github.com/exea-labs/ExeaLM/issues/17))
 - [x] Exact resume from checkpoints (`--save_every`, `--stop_at`, `--resume auto`)
 - [ ] Weights & Biases logging
 - [ ] Context extension near the end of training
-- [ ] Optimizer: Muon vs AdamW (`small` preset)
+- [ ] Optimizer: Muon vs AdamW (`small` preset) ([#21](https://github.com/exea-labs/ExeaLM/issues/21))
 - [ ] Multi-token prediction heads (`small` preset)
 - [ ] Learning-rate transfer from small models (μP): tune on `tiny`/`small`, carry over to 0.1B
-- [ ] (starter) Budget sheet: GPU-hours per run, checkpoint cadence, what we can afford
+- [x] (starter) Budget sheet: GPU-hours per run, checkpoint cadence, what we can afford ([docs/budget.md](docs/budget.md))
 
 ### Post-training (`exealm/train/`)
 - [ ] SFT loop and data loader (pack conversations so they can't see each other; test on `tiny`)
@@ -256,19 +256,19 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [ ] Do long reasoning traces help a model this small? Test on an existing small open model such as SmolLM2-135M (Colab)
 
 ### Evals (`exealm/eval/`)
-- [ ] (starter) lm-evaluation-harness wrapper (test it on a `tiny` checkpoint)
+- [ ] (starter) lm-evaluation-harness wrapper (test it on a `tiny` checkpoint) ([#12](https://github.com/exea-labs/ExeaLM/issues/12))
 - [ ] Japanese evals (llm-jp-eval)
-- [ ] Retrieval eval: questions answered in the datastore but not in the prompt
+- [ ] Retrieval eval: questions answered in the datastore but not in the prompt ([#18](https://github.com/exea-labs/ExeaLM/issues/18))
 - [ ] Run evals automatically on every checkpoint
 - [ ] Results table in this README
 
 ### Release, docs and community
 - [ ] Hugging Face model card and a loader, so the model loads with one line
 - [ ] Demo: chat with one agent or a swarm (build it on a `tiny` checkpoint now)
-- [ ] (starter) Diagrams: a TONN layer, RG, AG, a swarm
-- [ ] (starter) Japanese translation of this README
-- [ ] (starter) Glossary of terms
-- [ ] (starter) Beginner notebook: train the `tiny` model and look inside it
+- [x] (starter) Diagrams: a TONN layer, RG, AG, a swarm (interactive, on the blog: https://blog.exealabs.org/architecture/)
+- [ ] (starter) Japanese translation of this README ([#13](https://github.com/exea-labs/ExeaLM/issues/13))
+- [x] (starter) Glossary of terms ([docs/glossary.md](docs/glossary.md))
+- [ ] (starter) Beginner notebook: train the `tiny` model and look inside it ([#14](https://github.com/exea-labs/ExeaLM/issues/14))
 - [ ] Technical report
 
 ## Repo layout
