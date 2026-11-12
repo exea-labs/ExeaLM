@@ -7,6 +7,9 @@ checks what it can do, against a same-size Llama that sees the same token stream
     text     80%  English, Japanese and code (50/30/20), read in swarms of 4 (half split, half random), seams hidden
     wiki     15%  second halves of Wikipedia articles, with the first halves in the retrieval library
     relay     5%  the relay task (experiments/swarm_relay.py): facts split across 2 agents, only the board connects them
+    lookup    0%  the lookup task (experiments/rag_lookup.py): questions about facts that exist only in a fresh datastore
+                  (--p_kinds sets the shares; --warm_steps runs a first phase with --warm_kinds, e.g. mostly relay
+                  and lookup, so the board and the search are learned before the text drowns them out)
 
   evaluation (held-out data only)
     language       bits per byte on English, Japanese wiki, Japanese web and code; ExeaLM with the library attached
@@ -15,6 +18,7 @@ checks what it can do, against a same-size Llama that sees the same token stream
     knowledge      held-out Wikipedia articles with a fresh library of their first halves: attached vs removed, and
                    how often the search finds the right article
     relay          accuracy with the board shared vs cut (chance is 1 in 64)
+    lookup         accuracy on 1,024 unseen facts with the datastore attached vs removed (chance is 1 in 64)
     samples        text the model writes, and a retrieval demo: the same prompt with and without the library
 
 python experiments/full_small.py --model exealm --steps 24000 --out results/full_small
@@ -40,11 +44,12 @@ from exealm.model.baseline import Llama  # noqa: E402
 from exealm.train.pretrain import lr_at, make_optimizer, pick_device  # noqa: E402
 from rag_wiki_split import TEXT_DOC_OFFSET, hit_rate, split_articles, text_batch  # noqa: E402
 from swarm_relay import make_batch as relay_batch  # noqa: E402
+from rag_lookup import make_kb, make_questions  # noqa: E402
 
 VAL = ("val_en", "val_ja_wiki", "val_ja_web", "val_code")
 VAL_DOC_OFFSET = 2 * 10 ** 9            # held-out documents never share an id with the library
 TEXT_ID_OFFSET = 3 * 10 ** 9            # nor do training documents
-KINDS = ("text", "wiki", "relay")
+KINDS = ("text", "wiki", "relay", "lookup")
 
 
 def lib_of(arts):
@@ -57,6 +62,23 @@ def relay(B, C, rng, base, n_facts=4):
     """The relay task in swarms of 2, its tokens moved to the top of the vocabulary (rare BPE ids)."""
     x, y = relay_batch(B // 2, n_facts, C, rng, agents=2)
     return x + base, torch.where(y >= 0, y + base, y)
+
+
+def lookup(B, C, n_facts, rng, base, model, dev):
+    """The lookup task, its tokens moved below the relay's (vocab-512 .. vocab-256): a fresh datastore of n_facts
+    facts and B rows of 4 question/answer pairs about them. The datastore is None for the Llama (it has no search)."""
+    kb = make_kb(n_facts, C, rng)
+    x, y = make_questions(B, 4, C, kb, rng)
+    ds = None
+    if model is not None:
+        ds = Datastore(torch.from_numpy(kb[0] + base), torch.arange(n_facts)).to(dev)
+        ds.refresh(model.encoder, model.emb)
+    return x + base, torch.where(y >= 0, y + base, y), ds
+
+
+def kinds_p(spec):
+    p = np.array([float(v) for v in spec.split(",")] + [0.0] * (len(KINDS) - len(spec.split(","))))
+    return p / p.sum()
 
 
 class Data:
@@ -142,6 +164,19 @@ def evaluate(model, a, data, dev, mk):
             hits[k] += int((logits[m.to(dev)].argmax(-1).cpu() == y[m]).sum())
         n += int(m.sum())
     out["relay"] = {k: round(v / n, 4) for k, v in hits.items()}
+    # lookup: 1,024 facts the model has never seen, datastore attached vs removed
+    lrng = np.random.default_rng(40_000)
+    hits = {"attached": 0, "removed": 0} if mk == "exealm" else {"removed": 0}
+    n = 0
+    for _ in range(max(2, a.eval_batches // 2)):
+        x, y, ds = lookup(a.batch, a.chunk, a.facts, lrng, data.vocab - 512, model if mk == "exealm" else None, dev)
+        m = y >= 0
+        for k in hits:
+            mem = mem_for(mk, ds if k == "attached" else None, torch.full(x.shape, -1), 1, dev)
+            logits = model(x.to(dev), mem)[0].float()
+            hits[k] += int((logits[m.to(dev)].argmax(-1).cpu() == y[m]).sum())
+        n += int(m.sum())
+    out["lookup"] = {k: round(v / n, 4) for k, v in hits.items()}
     model.train()
     return out
 
@@ -187,7 +222,12 @@ def main():
     ap.add_argument("--toks", default="bpe32k")
     ap.add_argument("--train", default="train_en_big,train_ja_big,train_code_big")
     ap.add_argument("--mix", default="0.5,0.3,0.2")
-    ap.add_argument("--p_kinds", default="0.8,0.15,0.05", help="share of steps for text, wiki and relay batches")
+    ap.add_argument("--p_kinds", default="0.8,0.15,0.05,0", help="share of steps for text, wiki, relay and lookup batches")
+    ap.add_argument("--warm_steps", type=int, default=0, help="first phase with --warm_kinds instead of --p_kinds")
+    ap.add_argument("--warm_kinds", default="0.2,0,0.4,0.4")
+    ap.add_argument("--facts", type=int, default=1024, help="lookup datastore size (at evaluation, and the cap)")
+    ap.add_argument("--grow", type=int, default=16, help="lookup datastore starts this small and doubles (0: off)")
+    ap.add_argument("--grow_every", type=int, default=150, help="lookup batches between doublings")
     ap.add_argument("--d", type=int, default=320)
     ap.add_argument("--slots", type=int, default=10)
     ap.add_argument("--steps", type=int, default=24000)
@@ -206,6 +246,8 @@ def main():
     ap.add_argument("--gen_tokens", type=int, default=60)
     ap.add_argument("--prompts", default="The history of the city begins||Photosynthesis is the process by which||日本の首都は||def fibonacci(n):")
     ap.add_argument("--tokenizer", default="results/tokenizer/bpe32k/tokenizer.json")
+    ap.add_argument("--lib_on", default="all", choices=["all", "wiki"], help="training batches that get the library")
+    ap.add_argument("--tag", default="")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--smoke", type=int, default=0)
     ap.add_argument("--device", default="auto")
@@ -214,6 +256,7 @@ def main():
     if a.smoke:
         a.steps, a.batch, a.seq, a.chunk, a.min_tokens, a.d, a.slots = 12, 8, 64, 8, 64, 64, 2
         a.eval_every, a.eval_batches, a.refresh_every, a.save_every, a.gen_tokens, a.key_dim, a.lexical = 6, 2, 5, 0, 4, 32, 32
+        a.facts, a.grow_every = 64, 2
         a.device, a.out = "cpu", "runs/full_small_smoke"
     dev = pick_device(a.device)
     torch.manual_seed(a.seed)
@@ -227,7 +270,8 @@ def main():
         from tokenizers import Tokenizer
         tok = Tokenizer.from_file(a.tokenizer)
     os.makedirs(a.out, exist_ok=True)
-    path = os.path.join(a.out, f"full_small_{a.model}_seed{a.seed}.json")
+    name = f"{a.model}{('_' + a.tag) if a.tag else ''}"
+    path = os.path.join(a.out, f"full_small_{name}_seed{a.seed}.json")
     info = dict(model=a.model, params=count_params(model), library_chunks=len(data.lib_train), eval_library_chunks=len(data.lib_eval),
                 train_articles=len(data.train_arts), eval_articles=len(data.eval_arts), args=vars(a))
     print(json.dumps(info), flush=True)
@@ -235,7 +279,7 @@ def main():
         data.lib_train = data.lib_train.to(dev)
         data.lib_eval = data.lib_eval.to(dev)
         data.lib_train.refresh(model.encoder, model.emb, step=0)
-    p = np.array([float(x) for x in a.p_kinds.split(",")])
+    p, p_warm = kinds_p(a.p_kinds), kinds_p(a.warm_kinds)
     rng = np.random.default_rng(a.seed)
     curve, t0, tokens = [], time.time(), 0
     counts = dict.fromkeys(KINDS, 0)
@@ -244,11 +288,18 @@ def main():
             data.lib_train.refresh(model.encoder, model.emb, step=step)
         for g in opt.param_groups:
             g["lr"] = lr_at(step, a.steps, a.lr, a.warmup, 0.2)
-        kind = KINDS[int(rng.choice(3, p=p / p.sum()))]
-        x, y, d, swarm = batch(kind, data, a, rng)
+        kind = KINDS[int(rng.choice(len(KINDS), p=p_warm if step < a.warm_steps else p))]
+        if kind == "lookup":
+            n_facts = min(a.facts, a.grow * 2 ** (counts["lookup"] // a.grow_every)) if a.grow else a.facts
+            x, y, ds = lookup(a.batch, a.chunk, n_facts, rng, data.vocab - 512, model if a.model == "exealm" else None, dev)
+            mem = mem_for(a.model, ds, torch.full(x.shape, -1), 1, dev)
+        else:
+            x, y, d, swarm = batch(kind, data, a, rng)
+            use_lib = kind == "wiki" or (kind == "text" and a.lib_on == "all")
+            mem = mem_for(a.model, data.lib_train if use_lib else None, d, swarm, dev)
         counts[kind] += 1
         tokens += x.numel()
-        loss = model(x.to(dev), mem_for(a.model, data.lib_train if kind != "relay" else None, d, swarm, dev), y.to(dev))[1]
+        loss = model(x.to(dev), mem, y.to(dev))[1]
         opt.zero_grad(set_to_none=True)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -262,8 +313,8 @@ def main():
             print(json.dumps(rec), flush=True)
             json.dump(dict(info, curve=curve), open(path, "w"), indent=1)
         if a.save_every and (step + 1) % a.save_every == 0:
-            torch.save(dict(model=model.state_dict(), cfg=vars(cfg), step=step + 1), os.path.join(a.out, f"{a.model}_ckpt.pt"))
-    torch.save(dict(model=model.state_dict(), cfg=vars(cfg), step=a.steps), os.path.join(a.out, f"{a.model}_ckpt.pt"))
+            torch.save(dict(model=model.state_dict(), cfg=vars(cfg), step=step + 1), os.path.join(a.out, f"{name}_ckpt.pt"))
+    torch.save(dict(model=model.state_dict(), cfg=vars(cfg), step=a.steps), os.path.join(a.out, f"{name}_ckpt.pt"))
     s = samples(model, a, data, dev, a.model, tok)
     json.dump(dict(info, curve=curve, samples=s), open(path, "w"), indent=1, ensure_ascii=False)
     print(json.dumps(dict(samples=s), ensure_ascii=False), flush=True)
