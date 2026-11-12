@@ -264,6 +264,7 @@ def main():
     ap.add_argument("--board_chunk", type=int, default=0, help="AG posts every this many tokens (0: every chunk)")
     ap.add_argument("--pool", default="mean", choices=["mean", "attn"], help="how a chunk becomes a board post or a retrieval key")
     ap.add_argument("--tag", default="")
+    ap.add_argument("--stop_at", type=int, default=0, help="stop after this step, keeping the --steps schedule (quick checks)")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--smoke", type=int, default=0)
     ap.add_argument("--device", default="auto")
@@ -301,7 +302,8 @@ def main():
     rng = np.random.default_rng(a.seed)
     curve, t0, tokens = [], time.time(), 0
     counts = dict.fromkeys(KINDS, 0)
-    for step in range(a.steps):
+    last = min(a.steps, a.stop_at) if a.stop_at else a.steps
+    for step in range(last):
         if a.model == "exealm" and step > 0 and step % a.refresh_every == 0:
             data.lib_train.refresh(model.encoder, model.emb, step=step)
         for g in opt.param_groups:
@@ -324,15 +326,15 @@ def main():
         opt.step()
         if dev.type == "mps" and step % 200 == 0:
             torch.mps.empty_cache()
-        if (step + 1) % a.eval_every == 0 or step + 1 == a.steps:
+        if (step + 1) % a.eval_every == 0 or step + 1 == last:
             rec = dict(step=step + 1, secs=round(time.time() - t0, 1), tokens=tokens, train_loss=round(float(loss.detach()), 4), batches=dict(counts))
             rec.update(evaluate(model, a, data, dev, a.model))
             curve.append(rec)
             print(json.dumps(rec), flush=True)
             json.dump(dict(info, curve=curve), open(path, "w"), indent=1)
         if a.save_every and (step + 1) % a.save_every == 0:
-            torch.save(dict(model=model.state_dict(), cfg=vars(cfg), step=step + 1), os.path.join(a.out, f"{name}_ckpt.pt"))
-    torch.save(dict(model=model.state_dict(), cfg=vars(cfg), step=a.steps), os.path.join(a.out, f"{name}_ckpt.pt"))
+            torch.save(dict(model=model.state_dict(), cfg=vars(cfg), step=step + 1, specs=getattr(model, "specs", None)), os.path.join(a.out, f"{name}_ckpt.pt"))
+    torch.save(dict(model=model.state_dict(), cfg=vars(cfg), step=last, specs=getattr(model, "specs", None)), os.path.join(a.out, f"{name}_ckpt.pt"))
     s = samples(model, a, data, dev, a.model, tok)
     json.dump(dict(info, curve=curve, samples=s), open(path, "w"), indent=1, ensure_ascii=False)
     print(json.dumps(dict(samples=s), ensure_ascii=False), flush=True)
