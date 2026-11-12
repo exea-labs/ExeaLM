@@ -561,6 +561,10 @@ TONN at layers 0, 3, 6, 9, 12; 3,000 seconds; seed 0):
 |---|---|---|---|---|---|---|
 | **ExeaLM 2:1 hybrid** (1.5e-3) | 2,902 | **1.398** | **1.468** | **1.359** | **1.702** | **1.482** |
 | Llama (1e-3) | 3,231 | 1.406 | 1.481 | 1.365 | 1.741 | 1.498 |
+| ExeaLM 2:1 hybrid (1e-3), run at normal speed | 3,206 | 1.368 | 1.438 | 1.331 | 1.648 | 1.446 |
+
+The last row is not a fair comparison yet: it ran at normal speed while the Llama and hybrid rows above it ran on a
+slowed Mac (Llama got 3,231 steps here against 3,491 on seed 0). Both slowed runs are queued to rerun.
 
 At the size we plan to train, the default ExeaLM beats a same-size Llama at equal compute on every kind of text, on
 both seeds. At 1.5e-3 the margin is 0.007 (seed 0) and 0.016 (seed 1), 0.012 on average. At Llama's learning rate
