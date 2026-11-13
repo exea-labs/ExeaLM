@@ -911,7 +911,26 @@ at 3 and 5. That is close to Qwen3.5's 3:1 ratio of DeltaNet to attention.
   With them the hybrid beats the Qwen3.5-style model by 0.009 and Llama by 0.032.
 - Gated DeltaNet layers on top add nothing at this size (1.512 against 1.511). They are slower, since the fast
   kernels need an NVIDIA GPU (#31).
-- Caveats: one seed. The gate adds 2% parameters, and the Llama did not get one. Equal steps only: the runs shared
-  the GPU with others, so their times are not comparable. The next checks are a second seed, a gated Llama, and
-  equal compute.
+**Follow-up checks** (the same night):
+
+| Model | Parameters | Seed 0 | Seed 1 |
+|---|---|---|---|
+| Llama | 13.1M | 1.543 | 1.560 |
+| Llama + gated attention + QK-norm | 13.5M | 1.525 | |
+| Qwen3.5-style | 13.5M | 1.520 | 1.521 |
+| **ExeaLM hybrid + gated attention + QK-norm** | 13.4M | **1.511** | **1.512** |
+
+- The gated hybrid holds on a second seed (1.511 and 1.512), as does the Qwen3.5-style model (1.520 and 1.521).
+- Gated attention and QK-norm help Llama too, by 0.019, so they are not specific to the hybrid. With them on both,
+  the hybrid still leads the gated Llama by 0.014 (seed 0) and the Qwen3.5-style model by 0.009 (both seeds).
+- Caveats: equal steps only, since the runs shared the GPU and their times are not comparable. The gated Llama ran
+  on one seed. Equal compute is the next check.
+
+**The circuit search with both memory skills** (`full_small.py --search 1`, 17M, the third recipe, stopped at
+step 1,500, one seed; `results/full_small/full_small_exealm_search_check_seed0.json`):
+- Both skills still form: relay 99.6% (1.3% cut), lookup 56% (1.4% removed) at step 1,500.
+- Scoring circuits on the training mix, the search **added board circuits**. Layer 0 went from 1 AG to 5. Layer 3
+  went to 2 RG and 3 AG. They replaced language circuits (attention, state-space and oscillating circuits). This
+  agrees with the real-text tests, where more AG slots gave larger gains (#27). What it does to language over a full
+  run is untested.
 

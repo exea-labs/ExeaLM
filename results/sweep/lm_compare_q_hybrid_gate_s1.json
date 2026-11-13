@@ -1,0 +1,74 @@
+{
+ "args": {
+  "root": "data/tokpack",
+  "toks": "bpe32k",
+  "mix": "0.5,0.3,0.2",
+  "steps": 3000,
+  "seconds": 0,
+  "batch": 32,
+  "seq": 512,
+  "lr": 0.002,
+  "eval_batches": 16,
+  "models": "tonn_core",
+  "seeds": "1",
+  "cfg": "{\"attn_layers\": [1, 2, 4, 5], \"init_weights\": {\"C\": 4, \"G\": 0.25, \"D\": 0.25}, \"attn_gate\": true, \"qk_norm\": true}",
+  "llama_cfg": "{}",
+  "size": "{}",
+  "tag": "q_hybrid_gate_s1",
+  "device": "mps",
+  "out": "results/sweep"
+ },
+ "device": "mps",
+ "rows": [
+  {
+   "model": "tonn_core",
+   "tag": "q_hybrid_gate_s1",
+   "cfg": "{\"attn_layers\": [1, 2, 4, 5], \"init_weights\": {\"C\": 4, \"G\": 0.25, \"D\": 0.25}, \"attn_gate\": true, \"qk_norm\": true}",
+   "lr": 0.002,
+   "seed": 1,
+   "tokenizer": "bpe32k",
+   "vocab": 32768,
+   "params_M": 13.36,
+   "steps": 3000,
+   "seconds_budget": 0,
+   "tokens_seen": 49152000,
+   "bytes_seen": 193458598,
+   "secs": 574.4,
+   "bits_per_byte": {
+    "en": 1.4375,
+    "ja_wiki": 1.5015,
+    "ja_web": 1.3896,
+    "code": 1.7175
+   },
+   "architecture": [
+    {
+     "GI": 2,
+     "C": 3,
+     "MI": 1,
+     "SM": 1,
+     "I": 1
+    },
+    {
+     "OS": 3,
+     "C": 3,
+     "M": 1,
+     "GI": 1
+    }
+   ],
+   "train_loss_every_250": [
+    7.394,
+    5.5668,
+    4.9486,
+    4.6487,
+    4.5107,
+    4.4002,
+    4.3207,
+    4.2699,
+    4.2061,
+    4.1993,
+    4.0818,
+    3.977
+   ]
+  }
+ ]
+}
