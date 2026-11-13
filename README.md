@@ -78,7 +78,7 @@ That's small scale and short training. At 6,000 steps the hybrid is still ahead 
 the same GPU, it ties Llama at 13M and wins at 27M. At 48M the half-attention layout lost (0.014), but the 2:1 layout
 (two attention layers per TONN layer) **wins at equal compute at 48M: 1.445 vs 1.452, both seeds, every kind of
 text.** That layout is now the default. At 0.1B, with the same training time, it leads Llama on every kind of text on
-both seeds (0.007 and 0.016 at its 1.5e-3 rate; 0.017 at Llama's 1e-3 on seed 0, seed 1 running). Details:
+both seeds (0.007 and 0.010 at its 1.5e-3 rate; 0.017 and 0.031 at Llama's 1e-3). Details:
 [results/README.md](results/README.md#8-overnight-sweep-making-tonn-beat-llama-experimentsrun_queuesh-resultssweep).
 
 Nobody picks which circuit goes where. While the model trains, TONN switches each kind of circuit off on text it has not trained on and keeps it only if the error goes up. Useless circuits are replaced by new ones, drawn more often from the kinds that have proven useful. Early in training the architecture changes; later it is frozen.
@@ -197,9 +197,9 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 ### Swarms and agents (`exealm/model/board.py`, `exealm/data/loader.py`, [docs/swarms.md](docs/swarms.md))
 - [x] Proof of mechanism: agents learn to pass facts over the board during training, 99.8% vs 1.5% with the board cut ([results](results/README.md#1-agents-learn-to-talk-through-the-board-during-training-experimentsswarm_relaypy))
 - [x] First real-text experiment: split swarms beat a matched control by 0.006 bits per byte at 5M parameters; split batches cost 0.021 ([results](results/README.md#2-swarms-on-real-text-experimentsswarm_textpy))
-- [ ] Is the swarm gain on real text real? Reruns disagree by up to 0.05 bits per byte; 3 more seeds in both seam settings are running ([#33](https://github.com/exea-labs/ExeaLM/issues/33))
+- [ ] Is the swarm gain on real text real? Reruns range from 0.015 better to 0.035 worse than the control, and the same run twice differs by up to 0.012; it needs 3 more seeds in both seam settings ([#33](https://github.com/exea-labs/ExeaLM/issues/33))
 - [x] One model with both skills: the 17M model learns the relay and lookup alongside text when both are taught together from step 0 ([#26](https://github.com/exea-labs/ExeaLM/issues/26))
-- [ ] The board on real text: pair batches (a reader of one half of an article, heard from the first token by an agent reading the other half), scored with `experiments/irl_eval.py` ([#27](https://github.com/exea-labs/ExeaLM/issues/27), running)
+- [x] The board on real text: pair batches (a reader of one half of an article, heard from the first token by an agent reading the other half), scored with `experiments/irl_eval.py`. Notes from a reader of the article gain up to 0.039 bits; after longer practice, notes from all 256 articles at once break the model ([#27](https://github.com/exea-labs/ExeaLM/issues/27), [results §13](results/README.md#13-memory-on-real-text-experimentsirl_evalpy-resultsirl-issue-27))
 - [ ] A notes knowledge base at scale: search the stored notes instead of attending to all of them ([#28](https://github.com/exea-labs/ExeaLM/issues/28))
 - [ ] Swarm batches that keep as many independent stretches of text as solo batches (the 0.021 cost above) ([#19](https://github.com/exea-labs/ExeaLM/issues/19))
 - [x] (starter) Measure board use during training: AG worth in the search log, how often agents read nothing, post strength (`board` in eval records, `board_worth` in search records)
@@ -228,16 +228,16 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [ ] Key size: 32 vs 64 vs 128 numbers (`small` preset)
 - [x] (starter) Script that prints what RG retrieved for a prompt (`python -m exealm.eval.show_retrieval`)
 - [x] Swap the datastore at inference: on synthetic facts the model never saw, 94% correct with a fresh library (two seeds, 17M)
-- [ ] The same on real text: a library of documents the model never trained on ([#27](https://github.com/exea-labs/ExeaLM/issues/27)); the read is being trained on the right real document (`--wiki_oracle`)
+- [ ] The same on real text: a library of documents the model never trained on ([#27](https://github.com/exea-labs/ExeaLM/issues/27)); training the read on the right real document (`--wiki_oracle`) makes the library harmless but not helpful
 - [x] Ordinary RAG baseline for the real-text test: BM25 and the retrieved text in the prompt gains 0.34 bits on re-mentions; the right article in context 1.0 ([#32](https://github.com/exea-labs/ExeaLM/issues/32))
 - [ ] Make retrieval pay off on real text. A perfect search would gain 0.040 bits per token on a Wikipedia knowledge task. Rare-word codes in the keys raise the search's hit rate from 12% to 30%, but the net gain over a no-retrieval model is not yet established (+0.026 and -0.002 on two seeds; results §6). Next: better pooling, hard negatives, a bigger encoder, larger models ([#22](https://github.com/exea-labs/ExeaLM/issues/22))
 
 ### Architecture (`exealm/model/`)
 - [x] TONN vs Llama with the `small` preset on real tokens, two seeds each: Llama ahead, most of all on code ([results](results/README.md#7-tonn-vs-llama-on-real-tokens-experimentstokenizer_lmpy---models-))
 - [x] Close the gap: TONN layers alternating with attention layers, with a convolution-heavy start, beat Llama at equal size and steps (13M, 27M) and at equal compute at 27M ([results](results/README.md#8-overnight-sweep-making-tonn-beat-llama-experimentsrun_queuesh-resultssweep))
-- [ ] Confirm the hybrid's equal-compute lead at 48M (running), then at 0.1B **(GPU)**
-- [ ] Hybrid layout: which layers get attention, and how many (layout variants queued)
-- [ ] Re-run the swarm and retrieval experiments on the hybrid (they ran on pure TONN)
+- [x] Confirm the hybrid's equal-compute lead at 48M (1.445 against 1.452, both seeds), then at 0.1B (0.024 at 1e-3, both seeds; short runs without memory circuits)
+- [x] Hybrid layout: at equal steps the number of attention layers barely matters (13M, 2 seeds); at equal compute two attention layers per TONN layer win (48M), now the default
+- [x] Re-run the swarm and retrieval experiments on the hybrid (they ran on pure TONN)
 - [ ] Ablations at `small` size: with and without RG, AG and swarms
 - [x] Gated DeltaNet, Qwen3.5's linear attention, as a layer (`exealm/model/delta.py`, tested against the recurrence); gated attention and QK-norm as options. At 13M (one seed) gated attention + QK-norm improve the hybrid by 0.025 bits per byte and put it ahead of a Qwen3.5-style model; DeltaNet layers add nothing on top ([results §12](results/README.md))
 - [ ] Make gated attention + QK-norm the default: it holds on two seeds (1.511, 1.512) and beats a gated Llama and a Qwen3.5-style model at equal steps; equal compute is the last check ([results §12](results/README.md))
