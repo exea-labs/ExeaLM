@@ -41,6 +41,7 @@ sys.path.insert(0, HERE)
 from exealm import Datastore, ExeaLM, MemoryContext, count_params, get_config  # noqa: E402
 from exealm.data.loader import MultiShards, SyntheticShards, TokenShards  # noqa: E402
 from exealm.model.baseline import Llama  # noqa: E402
+from exealm.model.search import Searcher  # noqa: E402
 from exealm.train.pretrain import lr_at, make_optimizer, pick_device  # noqa: E402
 from rag_wiki_split import TEXT_DOC_OFFSET, hit_rate, split_articles, text_batch  # noqa: E402
 from swarm_relay import make_batch as relay_batch  # noqa: E402
@@ -130,6 +131,26 @@ def mem_for(model_kind, ds, d, swarm, dev, cut=False):
 @torch.no_grad()
 def nll(model, kind, x, y, mem, dev):
     return float(model(x.to(dev), mem, y.to(dev))[1])
+
+
+def selection(model, a, data, dev):
+    """The circuit search's batches, drawn the same way every round (fixed seed) from the training mix (--search_mix),
+    so a circuit that only helps the relay or the lookup still counts. Lookup batches get fresh datastores keyed by
+    the current encoder. Returns [(x, y, mem)] on the device."""
+    rng = np.random.default_rng(50_000)
+    out = []
+    for part in a.search_mix.split(","):
+        kind, k = part.split(":")
+        for _ in range(int(k)):
+            if kind == "lookup":
+                x, y, ds = lookup(a.batch, a.chunk, a.facts, rng, data.vocab - 512, model, dev, a.dense)
+                mem = mem_for("exealm", ds, torch.full(x.shape, -1), 1, dev)
+            else:
+                x, y, d, swarm = batch(kind, data, a, rng)
+                use_lib = kind == "wiki" or (kind == "text" and a.lib_on == "all")
+                mem = mem_for("exealm", data.lib_train if use_lib else None, d, swarm, dev)
+            out.append((x.to(dev), y.to(dev), mem))
+    return out
 
 
 @torch.no_grad()
@@ -240,6 +261,11 @@ def samples(model, a, data, dev, mk, tok):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="exealm", choices=["exealm", "llama"])
+    ap.add_argument("--preset", default="small", choices=["small", "100m"], help="100m: the real size (--d, --slots ignored)")
+    ap.add_argument("--search", type=int, default=0, help="1: TONN's circuit search during the first --search_until of training")
+    ap.add_argument("--search_every", type=int, default=250)
+    ap.add_argument("--search_until", type=float, default=0.5)
+    ap.add_argument("--search_mix", default="text:3,wiki:1,relay:1,lookup:1", help="batches the search scores circuits on")
     ap.add_argument("--root", default="data/tokpack")
     ap.add_argument("--toks", default="bpe32k")
     ap.add_argument("--train", default="train_en_big,train_ja_big,train_code_big")
@@ -291,8 +317,10 @@ def main():
     dev = pick_device(a.device)
     torch.manual_seed(a.seed)
     data = Data(a)
-    cfg = get_config("small", vocab_size=data.vocab, d=a.d, slots=a.slots, h=a.d // a.slots, chunk=a.chunk, rag_chunk_len=a.chunk,
-                     rag_key_dim=a.key_dim, rag_lexical=a.lexical, chunk_pool=a.pool, board_chunk=a.board_chunk, seed=a.seed, **({"enc_dim": 32, "n_layers": 3, "attn_layers": (1,)} if a.smoke else {}))
+    size = dict(d=a.d, slots=a.slots, h=a.d // a.slots) if a.preset == "small" else {}
+    cfg = get_config(a.preset, vocab_size=data.vocab, chunk=a.chunk, rag_chunk_len=a.chunk, rag_key_dim=a.key_dim,
+                     rag_lexical=a.lexical, chunk_pool=a.pool, board_chunk=a.board_chunk, seed=a.seed, **size,
+                     **({"enc_dim": 32, "n_layers": 3, "attn_layers": (1,)} if a.smoke else {}))
     model = (ExeaLM(cfg) if a.model == "exealm" else Llama(cfg)).to(dev)
     opt = make_optimizer(model, a.lr, 0.1)
     tok = None
@@ -314,9 +342,16 @@ def main():
         else [(a.warm_steps, kinds_p(a.warm_kinds))]
     rng = np.random.default_rng(a.seed)
     curve, t0, tokens = [], time.time(), 0
+    searcher = Searcher(every=a.search_every, until=a.search_until, seed=a.seed) if a.search and a.model == "exealm" else None
+    searches = []
     counts = dict.fromkeys(KINDS, 0)
     last = min(a.steps, a.stop_at) if a.stop_at else a.steps
     for step in range(last):
+        if searcher is not None and searcher.due(step, a.steps):
+            rec = searcher.maybe_round(model, opt, step, a.steps, selection(model, a, data, dev), a.seq)
+            rec["architecture"] = model.architecture()
+            searches.append(rec)
+            print(json.dumps(dict(search=rec)), flush=True)
         if a.model == "exealm" and step > 0 and step % a.refresh_every == 0:
             data.lib_train.refresh(model.encoder, model.emb, step=step)
         for g in opt.param_groups:
@@ -344,12 +379,14 @@ def main():
             rec.update(evaluate(model, a, data, dev, a.model))
             curve.append(rec)
             print(json.dumps(rec), flush=True)
-            json.dump(dict(info, curve=curve), open(path, "w"), indent=1)
+            json.dump(dict(info, curve=curve, searches=searches), open(path, "w"), indent=1)
         if a.save_every and (step + 1) % a.save_every == 0:
             torch.save(dict(model=model.state_dict(), cfg=vars(cfg), step=step + 1, specs=getattr(model, "specs", None)), os.path.join(a.out, f"{name}_seed{a.seed}_ckpt.pt"))
     torch.save(dict(model=model.state_dict(), cfg=vars(cfg), step=last, specs=getattr(model, "specs", None)), os.path.join(a.out, f"{name}_seed{a.seed}_ckpt.pt"))
     s = samples(model, a, data, dev, a.model, tok)
-    json.dump(dict(info, curve=curve, samples=s), open(path, "w"), indent=1, ensure_ascii=False)
+    json.dump(dict(info, curve=curve, searches=searches, samples=s,
+                   architecture=model.architecture() if a.model == "exealm" else None),
+              open(path, "w"), indent=1, ensure_ascii=False)
     print(json.dumps(dict(samples=s), ensure_ascii=False), flush=True)
     print("WROTE", path)
 
