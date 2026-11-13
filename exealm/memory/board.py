@@ -20,6 +20,7 @@ class AgentBoard:
         self.capacity = capacity                          # messages kept per channel (oldest dropped first)
         self.channels = {}                                # (layer, slot) -> {(author, chunk): (key, value, log_w)}
         self.clock = 0
+        self._cache = {}                                  # read() results by (layer, slots, device), until the next post
 
     def post(self, layer, slots, key, val, log_w, authors, n_complete):
         """key, val (B, n, g, h); log_w (B, n, g); authors (B,) agent ids; only the first n_complete chunks are full.
@@ -35,22 +36,42 @@ class AgentBoard:
             while len(ch) > self.capacity:
                 ch.pop(next(iter(ch)))
         self.clock += 1
+        self._cache.clear()
+
+    def merge(self, other):
+        """Add every message of another board (for example notes written by readers that worked separately)."""
+        for ch, msgs in other.channels.items():
+            self.channels.setdefault(ch, {}).update(msgs)
+        self._cache.clear()
 
     def read(self, layer, slots, device):
         """Messages of the channels of one group of g slots, padded to the longest channel. Returns keys (g, E, h),
         values (g, E, h), log write strengths (g, E), authors (g, E) and a validity mask (g, E); None if empty."""
+        ck = (layer, tuple(int(k) for k in slots), str(device))
+        if ck in self._cache:                             # the board is read by every forward pass; build it once
+            return self._cache[ck]
         chans = [self.channels.get((layer, int(k)), {}) for k in slots]
         E = max((len(c) for c in chans), default=0)
         if E == 0:
+            self._cache[ck] = None
             return None
         h = next(iter(next(c for c in chans if c).values()))[0].shape[0]
         g = len(chans)
         K, V, W = torch.zeros(g, E, h), torch.zeros(g, E, h), torch.zeros(g, E)
         A, ok = torch.full((g, E), -1, dtype=torch.long), torch.zeros(g, E, dtype=torch.bool)
         for j, ch in enumerate(chans):
-            for e, ((a, _), (k_, v_, w_)) in enumerate(ch.items()):
-                K[j, e], V[j, e], W[j, e], A[j, e], ok[j, e] = k_, v_, w_, a, True
-        return tuple(t.to(device) for t in (K, V, W, A, ok))
+            if not ch:
+                continue
+            n = len(ch)
+            keys, vals = list(ch.keys()), list(ch.values())
+            K[j, :n] = torch.stack([v[0] for v in vals])
+            V[j, :n] = torch.stack([v[1] for v in vals])
+            W[j, :n] = torch.stack([v[2] for v in vals])
+            A[j, :n] = torch.tensor([a for a, _ in keys])
+            ok[j, :n] = True
+        out = tuple(t.to(device) for t in (K, V, W, A, ok))
+        self._cache[ck] = out
+        return out
 
     def save(self, path):
         """TODO(infra): a small server (HTTP or Redis) so agents on different machines can share one board."""
@@ -61,4 +82,5 @@ class AgentBoard:
         st = torch.load(path)
         b = cls(st["capacity"])
         b.channels, b.clock = st["channels"], st["clock"]
+        b._cache = {}
         return b

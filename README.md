@@ -103,7 +103,7 @@ All of it is learned from the next-token loss. The datastore never returns chunk
 
 ### 3. Agents that talk to each other (the AG circuit, read and write)
 
-Every layer has at least one **AG** circuit, which connects to the **agent board**. Once per 64 tokens, each copy of the model posts a message: what it is about, what it says, and how strongly it wants it read, so it can stay quiet. At every position it reads the earlier messages of the other agents in its swarm with attention, and it can choose to read nothing. The datastore is read-only; the board is read *and* write. At inference, many running agents can share a persistent board.
+Every layer has at least one **AG** circuit, which connects to the **agent board**. Once per 64 tokens (every 8 in the 17M runs, which the relay needs), each copy of the model posts a message: what it is about, what it says, and how strongly it wants it read, so it can stay quiet. At every position it reads the earlier messages of the other agents in its swarm with attention, and it can choose to read nothing. The datastore is read-only; the board is read *and* write. At inference, many running agents can share a persistent board.
 
 **Guaranteed, then chosen:** every layer starts with one RG and one AG circuit, and the search can never remove the last one, because both need training before they become useful. The search is free to add more wherever they earn it. Design and open questions: [docs/memory.md](docs/memory.md).
 
@@ -153,13 +153,25 @@ Small-scale tests on a Mac Studio, all in [results/README.md](results/README.md)
   The first design never learned; the report says what broke and why. On real text retrieval is not yet a net win:
   with a perfect search it would gain 0.040 bits per token on a Wikipedia knowledge task, but the model's own search
   finds the right article only about 30% of the time.
-- **On real text the board helps:** on the hybrid, swarms beat a matched control by 0.014 bits per byte (0.8%, both seeds; 0.006 on pure TONN; a seam leak found in PR #7 can explain up to 0.002 of each, and the fixed reruns are queued), and training as a swarm makes each agent better even with its board cut (0.010).
+- **One 18M model learns both memory skills alongside text.** Trained mostly on real text, it passes facts between
+  agents through its board (100% correct, 1% with the board cut) and looks up facts in a library it has never seen
+  (94%, 1.6% without it), on both seeds, once the two skills are taught together from the first step. On language it
+  is about even with a same-size Llama: 0.011 bits per byte ahead at equal steps over two seeds, a tie at equal
+  compute ([results §10](results/README.md#10-the-whole-model-at-17m-with-the-board-and-the-library-on-experimentsfull_smallpy-resultsfull_small)).
+- **Memory on real text does not pay off yet** ([#27](https://github.com/exea-labs/ExeaLM/issues/27)). On held-out
+  Wikipedia, with the first half of each article as knowledge the model never trained on, the library, a live second
+  agent and notes written ahead of time each change the loss on re-mentioned rare words by -0.10 to +0.01 bits.
+  Putting that first half in the context instead gains 1.1 bits. Training the reads on real text is running.
+- **The swarm gain on real text did not reproduce.** We reported 0.014 bits per byte for swarms over a matched
+  control (0.012 after a leak found in PR #7). Reruns range from 0.015 better to 0.035 worse than the control. More
+  seeds are running ([#33](https://github.com/exea-labs/ExeaLM/issues/33)); treat it as unproven.
 - **Tokenizer: 32k.** It wins or ties 49k and 64k on English, Japanese and code at a fixed token budget.
 - **Speed:** the default 0.1B model (2:1 hybrid) trains at the same speed as a same-size Llama (1.01x per token), 1.49x with retrieval on.
 - **Pure TONN lost to Llama on real tokens; the hybrid wins.** Pure TONN trailed a same-size Llama, mostly on code. A
   hybrid (TONN layers among attention layers, convolution-heavy start) beats Llama on English, Japanese and code
   with both seeds: at equal size and steps (13M, 27M, 48M) and, with two attention layers per TONN layer, at equal
-  training time at 48M (0.007 bits per byte). That is now the default architecture.
+  training time at 48M (0.007 bits per byte) and at 0.1B (0.024 at lr 1e-3, both seeds, short runs without memory
+  circuits). That is now the default architecture.
 
 ## To-do list
 
@@ -168,6 +180,10 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 ### Swarms and agents (`exealm/model/board.py`, `exealm/data/loader.py`, [docs/swarms.md](docs/swarms.md))
 - [x] Proof of mechanism: agents learn to pass facts over the board during training, 99.8% vs 1.5% with the board cut ([results](results/README.md#1-agents-learn-to-talk-through-the-board-during-training-experimentsswarm_relaypy))
 - [x] First real-text experiment: split swarms beat a matched control by 0.006 bits per byte at 5M parameters; split batches cost 0.021 ([results](results/README.md#2-swarms-on-real-text-experimentsswarm_textpy))
+- [ ] Is the swarm gain on real text real? Reruns disagree by up to 0.05 bits per byte; 3 more seeds in both seam settings are running ([#33](https://github.com/exea-labs/ExeaLM/issues/33))
+- [x] One model with both skills: the 17M model learns the relay and lookup alongside text when both are taught together from step 0 ([#26](https://github.com/exea-labs/ExeaLM/issues/26))
+- [ ] The board on real text: pair batches (a reader of one half of an article, heard from the first token by an agent reading the other half), scored with `experiments/irl_eval.py` ([#27](https://github.com/exea-labs/ExeaLM/issues/27), running)
+- [ ] A notes knowledge base at scale: search the stored notes instead of attending to all of them ([#28](https://github.com/exea-labs/ExeaLM/issues/28))
 - [ ] Swarm batches that keep as many independent stretches of text as solo batches (the 0.021 cost above) ([#19](https://github.com/exea-labs/ExeaLM/issues/19))
 - [x] (starter) Measure board use during training: AG worth in the search log, how often agents read nothing, post strength (`board` in eval records, `board_worth` in search records)
 - [ ] Related swarms: group documents that are near each other in the model's own retrieval space
@@ -181,8 +197,8 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [ ] Swarm RL (GRPO): whole-swarm attempts with a shared reward (test on the `tiny` preset)
 - [ ] Swarm task suite: split-information QA, divide-and-conquer math, write-and-test code, propose-and-check, cross-lingual QA
 - [ ] Swarm generation: all agents generate in lockstep in one batch
-- [ ] Board server so agents on different machines share one board (HTTP or Redis)
-- [ ] Message decoder: turn board messages into text people can read
+- [ ] Board server so agents on different machines share one board (HTTP or Redis) ([#35](https://github.com/exea-labs/ExeaLM/issues/35))
+- [ ] Message decoder: turn board messages into text people can read ([#34](https://github.com/exea-labs/ExeaLM/issues/34))
 - [ ] Safety: agents treat other agents' messages as information, not instructions (data and an eval)
 - [ ] Swarm eval: the same tasks solo vs swarms of 2, 4 and 8
 - [ ] Headline eval: a swarm of 0.1B agents with retrieval vs a single larger open model (for example 1B) on the same large tasks at the same inference compute. Build and test the harness now on `tiny` checkpoints and small open models
@@ -194,7 +210,9 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [ ] Cheaper retrieval: cache encodings, share retrievals across layers, tune top-k and chunk length
 - [ ] Key size: 32 vs 64 vs 128 numbers (`small` preset)
 - [x] (starter) Script that prints what RG retrieved for a prompt (`python -m exealm.eval.show_retrieval`)
-- [ ] Swap the datastore at inference: can the model use new facts without retraining?
+- [x] Swap the datastore at inference: on synthetic facts the model never saw, 94% correct with a fresh library (two seeds, 17M)
+- [ ] The same on real text: a library of documents the model never trained on ([#27](https://github.com/exea-labs/ExeaLM/issues/27)); the read is being trained on the right real document (`--wiki_oracle`)
+- [ ] Ordinary RAG baseline for the real-text test: BM25 and the retrieved text in the prompt ([#32](https://github.com/exea-labs/ExeaLM/issues/32))
 - [ ] Make retrieval pay off on real text. A perfect search would gain 0.040 bits per token on a Wikipedia knowledge task. Rare-word codes in the keys raise the search's hit rate from 12% to 30%, but the net gain over a no-retrieval model is not yet established (+0.026 and -0.002 on two seeds; results §6). Next: better pooling, hard negatives, a bigger encoder, larger models ([#22](https://github.com/exea-labs/ExeaLM/issues/22))
 
 ### Architecture (`exealm/model/`)
@@ -204,7 +222,8 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [ ] Hybrid layout: which layers get attention, and how many (layout variants queued)
 - [ ] Re-run the swarm and retrieval experiments on the hybrid (they ran on pure TONN)
 - [ ] Ablations at `small` size: with and without RG, AG and swarms
-- [ ] New circuit types, for example a gated delta-rule memory or sliding-window attention
+- [x] Gated DeltaNet, Qwen3.5's linear attention, as a layer (`exealm/model/delta.py`, tested against the recurrence); gated attention and QK-norm as options. The 13M comparison against Llama and a Qwen3.5-style model is running
+- [ ] Gated DeltaNet as a TONN circuit type the search can choose ([#30](https://github.com/exea-labs/ExeaLM/issues/30)); other new types, for example sliding-window attention
 - [ ] Shape sweep at fixed parameters: depth, width, slots per layer, channels per slot
 - [ ] Search schedule: how long to search, how much to replace, how long new circuits are protected (on the hybrid with a good start it adds about 0.001 today)
 - [ ] Which circuit types survive the search, and does that change from `tiny` to `small`?
@@ -215,6 +234,8 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [ ] Fused Triton kernels for `decay_scan` and `gated_scan` (any NVIDIA GPU works, including a free Colab T4; must also run on AMD MI300X) ([#16](https://github.com/exea-labs/ExeaLM/issues/16))
 - [ ] A compile-friendly TONN layer: one code path for every circuit type, so `torch.compile` can fuse it (today it gains 8% for the hybrid and 20% for Llama) ([#24](https://github.com/exea-labs/ExeaLM/issues/24))
 - [ ] One scan call for all running-sum circuits in a layer
+- [ ] Profile where the memory circuits' time goes: the 17M model with the board and library on is 1.30x Llama per step ([#29](https://github.com/exea-labs/ExeaLM/issues/29))
+- [ ] Fast Gated DeltaNet on NVIDIA through flash-linear-attention ([#31](https://github.com/exea-labs/ExeaLM/issues/31))
 - [ ] Recurrent state cache, so generating a token doesn't re-read the whole context
 - [ ] `torch.compile` support
 - [x] Training-speed benchmark: the default 2:1 hybrid costs 1.01x a same-size Llama per token, 1.49x with retrieval on (pure TONN was 1.5x) ([results](results/README.md#5-speed-of-the-real-model-experimentsspeedpy), `experiments/speed.py`)
@@ -258,7 +279,7 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 ### Evals (`exealm/eval/`)
 - [ ] (starter) lm-evaluation-harness wrapper (test it on a `tiny` checkpoint) ([#12](https://github.com/exea-labs/ExeaLM/issues/12))
 - [ ] Japanese evals (llm-jp-eval)
-- [ ] Retrieval eval: questions answered in the datastore but not in the prompt ([#18](https://github.com/exea-labs/ExeaLM/issues/18))
+- [x] Retrieval eval: answers that are in the library but not in the prompt (`experiments/irl_eval.py`: re-mentioned rare words of held-out Wikipedia, bits, top-1 and four choices) ([#18](https://github.com/exea-labs/ExeaLM/issues/18))
 - [ ] Run evals automatically on every checkpoint
 - [ ] Results table in this README
 

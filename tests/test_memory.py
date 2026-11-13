@@ -237,3 +237,17 @@ def test_a_prior_agent_is_heard_from_the_first_token_and_hears_no_one():
     assert not torch.allclose(base[1, :8], a[1, :8])                    # row 1 hears the end of row 0 at once
     assert torch.allclose(base[0], b[0], atol=1e-5)                     # row 0 never hears row 1
     assert torch.allclose(base[1, :9], b[1, :9], atol=1e-5)             # and row 1 is still causal
+
+
+def test_persistent_board_reads_are_cached_until_the_next_post():
+    board = AgentBoard()
+    key, val, log_w = torch.randn(1, 2, 1, 4), torch.randn(1, 2, 1, 4), torch.zeros(1, 2, 1)
+    board.post(0, [0], key, val, log_w, torch.tensor([7]), n_complete=2)
+    first = board.read(0, [0], "cpu")
+    assert board.read(0, [0], "cpu") is first                          # cached
+    assert first[0].shape == (1, 2, 4) and first[3].tolist() == [[7, 7]]
+    other = AgentBoard()
+    other.post(0, [0], key, val, log_w, torch.tensor([8]), n_complete=1)
+    board.merge(other)
+    after = board.read(0, [0], "cpu")
+    assert after[0].shape == (1, 3, 4) and sorted(after[3][0].tolist()) == [7, 7, 8]
