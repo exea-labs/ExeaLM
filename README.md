@@ -179,8 +179,9 @@ Small-scale tests on a Mac Studio, all in [results/README.md](results/README.md)
   8,000 steps of practice, notes from all 256 articles at once make it 7.9 bits worse, so the board must learn to
   ignore notes on the wrong article ([results §13](results/README.md#13-memory-on-real-text-experimentsirl_evalpy-resultsirl-issue-27)).
 - **The swarm gain on real text did not reproduce.** We reported 0.014 bits per byte for swarms over a matched
-  control (0.012 after a leak found in PR #7). Reruns range from 0.015 better to 0.035 worse than the control. More
-  seeds are running ([#33](https://github.com/exea-labs/ExeaLM/issues/33)); treat it as unproven.
+  control (0.012 after a leak found in PR #7). Reruns range from 0.015 better to 0.035 worse than the control, and
+  the same run twice differs by up to 0.012 on the Mac's GPU. Treat it as unproven until more seeds give a number
+  with a spread ([#33](https://github.com/exea-labs/ExeaLM/issues/33), [results §2](results/README.md#2-swarms-on-real-text-experimentsswarm_textpy)).
 - **Tokenizer: 32k.** It wins or ties 49k and 64k on English, Japanese and code at a fixed token budget.
 - **Speed:** the default 0.1B model (2:1 hybrid) trains at the same speed as a same-size Llama (1.01x per token), 1.49x with retrieval on.
 - **Pure TONN lost to Llama on real tokens; the hybrid wins.** Pure TONN trailed a same-size Llama, mostly on code. A

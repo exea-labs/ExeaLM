@@ -87,8 +87,28 @@ off the board; the matched control (swarm size 1) could not do this.
   (0.010) is not exposed at evaluation.
 - The pure-TONN gain above (0.006) is the most exposed: the same ceiling of 0.002 is a third of it.
 - The loader now hides seam targets in split swarms (`mask_seams`), and `experiments/swarm_text.py` scores only the
-  targets it keeps. Both swarm experiments are queued to rerun with the fix; the numbers above stay as measured until
-  then.
+  targets it keeps.
+
+**Reruns (2026-11-11 and 2026-11-12): the hybrid's swarm gain does not hold up** (issue #33). Swarm (board shared)
+minus the matched control, in bits per byte; below zero, the swarm is better:
+
+| Model | Seam targets | Seed 0 | Seed 1 | Result files |
+|---|---|---|---|---|
+| Pure TONN | kept (the original run) | -0.006 | | `swarm_text/` |
+| Pure TONN | hidden | -0.007 | | `swarm_text_fix/` |
+| Hybrid | kept (the original run) | -0.015 | -0.012 | `swarm_text_hybrid/` |
+| Hybrid | hidden | +0.035 | +0.033 | `swarm_text_hybrid_fix/` |
+| Hybrid | kept, rerun | +0.001 | -0.014 | `swarm_text_hybrid_nomask/` |
+
+- **The same configuration run twice differs by up to 0.012.** The hybrid's control, with seam targets kept, scored
+  1.639 and then 1.627 on seed 0 (1.634 and 1.638 on seed 1). The seam-hidden swarm on seed 0 scored 1.654 and then
+  1.647 (`swarm_text_hybrid_fix_repeat/`). Training on the Mac's GPU is not deterministic. With two seeds per arm,
+  differences under about 0.015 cannot be told apart from that noise.
+- Hiding the seam targets makes the hybrid swarm worse than its control by 0.033 to 0.035 on both seeds. Hiding one
+  target in 512 should not do that, and we have not found why.
+- **For the hybrid, the swarm gain on real text is unproven.** The numbers reported above (0.014, then 0.012 after
+  the leak) stand only if more seeds give a gain with a spread. The pure-TONN gain (0.006 to 0.007) held with the
+  seams hidden, on one seed.
 
 Next steps toward the bet (a 0.1B model that takes on large problems with its swarm):
 - swarms of related documents instead of consecutive windows;
