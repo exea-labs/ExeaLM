@@ -1,0 +1,700 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#fff}</style></head><body>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1420" viewBox="0 0 1600 1420"><defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,1 L10,5 L0,9 z" fill="#1a1a1a"/></marker></defs>
+<rect width="1600" height="1420" fill="#fff"/><text x="800.0" y="34" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="22" font-weight="600" fill="#1a1a1a" text-anchor="middle">Three 13M-parameter language models, layer by layer</text>
+<text x="800.0" y="56" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#555" text-anchor="middle">Width 256, 6 layers, 32,768-token vocabulary with tied embeddings, 4 heads of 64, SwiGLU MLP of width 680. 3,000 steps, seed 0; bits per byte on English, Japanese and code, lower is better.</text>
+<text x="280.0" y="90" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="15" font-weight="600" fill="#1a1a1a" text-anchor="middle">Llama</text>
+<text x="280.0" y="108" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#555" text-anchor="middle">13.10M parameters   ·   1.543 bits per byte</text>
+<rect x="150" y="146" width="360" height="26" rx="4" fill="#e6e6e6" stroke="#1a1a1a" stroke-width="1"/>
+<text x="330.0" y="162.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">Linear 256 → 32,768 (tied with the embedding), softmax</text>
+<rect x="150" y="179" width="360" height="26" rx="4" fill="#fff1b8" stroke="#1a1a1a" stroke-width="1"/>
+<text x="330.0" y="195.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">RMSNorm</text>
+<path d="M100,222 L100,192.0 L150,192.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M330.0,179 L330.0,173" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<text x="330.0" y="140" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="middle">next-token probabilities</text>
+<rect x="150" y="226" width="360" height="26" rx="4" fill="#ececec" stroke="#1a1a1a" stroke-width="1"/>
+<text x="330.0" y="242.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(e) SwiGLU MLP</text>
+<path d="M74,228 h-6 v64 h6" fill="none" stroke="#bbb" stroke-width="1"/>
+<text x="64" y="264.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="end">layer 5</text>
+<circle cx="100" cy="218" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M95.5,218 L104.5,218" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,213.5 L100,222.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,260 L136,260 L136,239.0 L150,239.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M330.0,226 L330.0,218 L107,218" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M100,260 L100,225" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="150" y="268" width="360" height="26" rx="4" fill="#f9d9c2" stroke="#1a1a1a" stroke-width="1"/>
+<text x="330.0" y="284.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(a) Attention</text>
+<circle cx="100" cy="260" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M95.5,260 L104.5,260" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,255.5 L100,264.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,302 L136,302 L136,281.0 L150,281.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M330.0,268 L330.0,260 L107,260" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M100,302 L100,267" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="150" y="310" width="360" height="26" rx="4" fill="#ececec" stroke="#1a1a1a" stroke-width="1"/>
+<text x="330.0" y="326.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(e) SwiGLU MLP</text>
+<path d="M74,312 h-6 v64 h6" fill="none" stroke="#bbb" stroke-width="1"/>
+<text x="64" y="348.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="end">layer 4</text>
+<circle cx="100" cy="302" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M95.5,302 L104.5,302" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,297.5 L100,306.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,344 L136,344 L136,323.0 L150,323.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M330.0,310 L330.0,302 L107,302" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M100,344 L100,309" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="150" y="352" width="360" height="26" rx="4" fill="#f9d9c2" stroke="#1a1a1a" stroke-width="1"/>
+<text x="330.0" y="368.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(a) Attention</text>
+<circle cx="100" cy="344" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M95.5,344 L104.5,344" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,339.5 L100,348.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,386 L136,386 L136,365.0 L150,365.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M330.0,352 L330.0,344 L107,344" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M100,386 L100,351" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="150" y="394" width="360" height="26" rx="4" fill="#ececec" stroke="#1a1a1a" stroke-width="1"/>
+<text x="330.0" y="410.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(e) SwiGLU MLP</text>
+<path d="M74,396 h-6 v64 h6" fill="none" stroke="#bbb" stroke-width="1"/>
+<text x="64" y="432.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="end">layer 3</text>
+<circle cx="100" cy="386" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M95.5,386 L104.5,386" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,381.5 L100,390.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,428 L136,428 L136,407.0 L150,407.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M330.0,394 L330.0,386 L107,386" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M100,428 L100,393" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="150" y="436" width="360" height="26" rx="4" fill="#f9d9c2" stroke="#1a1a1a" stroke-width="1"/>
+<text x="330.0" y="452.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(a) Attention</text>
+<circle cx="100" cy="428" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M95.5,428 L104.5,428" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,423.5 L100,432.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,470 L136,470 L136,449.0 L150,449.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M330.0,436 L330.0,428 L107,428" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M100,470 L100,435" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="150" y="478" width="360" height="26" rx="4" fill="#ececec" stroke="#1a1a1a" stroke-width="1"/>
+<text x="330.0" y="494.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(e) SwiGLU MLP</text>
+<path d="M74,480 h-6 v64 h6" fill="none" stroke="#bbb" stroke-width="1"/>
+<text x="64" y="516.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="end">layer 2</text>
+<circle cx="100" cy="470" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M95.5,470 L104.5,470" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,465.5 L100,474.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,512 L136,512 L136,491.0 L150,491.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M330.0,478 L330.0,470 L107,470" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M100,512 L100,477" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="150" y="520" width="360" height="26" rx="4" fill="#f9d9c2" stroke="#1a1a1a" stroke-width="1"/>
+<text x="330.0" y="536.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(a) Attention</text>
+<circle cx="100" cy="512" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M95.5,512 L104.5,512" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,507.5 L100,516.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,554 L136,554 L136,533.0 L150,533.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M330.0,520 L330.0,512 L107,512" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M100,554 L100,519" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="150" y="562" width="360" height="26" rx="4" fill="#ececec" stroke="#1a1a1a" stroke-width="1"/>
+<text x="330.0" y="578.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(e) SwiGLU MLP</text>
+<path d="M74,564 h-6 v64 h6" fill="none" stroke="#bbb" stroke-width="1"/>
+<text x="64" y="600.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="end">layer 1</text>
+<circle cx="100" cy="554" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M95.5,554 L104.5,554" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,549.5 L100,558.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,596 L136,596 L136,575.0 L150,575.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M330.0,562 L330.0,554 L107,554" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M100,596 L100,561" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="150" y="604" width="360" height="26" rx="4" fill="#f9d9c2" stroke="#1a1a1a" stroke-width="1"/>
+<text x="330.0" y="620.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(a) Attention</text>
+<circle cx="100" cy="596" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M95.5,596 L104.5,596" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,591.5 L100,600.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,638 L136,638 L136,617.0 L150,617.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M330.0,604 L330.0,596 L107,596" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M100,638 L100,603" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="150" y="646" width="360" height="26" rx="4" fill="#ececec" stroke="#1a1a1a" stroke-width="1"/>
+<text x="330.0" y="662.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(e) SwiGLU MLP</text>
+<path d="M74,648 h-6 v64 h6" fill="none" stroke="#bbb" stroke-width="1"/>
+<text x="64" y="684.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="end">layer 0</text>
+<circle cx="100" cy="638" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M95.5,638 L104.5,638" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,633.5 L100,642.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,680 L136,680 L136,659.0 L150,659.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M330.0,646 L330.0,638 L107,638" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M100,680 L100,645" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="150" y="688" width="360" height="26" rx="4" fill="#f9d9c2" stroke="#1a1a1a" stroke-width="1"/>
+<text x="330.0" y="704.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(a) Attention</text>
+<circle cx="100" cy="680" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M95.5,680 L104.5,680" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,675.5 L100,684.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M100,722 L136,722 L136,701.0 L150,701.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M330.0,688 L330.0,680 L107,680" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M100,722 L100,687" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="150" y="732" width="360" height="26" rx="4" fill="#e6e6e6" stroke="#1a1a1a" stroke-width="1"/>
+<text x="330.0" y="748.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">Token embedding 32,768 × 256</text>
+<path d="M150,745.0 L100,745.0 L100,722" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<text x="330.0" y="776" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#555" text-anchor="middle">tokens</text>
+<path d="M330.0,764 L330.0,759" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<text x="805.0" y="90" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="15" font-weight="600" fill="#1a1a1a" text-anchor="middle">Qwen3.5-style</text>
+<text x="805.0" y="108" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#555" text-anchor="middle">13.51M parameters   ·   1.520 bits per byte</text>
+<rect x="675" y="146" width="360" height="26" rx="4" fill="#e6e6e6" stroke="#1a1a1a" stroke-width="1"/>
+<text x="855.0" y="162.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">Linear 256 → 32,768 (tied with the embedding), softmax</text>
+<rect x="675" y="179" width="360" height="26" rx="4" fill="#fff1b8" stroke="#1a1a1a" stroke-width="1"/>
+<text x="855.0" y="195.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">RMSNorm</text>
+<path d="M625,222 L625,192.0 L675,192.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M855.0,179 L855.0,173" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<text x="855.0" y="140" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="middle">next-token probabilities</text>
+<rect x="675" y="226" width="360" height="26" rx="4" fill="#ececec" stroke="#1a1a1a" stroke-width="1"/>
+<text x="855.0" y="242.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(e) SwiGLU MLP</text>
+<path d="M599,228 h-6 v64 h6" fill="none" stroke="#bbb" stroke-width="1"/>
+<text x="589" y="264.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="end">layer 5</text>
+<circle cx="625" cy="218" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M620.5,218 L629.5,218" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,213.5 L625,222.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,260 L661,260 L661,239.0 L675,239.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M855.0,226 L855.0,218 L632,218" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M625,260 L625,225" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="675" y="268" width="360" height="26" rx="4" fill="#f9d9c2" stroke="#1a1a1a" stroke-width="1"/>
+<text x="855.0" y="284.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(b) Gated attention + QK-norm</text>
+<circle cx="625" cy="260" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M620.5,260 L629.5,260" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,255.5 L625,264.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,302 L661,302 L661,281.0 L675,281.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M855.0,268 L855.0,260 L632,260" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M625,302 L625,267" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="675" y="310" width="360" height="26" rx="4" fill="#ececec" stroke="#1a1a1a" stroke-width="1"/>
+<text x="855.0" y="326.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(e) SwiGLU MLP</text>
+<path d="M599,312 h-6 v64 h6" fill="none" stroke="#bbb" stroke-width="1"/>
+<text x="589" y="348.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="end">layer 4</text>
+<circle cx="625" cy="302" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M620.5,302 L629.5,302" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,297.5 L625,306.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,344 L661,344 L661,323.0 L675,323.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M855.0,310 L855.0,302 L632,302" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M625,344 L625,309" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="675" y="352" width="360" height="26" rx="4" fill="#d5edd5" stroke="#1a1a1a" stroke-width="1"/>
+<text x="855.0" y="368.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(c) Gated DeltaNet</text>
+<circle cx="625" cy="344" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M620.5,344 L629.5,344" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,339.5 L625,348.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,386 L661,386 L661,365.0 L675,365.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M855.0,352 L855.0,344 L632,344" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M625,386 L625,351" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="675" y="394" width="360" height="26" rx="4" fill="#ececec" stroke="#1a1a1a" stroke-width="1"/>
+<text x="855.0" y="410.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(e) SwiGLU MLP</text>
+<path d="M599,396 h-6 v64 h6" fill="none" stroke="#bbb" stroke-width="1"/>
+<text x="589" y="432.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="end">layer 3</text>
+<circle cx="625" cy="386" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M620.5,386 L629.5,386" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,381.5 L625,390.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,428 L661,428 L661,407.0 L675,407.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M855.0,394 L855.0,386 L632,386" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M625,428 L625,393" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="675" y="436" width="360" height="26" rx="4" fill="#f9d9c2" stroke="#1a1a1a" stroke-width="1"/>
+<text x="855.0" y="452.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(b) Gated attention + QK-norm</text>
+<circle cx="625" cy="428" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M620.5,428 L629.5,428" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,423.5 L625,432.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,470 L661,470 L661,449.0 L675,449.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M855.0,436 L855.0,428 L632,428" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M625,470 L625,435" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="675" y="478" width="360" height="26" rx="4" fill="#ececec" stroke="#1a1a1a" stroke-width="1"/>
+<text x="855.0" y="494.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(e) SwiGLU MLP</text>
+<path d="M599,480 h-6 v64 h6" fill="none" stroke="#bbb" stroke-width="1"/>
+<text x="589" y="516.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="end">layer 2</text>
+<circle cx="625" cy="470" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M620.5,470 L629.5,470" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,465.5 L625,474.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,512 L661,512 L661,491.0 L675,491.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M855.0,478 L855.0,470 L632,470" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M625,512 L625,477" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="675" y="520" width="360" height="26" rx="4" fill="#d5edd5" stroke="#1a1a1a" stroke-width="1"/>
+<text x="855.0" y="536.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(c) Gated DeltaNet</text>
+<circle cx="625" cy="512" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M620.5,512 L629.5,512" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,507.5 L625,516.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,554 L661,554 L661,533.0 L675,533.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M855.0,520 L855.0,512 L632,512" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M625,554 L625,519" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="675" y="562" width="360" height="26" rx="4" fill="#ececec" stroke="#1a1a1a" stroke-width="1"/>
+<text x="855.0" y="578.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(e) SwiGLU MLP</text>
+<path d="M599,564 h-6 v64 h6" fill="none" stroke="#bbb" stroke-width="1"/>
+<text x="589" y="600.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="end">layer 1</text>
+<circle cx="625" cy="554" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M620.5,554 L629.5,554" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,549.5 L625,558.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,596 L661,596 L661,575.0 L675,575.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M855.0,562 L855.0,554 L632,554" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M625,596 L625,561" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="675" y="604" width="360" height="26" rx="4" fill="#d5edd5" stroke="#1a1a1a" stroke-width="1"/>
+<text x="855.0" y="620.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(c) Gated DeltaNet</text>
+<circle cx="625" cy="596" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M620.5,596 L629.5,596" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,591.5 L625,600.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,638 L661,638 L661,617.0 L675,617.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M855.0,604 L855.0,596 L632,596" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M625,638 L625,603" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="675" y="646" width="360" height="26" rx="4" fill="#ececec" stroke="#1a1a1a" stroke-width="1"/>
+<text x="855.0" y="662.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(e) SwiGLU MLP</text>
+<path d="M599,648 h-6 v64 h6" fill="none" stroke="#bbb" stroke-width="1"/>
+<text x="589" y="684.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="end">layer 0</text>
+<circle cx="625" cy="638" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M620.5,638 L629.5,638" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,633.5 L625,642.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,680 L661,680 L661,659.0 L675,659.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M855.0,646 L855.0,638 L632,638" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M625,680 L625,645" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="675" y="688" width="360" height="26" rx="4" fill="#d5edd5" stroke="#1a1a1a" stroke-width="1"/>
+<text x="855.0" y="704.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(c) Gated DeltaNet</text>
+<circle cx="625" cy="680" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M620.5,680 L629.5,680" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,675.5 L625,684.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M625,722 L661,722 L661,701.0 L675,701.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M855.0,688 L855.0,680 L632,680" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M625,722 L625,687" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="675" y="732" width="360" height="26" rx="4" fill="#e6e6e6" stroke="#1a1a1a" stroke-width="1"/>
+<text x="855.0" y="748.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">Token embedding 32,768 × 256</text>
+<path d="M675,745.0 L625,745.0 L625,722" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<text x="855.0" y="776" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#555" text-anchor="middle">tokens</text>
+<path d="M855.0,764 L855.0,759" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<text x="1330.0" y="90" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="15" font-weight="600" fill="#1a1a1a" text-anchor="middle">ExeaLM hybrid + gated attention + QK-norm</text>
+<text x="1330.0" y="108" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#555" text-anchor="middle">13.36M parameters   ·   1.511 bits per byte</text>
+<rect x="1200" y="146" width="360" height="26" rx="4" fill="#e6e6e6" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1380.0" y="162.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">Linear 256 → 32,768 (tied with the embedding), softmax</text>
+<rect x="1200" y="179" width="360" height="26" rx="4" fill="#fff1b8" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1380.0" y="195.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">RMSNorm</text>
+<path d="M1150,222 L1150,192.0 L1200,192.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1380.0,179 L1380.0,173" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<text x="1380.0" y="140" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="middle">next-token probabilities</text>
+<rect x="1200" y="226" width="360" height="26" rx="4" fill="#ececec" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1380.0" y="242.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(e) SwiGLU MLP</text>
+<path d="M1124,228 h-6 v64 h6" fill="none" stroke="#bbb" stroke-width="1"/>
+<text x="1114" y="264.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="end">layer 5</text>
+<circle cx="1150" cy="218" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M1145.5,218 L1154.5,218" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,213.5 L1150,222.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,260 L1186,260 L1186,239.0 L1200,239.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1380.0,226 L1380.0,218 L1157,218" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1150,260 L1150,225" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="1200" y="268" width="360" height="26" rx="4" fill="#f9d9c2" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1380.0" y="284.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(b) Gated attention + QK-norm</text>
+<circle cx="1150" cy="260" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M1145.5,260 L1154.5,260" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,255.5 L1150,264.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,302 L1186,302 L1186,281.0 L1200,281.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1380.0,268 L1380.0,260 L1157,260" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1150,302 L1150,267" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="1200" y="310" width="360" height="26" rx="4" fill="#ececec" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1380.0" y="326.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(e) SwiGLU MLP</text>
+<path d="M1124,312 h-6 v64 h6" fill="none" stroke="#bbb" stroke-width="1"/>
+<text x="1114" y="348.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="end">layer 4</text>
+<circle cx="1150" cy="302" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M1145.5,302 L1154.5,302" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,297.5 L1150,306.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,344 L1186,344 L1186,323.0 L1200,323.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1380.0,310 L1380.0,302 L1157,302" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1150,344 L1150,309" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="1200" y="352" width="360" height="26" rx="4" fill="#f9d9c2" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1380.0" y="368.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(b) Gated attention + QK-norm</text>
+<circle cx="1150" cy="344" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M1145.5,344 L1154.5,344" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,339.5 L1150,348.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,386 L1186,386 L1186,365.0 L1200,365.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1380.0,352 L1380.0,344 L1157,344" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1150,386 L1150,351" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="1200" y="394" width="360" height="26" rx="4" fill="#ececec" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1380.0" y="410.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(e) SwiGLU MLP</text>
+<path d="M1124,396 h-6 v64 h6" fill="none" stroke="#bbb" stroke-width="1"/>
+<text x="1114" y="432.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="end">layer 3</text>
+<circle cx="1150" cy="386" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M1145.5,386 L1154.5,386" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,381.5 L1150,390.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,428 L1186,428 L1186,407.0 L1200,407.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1380.0,394 L1380.0,386 L1157,386" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1150,428 L1150,393" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="1200" y="436" width="360" height="26" rx="4" fill="#e6ddf4" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1380.0" y="452.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(d) TONN layer: 8 circuits   (G, EP, OS, SM, RP, GI, C, C)</text>
+<circle cx="1150" cy="428" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M1145.5,428 L1154.5,428" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,423.5 L1150,432.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,470 L1186,470 L1186,449.0 L1200,449.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1380.0,436 L1380.0,428 L1157,428" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1150,470 L1150,435" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="1200" y="478" width="360" height="26" rx="4" fill="#ececec" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1380.0" y="494.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(e) SwiGLU MLP</text>
+<path d="M1124,480 h-6 v64 h6" fill="none" stroke="#bbb" stroke-width="1"/>
+<text x="1114" y="516.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="end">layer 2</text>
+<circle cx="1150" cy="470" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M1145.5,470 L1154.5,470" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,465.5 L1150,474.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,512 L1186,512 L1186,491.0 L1200,491.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1380.0,478 L1380.0,470 L1157,470" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1150,512 L1150,477" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="1200" y="520" width="360" height="26" rx="4" fill="#f9d9c2" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1380.0" y="536.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(b) Gated attention + QK-norm</text>
+<circle cx="1150" cy="512" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M1145.5,512 L1154.5,512" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,507.5 L1150,516.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,554 L1186,554 L1186,533.0 L1200,533.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1380.0,520 L1380.0,512 L1157,512" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1150,554 L1150,519" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="1200" y="562" width="360" height="26" rx="4" fill="#ececec" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1380.0" y="578.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(e) SwiGLU MLP</text>
+<path d="M1124,564 h-6 v64 h6" fill="none" stroke="#bbb" stroke-width="1"/>
+<text x="1114" y="600.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="end">layer 1</text>
+<circle cx="1150" cy="554" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M1145.5,554 L1154.5,554" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,549.5 L1150,558.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,596 L1186,596 L1186,575.0 L1200,575.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1380.0,562 L1380.0,554 L1157,554" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1150,596 L1150,561" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="1200" y="604" width="360" height="26" rx="4" fill="#f9d9c2" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1380.0" y="620.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(b) Gated attention + QK-norm</text>
+<circle cx="1150" cy="596" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M1145.5,596 L1154.5,596" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,591.5 L1150,600.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,638 L1186,638 L1186,617.0 L1200,617.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1380.0,604 L1380.0,596 L1157,596" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1150,638 L1150,603" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="1200" y="646" width="360" height="26" rx="4" fill="#ececec" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1380.0" y="662.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(e) SwiGLU MLP</text>
+<path d="M1124,648 h-6 v64 h6" fill="none" stroke="#bbb" stroke-width="1"/>
+<text x="1114" y="684.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="end">layer 0</text>
+<circle cx="1150" cy="638" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M1145.5,638 L1154.5,638" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,633.5 L1150,642.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,680 L1186,680 L1186,659.0 L1200,659.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1380.0,646 L1380.0,638 L1157,638" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1150,680 L1150,645" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="1200" y="688" width="360" height="26" rx="4" fill="#e6ddf4" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1380.0" y="704.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">(d) TONN layer: 8 circuits   (RP, MI, EP, MIM, MI, OS, MI, SM)</text>
+<circle cx="1150" cy="680" r="7" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M1145.5,680 L1154.5,680" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,675.5 L1150,684.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1150,722 L1186,722 L1186,701.0 L1200,701.0" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1380.0,688 L1380.0,680 L1157,680" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1150,722 L1150,687" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="1200" y="732" width="360" height="26" rx="4" fill="#e6e6e6" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1380.0" y="748.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">Token embedding 32,768 × 256</text>
+<path d="M1200,745.0 L1150,745.0 L1150,722" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<text x="1380.0" y="776" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#555" text-anchor="middle">tokens</text>
+<path d="M1380.0,764 L1380.0,759" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<line x1="20" x2="1580" y1="805" y2="805" stroke="#ccc" stroke-width="1"/>
+<text x="145.0" y="833" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="13.5" font-weight="600" fill="#1a1a1a" text-anchor="middle">(a) Attention</text>
+<text x="145.0" y="849" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="middle">Llama</text>
+<text x="155" y="1364" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="13" font-weight="400" fill="#1a1a1a" text-anchor="middle" font-style="italic">x</text>
+<path d="M155,1350 L155,1338" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M155,1344 L34,1344 L34,889 L146,889" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<circle cx="155" cy="889" r="8" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M150.5,889 L159.5,889" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M155,884.5 L155,893.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M155,881 L155,869" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="65.0" y="1302" width="180" height="28" rx="4" fill="#fff1b8" stroke="#1a1a1a" stroke-width="1"/>
+<text x="155.0" y="1320.14" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">RMSNorm</text>
+<rect x="65.0" y="1250" width="180" height="28" rx="4" fill="#d6e6f7" stroke="#1a1a1a" stroke-width="1"/>
+<text x="155.0" y="1268.14" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">Linear 256 → 768</text>
+<path d="M155,1338 L155,1330" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M155,1302 L155,1278" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M155,1250 L95,1230" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<text x="95" y="1224" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="12" font-weight="400" fill="#1a1a1a" text-anchor="middle" font-style="italic">q</text>
+<path d="M155,1250 L155,1230" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<text x="155" y="1224" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="12" font-weight="400" fill="#1a1a1a" text-anchor="middle" font-style="italic">k</text>
+<path d="M155,1250 L215,1230" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<text x="215" y="1224" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="12" font-weight="400" fill="#1a1a1a" text-anchor="middle" font-style="italic">v</text>
+<rect x="69" y="1170" width="52" height="26" rx="4" fill="#d6e6f7" stroke="#1a1a1a" stroke-width="1"/>
+<text x="95.0" y="1186.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">RoPE</text>
+<path d="M95,1212 L95,1196" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="129" y="1170" width="52" height="26" rx="4" fill="#d6e6f7" stroke="#1a1a1a" stroke-width="1"/>
+<text x="155.0" y="1186.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">RoPE</text>
+<path d="M155,1212 L155,1196" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M215,1212 L215,1132" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="65.0" y="1080" width="180" height="50" rx="4" fill="#f9d9c2" stroke="#1a1a1a" stroke-width="1"/>
+<text x="155.0" y="1103.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">causal softmax(QKᵀ/√64)V</text>
+<text x="155.0" y="1116.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#555" text-anchor="middle">4 heads × 64</text>
+<path d="M95,1170 L95,1130" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M155,1170 L155,1130" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="65.0" y="1012" width="180" height="28" rx="4" fill="#d6e6f7" stroke="#1a1a1a" stroke-width="1"/>
+<text x="155.0" y="1030.14" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">Linear 256 → 256</text>
+<path d="M155,1080 L155,1040" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M155,1012 L155,897" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<text x="435.0" y="833" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="13.5" font-weight="600" fill="#1a1a1a" text-anchor="middle">(b) Gated attention + QK-norm</text>
+<text x="435.0" y="849" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="middle">Qwen3.5-style and ExeaLM</text>
+<text x="415" y="1364" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="13" font-weight="400" fill="#1a1a1a" text-anchor="middle" font-style="italic">x</text>
+<path d="M415,1350 L415,1338" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M415,1344 L299,1344 L299,889 L406,889" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<circle cx="415" cy="889" r="8" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M410.5,889 L419.5,889" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M415,884.5 L415,893.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M415,881 L415,869" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="330.0" y="1302" width="170" height="28" rx="4" fill="#fff1b8" stroke="#1a1a1a" stroke-width="1"/>
+<text x="415.0" y="1320.14" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">RMSNorm</text>
+<path d="M415,1338 L415,1330" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<text x="508.0" y="1320" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="12" font-weight="400" fill="#1a1a1a" text-anchor="start" font-style="italic">h</text>
+<rect x="330.0" y="1250" width="170" height="28" rx="4" fill="#d6e6f7" stroke="#1a1a1a" stroke-width="1"/>
+<text x="415.0" y="1268.14" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">Linear 256 → 768</text>
+<path d="M415,1302 L415,1278" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M415,1250 L360,1232" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<text x="360" y="1226" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="12" font-weight="400" fill="#1a1a1a" text-anchor="middle" font-style="italic">q</text>
+<path d="M415,1250 L415,1232" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<text x="415" y="1226" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="12" font-weight="400" fill="#1a1a1a" text-anchor="middle" font-style="italic">k</text>
+<path d="M415,1250 L470,1232" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<text x="470" y="1226" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="12" font-weight="400" fill="#1a1a1a" text-anchor="middle" font-style="italic">v</text>
+<rect x="335" y="1180" width="50" height="24" rx="4" fill="#fff1b8" stroke="#1a1a1a" stroke-width="1"/>
+<text x="360.0" y="1195.42" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">RMSNorm</text>
+<path d="M360,1214 L360,1204" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="335" y="1140" width="50" height="24" rx="4" fill="#d6e6f7" stroke="#1a1a1a" stroke-width="1"/>
+<text x="360.0" y="1155.78" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">RoPE</text>
+<path d="M360,1180 L360,1164" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="390" y="1180" width="50" height="24" rx="4" fill="#fff1b8" stroke="#1a1a1a" stroke-width="1"/>
+<text x="415.0" y="1195.42" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">RMSNorm</text>
+<path d="M415,1214 L415,1204" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="390" y="1140" width="50" height="24" rx="4" fill="#d6e6f7" stroke="#1a1a1a" stroke-width="1"/>
+<text x="415.0" y="1155.78" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">RoPE</text>
+<path d="M415,1180 L415,1164" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M470,1214 L470,1112" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="330.0" y="1062" width="170" height="48" rx="4" fill="#f9d9c2" stroke="#1a1a1a" stroke-width="1"/>
+<text x="415.0" y="1084.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">causal softmax(QKᵀ/√64)V</text>
+<text x="415.0" y="1097.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#555" text-anchor="middle">4 heads × 64</text>
+<path d="M360,1140 L360,1110" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M415,1140 L415,1110" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M500.0,1316 L540.0,1316 L540.0,1072" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="504.0" y="1038" width="72" height="32" rx="4" fill="#d6e6f7" stroke="#1a1a1a" stroke-width="1"/>
+<text x="540.0" y="1052.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">Linear</text>
+<text x="540.0" y="1065.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8.5" font-weight="400" fill="#555" text-anchor="middle">256 → 256</text>
+<circle cx="540.0" cy="1020" r="8" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<text x="540.0" y="1024" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">σ</text>
+<path d="M540.0,1042 L540.0,1028" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<circle cx="415" cy="1020" r="8" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M411.5,1016.5 L418.5,1023.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M411.5,1023.5 L418.5,1016.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M415,1062 L415,1028" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M532.0,1020 L424,1020" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<text x="554.0" y="1012" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#555" text-anchor="start">gate</text>
+<rect x="330.0" y="966" width="170" height="28" rx="4" fill="#d6e6f7" stroke="#1a1a1a" stroke-width="1"/>
+<text x="415.0" y="984.14" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">Linear 256 → 256</text>
+<path d="M415,1012 L415,994" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M415,966 L415,897" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<text x="790.0" y="833" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="13.5" font-weight="600" fill="#1a1a1a" text-anchor="middle">(c) Gated DeltaNet</text>
+<text x="790.0" y="849" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="middle">Qwen3.5-style, layers 0, 1, 2 and 4</text>
+<text x="740" y="1364" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="13" font-weight="400" fill="#1a1a1a" text-anchor="middle" font-style="italic">x</text>
+<path d="M740,1350 L740,1338" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M740,1344 L614,1344 L614,889 L731,889" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<circle cx="740" cy="889" r="8" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M735.5,889 L744.5,889" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M740,884.5 L740,893.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M740,881 L740,869" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="650.0" y="1302" width="180" height="28" rx="4" fill="#fff1b8" stroke="#1a1a1a" stroke-width="1"/>
+<text x="740.0" y="1320.14" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">RMSNorm</text>
+<path d="M740,1338 L740,1330" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<text x="838.0" y="1320" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="12" font-weight="400" fill="#1a1a1a" text-anchor="start" font-style="italic">h</text>
+<rect x="650.0" y="1252" width="180" height="26" rx="4" fill="#d6e6f7" stroke="#1a1a1a" stroke-width="1"/>
+<text x="740.0" y="1268.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">Linear 256 → 768</text>
+<path d="M740,1302 L740,1278" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="650.0" y="1214" width="180" height="26" rx="4" fill="#f4f4f4" stroke="#1a1a1a" stroke-width="1"/>
+<text x="740.0" y="1230.78" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">causal conv1d, kernel 4, then SiLU</text>
+<path d="M740,1252 L740,1240" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M740,1214 L680,1198" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<text x="680" y="1192" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="12" font-weight="400" fill="#1a1a1a" text-anchor="middle" font-style="italic">q</text>
+<path d="M740,1214 L740,1198" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<text x="740" y="1192" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="12" font-weight="400" fill="#1a1a1a" text-anchor="middle" font-style="italic">k</text>
+<path d="M740,1214 L800,1198" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<text x="800" y="1192" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="12" font-weight="400" fill="#1a1a1a" text-anchor="middle" font-style="italic">v</text>
+<rect x="650" y="1156" width="60" height="22" rx="4" fill="#fff1b8" stroke="#1a1a1a" stroke-width="1"/>
+<text x="680.0" y="1170.24" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="9" font-weight="400" fill="#1a1a1a" text-anchor="middle">L2-norm ÷ 8</text>
+<path d="M680,1184 L680,1178" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="710" y="1156" width="60" height="22" rx="4" fill="#fff1b8" stroke="#1a1a1a" stroke-width="1"/>
+<text x="740.0" y="1170.24" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="9" font-weight="400" fill="#1a1a1a" text-anchor="middle">L2-norm</text>
+<path d="M740,1184 L740,1178" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M800,1184 L800,1132" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="640.0" y="1062" width="200" height="68" rx="4" fill="#d5edd5" stroke="#1a1a1a" stroke-width="1"/>
+<text x="740" y="1079" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">gated delta rule, 4 heads × 64</text>
+<text x="740" y="1098" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="11.5" font-weight="400" fill="#1a1a1a" text-anchor="middle" font-style="italic">Sₜ = αₜ Sₜ₋₁ (I − βₜ kₜkₜᵀ) + βₜ vₜkₜᵀ</text>
+<text x="740" y="1116" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="11.5" font-weight="400" fill="#1a1a1a" text-anchor="middle" font-style="italic">oₜ = Sₜ qₜ</text>
+<path d="M680,1156 L680,1130" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M740,1156 L740,1130" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M830.0,1312 L882.0,1312 L882.0,1266" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="842.0" y="1238" width="80" height="26" rx="4" fill="#d6e6f7" stroke="#1a1a1a" stroke-width="1"/>
+<text x="882.0" y="1254.42" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">Linear 256 → 8</text>
+<rect x="820.0" y="1176" width="124" height="48" rx="4" fill="#f4f4f4" stroke="#1a1a1a" stroke-width="1"/>
+<text x="882.0" y="1195" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="9.5" font-weight="400" fill="#1a1a1a" text-anchor="middle" font-style="italic">α = exp(−eᴬ·softplus(a + δ))</text>
+<text x="882.0" y="1213" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="9.5" font-weight="400" fill="#1a1a1a" text-anchor="middle" font-style="italic">β = σ(b), one per head</text>
+<path d="M882.0,1238 L882.0,1224" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M882.0,1176 L882.0,1096 L842.0,1096" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="650.0" y="1026" width="180" height="26" rx="4" fill="#fff1b8" stroke="#1a1a1a" stroke-width="1"/>
+<text x="740.0" y="1042.78" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">RMSNorm per head</text>
+<path d="M740,1066 L740,1054" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M834.0,1324 L958.0,1324 L958.0,1002 L924.0,1002" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="884.0" y="986" width="40" height="32" rx="4" fill="#d6e6f7" stroke="#1a1a1a" stroke-width="1"/>
+<text x="904.0" y="1000.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">Linear</text>
+<text x="904.0" y="1013.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8" font-weight="400" fill="#555" text-anchor="middle">256²</text>
+<rect x="834.0" y="990" width="40" height="24" rx="4" fill="#f4f4f4" stroke="#1a1a1a" stroke-width="1"/>
+<text x="854.0" y="1005.42" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">SiLU</text>
+<path d="M884.0,1002 L874.0,1002" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<circle cx="740" cy="1002" r="8" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M736.5,998.5 L743.5,1005.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M736.5,1005.5 L743.5,998.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M740,1026 L740,1010" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M834.0,1002 L749,1002" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="650.0" y="950" width="180" height="26" rx="4" fill="#d6e6f7" stroke="#1a1a1a" stroke-width="1"/>
+<text x="740.0" y="966.96" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#1a1a1a" text-anchor="middle">Linear 256 → 256</text>
+<path d="M740,994 L740,976" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M740,950 L740,897" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<text x="1197.5" y="833" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="13.5" font-weight="600" fill="#1a1a1a" text-anchor="middle">(d) TONN layer</text>
+<text x="1197.5" y="849" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="middle">ExeaLM, layers 0 and 3 (layer 0 shown)</text>
+<text x="1210" y="1364" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="13" font-weight="400" fill="#1a1a1a" text-anchor="middle" font-style="italic">x</text>
+<path d="M1210,1350 L1210,1338" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1210,1344 L1009,1344 L1009,889 L1201,889" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<circle cx="1210" cy="889" r="8" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M1205.5,889 L1214.5,889" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1210,884.5 L1210,893.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1210,881 L1210,869" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="1120" y="1302" width="180" height="28" rx="4" fill="#fff1b8" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1210.0" y="1320.14" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">RMSNorm</text>
+<path d="M1210,1338 L1210,1330" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="1060" y="1250" width="300" height="28" rx="4" fill="#d6e6f7" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1210.0" y="1267.6" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#1a1a1a" text-anchor="middle">Linear 256 → 768 (+ bias): 8 slots × 3 streams × 32</text>
+<path d="M1210,1302 L1210,1278" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1105.0,1250 L1032.75,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<path d="M1105.0,1250 L1043.75,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<path d="M1105.0,1250 L1054.75,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<text x="1032.75" y="1214" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8" font-weight="400" fill="#555" text-anchor="middle">A</text>
+<text x="1043.75" y="1214" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8" font-weight="400" fill="#555" text-anchor="middle">B</text>
+<text x="1054.75" y="1214" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8" font-weight="400" fill="#555" text-anchor="middle">C</text>
+<rect x="1021.75" y="1128" width="44" height="82" rx="4" fill="#e6ddf4" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1043.75" y="1146" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#1a1a1a" text-anchor="middle">RP</text>
+<text x="1043.75" y="1159" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8.5" font-weight="400" fill="#555" text-anchor="middle">lag 8</text>
+<text x="1043.75" y="1176" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8" font-weight="400" fill="#1a1a1a" text-anchor="middle">rotary</text>
+<text x="1043.75" y="1186" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8" font-weight="400" fill="#1a1a1a" text-anchor="middle">attention</text>
+<rect x="1024.75" y="1092" width="38" height="22" rx="4" fill="#f4f4f4" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1043.75" y="1106.06" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">÷ rms</text>
+<path d="M1043.75,1128 L1043.75,1114" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1043.75,1092 L1168.0,1060" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<path d="M1135.0,1250 L1080.25,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<path d="M1135.0,1250 L1091.25,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<path d="M1135.0,1250 L1102.25,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<rect x="1069.25" y="1128" width="44" height="82" rx="4" fill="#e6ddf4" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1091.25" y="1146" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#1a1a1a" text-anchor="middle">MI</text>
+<text x="1091.25" y="1159" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8.5" font-weight="400" fill="#555" text-anchor="middle">lag 16</text>
+<text x="1091.25" y="1176" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8" font-weight="400" fill="#1a1a1a" text-anchor="middle">Σλ A(t−16)</text>
+<text x="1091.25" y="1186" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8" font-weight="400" fill="#1a1a1a" text-anchor="middle">× B</text>
+<rect x="1072.25" y="1092" width="38" height="22" rx="4" fill="#f4f4f4" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1091.25" y="1106.06" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">÷ rms</text>
+<path d="M1091.25,1128 L1091.25,1114" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1091.25,1092 L1180.0,1060" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<path d="M1165.0,1250 L1127.75,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<path d="M1165.0,1250 L1138.75,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<path d="M1165.0,1250 L1149.75,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<rect x="1116.75" y="1128" width="44" height="82" rx="4" fill="#e6ddf4" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1138.75" y="1146" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#1a1a1a" text-anchor="middle">EP</text>
+<text x="1138.75" y="1159" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8.5" font-weight="400" fill="#555" text-anchor="middle"></text>
+<text x="1138.75" y="1176" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8" font-weight="400" fill="#1a1a1a" text-anchor="middle">softmax</text>
+<text x="1138.75" y="1186" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8" font-weight="400" fill="#1a1a1a" text-anchor="middle">pooling</text>
+<rect x="1119.75" y="1092" width="38" height="22" rx="4" fill="#f4f4f4" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1138.75" y="1106.06" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">÷ rms</text>
+<path d="M1138.75,1128 L1138.75,1114" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1138.75,1092 L1192.0,1060" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<path d="M1195.0,1250 L1175.25,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<path d="M1195.0,1250 L1186.25,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<path d="M1195.0,1250 L1197.25,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<rect x="1164.25" y="1128" width="44" height="82" rx="4" fill="#e6ddf4" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1186.25" y="1146" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#1a1a1a" text-anchor="middle">MIM</text>
+<text x="1186.25" y="1159" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8.5" font-weight="400" fill="#555" text-anchor="middle">lag 3</text>
+<text x="1186.25" y="1176" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8" font-weight="400" fill="#1a1a1a" text-anchor="middle">C × Σλ</text>
+<text x="1186.25" y="1186" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8" font-weight="400" fill="#1a1a1a" text-anchor="middle">A(t−3)B</text>
+<rect x="1167.25" y="1092" width="38" height="22" rx="4" fill="#f4f4f4" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1186.25" y="1106.06" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">÷ rms</text>
+<path d="M1186.25,1128 L1186.25,1114" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1186.25,1092 L1204.0,1060" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<path d="M1225.0,1250 L1222.75,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<path d="M1225.0,1250 L1233.75,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<path d="M1225.0,1250 L1244.75,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<rect x="1211.75" y="1128" width="44" height="82" rx="4" fill="#e6ddf4" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1233.75" y="1146" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#1a1a1a" text-anchor="middle">MI</text>
+<text x="1233.75" y="1159" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8.5" font-weight="400" fill="#555" text-anchor="middle">lag 1</text>
+<text x="1233.75" y="1176" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8" font-weight="400" fill="#1a1a1a" text-anchor="middle">Σλ A(t−1)</text>
+<text x="1233.75" y="1186" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8" font-weight="400" fill="#1a1a1a" text-anchor="middle">× B</text>
+<rect x="1214.75" y="1092" width="38" height="22" rx="4" fill="#f4f4f4" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1233.75" y="1106.06" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">÷ rms</text>
+<path d="M1233.75,1128 L1233.75,1114" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1233.75,1092 L1216.0,1060" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<path d="M1255.0,1250 L1270.25,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<path d="M1255.0,1250 L1281.25,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<path d="M1255.0,1250 L1292.25,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<rect x="1259.25" y="1128" width="44" height="82" rx="4" fill="#e6ddf4" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1281.25" y="1146" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#1a1a1a" text-anchor="middle">OS</text>
+<text x="1281.25" y="1159" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8.5" font-weight="400" fill="#555" text-anchor="middle"></text>
+<text x="1281.25" y="1176" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8" font-weight="400" fill="#1a1a1a" text-anchor="middle">oscillating</text>
+<text x="1281.25" y="1186" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8" font-weight="400" fill="#1a1a1a" text-anchor="middle">memory</text>
+<rect x="1262.25" y="1092" width="38" height="22" rx="4" fill="#f4f4f4" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1281.25" y="1106.06" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">÷ rms</text>
+<path d="M1281.25,1128 L1281.25,1114" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1281.25,1092 L1228.0,1060" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<path d="M1285.0,1250 L1317.75,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<path d="M1285.0,1250 L1328.75,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<path d="M1285.0,1250 L1339.75,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<rect x="1306.75" y="1128" width="44" height="82" rx="4" fill="#e6ddf4" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1328.75" y="1146" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#1a1a1a" text-anchor="middle">MI</text>
+<text x="1328.75" y="1159" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8.5" font-weight="400" fill="#555" text-anchor="middle">lag 128</text>
+<text x="1328.75" y="1176" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8" font-weight="400" fill="#1a1a1a" text-anchor="middle">Σλ A(t−128)</text>
+<text x="1328.75" y="1186" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8" font-weight="400" fill="#1a1a1a" text-anchor="middle">× B</text>
+<rect x="1309.75" y="1092" width="38" height="22" rx="4" fill="#f4f4f4" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1328.75" y="1106.06" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">÷ rms</text>
+<path d="M1328.75,1128 L1328.75,1114" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1328.75,1092 L1240.0,1060" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<path d="M1315.0,1250 L1365.25,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<path d="M1315.0,1250 L1376.25,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<path d="M1315.0,1250 L1387.25,1218" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<rect x="1354.25" y="1128" width="44" height="82" rx="4" fill="#e6ddf4" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1376.25" y="1146" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="600" fill="#1a1a1a" text-anchor="middle">SM</text>
+<text x="1376.25" y="1159" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8.5" font-weight="400" fill="#555" text-anchor="middle"></text>
+<text x="1376.25" y="1176" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8" font-weight="400" fill="#1a1a1a" text-anchor="middle">selective</text>
+<text x="1376.25" y="1186" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8" font-weight="400" fill="#1a1a1a" text-anchor="middle">state space</text>
+<rect x="1357.25" y="1092" width="38" height="22" rx="4" fill="#f4f4f4" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1376.25" y="1106.06" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="8.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">÷ rms</text>
+<path d="M1376.25,1128 L1376.25,1114" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1376.25,1092 L1252.0,1060" fill="none" stroke="#555" stroke-width="0.7" marker-end="url(#a)"/>
+<rect x="1060" y="1032" width="300" height="26" rx="4" fill="#d6e6f7" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1210.0" y="1048.6" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#1a1a1a" text-anchor="middle">concatenate 8 × 32 → Linear 256 → 256</text>
+<path d="M1210,1032 L1210,897" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<text x="1021" y="901.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="400" fill="#555" text-anchor="start">Each slot: streams A, B, C (32 ch)</text>
+<text x="1021" y="914.5" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="400" fill="#555" text-anchor="start">→ one circuit → 32 channels.</text>
+<text x="1021" y="932.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="400" fill="#555" text-anchor="start">λ: a learned decay per channel.</text>
+<text x="1021" y="945.5" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="400" fill="#555" text-anchor="start">÷ rms: the slot&#x27;s running size,</text>
+<text x="1021" y="959.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="400" fill="#555" text-anchor="start">from past batches.</text>
+<text x="1021" y="980.5" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="400" fill="#555" text-anchor="start">Layer 3 holds G (gated unit), EP,</text>
+<text x="1021" y="994.0" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="400" fill="#555" text-anchor="start">OS, SM, RP lag 16, GI (gated</text>
+<text x="1021" y="1007.5" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="400" fill="#555" text-anchor="start">memory), C lag 6, C lag 128.</text>
+<text x="1500.0" y="833" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="13.5" font-weight="600" fill="#1a1a1a" text-anchor="middle">(e) SwiGLU MLP</text>
+<text x="1500.0" y="849" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#555" text-anchor="middle">after every layer, in all three</text>
+<text x="1510" y="1364" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="13" font-weight="400" fill="#1a1a1a" text-anchor="middle" font-style="italic">x</text>
+<path d="M1510,1350 L1510,1338" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1510,1344 L1429,1344 L1429,889 L1501,889" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<circle cx="1510" cy="889" r="8" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M1505.5,889 L1514.5,889" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1510,884.5 L1510,893.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1510,881 L1510,869" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="1445.0" y="1302" width="130" height="28" rx="4" fill="#fff1b8" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1510.0" y="1320.14" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">RMSNorm</text>
+<path d="M1510,1338 L1510,1330" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="1445.0" y="1250" width="130" height="28" rx="4" fill="#d6e6f7" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1510.0" y="1267.78" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">Linear 256 → 1,360</text>
+<path d="M1510,1302 L1510,1278" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1510,1250 L1480,1230" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1510,1250 L1540,1230" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<text x="1480" y="1224" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="12" font-weight="400" fill="#1a1a1a" text-anchor="middle" font-style="italic">a</text>
+<text x="1540" y="1224" font-family="'STIX Two Text', 'Times New Roman', serif" font-size="12" font-weight="400" fill="#1a1a1a" text-anchor="middle" font-style="italic">b</text>
+<rect x="1458" y="1180" width="44" height="24" rx="4" fill="#f4f4f4" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1480.0" y="1195.78" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">SiLU</text>
+<path d="M1480,1214 L1480,1204" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<circle cx="1510" cy="1146" r="8" fill="white" stroke="#1a1a1a" stroke-width="1"/>
+<path d="M1506.5,1142.5 L1513.5,1149.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1506.5,1149.5 L1513.5,1142.5" fill="none" stroke="#1a1a1a" stroke-width="1.1"/>
+<path d="M1480,1180 L1480,1146 L1501,1146" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1540,1214 L1540,1146 L1519,1146" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<text x="1510" y="1132" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="9" font-weight="400" fill="#555" text-anchor="middle">680</text>
+<rect x="1445.0" y="1086" width="130" height="28" rx="4" fill="#d6e6f7" stroke="#1a1a1a" stroke-width="1"/>
+<text x="1510.0" y="1103.78" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="400" fill="#1a1a1a" text-anchor="middle">Linear 680 → 256</text>
+<path d="M1510,1138 L1510,1114" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<path d="M1510,1086 L1510,897" fill="none" stroke="#1a1a1a" stroke-width="1.1" marker-end="url(#a)"/>
+<rect x="30" y="1381" width="16" height="12" rx="2" fill="#fff1b8" stroke="#1a1a1a" stroke-width="0.8"/>
+<text x="52" y="1392" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#555" text-anchor="start">norm</text>
+<rect x="155" y="1381" width="16" height="12" rx="2" fill="#d6e6f7" stroke="#1a1a1a" stroke-width="0.8"/>
+<text x="177" y="1392" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#555" text-anchor="start">linear</text>
+<rect x="280" y="1381" width="16" height="12" rx="2" fill="#f9d9c2" stroke="#1a1a1a" stroke-width="0.8"/>
+<text x="302" y="1392" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#555" text-anchor="start">attention</text>
+<rect x="405" y="1381" width="16" height="12" rx="2" fill="#d5edd5" stroke="#1a1a1a" stroke-width="0.8"/>
+<text x="427" y="1392" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#555" text-anchor="start">delta rule</text>
+<rect x="530" y="1381" width="16" height="12" rx="2" fill="#e6ddf4" stroke="#1a1a1a" stroke-width="0.8"/>
+<text x="552" y="1392" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#555" text-anchor="start">TONN circuit</text>
+<rect x="655" y="1381" width="16" height="12" rx="2" fill="#f4f4f4" stroke="#1a1a1a" stroke-width="0.8"/>
+<text x="677" y="1392" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#555" text-anchor="start">other</text>
+<text x="1570" y="1392" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#555" text-anchor="end">⊕ residual add   ⊗ elementwise product   σ sigmoid</text></svg></body></html>
