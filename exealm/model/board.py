@@ -93,6 +93,7 @@ class BoardCircuit(nn.Module):
         att = torch.cat(parts, -1).softmax(-1)
         if self.record:
             self.last = usage_stats(att, log_w, E, sw, n, C)
+            self.last_att = att.detach().float().cpu()                   # (B, T, g, E [+ E2] + 1): who read which post
         y = torch.einsum("atsge,aegh->atsgh", att[..., :E].reshape(ns, sw, T, g, E), valT).reshape(B, T, g, h)
         if ext is not None:
             y = y + torch.einsum("btge,geh->btgh", att[..., E:-1], eV)

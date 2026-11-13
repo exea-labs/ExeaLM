@@ -277,3 +277,14 @@ def test_a_keyword_library_feeds_the_retrieval_circuit_and_stays_causal():
         none = m(x, MemoryContext())[0]
     assert torch.allclose(a[:, :2 * C + 3], b[:, :2 * C + 3], atol=1e-5)   # a later token changes nothing before it
     assert not torch.allclose(a[0, C:], none[0, C:])                   # and the library is read from chunk 1 on
+
+
+def test_retrieval_with_a_read_nothing_entry_stays_causal():
+    cfg, m, x, mem = setup(rag_null=True)
+    with torch.no_grad():
+        m.layers[0].rg.null.fill_(2.0)
+        t = 21
+        x2 = x.clone()
+        x2[0, t] = (x2[0, t] + 1) % cfg.vocab_size
+        a, b = m(x, mem)[0], m(x2, mem)[0]
+    assert torch.allclose(a[:, :t], b[:, :t], atol=1e-5)
