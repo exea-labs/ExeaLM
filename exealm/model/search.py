@@ -14,6 +14,9 @@ One search round:
 Rounds run every `every` steps during the first `until` fraction of training, replacing a fraction sigma that shrinks
 to zero. After that the architecture is frozen. For the full run the plan is to search during a pilot and then freeze
 (docs/training.md).
+
+Each round's record (an `event: "search"` line in pretrain's log.jsonl) includes `architecture`: how many slots of each
+type every TONN layer holds after that round. experiments/plot_search.py draws it over training.
 """
 import random
 from collections import Counter
@@ -142,4 +145,4 @@ class Searcher:
         worth = {t: round(sum(v) / len(v), 5) for t, v in per_type.items()}
         return dict(step=step, sigma=round(sigma, 4), selection_bits=round(base, 4), replaced=len(changed),
                     type_worth=dict(sorted(worth.items(), key=lambda kv: -kv[1])),
-                    board_worth=board)
+                    board_worth=board, architecture=model.architecture())   # after this round's replacements
