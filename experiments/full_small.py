@@ -299,6 +299,8 @@ def main():
                     "(it returns chunks of the right article's first half), so the read learns on real retrieved text")
     ap.add_argument("--init_ckpt", default="", help="start from this checkpoint (same architecture arguments)")
     ap.add_argument("--rag_null", type=int, default=0, help="1: RG's read can attend to nothing (cfg.rag_null)")
+    ap.add_argument("--attn_gate", type=int, default=0, help="1: gated attention in the attention layers (Qwen3.5)")
+    ap.add_argument("--qk_norm", type=int, default=0, help="1: RMSNorm on each head's queries and keys (Qwen3)")
     ap.add_argument("--memory_slots", type=int, default=0, help="with --init_ckpt: turn the last language circuits of "
                     "each TONN layer into RG and AG until each layer has this many of each (no new parameters)")
     ap.add_argument("--lib_search", default="learned", choices=["learned", "lexical"],
@@ -358,7 +360,7 @@ def main():
     size = dict(d=a.d, slots=a.slots, h=a.d // a.slots) if a.preset == "small" else {}
     cfg = get_config(a.preset, vocab_size=data.vocab, chunk=a.chunk, rag_chunk_len=a.chunk, rag_key_dim=a.key_dim,
                      rag_lexical=a.lexical, chunk_pool=a.pool, board_chunk=a.board_chunk, seed=a.seed, **size,
-                     rag_null=bool(a.rag_null),
+                     rag_null=bool(a.rag_null), attn_gate=bool(a.attn_gate), qk_norm=bool(a.qk_norm),
                      **({"enc_dim": 32, "n_layers": 3, "attn_layers": (1,)} if a.smoke else {}))
     init = torch.load(a.init_ckpt, map_location="cpu", weights_only=False) if a.init_ckpt else None
     specs = init.get("specs") if init else None
