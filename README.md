@@ -227,7 +227,7 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [ ] Shape sweep at fixed parameters: depth, width, slots per layer, channels per slot
 - [ ] Search schedule: how long to search, how much to replace, how long new circuits are protected (on the hybrid with a good start it adds about 0.001 today)
 - [ ] Which circuit types survive the search, and does that change from `tiny` to `small`?
-- [ ] (starter) Plot the architecture the search chose, layer by layer, over training ([#11](https://github.com/exea-labs/ExeaLM/issues/11))
+- [x] (starter) Plot the architecture the search chose, layer by layer, over training: `experiments/plot_search.py` ([figure and results](results/README.md#11-what-the-search-chooses-experimentsplot_searchpy-resultssearch_arch), [#11](https://github.com/exea-labs/ExeaLM/issues/11))
 - [ ] (GPU) Confirm the winners at the full 0.1B size
 
 ### Speed (`exealm/model/scan.py`)

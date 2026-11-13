@@ -74,6 +74,10 @@ The architecture is not fixed by hand. Every few hundred steps early in training
 
 The fraction replaced shrinks to zero, and the architecture is then frozen for the rest of training.
 
+Every round's record in the training log (`"event": "search"` in `log.jsonl`) includes the architecture it leaves
+behind. `python experiments/plot_search.py <log.jsonl>` draws it, layer by layer, over training (results/README.md,
+section 11).
+
 ## What we know, what we don't
 
 Known, from small byte-level tests (4.85M parameters, 25 to 82 MB of English web text):
