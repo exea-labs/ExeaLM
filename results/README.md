@@ -941,6 +941,14 @@ at 3 and 5. That is close to Qwen3.5's 3:1 ratio of DeltaNet to attention.
 - The step counts come from timing the first 50 steps. Two runs overshot the budget (655 s and 684 s), which favours
   them. One seed.
 
+**The circuit search on the gated hybrid** (`--models tonn_core_search`: TONN's search swaps circuits every 250 steps
+during the first half of training; language only, seed 0):
+- At equal steps (3,000) it adds nothing: 1.5107 against 1.5110 without it. It swapped one circuit (an attention
+  circuit for a state-space one in layer 3).
+- At equal time (600 s) it got 2,286 steps against 3,070 and scored 1.552. Part of that is the search's own cost and
+  part is the timing of the first 50 steps. Either way, at 13M on language alone the search costs time and gains
+  nothing over a good starting mix, as in section 8.
+
 **The circuit search with both memory skills** (`full_small.py --search 1`, 17M, the third recipe, stopped at
 step 1,500, one seed; `results/full_small/full_small_exealm_search_check_seed0.json`):
 - Both skills still form: relay 99.6% (1.3% cut), lookup 56% (1.4% removed) at step 1,500.
