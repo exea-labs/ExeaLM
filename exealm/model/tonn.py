@@ -18,7 +18,7 @@ import torch.nn.functional as F
 from ..config import ModelConfig
 from ..memory import MemoryContext
 from . import circuits as Cc
-from .baseline import Attention
+from .baseline import Attention, mixer  # noqa: F401
 from .board import BoardCircuit
 from .common import MLP, RMSNorm
 from .retrieval import ChunkEncoder, RetrievalCircuit
@@ -167,7 +167,7 @@ class ExeaLM(nn.Module):
         self.emb = nn.Embedding(cfg.vocab_size, cfg.d)
         nn.init.normal_(self.emb.weight, std=0.02)
         self.layers = nn.ModuleList([TONNLayer(cfg, specs[i], i) for i in range(cfg.n_layers - len(cfg.attn_layers))])
-        self.attn = nn.ModuleList([Attention(cfg.d, max(1, cfg.d // 64)) for _ in cfg.attn_layers])
+        self.attn = nn.ModuleList([mixer(cfg, i) for i in cfg.attn_layers])          # attention or Gated DeltaNet
         f = cfg.ffn_width
         self.mlps = nn.ModuleList([MLP(cfg.d, f) for _ in range(cfg.n_layers)]) if f else None
         self.norm = RMSNorm(cfg.d)

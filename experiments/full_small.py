@@ -43,14 +43,14 @@ from exealm.data.loader import MultiShards, SyntheticShards, TokenShards  # noqa
 from exealm.model.baseline import Llama  # noqa: E402
 from exealm.model.search import Searcher  # noqa: E402
 from exealm.train.pretrain import lr_at, make_optimizer, pick_device  # noqa: E402
-from rag_wiki_split import TEXT_DOC_OFFSET, hit_rate, split_articles, text_batch  # noqa: E402
+from rag_wiki_split import TEXT_DOC_OFFSET, OracleDatastore, hit_rate, split_articles, text_batch  # noqa: E402
 from swarm_relay import make_batch as relay_batch  # noqa: E402
 from rag_lookup import make_kb, make_kb_dense, make_questions, make_questions_dense  # noqa: E402
 
 VAL = ("val_en", "val_ja_wiki", "val_ja_web", "val_code")
 VAL_DOC_OFFSET = 2 * 10 ** 9            # held-out documents never share an id with the library
 TEXT_ID_OFFSET = 3 * 10 ** 9            # nor do training documents
-KINDS = ("text", "wiki", "relay", "lookup")
+KINDS = ("text", "wiki", "relay", "lookup", "pair")
 
 
 def lib_of(arts):
@@ -110,6 +110,31 @@ class Data:
         self.lib_train, self.lib_eval = lib_of(self.train_arts), lib_of(self.eval_arts)
 
 
+def pair_batch(arts, B, T, rng):
+    """Swarms of 2 from one Wikipedia article each: row 0 reads T tokens of the first half and has finished reading
+    (its posts are visible to row 1 from row 1's first token: MemoryContext.board_prior); row 1 reads T tokens of the
+    second half. Teaches the board to carry what one document says to an agent reading another part of it, the way
+    notes written ahead of time are read (experiments/irl_eval.py)."""
+    xs, ys, ds = [], [], []
+    while len(xs) < B:
+        d, first, second = arts[int(rng.integers(len(arts)))]
+        f = first.reshape(-1)
+        if len(second) < T + 1 or len(f) < 2:
+            continue
+        s = int(rng.integers(0, max(1, len(f) - T)))
+        fw = torch.from_numpy(f[s:s + T + 1].astype(np.int64))
+        fx, fy = fw[:-1], fw[1:]
+        if len(fx) < T:                                                  # a short first half: pad, targets ignored
+            fy = torch.cat([fy, torch.full((T - len(fy),), -100)])
+            fx = torch.cat([fx, torch.zeros(T - len(fx), dtype=torch.long)])
+        s2 = int(rng.integers(0, len(second) - T))
+        w = torch.from_numpy(second[s2:s2 + T + 1].astype(np.int64))
+        xs += [fx, w[:-1]]
+        ys += [fy, w[1:]]
+        ds += [torch.full((T,), d), torch.full((T,), d + TEXT_DOC_OFFSET)]
+    return torch.stack(xs[:B]), torch.stack(ys[:B]), torch.stack(ds[:B])
+
+
 def batch(kind, data, a, rng):
     """(x, y, doc ids or None, swarm size) for one training or evaluation step."""
     if kind == "text":
@@ -118,6 +143,9 @@ def batch(kind, data, a, rng):
     if kind == "wiki":
         x, y, d = text_batch(data.train_arts, a.batch, a.seq, rng)
         return x, y, d, 4
+    if kind == "pair":
+        x, y, d = pair_batch(data.train_arts, a.batch - a.batch % 2, a.seq, rng)
+        return x, y, d, 2
     x, y = relay(a.batch, a.relay_chunk or a.chunk, rng, data.vocab - 256, a.relay_facts, a.batch * a.seq)
     return x, y, None, 2
 
@@ -266,6 +294,9 @@ def main():
     ap.add_argument("--search_every", type=int, default=250)
     ap.add_argument("--search_until", type=float, default=0.5)
     ap.add_argument("--search_mix", default="text:3,wiki:1,relay:1,lookup:1", help="batches the search scores circuits on")
+    ap.add_argument("--wiki_oracle", type=float, default=0.0, help="share of Wikipedia batches whose search is perfect "
+                    "(it returns chunks of the right article's first half), so the read learns on real retrieved text")
+    ap.add_argument("--init_ckpt", default="", help="start from this checkpoint (same architecture arguments)")
     ap.add_argument("--root", default="data/tokpack")
     ap.add_argument("--toks", default="bpe32k")
     ap.add_argument("--train", default="train_en_big,train_ja_big,train_code_big")
@@ -321,7 +352,13 @@ def main():
     cfg = get_config(a.preset, vocab_size=data.vocab, chunk=a.chunk, rag_chunk_len=a.chunk, rag_key_dim=a.key_dim,
                      rag_lexical=a.lexical, chunk_pool=a.pool, board_chunk=a.board_chunk, seed=a.seed, **size,
                      **({"enc_dim": 32, "n_layers": 3, "attn_layers": (1,)} if a.smoke else {}))
-    model = (ExeaLM(cfg) if a.model == "exealm" else Llama(cfg)).to(dev)
+    init = torch.load(a.init_ckpt, map_location="cpu", weights_only=False) if a.init_ckpt else None
+    model = ExeaLM(cfg, init.get("specs")) if a.model == "exealm" and init else (ExeaLM(cfg) if a.model == "exealm" else Llama(cfg))
+    if init:
+        model.load_state_dict(init["model"])
+        if a.model == "exealm":
+            model.encoder.idf_ready = True                             # keep the checkpoint's word rarity
+    model = model.to(dev)
     opt = make_optimizer(model, a.lr, 0.1)
     tok = None
     if os.path.exists(a.tokenizer) and not a.smoke:
@@ -337,6 +374,8 @@ def main():
         data.lib_train = data.lib_train.to(dev)
         data.lib_eval = data.lib_eval.to(dev)
         data.lib_train.refresh(model.encoder, model.emb, step=0)
+        data.oracle_train = OracleDatastore(data.lib_train.tokens, data.lib_train.doc_ids)
+        data.oracle_train.keys = data.lib_train.keys
     p = kinds_p(a.p_kinds)
     phases = [(int(u), kinds_p(sh)) for u, sh in (ph.split(":") for ph in a.schedule.split(";") if ph)] if a.schedule \
         else [(a.warm_steps, kinds_p(a.warm_kinds))]
@@ -354,6 +393,7 @@ def main():
             print(json.dumps(dict(search=rec)), flush=True)
         if a.model == "exealm" and step > 0 and step % a.refresh_every == 0:
             data.lib_train.refresh(model.encoder, model.emb, step=step)
+            data.oracle_train.keys = data.lib_train.keys
         for g in opt.param_groups:
             g["lr"] = lr_at(step, a.steps, a.lr, a.warmup, 0.2)
         kind = KINDS[int(rng.choice(len(KINDS), p=next((q for u, q in phases if step < u), p)))]
@@ -364,7 +404,12 @@ def main():
         else:
             x, y, d, swarm = batch(kind, data, a, rng)
             use_lib = kind == "wiki" or (kind == "text" and a.lib_on == "all")
-            mem = mem_for(a.model, data.lib_train if use_lib else None, d, swarm, dev)
+            lib = data.lib_train if use_lib else None
+            if kind == "wiki" and a.wiki_oracle and a.model == "exealm" and rng.random() < a.wiki_oracle:
+                lib = data.oracle_train
+            mem = mem_for(a.model, lib, d, swarm, dev)
+            if kind == "pair":
+                mem.board_prior = True
         counts[kind] += 1
         tokens += x.numel()
         loss = model(x.to(dev), mem, y.to(dev))[1]

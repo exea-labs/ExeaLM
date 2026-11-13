@@ -1,0 +1,63 @@
+{
+ "ckpt": "results/full_small/exealm_ckpt.pt",
+ "articles": 256,
+ "re_mentions": 8517,
+ "novel": 23227,
+ "reader_windows_in_notes": 1134,
+ "args": {
+  "ckpt": "results/full_small/exealm_ckpt.pt",
+  "wiki": "data/tokpack/bpe32k/store_wiki",
+  "articles": 256,
+  "seq": 512,
+  "min_tokens": 1024,
+  "common": 1000,
+  "batch": 16,
+  "seed": 0,
+  "device": "auto",
+  "out": ""
+ },
+ "results": {
+  "none": {
+   "all": 4.7767,
+   "re-mention": 8.4113,
+   "novel": 8.6459,
+   "re-mention top-1": 0.1619
+  },
+  "library": {
+   "all": 4.8173,
+   "re-mention": 8.4796,
+   "novel": 8.7003,
+   "re-mention top-1": 0.1587
+  },
+  "library, perfect search": {
+   "all": 4.8435,
+   "re-mention": 8.509,
+   "novel": 8.7355,
+   "re-mention top-1": 0.1563
+  },
+  "board, live (swarm of 2)": {
+   "all": 4.7758,
+   "re-mention": 8.4135,
+   "novel": 8.647,
+   "re-mention top-1": 0.1619
+  },
+  "board, live, cut": {
+   "all": 4.7767,
+   "re-mention": 8.4113,
+   "novel": 8.6459,
+   "re-mention top-1": 0.1619
+  },
+  "notes, own article": {
+   "all": 4.7816,
+   "re-mention": 8.4577,
+   "novel": 8.6671,
+   "re-mention top-1": 0.1605
+  },
+  "notes, all articles": {
+   "all": 17.9502,
+   "re-mention": 19.3589,
+   "novel": 19.7135,
+   "re-mention top-1": 0.0002
+  }
+ }
+}

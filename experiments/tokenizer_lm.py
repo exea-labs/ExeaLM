@@ -56,6 +56,12 @@ def run(tok, a, dev, kind="tonn", seed=0):
         for k in ("attn_layers", "menu", "lags"):
             if k in over:
                 over[k] = tuple(over[k])
+    if kind == "llama":
+        over.update(json.loads(a.llama_cfg))           # e.g. Qwen3.5-style: {"delta_layers": [0, 1, 2, 4], "attn_gate": true}
+        if "delta_layers" in over:
+            over["delta_layers"] = tuple(over["delta_layers"])
+    elif "delta_layers" in over:
+        over["delta_layers"] = tuple(over["delta_layers"])
     over = {**json.loads(a.size), **over}                  # model size for every model, Llama included
     cfg = get_config("small-tonn", vocab_size=int(train.meta["vocab_size"]), seed=seed, **over)
     model = (Llama(cfg) if kind == "llama" else ExeaLM(cfg)).to(dev)
@@ -121,6 +127,7 @@ def main():
     ap.add_argument("--models", default="tonn", help="any of tonn, tonn_core, tonn_core_search, llama")
     ap.add_argument("--seeds", default="0")
     ap.add_argument("--cfg", default="{}", help="JSON ModelConfig overrides for the TONN models")
+    ap.add_argument("--llama_cfg", default="{}", help="JSON overrides for the Llama (delta_layers, attn_gate, qk_norm)")
     ap.add_argument("--size", default="{}", help='JSON size overrides for every model, e.g. {"d": 384, "n_layers": 8}')
     ap.add_argument("--tag", default="", help="a name for this run in the output rows")
     ap.add_argument("--device", default="auto")

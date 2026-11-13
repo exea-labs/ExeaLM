@@ -217,3 +217,23 @@ def test_pooled_posts_are_heard_only_after_their_chunk(kw):
     c_end = (t // bc + 1) * bc                   # the post made in t's board chunk is readable from here on
     assert torch.allclose(a[0, :t], b[0, :t], atol=1e-5)
     assert torch.allclose(a[1, :c_end], b[1, :c_end], atol=1e-5)
+
+
+def test_a_prior_agent_is_heard_from_the_first_token_and_hears_no_one():
+    """board_prior: row 0 of a swarm finished reading before row 1 started. Row 1 hears all of row 0's posts from its
+    first token on; row 0 never hears row 1; row 1 still cannot see its own future."""
+    cfg, m, x, mem = setup(swarm_size=2, board_chunk=4)
+    mem.board_prior = True
+    _randomize_pools(m)
+    T = x.shape[1]
+    with torch.no_grad():
+        base = m(x, mem)[0]
+        x0 = x.clone()
+        x0[0, T - 6] = (x0[0, T - 6] + 1) % cfg.vocab_size              # late in row 0's text
+        a = m(x0, mem)[0]
+        x1 = x.clone()
+        x1[1, 9] = (x1[1, 9] + 1) % cfg.vocab_size
+        b = m(x1, mem)[0]
+    assert not torch.allclose(base[1, :8], a[1, :8])                    # row 1 hears the end of row 0 at once
+    assert torch.allclose(base[0], b[0], atol=1e-5)                     # row 0 never hears row 1
+    assert torch.allclose(base[1, :9], b[1, :9], atol=1e-5)             # and row 1 is still causal

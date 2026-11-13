@@ -71,6 +71,10 @@ class BoardCircuit(nn.Module):
         vis = e_chunk.view(1, 1, 1, 1, E) < r_chunk.view(1, 1, T, 1, 1)
         if not self.read_self:
             vis = vis & (e_author.view(1, 1, 1, 1, E) != torch.arange(sw, device=A.device).view(1, sw, 1, 1, 1))
+        if mem is not None and getattr(mem, "board_prior", False):     # row 0 finished reading before the others
+            reader = torch.arange(sw, device=A.device).view(1, sw, 1, 1, 1)
+            first = e_author.view(1, 1, 1, 1, E) == 0
+            vis = (vis & ~((reader == 0) & ~first)) | (first & (reader != 0))
         lin = lin.masked_fill(~vis, float("-inf")).reshape(B, T, g, E)
         parts = [lin]
 

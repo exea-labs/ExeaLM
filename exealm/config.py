@@ -34,6 +34,9 @@ class ModelConfig:
     pinned: dict = field(default_factory=lambda: {"RG": 1, "AG": 1})
     init_weights: dict = None        # relative chance of each type in the starting circuits (unlisted: 1)
     attn_layers: tuple = ()          # layers that are a full multi-head attention block instead of a TONN layer
+    delta_layers: tuple = ()         # of those (or of a Llama's layers), the ones that are Gated DeltaNet instead (Qwen3.5)
+    attn_gate: bool = False          # gated attention: a sigmoid gate on each attention output channel (Qwen3-Next, 3.5)
+    qk_norm: bool = False            # RMSNorm on each head's queries and keys (Qwen3)
     seed: int = 0
     # memory circuits
     chunk: int = 64                  # RG retrieves and AG posts once per chunk of this many tokens
@@ -59,7 +62,7 @@ class ModelConfig:
     @classmethod
     def from_dict(cls, d):
         d = dict(d)
-        for k in ("menu", "lags", "attn_layers"):
+        for k in ("menu", "lags", "attn_layers", "delta_layers"):
             if k in d:
                 d[k] = tuple(d[k])
         return cls(**d)
