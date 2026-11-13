@@ -298,6 +298,9 @@ def main():
     ap.add_argument("--wiki_oracle", type=float, default=0.0, help="share of Wikipedia batches whose search is perfect "
                     "(it returns chunks of the right article's first half), so the read learns on real retrieved text")
     ap.add_argument("--init_ckpt", default="", help="start from this checkpoint (same architecture arguments)")
+    ap.add_argument("--rag_null", type=int, default=0, help="1: RG's read can attend to nothing (cfg.rag_null)")
+    ap.add_argument("--memory_slots", type=int, default=0, help="with --init_ckpt: turn the last language circuits of "
+                    "each TONN layer into RG and AG until each layer has this many of each (no new parameters)")
     ap.add_argument("--lib_search", default="learned", choices=["learned", "lexical"],
                     help="how Wikipedia batches search the library: the model's own embeddings, or BM25 keywords "
                     "(exealm/memory/lexical.py; the read stays learned)")
@@ -355,11 +358,21 @@ def main():
     size = dict(d=a.d, slots=a.slots, h=a.d // a.slots) if a.preset == "small" else {}
     cfg = get_config(a.preset, vocab_size=data.vocab, chunk=a.chunk, rag_chunk_len=a.chunk, rag_key_dim=a.key_dim,
                      rag_lexical=a.lexical, chunk_pool=a.pool, board_chunk=a.board_chunk, seed=a.seed, **size,
+                     rag_null=bool(a.rag_null),
                      **({"enc_dim": 32, "n_layers": 3, "attn_layers": (1,)} if a.smoke else {}))
     init = torch.load(a.init_ckpt, map_location="cpu", weights_only=False) if a.init_ckpt else None
-    model = ExeaLM(cfg, init.get("specs")) if a.model == "exealm" and init else (ExeaLM(cfg) if a.model == "exealm" else Llama(cfg))
+    specs = init.get("specs") if init else None
+    if specs and a.memory_slots:
+        specs = [[dict(s) for s in row] for row in specs]
+        for row in specs:
+            for t in ("RG", "AG"):
+                while sum(s["tmpl"] == t for s in row) < a.memory_slots:
+                    k = max(i for i, s in enumerate(row) if s["tmpl"] not in ("RG", "AG"))
+                    row[k] = dict(row[k], tmpl=t, lag=0)
+    model = ExeaLM(cfg, specs) if a.model == "exealm" and init else (ExeaLM(cfg) if a.model == "exealm" else Llama(cfg))
     if init:
-        model.load_state_dict(init["model"])
+        missing, unexpected = model.load_state_dict(init["model"], strict=False)
+        assert not unexpected and all("null" in k for k in missing), (missing, unexpected)
         if a.model == "exealm":
             model.encoder.idf_ready = True                             # keep the checkpoint's word rarity
     model = model.to(dev)

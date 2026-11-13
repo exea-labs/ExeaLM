@@ -44,6 +44,8 @@ class ModelConfig:
     rag_chunk_len: int = 64          # tokens per stored datastore chunk
     enc_dim: int = 256               # width of the model's own chunk encoder (its retrieval embedding model)
     rag_query: str = "last"          # RG query from the previous chunk's "last" position or its "mean"
+    rag_null: bool = False           # RG's read may attend to "nothing" (a learned sink, as the board has), so it can
+                                     # stay quiet on text where the retrieved chunks don't help
     rag_key_dim: int = 0             # size of retrieval keys (0: one circuit's width, h)
     rag_lexical: int = 0             # extra lexical part of retrieval keys: rare-word codes of this size (0: off)
     swarm_size: int = 4              # agents that share one board (a swarm); a training batch holds many swarms
