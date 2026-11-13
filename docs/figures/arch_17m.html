@@ -1,0 +1,272 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500&display=block" rel="stylesheet">
+<style>html,body{margin:0;background:#111418;} svg{display:block}</style></head><body>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1140" viewBox="0 0 1800 1140">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="rgba(236,230,216,0.34)"/></marker><marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff6a3d"/></marker><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff8a8a"/></marker><marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff6fc8"/></marker></defs><rect width="1800" height="1140" fill="#111418"/>
+<text x="64" y="96" font-family="'Fraunces', Georgia, serif" font-size="46" font-weight="500" fill="#ece6d8" text-anchor="start">ExeaLM and a same-size Llama</text>
+<text x="64" y="136" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#a29c8e" text-anchor="start">The 17M test models. Same width, depth, vocabulary, MLPs and norms. Two of the six layers differ.</text>
+<text x="64" y="214" font-family="'Fraunces', Georgia, serif" font-size="30" font-weight="500" fill="#ece6d8" text-anchor="start">Llama</text>
+<text x="64" y="242" font-family="'DM Mono', ui-monospace, monospace" font-size="15" font-weight="400" fill="#a29c8e" text-anchor="start">17.83M parameters</text>
+<text x="284.0" y="284" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#a29c8e" text-anchor="middle">tokens</text>
+<path d="M284.0,291 V306" fill="none" stroke="rgba(236,230,216,0.34)" stroke-width="1.5" marker-end="url(#a)"/>
+<rect x="64" y="310" width="440" height="44" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="80" y="338" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">embedding</text>
+<text x="488" y="338" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="end">32,768 × 320, shared with the output</text>
+<path d="M284.0,356 V368" fill="none" stroke="rgba(236,230,216,0.34)" stroke-width="1.5" marker-end="url(#a)"/>
+<text x="82" y="409" font-family="'DM Mono', ui-monospace, monospace" font-size="15" font-weight="400" fill="#a29c8e" text-anchor="middle">0</text>
+<rect x="106" y="372" width="230" height="62" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="122" y="399" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">attention</text>
+<text x="122" y="420" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">5 heads × 64, RoPE</text>
+<rect x="342" y="372" width="162" height="62" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="358" y="399" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">SwiGLU MLP</text>
+<text x="358" y="420" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">848 wide</text>
+<text x="82" y="481" font-family="'DM Mono', ui-monospace, monospace" font-size="15" font-weight="400" fill="#a29c8e" text-anchor="middle">1</text>
+<rect x="106" y="444" width="230" height="62" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="122" y="471" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">attention</text>
+<text x="122" y="492" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">5 heads × 64, RoPE</text>
+<rect x="342" y="444" width="162" height="62" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="358" y="471" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">SwiGLU MLP</text>
+<text x="358" y="492" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">848 wide</text>
+<text x="82" y="553" font-family="'DM Mono', ui-monospace, monospace" font-size="15" font-weight="400" fill="#a29c8e" text-anchor="middle">2</text>
+<rect x="106" y="516" width="230" height="62" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="122" y="543" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">attention</text>
+<text x="122" y="564" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">5 heads × 64, RoPE</text>
+<rect x="342" y="516" width="162" height="62" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="358" y="543" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">SwiGLU MLP</text>
+<text x="358" y="564" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">848 wide</text>
+<text x="82" y="625" font-family="'DM Mono', ui-monospace, monospace" font-size="15" font-weight="400" fill="#a29c8e" text-anchor="middle">3</text>
+<rect x="106" y="588" width="230" height="62" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="122" y="615" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">attention</text>
+<text x="122" y="636" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">5 heads × 64, RoPE</text>
+<rect x="342" y="588" width="162" height="62" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="358" y="615" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">SwiGLU MLP</text>
+<text x="358" y="636" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">848 wide</text>
+<text x="82" y="697" font-family="'DM Mono', ui-monospace, monospace" font-size="15" font-weight="400" fill="#a29c8e" text-anchor="middle">4</text>
+<rect x="106" y="660" width="230" height="62" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="122" y="687" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">attention</text>
+<text x="122" y="708" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">5 heads × 64, RoPE</text>
+<rect x="342" y="660" width="162" height="62" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="358" y="687" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">SwiGLU MLP</text>
+<text x="358" y="708" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">848 wide</text>
+<text x="82" y="769" font-family="'DM Mono', ui-monospace, monospace" font-size="15" font-weight="400" fill="#a29c8e" text-anchor="middle">5</text>
+<rect x="106" y="732" width="230" height="62" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="122" y="759" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">attention</text>
+<text x="122" y="780" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">5 heads × 64, RoPE</text>
+<rect x="342" y="732" width="162" height="62" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="358" y="759" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">SwiGLU MLP</text>
+<text x="358" y="780" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">848 wide</text>
+<path d="M284.0,796 V816" fill="none" stroke="rgba(236,230,216,0.34)" stroke-width="1.5" marker-end="url(#a)"/>
+<rect x="64" y="820" width="440" height="44" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="284.0" y="848" font-family="'DM Mono', ui-monospace, monospace" font-size="15" font-weight="400" fill="#ece6d8" text-anchor="middle">RMSNorm → next-token probabilities</text>
+<text x="584" y="214" font-family="'Fraunces', Georgia, serif" font-size="30" font-weight="500" fill="#ece6d8" text-anchor="start">ExeaLM</text>
+<text x="584" y="242" font-family="'DM Mono', ui-monospace, monospace" font-size="15" font-weight="400" fill="#a29c8e" text-anchor="start">18.08M parameters</text>
+<text x="804.0" y="284" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#a29c8e" text-anchor="middle">tokens</text>
+<path d="M804.0,291 V306" fill="none" stroke="rgba(236,230,216,0.34)" stroke-width="1.5" marker-end="url(#a)"/>
+<rect x="584" y="310" width="440" height="44" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="600" y="338" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">embedding</text>
+<text x="1008" y="338" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="end">32,768 × 320, shared with the output</text>
+<path d="M804.0,356 V368" fill="none" stroke="rgba(236,230,216,0.34)" stroke-width="1.5" marker-end="url(#a)"/>
+<text x="602" y="409" font-family="'DM Mono', ui-monospace, monospace" font-size="15" font-weight="400" fill="#a29c8e" text-anchor="middle">0</text>
+<rect x="626" y="372" width="230" height="62" rx="8" fill="rgba(255,106,61,0.13)" stroke="#ff6a3d" stroke-width="1.5"/>
+<text x="642" y="399" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="500" fill="#ff6a3d" text-anchor="start">TONN layer</text>
+<text x="642" y="420" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#c9c3b5" text-anchor="start">10 circuits × 32 channels</text>
+<rect x="862" y="372" width="162" height="62" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="878" y="399" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">SwiGLU MLP</text>
+<text x="878" y="420" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">848 wide</text>
+<text x="602" y="481" font-family="'DM Mono', ui-monospace, monospace" font-size="15" font-weight="400" fill="#a29c8e" text-anchor="middle">1</text>
+<rect x="626" y="444" width="230" height="62" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="642" y="471" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">attention</text>
+<text x="642" y="492" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">5 heads × 64, RoPE</text>
+<rect x="862" y="444" width="162" height="62" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="878" y="471" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">SwiGLU MLP</text>
+<text x="878" y="492" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">848 wide</text>
+<text x="602" y="553" font-family="'DM Mono', ui-monospace, monospace" font-size="15" font-weight="400" fill="#a29c8e" text-anchor="middle">2</text>
+<rect x="626" y="516" width="230" height="62" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="642" y="543" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">attention</text>
+<text x="642" y="564" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">5 heads × 64, RoPE</text>
+<rect x="862" y="516" width="162" height="62" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="878" y="543" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">SwiGLU MLP</text>
+<text x="878" y="564" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">848 wide</text>
+<text x="602" y="625" font-family="'DM Mono', ui-monospace, monospace" font-size="15" font-weight="400" fill="#a29c8e" text-anchor="middle">3</text>
+<rect x="626" y="588" width="230" height="62" rx="8" fill="rgba(255,106,61,0.13)" stroke="#ff6a3d" stroke-width="1.5"/>
+<text x="642" y="615" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="500" fill="#ff6a3d" text-anchor="start">TONN layer</text>
+<text x="642" y="636" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#c9c3b5" text-anchor="start">10 circuits × 32 channels</text>
+<rect x="862" y="588" width="162" height="62" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="878" y="615" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">SwiGLU MLP</text>
+<text x="878" y="636" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">848 wide</text>
+<text x="602" y="697" font-family="'DM Mono', ui-monospace, monospace" font-size="15" font-weight="400" fill="#a29c8e" text-anchor="middle">4</text>
+<rect x="626" y="660" width="230" height="62" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="642" y="687" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">attention</text>
+<text x="642" y="708" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">5 heads × 64, RoPE</text>
+<rect x="862" y="660" width="162" height="62" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="878" y="687" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">SwiGLU MLP</text>
+<text x="878" y="708" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">848 wide</text>
+<text x="602" y="769" font-family="'DM Mono', ui-monospace, monospace" font-size="15" font-weight="400" fill="#a29c8e" text-anchor="middle">5</text>
+<rect x="626" y="732" width="230" height="62" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="642" y="759" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">attention</text>
+<text x="642" y="780" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">5 heads × 64, RoPE</text>
+<rect x="862" y="732" width="162" height="62" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="878" y="759" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="400" fill="#ece6d8" text-anchor="start">SwiGLU MLP</text>
+<text x="878" y="780" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">848 wide</text>
+<path d="M804.0,796 V816" fill="none" stroke="rgba(236,230,216,0.34)" stroke-width="1.5" marker-end="url(#a)"/>
+<rect x="584" y="820" width="440" height="44" rx="8" fill="#181c21" stroke="rgba(236,230,216,0.16)" stroke-width="1"/>
+<text x="804.0" y="848" font-family="'DM Mono', ui-monospace, monospace" font-size="15" font-weight="400" fill="#ece6d8" text-anchor="middle">RMSNorm → next-token probabilities</text>
+<text x="1124" y="214" font-family="'Fraunces', Georgia, serif" font-size="30" font-weight="500" fill="#ece6d8" text-anchor="start">Inside the two TONN layers</text>
+<text x="1124" y="242" font-family="'DM Mono', ui-monospace, monospace" font-size="15" font-weight="400" fill="#a29c8e" text-anchor="start">10 small circuits side by side. Seed 0&#x27;s draw.</text>
+<rect x="1124" y="270" width="176" height="40" rx="8" fill="none" stroke="rgba(236,230,216,0.34)" stroke-width="1"/>
+<text x="1212" y="295" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="middle">norm, project in</text>
+<path d="M1304,290 H1336" fill="none" stroke="rgba(236,230,216,0.34)" stroke-width="1.5" marker-end="url(#a)"/>
+<rect x="1342" y="270" width="176" height="40" rx="8" fill="none" stroke="rgba(236,230,216,0.34)" stroke-width="1"/>
+<text x="1430" y="295" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="middle">10 circuits</text>
+<path d="M1522,290 H1554" fill="none" stroke="rgba(236,230,216,0.34)" stroke-width="1.5" marker-end="url(#a)"/>
+<rect x="1560" y="270" width="176" height="40" rx="8" fill="none" stroke="rgba(236,230,216,0.34)" stroke-width="1"/>
+<text x="1648" y="295" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="middle">project out, add</text>
+<rect x="1200" y="352" width="50" height="40" rx="6" fill="rgba(255,138,138,0.16)" stroke="#ff8a8a" stroke-width="1.3"/>
+<text x="1225.0" y="378" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="500" fill="#ff8a8a" text-anchor="middle">RG</text>
+<rect x="1254" y="352" width="50" height="40" rx="6" fill="#181c21" stroke="rgba(236,230,216,0.34)" stroke-width="1"/>
+<text x="1279.0" y="378" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="middle">RP</text>
+<rect x="1308" y="352" width="50" height="40" rx="6" fill="#181c21" stroke="rgba(236,230,216,0.34)" stroke-width="1"/>
+<text x="1333.0" y="378" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="middle">MIM</text>
+<rect x="1362" y="352" width="50" height="40" rx="6" fill="#181c21" stroke="rgba(236,230,216,0.34)" stroke-width="1"/>
+<text x="1387.0" y="378" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="middle">MI</text>
+<rect x="1416" y="352" width="50" height="40" rx="6" fill="#181c21" stroke="rgba(236,230,216,0.34)" stroke-width="1"/>
+<text x="1441.0" y="378" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="middle">MI</text>
+<rect x="1470" y="352" width="50" height="40" rx="6" fill="#181c21" stroke="rgba(236,230,216,0.34)" stroke-width="1"/>
+<text x="1495.0" y="378" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="middle">MI</text>
+<rect x="1524" y="352" width="50" height="40" rx="6" fill="#181c21" stroke="rgba(236,230,216,0.34)" stroke-width="1"/>
+<text x="1549.0" y="378" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="middle">EP</text>
+<rect x="1578" y="352" width="50" height="40" rx="6" fill="#181c21" stroke="rgba(236,230,216,0.34)" stroke-width="1"/>
+<text x="1603.0" y="378" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="middle">SM</text>
+<rect x="1632" y="352" width="50" height="40" rx="6" fill="#181c21" stroke="rgba(236,230,216,0.34)" stroke-width="1"/>
+<text x="1657.0" y="378" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="middle">OS</text>
+<rect x="1686" y="352" width="50" height="40" rx="6" fill="rgba(255,111,200,0.16)" stroke="#ff6fc8" stroke-width="1.3"/>
+<text x="1711.0" y="378" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="500" fill="#ff6fc8" text-anchor="middle">AG</text>
+<rect x="1200" y="400" width="50" height="40" rx="6" fill="rgba(255,138,138,0.16)" stroke="#ff8a8a" stroke-width="1.3"/>
+<text x="1225.0" y="426" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="500" fill="#ff8a8a" text-anchor="middle">RG</text>
+<rect x="1254" y="400" width="50" height="40" rx="6" fill="#181c21" stroke="rgba(236,230,216,0.34)" stroke-width="1"/>
+<text x="1279.0" y="426" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="middle">RP</text>
+<rect x="1308" y="400" width="50" height="40" rx="6" fill="#181c21" stroke="rgba(236,230,216,0.34)" stroke-width="1"/>
+<text x="1333.0" y="426" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="middle">C</text>
+<rect x="1362" y="400" width="50" height="40" rx="6" fill="#181c21" stroke="rgba(236,230,216,0.34)" stroke-width="1"/>
+<text x="1387.0" y="426" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="middle">C</text>
+<rect x="1416" y="400" width="50" height="40" rx="6" fill="#181c21" stroke="rgba(236,230,216,0.34)" stroke-width="1"/>
+<text x="1441.0" y="426" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="middle">G</text>
+<rect x="1470" y="400" width="50" height="40" rx="6" fill="#181c21" stroke="rgba(236,230,216,0.34)" stroke-width="1"/>
+<text x="1495.0" y="426" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="middle">GI</text>
+<rect x="1524" y="400" width="50" height="40" rx="6" fill="#181c21" stroke="rgba(236,230,216,0.34)" stroke-width="1"/>
+<text x="1549.0" y="426" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="middle">EP</text>
+<rect x="1578" y="400" width="50" height="40" rx="6" fill="#181c21" stroke="rgba(236,230,216,0.34)" stroke-width="1"/>
+<text x="1603.0" y="426" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="middle">SM</text>
+<rect x="1632" y="400" width="50" height="40" rx="6" fill="#181c21" stroke="rgba(236,230,216,0.34)" stroke-width="1"/>
+<text x="1657.0" y="426" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="middle">OS</text>
+<rect x="1686" y="400" width="50" height="40" rx="6" fill="rgba(255,111,200,0.16)" stroke="#ff6fc8" stroke-width="1.3"/>
+<text x="1711.0" y="426" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="500" fill="#ff6fc8" text-anchor="middle">AG</text>
+<path d="M1026,403.0 H1080 V372 H1194" fill="none" stroke="#ff6a3d" stroke-width="1.5" marker-end="url(#ao)"/>
+<text x="1112" y="364" font-family="'DM Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#a29c8e" text-anchor="start">layer 0</text>
+<path d="M1026,619.0 H1100 V420 H1194" fill="none" stroke="#ff6a3d" stroke-width="1.5" marker-end="url(#ao)"/>
+<text x="1110" y="412" font-family="'DM Mono', ui-monospace, monospace" font-size="12" font-weight="400" fill="#a29c8e" text-anchor="start">layer 3</text>
+<path d="M1225.0,442 V476" fill="none" stroke="#ff8a8a" stroke-width="1.5" marker-end="url(#ar)"/>
+<path d="M1711.0,442 V476" fill="none" stroke="#ff6fc8" stroke-width="1.5" marker-end="url(#ag)"/>
+<rect x="1124" y="480" width="296" height="290" rx="8" fill="#181c21" stroke="rgba(255,138,138,0.55)" stroke-width="1"/>
+<text x="1142" y="514" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="500" fill="#ff8a8a" text-anchor="start">Library search (RG)</text>
+<rect x="1142" y="538" width="120" height="9" rx="2" fill="rgba(236,230,216,0.14)"/>
+<rect x="1142" y="551" width="120" height="9" rx="2" fill="rgba(255,138,138,0.75)"/>
+<path d="M1266,555.5 C1299,555.5 1299,584 1322,584" fill="none" stroke="rgba(255,138,138,0.6)" stroke-width="1.2"/>
+<rect x="1142" y="564" width="120" height="9" rx="2" fill="rgba(236,230,216,0.14)"/>
+<rect x="1142" y="577" width="120" height="9" rx="2" fill="rgba(255,138,138,0.75)"/>
+<path d="M1266,581.5 C1299,581.5 1299,584 1322,584" fill="none" stroke="rgba(255,138,138,0.6)" stroke-width="1.2"/>
+<rect x="1142" y="590" width="120" height="9" rx="2" fill="rgba(255,138,138,0.75)"/>
+<path d="M1266,594.5 C1299,594.5 1299,584 1322,584" fill="none" stroke="rgba(255,138,138,0.6)" stroke-width="1.2"/>
+<rect x="1142" y="603" width="120" height="9" rx="2" fill="rgba(236,230,216,0.14)"/>
+<rect x="1142" y="616" width="120" height="9" rx="2" fill="rgba(255,138,138,0.75)"/>
+<path d="M1266,620.5 C1299,620.5 1299,584 1322,584" fill="none" stroke="rgba(255,138,138,0.6)" stroke-width="1.2"/>
+<rect x="1324" y="579" width="8" height="10" rx="1.5" fill="rgba(236,230,216,0.55)"/>
+<rect x="1334" y="579" width="8" height="10" rx="1.5" fill="rgba(236,230,216,0.55)"/>
+<rect x="1344" y="579" width="8" height="10" rx="1.5" fill="rgba(236,230,216,0.55)"/>
+<rect x="1354" y="579" width="8" height="10" rx="1.5" fill="rgba(236,230,216,0.55)"/>
+<rect x="1364" y="579" width="8" height="10" rx="1.5" fill="rgba(236,230,216,0.55)"/>
+<rect x="1374" y="579" width="8" height="10" rx="1.5" fill="rgba(236,230,216,0.55)"/>
+<rect x="1384" y="579" width="8" height="10" rx="1.5" fill="rgba(236,230,216,0.55)"/>
+<rect x="1394" y="579" width="8" height="10" rx="1.5" fill="rgba(236,230,216,0.55)"/>
+<text x="1363" y="610" font-family="'DM Mono', ui-monospace, monospace" font-size="11" font-weight="400" fill="#a29c8e" text-anchor="middle">this chunk</text>
+<text x="1202" y="642" font-family="'DM Mono', ui-monospace, monospace" font-size="11" font-weight="400" fill="#a29c8e" text-anchor="middle">library</text>
+<text x="1142" y="672" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#c9c3b5" text-anchor="start">Read-only store of 64-token</text>
+<text x="1142" y="692" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#c9c3b5" text-anchor="start">chunks. Once per 64 tokens it</text>
+<text x="1142" y="712" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#c9c3b5" text-anchor="start">encodes what it just read and</text>
+<text x="1142" y="732" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#c9c3b5" text-anchor="start">takes the 4 closest chunks.</text>
+<text x="1142" y="752" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#c9c3b5" text-anchor="start">Every token attends over them.</text>
+<rect x="1440" y="480" width="296" height="290" rx="8" fill="#181c21" stroke="rgba(255,111,200,0.55)" stroke-width="1"/>
+<text x="1458" y="514" font-family="'DM Mono', ui-monospace, monospace" font-size="16" font-weight="500" fill="#ff6fc8" text-anchor="start">Agent board (AG)</text>
+<rect x="1542.0" y="560" width="92" height="48" rx="6" fill="rgba(255,111,200,0.12)" stroke="#ff6fc8" stroke-width="1"/>
+<rect x="1552.0" y="572" width="11" height="24" rx="2" fill="rgba(255,111,200,0.55)"/>
+<rect x="1567.0" y="572" width="11" height="24" rx="2" fill="rgba(255,111,200,0.55)"/>
+<rect x="1582.0" y="572" width="11" height="24" rx="2" fill="rgba(255,111,200,0.55)"/>
+<rect x="1597.0" y="572" width="11" height="24" rx="2" fill="rgba(255,111,200,0.55)"/>
+<rect x="1612.0" y="572" width="11" height="24" rx="2" fill="rgba(255,111,200,0.55)"/>
+<circle cx="1486" cy="550" r="15" fill="#181c21" stroke="rgba(236,230,216,0.34)" stroke-width="1.2"/>
+<text x="1486" y="554.5" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#c9c3b5" text-anchor="middle">A</text>
+<path d="M1504,550 L1538.0,576" fill="none" stroke="rgba(255,111,200,0.6)" stroke-width="1.2"/>
+<circle cx="1486" cy="618" r="15" fill="#181c21" stroke="rgba(236,230,216,0.34)" stroke-width="1.2"/>
+<text x="1486" y="622.5" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#c9c3b5" text-anchor="middle">B</text>
+<path d="M1504,618 L1538.0,592" fill="none" stroke="rgba(255,111,200,0.6)" stroke-width="1.2"/>
+<circle cx="1690" cy="550" r="15" fill="#181c21" stroke="rgba(236,230,216,0.34)" stroke-width="1.2"/>
+<text x="1690" y="554.5" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#c9c3b5" text-anchor="middle">C</text>
+<path d="M1672,550 L1638.0,576" fill="none" stroke="rgba(255,111,200,0.6)" stroke-width="1.2"/>
+<circle cx="1690" cy="618" r="15" fill="#181c21" stroke="rgba(236,230,216,0.34)" stroke-width="1.2"/>
+<text x="1690" y="622.5" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#c9c3b5" text-anchor="middle">D</text>
+<path d="M1672,618 L1638.0,592" fill="none" stroke="rgba(255,111,200,0.6)" stroke-width="1.2"/>
+<text x="1588.0" y="652" font-family="'DM Mono', ui-monospace, monospace" font-size="11" font-weight="400" fill="#a29c8e" text-anchor="middle">copies of the model</text>
+<text x="1458" y="672" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#c9c3b5" text-anchor="start">Shared by a swarm of copies.</text>
+<text x="1458" y="692" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#c9c3b5" text-anchor="start">Every 8 tokens each posts one</text>
+<text x="1458" y="712" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#c9c3b5" text-anchor="start">message summing up those 8</text>
+<text x="1458" y="732" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#c9c3b5" text-anchor="start">tokens. Every token reads the</text>
+<text x="1458" y="752" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#c9c3b5" text-anchor="start">earlier posts by attention.</text>
+<text x="1124" y="806" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="500" fill="#ff8a8a" text-anchor="start">RG</text>
+<text x="1160" y="806" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">library search</text>
+<text x="1346" y="806" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="500" fill="#ff6fc8" text-anchor="start">AG</text>
+<text x="1382" y="806" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">agent board</text>
+<text x="1544" y="806" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="500" fill="#ece6d8" text-anchor="start">RP</text>
+<text x="1580" y="806" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">attention circuit</text>
+<text x="1124" y="830" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="500" fill="#ece6d8" text-anchor="start">MIM</text>
+<text x="1160" y="830" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">induction-like memory</text>
+<text x="1346" y="830" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="500" fill="#ece6d8" text-anchor="start">MI</text>
+<text x="1382" y="830" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">co-occurrence count</text>
+<text x="1544" y="830" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="500" fill="#ece6d8" text-anchor="start">EP</text>
+<text x="1580" y="830" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">soft pooling</text>
+<text x="1124" y="854" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="500" fill="#ece6d8" text-anchor="start">SM</text>
+<text x="1160" y="854" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">selective state space</text>
+<text x="1346" y="854" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="500" fill="#ece6d8" text-anchor="start">OS</text>
+<text x="1382" y="854" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">oscillating memory</text>
+<text x="1544" y="854" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="500" fill="#ece6d8" text-anchor="start">GI</text>
+<text x="1580" y="854" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">LSTM-like memory</text>
+<text x="1124" y="878" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="500" fill="#ece6d8" text-anchor="start">G</text>
+<text x="1160" y="878" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">gated unit</text>
+<text x="1346" y="878" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="500" fill="#ece6d8" text-anchor="start">C</text>
+<text x="1382" y="878" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="start">short convolution</text>
+<text x="1124" y="934" font-family="'Fraunces', Georgia, serif" font-size="22" font-weight="500" fill="#ece6d8" text-anchor="start">Speed</text>
+<text x="1124" y="964" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="start">1.30× the Llama&#x27;s time per step on the Mac Studio, same batches.</text>
+<text x="1124" y="986" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="start">Not profiled yet. TONN&#x27;s circuits run as plain PyTorch;</text>
+<text x="1124" y="1008" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="start">attention uses a fused kernel.</text>
+<text x="64" y="934" font-family="'Fraunces', Georgia, serif" font-size="22" font-weight="500" fill="#ece6d8" text-anchor="start">Where the parameters are</text>
+<text x="504" y="934" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="end">Llama</text>
+<text x="1024" y="934" font-family="'DM Mono', ui-monospace, monospace" font-size="13" font-weight="400" fill="#a29c8e" text-anchor="end">ExeaLM</text>
+<text x="64" y="964" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="start">embedding, shared with the output</text>
+<text x="504" y="964" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="end">10.49M</text>
+<text x="1024" y="964" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="end">10.49M</text>
+<text x="64" y="986" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="start">MLPs</text>
+<text x="504" y="986" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="end">4.89M</text>
+<text x="1024" y="986" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="end">4.89M</text>
+<text x="64" y="1008" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="start">attention layers</text>
+<text x="504" y="1008" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="end">2.46M (6)</text>
+<text x="1024" y="1008" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="end">1.64M (4)</text>
+<text x="64" y="1030" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="start">TONN layers</text>
+<text x="504" y="1030" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="end">–</text>
+<text x="1024" y="1030" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#ff6a3d" text-anchor="end">0.84M (2)</text>
+<text x="64" y="1052" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="start">library encoder</text>
+<text x="504" y="1052" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#c9c3b5" text-anchor="end">–</text>
+<text x="1024" y="1052" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="400" fill="#ff6a3d" text-anchor="end">0.23M</text>
+<path d="M64,1062 H1024" fill="none" stroke="rgba(236,230,216,0.34)" stroke-width="1"/>
+<text x="64" y="1082" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="500" fill="#ece6d8" text-anchor="start">total</text>
+<text x="504" y="1082" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="500" fill="#ece6d8" text-anchor="end">17.83M</text>
+<text x="1024" y="1082" font-family="'DM Mono', ui-monospace, monospace" font-size="14" font-weight="500" fill="#ece6d8" text-anchor="end">18.08M</text>
+</svg></body></html>

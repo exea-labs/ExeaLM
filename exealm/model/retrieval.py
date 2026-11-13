@@ -106,6 +106,7 @@ class RetrievalCircuit(nn.Module):
         kd = (cfg.rag_key_dim or cfg.h) + cfg.rag_lexical
         self.own = nn.Linear(cfg.h, kd, bias=False) if kd != cfg.h else None   # the slot's stream into key space
         self.log_tau = nn.Parameter(torch.zeros(()))                       # sharpness of "which result to trust" (starts at 1)
+        self.null = nn.Parameter(torch.zeros(())) if getattr(cfg, "rag_null", False) else None   # "read nothing" logit
         self.record = False         # if True, keep what the last forward pass retrieved in self.last (for inspection)
         self.last = None
 
@@ -180,8 +181,14 @@ class RetrievalCircuit(nn.Module):
         Qc = F.pad(Q, (0, 0, 0, 0, 0, n * C - T))[:, C:]                   # read queries of chunks 1 .. n-1
         Qc = Qc.reshape(B, n - 1, C, g, h).permute(0, 1, 3, 2, 4).reshape(M, C, h).float()
         att = torch.einsum("mch,mkrh->mckr", Qc, kr) / math.sqrt(h) + logp.view(M, 1, k, 1)
-        att = att.masked_fill(~valid.view(M, 1, k, 1), -1e4)
-        att = att.reshape(M, C, k * Lc).softmax(-1).view(M, C, k, Lc)
+        att = att.masked_fill(~valid.view(M, 1, k, 1), -1e4).reshape(M, C, k * Lc)
+        if self.null is not None:                                          # a sink: attention left on it reads zeros
+            att = torch.cat([att, self.null.float().expand(M, C, 1)], -1).softmax(-1)[..., :-1]
+        else:
+            att = att.softmax(-1)
+        att = att.view(M, C, k, Lc)
+        if self.record:                                                    # which retrieved token each position read
+            self.last["read"] = att.detach().float().view(B, n - 1, g, C, k, Lc).cpu()
         y = torch.einsum("mckr,mkrh->mch", att, vr) * valid.any(1).view(M, 1, 1)
         y = y.view(B, n - 1, g, C, h).permute(0, 1, 3, 2, 4).reshape(B, (n - 1) * C, g, h)
         y = F.pad(y, (0, 0, 0, 0, C, 0))[:, :T]                            # chunk 0 retrieves nothing

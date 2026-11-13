@@ -836,5 +836,8 @@ everything else as the second recipe). Final step, 24,000:
   synthetic), the Llama matched or beat ExeaLM at equal steps: English 1.294 vs 1.294, Japanese Wikipedia 1.383 vs
   1.387, Japanese web 1.282 vs 1.286, code 1.558 vs 1.581 (Llama first, seed 0; `full_small_llama_seed0.json`).
 - So on language alone the 17M ExeaLM is about even with a same-size Llama at equal steps, and a little behind at
-  equal compute. What it adds is the two skills. A Llama trained on text and Wikipedia only (no synthetic batches) is
-  running (`llama_textonly`); it is the fair measure of what the skills cost in language.
+  equal compute. What it adds is the two skills.
+- **What the skills cost.** A Llama trained on text and Wikipedia only (85% and 15%, no synthetic batches, seed 0)
+  reaches 1.288 / 1.376 / 1.270 / 1.542 (mean **1.369**) against ExeaLM's 1.419 with both skills. Spending 15% of
+  the steps on relay and lookup costs about 0.05 bits per byte of language at this size. (Its time, 7,629 s, is not
+  comparable: it shared the GPU with other runs.)
