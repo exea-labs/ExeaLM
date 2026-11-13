@@ -49,6 +49,13 @@ TONN is a sequence model that builds its own architecture from data. A normal tr
 
 After each TONN layer comes a gated MLP, as in a transformer.
 
+![Llama, a Qwen3.5-style model and the ExeaLM hybrid at 13M parameters: every layer of each stack, and the inside of every block type](docs/figures/arch_compare.png)
+
+*Llama, a Qwen3.5-style model and the ExeaLM hybrid with gated attention and QK-norm, at 13M parameters, as compared in
+[results §12](results/README.md). Top: every layer and its residual connections. Bottom: the inside of every block:
+(a) attention, (b) gated attention with QK-norm, (c) Gated DeltaNet, (d) a TONN layer with the 8 circuits of its first
+TONN layer, (e) the SwiGLU MLP. Drawn by `docs/figures/arch_compare.py`.*
+
 **ExeaLM is a hybrid.** Every third layer is a TONN layer and the others are full attention layers (5 TONN and 9
 attention layers in the 0.1B model), and TONN's starting circuits favour short convolutions. Pure TONN lost to a
 same-size Llama on real tokens, mostly on code. The hybrid beats it, with both seeds, on every kind of text (bits per
