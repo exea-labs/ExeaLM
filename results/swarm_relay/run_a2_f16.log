@@ -13,3 +13,21 @@
 {"arm": "swarm", "step": 3250, "secs": 4839.6, "shared": {"acc": 0.9999, "bits": 0.002}, "cut": {"acc": 0.014, "bits": 25.863}}
 {"arm": "swarm", "step": 3500, "secs": 5216.5, "shared": {"acc": 0.9988, "bits": 0.008}, "cut": {"acc": 0.0159, "bits": 26.385}}
 {"arm": "swarm", "step": 3750, "secs": 5604.2, "shared": {"acc": 0.9995, "bits": 0.002}, "cut": {"acc": 0.0139, "bits": 26.342}}
+{"arm": "swarm", "step": 4000, "secs": 5991.7, "shared": {"acc": 0.9999, "bits": 0.001}, "cut": {"acc": 0.0146, "bits": 26.649}}
+{"arm": "solo", "step": 250, "secs": 385.2, "shared": {"acc": 0.0171, "bits": 6.025}, "cut": {"acc": 0.0171, "bits": 6.025}}
+{"arm": "solo", "step": 500, "secs": 820.9, "shared": {"acc": 0.0143, "bits": 6.006}, "cut": {"acc": 0.0143, "bits": 6.006}}
+{"arm": "solo", "step": 750, "secs": 1249.0, "shared": {"acc": 0.0137, "bits": 6.005}, "cut": {"acc": 0.0137, "bits": 6.005}}
+{"arm": "solo", "step": 1000, "secs": 1674.7, "shared": {"acc": 0.017, "bits": 6.003}, "cut": {"acc": 0.017, "bits": 6.003}}
+{"arm": "solo", "step": 1250, "secs": 2092.3, "shared": {"acc": 0.0143, "bits": 6.005}, "cut": {"acc": 0.0143, "bits": 6.005}}
+{"arm": "solo", "step": 1500, "secs": 2515.8, "shared": {"acc": 0.0159, "bits": 6.002}, "cut": {"acc": 0.0159, "bits": 6.002}}
+{"arm": "solo", "step": 1750, "secs": 2881.4, "shared": {"acc": 0.0159, "bits": 6.001}, "cut": {"acc": 0.0159, "bits": 6.001}}
+{"arm": "solo", "step": 2000, "secs": 3185.0, "shared": {"acc": 0.0171, "bits": 6.0}, "cut": {"acc": 0.0171, "bits": 6.0}}
+{"arm": "solo", "step": 2250, "secs": 3485.2, "shared": {"acc": 0.0159, "bits": 6.001}, "cut": {"acc": 0.0159, "bits": 6.001}}
+{"arm": "solo", "step": 2500, "secs": 3784.9, "shared": {"acc": 0.0149, "bits": 6.001}, "cut": {"acc": 0.0149, "bits": 6.001}}
+{"arm": "solo", "step": 2750, "secs": 4087.4, "shared": {"acc": 0.017, "bits": 6.0}, "cut": {"acc": 0.017, "bits": 6.0}}
+{"arm": "solo", "step": 3000, "secs": 4387.5, "shared": {"acc": 0.0135, "bits": 6.001}, "cut": {"acc": 0.0135, "bits": 6.001}}
+{"arm": "solo", "step": 3250, "secs": 4687.1, "shared": {"acc": 0.0144, "bits": 6.001}, "cut": {"acc": 0.0144, "bits": 6.001}}
+{"arm": "solo", "step": 3500, "secs": 4975.5, "shared": {"acc": 0.0187, "bits": 6.0}, "cut": {"acc": 0.0187, "bits": 6.0}}
+{"arm": "solo", "step": 3750, "secs": 5260.6, "shared": {"acc": 0.015, "bits": 6.0}, "cut": {"acc": 0.015, "bits": 6.0}}
+{"arm": "solo", "step": 4000, "secs": 5545.5, "shared": {"acc": 0.0137, "bits": 6.0}, "cut": {"acc": 0.0137, "bits": 6.0}}
+WROTE results/swarm_relay/relay_a2_f16_seed0.json

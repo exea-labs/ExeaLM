@@ -1,0 +1,130 @@
+{
+ "args": {
+  "data": "data/bytes/train",
+  "val": "data/bytes/val",
+  "arms": "rag,none",
+  "chunks": 200000,
+  "refresh_every": 500,
+  "steps": 4000,
+  "batch": 32,
+  "seq": 512,
+  "chunk": 64,
+  "topk": 4,
+  "d": 256,
+  "layers": 6,
+  "slots": 8,
+  "h": 32,
+  "enc_dim": 128,
+  "lr": 0.002,
+  "eval_every": 1000,
+  "eval_batches": 16,
+  "seed": 0,
+  "device": "mps",
+  "out": "results/rag_text"
+ },
+ "device": "mps",
+ "runs": [
+  {
+   "arm": "rag",
+   "params": 4991112,
+   "final": {
+    "arm": "rag",
+    "step": 4000,
+    "secs": 1754.5,
+    "train_loss": 1.1205,
+    "attached": 1.6207,
+    "removed": 1.6195,
+    "retrieval_gain": -0.0012
+   },
+   "curve": [
+    {
+     "arm": "rag",
+     "step": 1000,
+     "secs": 434.1,
+     "train_loss": 1.3568,
+     "attached": 1.9348,
+     "removed": 1.9288,
+     "retrieval_gain": -0.006
+    },
+    {
+     "arm": "rag",
+     "step": 2000,
+     "secs": 874.5,
+     "train_loss": 1.2212,
+     "attached": 1.785,
+     "removed": 1.7833,
+     "retrieval_gain": -0.0017
+    },
+    {
+     "arm": "rag",
+     "step": 3000,
+     "secs": 1314.4,
+     "train_loss": 1.2428,
+     "attached": 6.1223,
+     "removed": 1.7273,
+     "retrieval_gain": -4.395
+    },
+    {
+     "arm": "rag",
+     "step": 4000,
+     "secs": 1754.5,
+     "train_loss": 1.1205,
+     "attached": 1.6207,
+     "removed": 1.6195,
+     "retrieval_gain": -0.0012
+    }
+   ]
+  },
+  {
+   "arm": "none",
+   "params": 4991112,
+   "final": {
+    "arm": "none",
+    "step": 4000,
+    "secs": 779.5,
+    "train_loss": 1.109,
+    "attached": 1.6031,
+    "removed": 1.6016,
+    "retrieval_gain": -0.0015
+   },
+   "curve": [
+    {
+     "arm": "none",
+     "step": 1000,
+     "secs": 191.3,
+     "train_loss": 1.3119,
+     "attached": 1.8647,
+     "removed": 1.8535,
+     "retrieval_gain": -0.0112
+    },
+    {
+     "arm": "none",
+     "step": 2000,
+     "secs": 387.4,
+     "train_loss": 1.2052,
+     "attached": 1.7553,
+     "removed": 1.7532,
+     "retrieval_gain": -0.0021
+    },
+    {
+     "arm": "none",
+     "step": 3000,
+     "secs": 583.5,
+     "train_loss": 1.2328,
+     "attached": 1.7054,
+     "removed": 1.7022,
+     "retrieval_gain": -0.0032
+    },
+    {
+     "arm": "none",
+     "step": 4000,
+     "secs": 779.5,
+     "train_loss": 1.109,
+     "attached": 1.6031,
+     "removed": 1.6016,
+     "retrieval_gain": -0.0015
+    }
+   ]
+  }
+ ]
+}

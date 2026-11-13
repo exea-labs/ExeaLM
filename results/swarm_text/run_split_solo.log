@@ -6,3 +6,7 @@ Consider using tensor.detach() first. (Triggered internally at /Users/runner/wor
 {"arm": "split_solo", "step": 1500, "secs": 305.6, "train_loss": 1.3246, "shared": {"bpb": 1.8545, "per_agent": [1.8399, 1.8649, 1.8547, 1.8585]}, "cut": {"bpb": 1.8548, "per_agent": [1.8404, 1.8654, 1.8553, 1.8582]}, "board_gain": 0.0003}
 {"arm": "split_solo", "step": 2000, "secs": 406.7, "train_loss": 1.2922, "shared": {"bpb": 1.795, "per_agent": [1.78, 1.8089, 1.7921, 1.7991]}, "cut": {"bpb": 1.7933, "per_agent": [1.778, 1.8078, 1.7907, 1.7967]}, "board_gain": -0.0017}
 {"arm": "split_solo", "step": 2500, "secs": 508.4, "train_loss": 1.2346, "shared": {"bpb": 1.7544, "per_agent": [1.7384, 1.7666, 1.7531, 1.7593]}, "cut": {"bpb": 1.7551, "per_agent": [1.7396, 1.7676, 1.754, 1.7593]}, "board_gain": 0.0007}
+{"arm": "split_solo", "step": 3000, "secs": 610.7, "train_loss": 1.21, "shared": {"bpb": 1.7307, "per_agent": [1.717, 1.7435, 1.7265, 1.7359]}, "cut": {"bpb": 1.7259, "per_agent": [1.712, 1.739, 1.7222, 1.7302]}, "board_gain": -0.0048}
+{"arm": "split_solo", "step": 3500, "secs": 713.6, "train_loss": 1.1417, "shared": {"bpb": 1.6917, "per_agent": [1.6769, 1.7041, 1.6877, 1.6983]}, "cut": {"bpb": 1.6779, "per_agent": [1.6628, 1.6921, 1.675, 1.6819]}, "board_gain": -0.0138}
+{"arm": "split_solo", "step": 4000, "secs": 816.3, "train_loss": 1.2743, "shared": {"bpb": 1.6314, "per_agent": [1.617, 1.643, 1.6261, 1.6393]}, "cut": {"bpb": 1.6132, "per_agent": [1.5986, 1.6262, 1.609, 1.6188]}, "board_gain": -0.0182}
+WROTE results/swarm_text_ctrl/text_seed0.json

@@ -842,6 +842,50 @@ everything else as the second recipe). Final step, 24,000:
   the steps on relay and lookup costs about 0.05 bits per byte of language at this size. (Its time, 7,629 s, is not
   comparable: it shared the GPU with other runs.)
 
+**Gated attention and QK-norm, and the circuit search, over a full run** (the third recipe, 24,000 steps, seed 0;
+`--attn_gate 1 --qk_norm 1` and `--search 1`; `full_small_exealm_skillsA_gate_seed0.json`,
+`full_small_exealm_skillsA_search_seed0.json`; 2026-11-12, overnight):
+
+| Model | Parameters | English | Japanese Wikipedia | Japanese web | Code | Mean | Relay, shared / cut | Lookup, attached / removed | Library on held-out Wikipedia |
+|---|---|---|---|---|---|---|---|---|---|
+| ExeaLM, third recipe | 18.08M | 1.320 | 1.422 | 1.322 | 1.612 | 1.419 | 100.0% / 0.9% | 94.0% / 1.5% | -0.072 |
+| **+ gated attention + QK-norm** | 18.49M | **1.303** | **1.399** | **1.302** | **1.566** | **1.393** | 100.0% / 1.4% | 93.1% / 1.5% | -0.045 |
+| + circuit search in the first half | 18.08M | 1.333 | 1.437 | 1.330 | 1.625 | 1.431 | 100.0% / 1.6% | 94.4% / 1.7% | -0.257 |
+
+- **Gated attention and QK-norm improve the full model by 0.026 bits per byte**, the same as on language alone at
+  13M (0.025, section 12). Code gains the most (0.046). Both skills hold.
+- Against the Llama on the same batches (1.440, seed 0) the lead grows from 0.021 to 0.047. That Llama has no gate.
+  At 13M the same additions improved Llama by 0.019 (section 12), and we have not run a gated Llama on these
+  batches, so most of that wider lead is probably the additions, not the hybrid.
+- **The circuit search costs 0.012 on language** (1.431 against 1.419) and leaves both skills where they were. It
+  made 16 swaps, all before step 1,750, and none in the remaining 10,000 steps of its window. As in the short check
+  (section 12), layer 0 went from 1 AG circuit to 5: its three MI circuits, its EP and its SM circuit gave way to four
+  AG circuits and an M circuit.
+  The search scores circuits on the training mix, where switching off the memory circuits breaks the relay and
+  lookup batches (worth 0.67 for RG and 0.33 for AG, against 0.17 or less for every language circuit). So it buys
+  board capacity that the synthetic tasks reward and pays for it in language.
+- The board's worth sits almost entirely in layer 0 (0.66 against 0.0003 for layer 3).
+- Times are not comparable: both runs shared the GPU with other runs (13,169 s and 14,041 s, against 6,430 s alone).
+  One seed each.
+
+**The 0.1B model with the third recipe** (`--preset 100m`: width 640, 14 layers, 90.65M parameters; stopped at step
+3,000 of the 24,000-step schedule so that it finished before we lost the Mac Studio; seed 0;
+`results/full_small_check/full_small_exealm_skillsA_100m_seed0.json`):
+
+| Step | English | Code | Relay, shared / cut | Lookup, attached / removed | Library on held-out Wikipedia |
+|---|---|---|---|---|---|
+| 1,000 | 2.212 | 3.864 | 99.1% / 1.6% | 52.6% / 1.6% | +0.137 |
+| 2,000 | 1.981 | 3.602 | 95.0% / 1.1% | 67.3% / 1.7% | +0.032 |
+| 3,000 | 1.790 | 3.265 | 99.1% / 0.8% | 73.1% / 1.7% | +0.014 |
+| 17M at step 3,000, for comparison | 1.800 | 3.220 | 98.4% / 1.6% | 77.5% / 1.8% | +0.020 |
+
+- Both skills form at 0.1B with the same recipe, at about the same pace as at 17M. Lookup was still rising.
+- The library helps on held-out Wikipedia early (+0.137 at step 1,000), and the gain shrinks as the model learns the
+  text (+0.014 at step 3,000). The 17M runs followed the same path.
+- At 49M tokens the 0.1B model is no better on language than the 17M one (English 1.790 against 1.800). Neither is
+  near its capacity this early. Its time (6,586 s) is not comparable: it shared the GPU.
+- The step-3,000 checkpoint is on Hugging Face (`checkpoints/100m/` in exea-labs/ExeaLM).
+
 ## 11. What the search chooses (`experiments/plot_search.py`, `results/search_arch/`)
 
 **Setup.** The `tiny` preset (2 TONN layers of 8 slots, 127K parameters) on synthetic data, 2,000 steps on a 4-core
@@ -954,6 +998,53 @@ step 1,500, one seed; `results/full_small/full_small_exealm_search_check_seed0.j
 - Both skills still form: relay 99.6% (1.3% cut), lookup 56% (1.4% removed) at step 1,500.
 - Scoring circuits on the training mix, the search **added board circuits**. Layer 0 went from 1 AG to 5. Layer 3
   went to 2 RG and 3 AG. They replaced language circuits (attention, state-space and oscillating circuits). This
-  agrees with the real-text tests, where more AG slots gave larger gains (#27). What it does to language over a full
-  run is untested.
+  agrees with the real-text tests, where more AG slots gave larger gains (#27).
+- **Over a full run** (24,000 steps, section 10) it costs 0.012 bits per byte of language (1.431 against 1.419) and
+  leaves both skills as they were (relay 100%, lookup 94.4%).
+
+## 13. Memory on real text (`experiments/irl_eval.py`, `results/irl/`, issue #27)
+
+**The test.** 256 held-out Wikipedia articles, split in half. The model reads the second half. It is scored on
+re-mentions: rare words from the first half that come up again in the second (8,517 tokens). The first half reaches
+the model by one of these paths:
+- **Library** (the RG circuit): the first halves of all 256 articles form a library the model never trained on. The
+  model's own search finds the chunks, or a perfect search hands it the right article, or BM25 searches by keywords.
+- **Board, live** (the AG circuit): a second agent reads the first half at the same time, in a swarm of 2.
+- **Notes** (AG, a knowledge base): a reader agent reads each first half once, ahead of time, and its posts are kept
+  on a frozen board. "Own article" holds only that article's notes. "All articles" holds the notes of all 256 at
+  once, so the model must pick the right ones by their keys.
+- For scale, two ordinary baselines: the end of the first half placed in the context, and BM25's top 4 chunks pasted
+  into the context (ordinary RAG, #32).
+
+**Fine-tunes** of the seed-0 third-recipe checkpoint. Gain in bits per re-mention against no memory (higher is
+better); the first 256 positions in brackets:
+
+| Fine-tune | Steps | No memory (bits) | Library, own search | Library, perfect search | Board, live | Notes, own article | Notes, all articles |
+|---|---|---|---|---|---|---|---|
+| Start (no fine-tune) | | 8.508 | -0.097 | -0.997 | +0.003 | -0.009 | -0.014 |
+| Control: the same mix, more steps | 4,000 | 8.546 | -0.347 | -2.386 | +0.002 | -0.005 | -0.010 |
+| Real-text practice: perfect search on half the Wikipedia batches, plus article pairs | 4,000 | 8.351 | -0.007 | -0.007 | +0.004 | +0.023 (+0.036) | +0.001 |
+| The same, with BM25 search | 4,000 | 8.334 | -0.015 | -0.001 | +0.005 | +0.022 (+0.035) | -0.003 |
+| The same, with a read-nothing entry for RG | 4,000 | 8.353 | -0.005 | +0.001 | +0.004 | +0.023 (+0.036) | +0.002 |
+| The same, with 3 RG and 3 AG per TONN layer | 2,000 | 8.532 | -0.052 | -0.136 | **+0.011** | **+0.039 (+0.059)** | **+0.014** |
+| The same, 3 RG and 3 AG, longer | 8,000 | **8.181** | -0.009 | -0.012 | +0.006 | +0.024 (+0.040) | -7.924 |
+
+For scale: the end of the first half in the context gains +0.98 to +1.05 (first 256 positions), and BM25 RAG gains
++0.32 to +0.36 (positions 64 to 255).
+
+- **Practice on real text makes the library harmless but not helpful** (about -0.01). Without it, more training on
+  the synthetic mix makes the library worse (-0.35, and -2.4 with a perfect search): the read learns the exact copying
+  that lookup rewards, which hurts on prose. The read-nothing entry changes nothing.
+- **Notes from a reader of the article are the only path that helps**: +0.022 to +0.039. More AG slots raised it to
+  +0.039 in 2,000 steps. Four times as many steps brought it back to +0.024.
+- **The notes path is fragile.** After 8,000 steps of practice, in which the board only ever held notes on the right
+  article, notes from all 256 articles at once make re-mentions 7.9 bits worse. The four-choice score falls from 0.88
+  to 0.66. The 2,000-step model gained +0.014 from the same board. The longer fine-tune learned to trust the board,
+  and it never saw notes on the wrong article. Training with notes from other articles on the board, and searching
+  the notes instead of reading all of them (#28), are the next steps.
+- The longer fine-tune is the best of the set with no memory (8.181 bits per re-mention), since half its batches are
+  Wikipedia or article pairs. It keeps the relay (100%) and most of lookup (89.1%). Its held-out mean is 1.443 bits
+  per byte, against 1.419 for the start.
+- One seed, one starting checkpoint and 256 articles. All of it is small next to the baselines: the best built-in
+  path gains 0.039 bits, BM25 RAG 0.32 to 0.36 and the right text in the context about 1 bit.
 

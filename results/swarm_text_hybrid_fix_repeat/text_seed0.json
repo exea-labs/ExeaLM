@@ -1,0 +1,258 @@
+{
+ "args": {
+  "data": "data/bytes/train",
+  "val": "data/bytes/val",
+  "arms": "split",
+  "steps": 4000,
+  "batch": 32,
+  "seq": 512,
+  "swarm": 4,
+  "chunk": 64,
+  "d": 256,
+  "layers": 6,
+  "slots": 8,
+  "h": 32,
+  "lr": 0.002,
+  "eval_every": 500,
+  "eval_batches": 24,
+  "seed": 0,
+  "hybrid": 1,
+  "mask_seams": 1,
+  "device": "mps",
+  "out": "results/swarm_text_hybrid_fix_repeat"
+ },
+ "device": "mps",
+ "runs": [
+  {
+   "arm": "split",
+   "params": 4986840,
+   "final": {
+    "arm": "split",
+    "step": 4000,
+    "secs": 441.0,
+    "train_loss": 1.3239,
+    "shared": {
+     "bpb": 1.6469,
+     "per_agent": [
+      1.6318,
+      1.656,
+      1.6471,
+      1.6525
+     ]
+    },
+    "cut": {
+     "bpb": 1.6504,
+     "per_agent": [
+      1.6355,
+      1.6606,
+      1.6505,
+      1.6549
+     ]
+    },
+    "board_gain": 0.0035
+   },
+   "curve": [
+    {
+     "arm": "split",
+     "step": 500,
+     "secs": 55.4,
+     "train_loss": 1.4445,
+     "shared": {
+      "bpb": 2.1004,
+      "per_agent": [
+       2.0824,
+       2.1148,
+       2.1069,
+       2.0973
+      ]
+     },
+     "cut": {
+      "bpb": 2.1018,
+      "per_agent": [
+       2.0833,
+       2.1162,
+       2.1088,
+       2.0988
+      ]
+     },
+     "board_gain": 0.0014
+    },
+    {
+     "arm": "split",
+     "step": 1000,
+     "secs": 110.5,
+     "train_loss": 1.3401,
+     "shared": {
+      "bpb": 1.9578,
+      "per_agent": [
+       1.9384,
+       1.9706,
+       1.9617,
+       1.9603
+      ]
+     },
+     "cut": {
+      "bpb": 1.9589,
+      "per_agent": [
+       1.9392,
+       1.9719,
+       1.9627,
+       1.9617
+      ]
+     },
+     "board_gain": 0.0011
+    },
+    {
+     "arm": "split",
+     "step": 1500,
+     "secs": 165.7,
+     "train_loss": 1.3623,
+     "shared": {
+      "bpb": 1.9009,
+      "per_agent": [
+       1.881,
+       1.9136,
+       1.9071,
+       1.9021
+      ]
+     },
+     "cut": {
+      "bpb": 1.9028,
+      "per_agent": [
+       1.8828,
+       1.9154,
+       1.9091,
+       1.9037
+      ]
+     },
+     "board_gain": 0.0019
+    },
+    {
+     "arm": "split",
+     "step": 2000,
+     "secs": 220.6,
+     "train_loss": 1.3135,
+     "shared": {
+      "bpb": 1.8544,
+      "per_agent": [
+       1.8384,
+       1.8673,
+       1.8575,
+       1.8542
+      ]
+     },
+     "cut": {
+      "bpb": 1.8562,
+      "per_agent": [
+       1.8402,
+       1.8696,
+       1.8594,
+       1.8556
+      ]
+     },
+     "board_gain": 0.0018
+    },
+    {
+     "arm": "split",
+     "step": 2500,
+     "secs": 275.8,
+     "train_loss": 1.2717,
+     "shared": {
+      "bpb": 1.8185,
+      "per_agent": [
+       1.8017,
+       1.8282,
+       1.8225,
+       1.8216
+      ]
+     },
+     "cut": {
+      "bpb": 1.8203,
+      "per_agent": [
+       1.8035,
+       1.8308,
+       1.8247,
+       1.8223
+      ]
+     },
+     "board_gain": 0.0018
+    },
+    {
+     "arm": "split",
+     "step": 3000,
+     "secs": 330.8,
+     "train_loss": 1.2378,
+     "shared": {
+      "bpb": 1.7902,
+      "per_agent": [
+       1.774,
+       1.8026,
+       1.793,
+       1.7914
+      ]
+     },
+     "cut": {
+      "bpb": 1.7925,
+      "per_agent": [
+       1.7767,
+       1.8054,
+       1.795,
+       1.793
+      ]
+     },
+     "board_gain": 0.0023
+    },
+    {
+     "arm": "split",
+     "step": 3500,
+     "secs": 386.0,
+     "train_loss": 1.1636,
+     "shared": {
+      "bpb": 1.73,
+      "per_agent": [
+       1.7146,
+       1.74,
+       1.7308,
+       1.7348
+      ]
+     },
+     "cut": {
+      "bpb": 1.7327,
+      "per_agent": [
+       1.7176,
+       1.7432,
+       1.7334,
+       1.7367
+      ]
+     },
+     "board_gain": 0.0027
+    },
+    {
+     "arm": "split",
+     "step": 4000,
+     "secs": 441.0,
+     "train_loss": 1.3239,
+     "shared": {
+      "bpb": 1.6469,
+      "per_agent": [
+       1.6318,
+       1.656,
+       1.6471,
+       1.6525
+      ]
+     },
+     "cut": {
+      "bpb": 1.6504,
+      "per_agent": [
+       1.6355,
+       1.6606,
+       1.6505,
+       1.6549
+      ]
+     },
+     "board_gain": 0.0035
+    }
+   ]
+  }
+ ]
+}

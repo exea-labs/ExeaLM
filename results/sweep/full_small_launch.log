@@ -1,0 +1,22 @@
+2026-11-11 22:08:02 packing
+{"dtype": "uint16", "vocab_size": 32768, "n_tokens": 232667931, "n_docs": 210014, "bytes_per_token": 4.297974089948821, "tokenizer": "results/tokenizer/bpe32k", "files": ["000_00000.parquet"]}
+{"dtype": "uint16", "vocab_size": 32768, "n_tokens": 92589553, "n_docs": 125953, "bytes_per_token": 4.860365736942266, "tokenizer": "results/tokenizer/bpe32k", "files": ["llmjp__ja__ja_fineweb-2__0000.first300MB.jsonl.gz", "llmjp__ja__ja_wiki__0000.first150MB.jsonl.gz"]}
+{"dtype": "uint16", "vocab_size": 32768, "n_tokens": 86987086, "n_docs": 31499, "bytes_per_token": 2.530413537476126, "tokenizer": "results/tokenizer/bpe32k", "files": ["llmjp__code__code_stack__0000.first220MB.jsonl.gz"]}
+{
+  "dtype": "uint16",
+  "vocab_size": 32768,
+  "n_tokens": 232667931,
+  "n_docs": 210014,
+{
+  "dtype": "uint16",
+  "vocab_size": 32768,
+  "n_tokens": 92589553,
+  "n_docs": 125953,
+{
+  "dtype": "uint16",
+  "vocab_size": 32768,
+  "n_tokens": 86987086,
+  "n_docs": 31499,
+2026-11-11 22:08:57 queued
+full_small_exealm|experiments/full_small.py --steps 24000 --out results/full_sma
+full_small_llama|experiments/full_small.py --steps 24000 --out results/full_smal

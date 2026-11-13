@@ -1,0 +1,297 @@
+{
+ "args": {
+  "arms": "rag,none",
+  "steps": 4000,
+  "facts": 1024,
+  "grow": 16,
+  "grow_every": 400,
+  "questions": 4,
+  "restate": 0,
+  "batch": 32,
+  "chunk": 8,
+  "topk": 4,
+  "query": "last",
+  "d": 128,
+  "layers": 4,
+  "slots": 8,
+  "h": 32,
+  "enc_dim": 64,
+  "lr": 0.002,
+  "eval_every": 500,
+  "eval_batches": 8,
+  "seed": 0,
+  "device": "cpu",
+  "out": "results/rag_lookup_v2"
+ },
+ "device": "cpu",
+ "chance": {
+  "acc": 0.0156,
+  "bits": 6.0
+ },
+ "runs": [
+  {
+   "arm": "rag",
+   "params": 1130480,
+   "final": {
+    "arm": "rag",
+    "step": 4000,
+    "kb": 1024,
+    "secs": 1748.9,
+    "attached": {
+     "acc": 1.0,
+     "bits": 0.0
+    },
+    "removed": {
+     "acc": 0.0146,
+     "bits": 9.594
+    }
+   },
+   "curve": [
+    {
+     "arm": "rag",
+     "step": 500,
+     "kb": 32,
+     "secs": 242.2,
+     "attached": {
+      "acc": 0.4561,
+      "bits": 2.856
+     },
+     "removed": {
+      "acc": 0.0195,
+      "bits": 8.791
+     }
+    },
+    {
+     "arm": "rag",
+     "step": 1000,
+     "kb": 64,
+     "secs": 449.0,
+     "attached": {
+      "acc": 0.9297,
+      "bits": 0.32
+     },
+     "removed": {
+      "acc": 0.0146,
+      "bits": 12.906
+     }
+    },
+    {
+     "arm": "rag",
+     "step": 1500,
+     "kb": 128,
+     "secs": 663.8,
+     "attached": {
+      "acc": 0.9922,
+      "bits": 0.037
+     },
+     "removed": {
+      "acc": 0.0205,
+      "bits": 13.033
+     }
+    },
+    {
+     "arm": "rag",
+     "step": 2000,
+     "kb": 256,
+     "secs": 878.3,
+     "attached": {
+      "acc": 0.9961,
+      "bits": 0.021
+     },
+     "removed": {
+      "acc": 0.0156,
+      "bits": 15.507
+     }
+    },
+    {
+     "arm": "rag",
+     "step": 2500,
+     "kb": 1024,
+     "secs": 1099.8,
+     "attached": {
+      "acc": 1.0,
+      "bits": 0.0
+     },
+     "removed": {
+      "acc": 0.0137,
+      "bits": 11.495
+     }
+    },
+    {
+     "arm": "rag",
+     "step": 3000,
+     "kb": 1024,
+     "secs": 1318.2,
+     "attached": {
+      "acc": 1.0,
+      "bits": 0.0
+     },
+     "removed": {
+      "acc": 0.0,
+      "bits": 11.751
+     }
+    },
+    {
+     "arm": "rag",
+     "step": 3500,
+     "kb": 1024,
+     "secs": 1531.9,
+     "attached": {
+      "acc": 1.0,
+      "bits": 0.0
+     },
+     "removed": {
+      "acc": 0.0039,
+      "bits": 9.772
+     }
+    },
+    {
+     "arm": "rag",
+     "step": 4000,
+     "kb": 1024,
+     "secs": 1748.9,
+     "attached": {
+      "acc": 1.0,
+      "bits": 0.0
+     },
+     "removed": {
+      "acc": 0.0146,
+      "bits": 9.594
+     }
+    }
+   ]
+  },
+  {
+   "arm": "none",
+   "params": 1130480,
+   "final": {
+    "arm": "none",
+    "step": 4000,
+    "kb": 1024,
+    "secs": 991.4,
+    "attached": {
+     "acc": 0.0234,
+     "bits": 6.001
+    },
+    "removed": {
+     "acc": 0.0234,
+     "bits": 6.001
+    }
+   },
+   "curve": [
+    {
+     "arm": "none",
+     "step": 500,
+     "kb": 32,
+     "secs": 117.2,
+     "attached": {
+      "acc": 0.0215,
+      "bits": 6.038
+     },
+     "removed": {
+      "acc": 0.0215,
+      "bits": 6.038
+     }
+    },
+    {
+     "arm": "none",
+     "step": 1000,
+     "kb": 64,
+     "secs": 231.7,
+     "attached": {
+      "acc": 0.0195,
+      "bits": 6.026
+     },
+     "removed": {
+      "acc": 0.0195,
+      "bits": 6.026
+     }
+    },
+    {
+     "arm": "none",
+     "step": 1500,
+     "kb": 128,
+     "secs": 357.9,
+     "attached": {
+      "acc": 0.0137,
+      "bits": 6.012
+     },
+     "removed": {
+      "acc": 0.0137,
+      "bits": 6.012
+     }
+    },
+    {
+     "arm": "none",
+     "step": 2000,
+     "kb": 256,
+     "secs": 488.2,
+     "attached": {
+      "acc": 0.0215,
+      "bits": 6.0
+     },
+     "removed": {
+      "acc": 0.0215,
+      "bits": 6.0
+     }
+    },
+    {
+     "arm": "none",
+     "step": 2500,
+     "kb": 1024,
+     "secs": 617.5,
+     "attached": {
+      "acc": 0.0127,
+      "bits": 6.006
+     },
+     "removed": {
+      "acc": 0.0127,
+      "bits": 6.006
+     }
+    },
+    {
+     "arm": "none",
+     "step": 3000,
+     "kb": 1024,
+     "secs": 740.0,
+     "attached": {
+      "acc": 0.0146,
+      "bits": 6.006
+     },
+     "removed": {
+      "acc": 0.0146,
+      "bits": 6.006
+     }
+    },
+    {
+     "arm": "none",
+     "step": 3500,
+     "kb": 1024,
+     "secs": 868.8,
+     "attached": {
+      "acc": 0.0137,
+      "bits": 6.004
+     },
+     "removed": {
+      "acc": 0.0137,
+      "bits": 6.004
+     }
+    },
+    {
+     "arm": "none",
+     "step": 4000,
+     "kb": 1024,
+     "secs": 991.4,
+     "attached": {
+      "acc": 0.0234,
+      "bits": 6.001
+     },
+     "removed": {
+      "acc": 0.0234,
+      "bits": 6.001
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -169,10 +169,15 @@ Small-scale tests on a Mac Studio, all in [results/README.md](results/README.md)
   (94%, 1.6% without it), on both seeds, once the two skills are taught together from the first step. On language it
   is about even with a same-size Llama: 0.011 bits per byte ahead at equal steps over two seeds, a tie at equal
   compute ([results §10](results/README.md#10-the-whole-model-at-17m-with-the-board-and-the-library-on-experimentsfull_smallpy-resultsfull_small)).
+  Gated attention and QK-norm from Qwen3.5 improve it by 0.026 (1.393 against 1.419, one seed), and it keeps both
+  skills. The circuit search over a full run adds board circuits and costs 0.012 on language.
 - **Memory on real text does not pay off yet** ([#27](https://github.com/exea-labs/ExeaLM/issues/27)). On held-out
   Wikipedia, with the first half of each article as knowledge the model never trained on, the library, a live second
   agent and notes written ahead of time each change the loss on re-mentioned rare words by -0.10 to +0.01 bits.
-  Putting that first half in the context instead gains 1.1 bits. Training the reads on real text is running.
+  Putting that first half in the context instead gains about 1 bit, and ordinary BM25 RAG 0.34. Practice on real
+  text makes the library harmless but not helpful. Notes from a reader of the article gain up to 0.039 bits. After
+  8,000 steps of practice, notes from all 256 articles at once make it 7.9 bits worse, so the board must learn to
+  ignore notes on the wrong article ([results §13](results/README.md#13-memory-on-real-text-experimentsirl_evalpy-resultsirl-issue-27)).
 - **The swarm gain on real text did not reproduce.** We reported 0.014 bits per byte for swarms over a matched
   control (0.012 after a leak found in PR #7). Reruns range from 0.015 better to 0.035 worse than the control. More
   seeds are running ([#33](https://github.com/exea-labs/ExeaLM/issues/33)); treat it as unproven.

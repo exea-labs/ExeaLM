@@ -1,0 +1,328 @@
+{
+ "model": "exealm",
+ "params": 90654360,
+ "library_chunks": 483270,
+ "eval_library_chunks": 53467,
+ "train_articles": 14209,
+ "eval_articles": 1578,
+ "args": {
+  "model": "exealm",
+  "preset": "100m",
+  "search": 0,
+  "search_every": 250,
+  "search_until": 0.5,
+  "search_mix": "text:3,wiki:1,relay:1,lookup:1",
+  "wiki_oracle": 0.0,
+  "init_ckpt": "",
+  "rag_null": 0,
+  "attn_gate": 0,
+  "qk_norm": 0,
+  "memory_slots": 0,
+  "lib_search": "learned",
+  "root": "data/tokpack",
+  "toks": "bpe32k",
+  "train": "train_en_big,train_ja_big,train_code_big",
+  "mix": "0.5,0.3,0.2",
+  "p_kinds": "0.7,0.15,0.075,0.075",
+  "warm_steps": 0,
+  "warm_kinds": "0.2,0,0.4,0.4",
+  "schedule": "400:0,0,0.5,0.5;2000:0.3,0.2,0.25,0.25",
+  "facts": 1024,
+  "grow": 16,
+  "dense": 1,
+  "relay_chunk": 8,
+  "relay_facts": 4,
+  "grow_every": 150,
+  "d": 320,
+  "slots": 10,
+  "steps": 24000,
+  "batch": 32,
+  "seq": 512,
+  "chunk": 64,
+  "min_tokens": 1024,
+  "lr": 0.002,
+  "warmup": 500,
+  "refresh_every": 1000,
+  "eval_every": 1000,
+  "eval_batches": 12,
+  "save_every": 4000,
+  "key_dim": 128,
+  "lexical": 128,
+  "gen_tokens": 60,
+  "prompts": "The history of the city begins||Photosynthesis is the process by which||日本の首都は||def fibonacci(n):",
+  "tokenizer": "results/tokenizer/bpe32k/tokenizer.json",
+  "lib_on": "wiki",
+  "board_chunk": 8,
+  "pool": "mean",
+  "tag": "skillsA_100m",
+  "stop_at": 3000,
+  "seed": 0,
+  "smoke": 0,
+  "device": "auto",
+  "out": "results/full_small_check"
+ },
+ "curve": [
+  {
+   "step": 1000,
+   "secs": 2099.6,
+   "tokens": 16384000,
+   "train_loss": 0.073,
+   "batches": {
+    "text": 187,
+    "wiki": 111,
+    "relay": 355,
+    "lookup": 347,
+    "pair": 0
+   },
+   "val_en": {
+    "removed": 2.2119,
+    "attached": 2.2136
+   },
+   "val_ja_wiki": {
+    "removed": 2.604,
+    "attached": 2.6128
+   },
+   "val_ja_web": {
+    "removed": 2.1313,
+    "attached": 2.1352
+   },
+   "val_code": {
+    "removed": 3.8643,
+    "attached": 3.8867
+   },
+   "swarm": {
+    "shared": 2.2035,
+    "cut": 2.2046,
+    "board_gain": 0.0011
+   },
+   "knowledge": {
+    "removed": 9.1483,
+    "attached": 9.011,
+    "retrieval_gain": 0.1373,
+    "same_article_hits": 0.2207
+   },
+   "relay": {
+    "shared": 0.9909,
+    "cut": 0.016
+   },
+   "lookup": {
+    "attached": 0.5256,
+    "removed": 0.0161
+   }
+  },
+  {
+   "step": 2000,
+   "secs": 4412.2,
+   "tokens": 32768000,
+   "train_loss": 5.4556,
+   "batches": {
+    "text": 496,
+    "wiki": 306,
+    "relay": 592,
+    "lookup": 606,
+    "pair": 0
+   },
+   "val_en": {
+    "removed": 1.9807,
+    "attached": 1.9883
+   },
+   "val_ja_wiki": {
+    "removed": 2.2981,
+    "attached": 2.3013
+   },
+   "val_ja_web": {
+    "removed": 1.9314,
+    "attached": 1.934
+   },
+   "val_code": {
+    "removed": 3.6022,
+    "attached": 3.605
+   },
+   "swarm": {
+    "shared": 1.9733,
+    "cut": 1.9742,
+    "board_gain": 0.001
+   },
+   "knowledge": {
+    "removed": 7.499,
+    "attached": 7.4675,
+    "retrieval_gain": 0.0315,
+    "same_article_hits": 0.2005
+   },
+   "relay": {
+    "shared": 0.9502,
+    "cut": 0.0114
+   },
+   "lookup": {
+    "attached": 0.673,
+    "removed": 0.0168
+   }
+  },
+  {
+   "step": 3000,
+   "secs": 6585.5,
+   "tokens": 49152000,
+   "train_loss": 5.7289,
+   "batches": {
+    "text": 1201,
+    "wiki": 457,
+    "relay": 663,
+    "lookup": 679,
+    "pair": 0
+   },
+   "val_en": {
+    "removed": 1.7895,
+    "attached": 1.8039
+   },
+   "val_ja_wiki": {
+    "removed": 2.0473,
+    "attached": 2.056
+   },
+   "val_ja_web": {
+    "removed": 1.7341,
+    "attached": 1.7404
+   },
+   "val_code": {
+    "removed": 3.265,
+    "attached": 3.2926
+   },
+   "swarm": {
+    "shared": 1.7842,
+    "cut": 1.7853,
+    "board_gain": 0.0011
+   },
+   "knowledge": {
+    "removed": 6.8977,
+    "attached": 6.8833,
+    "retrieval_gain": 0.0144,
+    "same_article_hits": 0.2588
+   },
+   "relay": {
+    "shared": 0.9909,
+    "cut": 0.0075
+   },
+   "lookup": {
+    "attached": 0.7309,
+    "removed": 0.0171
+   }
+  }
+ ],
+ "searches": [],
+ "samples": {
+  "free": [
+   {
+    "prompt": "The history of the city begins",
+    "text": " to see its own, but when the term was that the power of the term and its effects, and is the site of the river. In the time, there are a number of years to make sure they came to be in the same year.\n\nIn the same time, the number of"
+   },
+   {
+    "prompt": "Photosynthesis is the process by which",
+    "text": " these are not, the most important problem, and as many different bacteria.\nThe number of other symptoms were treated with the liver or has improved the underlying diseases that arise in the liver, and the first time, is the only part of the patient that may not affect the patient with the liver and"
+   },
+   {
+    "prompt": "日本の首都は",
+    "text": "第3点(日本)は同年1月12日発売（第5期）9月7日、ISBN 0x2D7（第2133年）8月1日、ISBN 978-9月10日から5月10日（平成62年）8月\n第"
+   },
+   {
+    "prompt": "def fibonacci(n):",
+    "text": " s);.pmf.g.g.h.e.g. a.l.e. a one.\n\nCeer: a (s.g. in the) for a, and then a p. This is a very unique. Moving a number of"
+   }
+  ],
+  "retrieval": [
+   {
+    "article_start": "Boonsboro is a town in Washington County, Maryland, United States, located at the foot of South Mountain. It nearly borders Frederick County and is proximate to the Antietam National Battlefield. The population was 3,336",
+    "prompt": " body of the Town. In Boonsboro, from 1831 through 1939, Mayors (originally called Burgesses) were elected annually. From 1940 through 1975, they served two-year terms. Since 1976, Mayors have been chosen for four-year terms, except for the previous mayor, who had been in office from 1988 through 2016.\n\nBoonsboro's current Mayor is Howard W. Long.\n\nPrevious Mayors include:\n\n 1831–1835 Jonathan Shafer\n 1835–1836 David Brookhart\n 1836–1837 Lewis F",
+    "with_library": "ear\nDavid\nDavid (born 1871), a Norwegian-Talk-Grove\nDavid-Lrak, British-Gel and Bryle, a town and former-American and professional.\nDavid Buffalo, a former-profit organization, and in the",
+    "without_library": "ear\nPera (Delson)\nAwards of the Rolemale\nThe city of the west of the north.\n\nDemographics \n\nEconomy\n\nThe city is in the township and the township (or three miles)\n\nE",
+    "truth": "letcher\n 1837–1838 Joseph O'neal\n 1838–1839 Anthony McBride\n 1839–1840 Joseph Knox\n 1840–1841 Charles Perry\n 1841–1843 Jacob Smith\n 1843–1845 James Chambers\n"
+   },
+   {
+    "article_start": "A macrobiotic diet (or macrobiotics) is a fad diet based on ideas about types of food drawn from Zen Buddhism. The diet tries to balance the supposed yin and yang elements of food and cookware.",
+    "prompt": " and nut butters, seasonings, sweeteners, fruits, and beverages may be enjoyed occasionally, two to three times per week. Other naturally-raised animal products may be included if needed during dietary transition or according to individual needs.\n\nKitchenware \nCooking utensils should be made from certain materials such as wood or glass, while some materials including plastic, copper, and non-stick coatings are to be avoided. Electric ovens should not be used.\n\nJapanese popularity and influence\nThe macrobiotic way of eating was developed and popularized by the Japanese. During",
+    "with_library": " the case of the same age of the world, with the following of the field and its effects, and is the most common effect of water. The most common form of a number of water and the air, and the river has been used to produce the total area of three weeks. The average household",
+    "without_library": " the world, there is also been a common example that the city is a lack of energy and efficient.\n\nLanguage\nThe water has been found in the UK and the UK\nMelu County and L. C. Brab, the north of California, and the southwest",
+    "truth": " the Edo period in Japan peasants had a diet based on staples of rice and soybeans. According to some macrobiotic advocates, a majority of the world population in the past ate a diet based primarily on grains, vegetables, and other plants. Because the macrobiotic diet was"
+   },
+   {
+    "article_start": "The BNC connector (initialism of \"Bayonet Neill–Concelman\") is a miniature quick connect/disconnect radio frequency connector used for coaxial cable. It is designed to maintain the same",
+    "prompt": " not mate with standard interface connectors. The SHV connector is a high-voltage BNC variant that uses this reverse polarity configuration.\n\nSmaller versions of the BNC connector, called Mini BNC and High Density BNC (HD BNC), are manufactured by Amphenol. While retaining the electrical characteristics of the original specification, they have smaller footprints giving a higher packing density on circuit boards and equipment backplanes. These connectors have true 75 ohm impedance making them suitable for HD video applications.\n\nCompatibility\nThe different",
+    "with_library": " parts of the surface is an example of the same number.\n\nTally, there is a significant number of materials.\n\nThe production of the form of a number of materials and the gas industry and construction of the market. In the UK, the following are available as the number of",
+    "without_library": " number of PHP is an example of the same number of PHP is used to make a higher level (GL) and the Earth. The source and current are a number of two and two are the first more important than the use of the other.\n\nThe following method is also used",
+    "truth": " versions are designed to mate with each other,\nand a 75 ohm and a 50 ohm BNC connector which both comply with the 2007 IEC standard, IEC 61169-8, will mate non-destructively. At least one manufacturer claims"
+   },
+   {
+    "article_start": "Salvation (from Latin: salvatio, from salva, 'safe, saved') is the state of being saved or protected from harm or a dire situation. In religion and theology, salvation generally refers to",
+    "prompt": " of Jesus Christ of Latter-day Saints, the plan of salvation is God's plan to save, redeem, and exalt all humankind who chose, either in this life, or in the world of spirits of the dead, to accept the grace of Jesus Christ by exercising faith in Him, repenting of their sins, and by making and keeping sacred covenants (including baptism). Since the vast majority of God's children depart this life without that opportunity, Christ's gospel is preached to the unbelieving spirits in spirit prison (1 Peter 3: 19) so that they",
+    "with_library": " were killed, he is not going to be a lot of a bundal and he is never a significant thing about the most important. In his life, there are a kind of people to the same one and more of the same of his life, the person, he was a symbol in the",
+    "without_library": " were not found in the same age of the p. The \"story of the Bible is, and is the greatest of his life. In his life, in a \"something of the Lord “The people to hear the world of Israel (or the only of God, as he was in",
+    "truth": " might be judged by the same standards as the living and live by following God in their spirit form (1 Peter 4: 6). If they accept Christ, sincerely repent of their sins, and accept ordinances done on their behalf, they can, by the grace of Christ"
+   }
+  ]
+ },
+ "architecture": [
+  {
+   "RG": 1,
+   "AG": 1,
+   "RP": 2,
+   "MI": 3,
+   "EP": 2,
+   "MIM": 1,
+   "OS": 2,
+   "SM": 2,
+   "G": 1,
+   "GI": 1,
+   "C": 2,
+   "M": 2
+  },
+  {
+   "RG": 1,
+   "AG": 1,
+   "I": 2,
+   "GI": 1,
+   "C": 5,
+   "RP": 2,
+   "OS": 1,
+   "EP": 1,
+   "MIM": 1,
+   "M": 1,
+   "G": 1,
+   "SM": 3
+  },
+  {
+   "RG": 1,
+   "AG": 1,
+   "C": 5,
+   "RP": 2,
+   "MIM": 2,
+   "EP": 2,
+   "I": 3,
+   "OS": 2,
+   "G": 1,
+   "M": 1
+  },
+  {
+   "RG": 1,
+   "AG": 1,
+   "C": 8,
+   "MI": 1,
+   "RP": 3,
+   "MIM": 1,
+   "D": 1,
+   "SM": 1,
+   "GI": 2,
+   "EP": 1
+  },
+  {
+   "RG": 1,
+   "AG": 1,
+   "C": 5,
+   "GI": 2,
+   "MIM": 2,
+   "I": 1,
+   "SM": 3,
+   "MI": 1,
+   "RP": 2,
+   "EP": 1,
+   "M": 1
+  }
+ ]
+}

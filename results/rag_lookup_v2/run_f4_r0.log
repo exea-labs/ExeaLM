@@ -1,0 +1,17 @@
+{"arm": "rag", "step": 500, "kb": 4, "secs": 233.4, "attached": {"acc": 0.0, "bits": 6.372}, "removed": {"acc": 0.0, "bits": 6.483}}
+{"arm": "rag", "step": 1000, "kb": 4, "secs": 438.6, "attached": {"acc": 0.0928, "bits": 5.606}, "removed": {"acc": 0.0, "bits": 6.05}}
+{"arm": "rag", "step": 1500, "kb": 4, "secs": 659.4, "attached": {"acc": 0.2119, "bits": 4.055}, "removed": {"acc": 0.0312, "bits": 6.328}}
+{"arm": "rag", "step": 2000, "kb": 4, "secs": 865.1, "attached": {"acc": 0.5137, "bits": 3.315}, "removed": {"acc": 0.0195, "bits": 6.596}}
+{"arm": "rag", "step": 2500, "kb": 4, "secs": 1081.4, "attached": {"acc": 0.7871, "bits": 1.72}, "removed": {"acc": 0.0, "bits": 7.728}}
+{"arm": "rag", "step": 3000, "kb": 4, "secs": 1272.5, "attached": {"acc": 0.959, "bits": 0.36}, "removed": {"acc": 0.0, "bits": 8.897}}
+{"arm": "rag", "step": 3500, "kb": 4, "secs": 1497.6, "attached": {"acc": 0.9492, "bits": 0.155}, "removed": {"acc": 0.0127, "bits": 8.06}}
+{"arm": "rag", "step": 4000, "kb": 4, "secs": 1714.7, "attached": {"acc": 0.8838, "bits": 1.212}, "removed": {"acc": 0.042, "bits": 7.627}}
+{"arm": "none", "step": 500, "kb": 4, "secs": 116.3, "attached": {"acc": 0.0, "bits": 6.256}, "removed": {"acc": 0.0, "bits": 6.258}}
+{"arm": "none", "step": 1000, "kb": 4, "secs": 235.0, "attached": {"acc": 0.0342, "bits": 6.092}, "removed": {"acc": 0.0342, "bits": 6.092}}
+{"arm": "none", "step": 1500, "kb": 4, "secs": 354.3, "attached": {"acc": 0.0, "bits": 6.081}, "removed": {"acc": 0.0, "bits": 6.081}}
+{"arm": "none", "step": 2000, "kb": 4, "secs": 482.6, "attached": {"acc": 0.0186, "bits": 6.09}, "removed": {"acc": 0.0186, "bits": 6.09}}
+{"arm": "none", "step": 2500, "kb": 4, "secs": 616.6, "attached": {"acc": 0.0352, "bits": 5.89}, "removed": {"acc": 0.0352, "bits": 5.89}}
+{"arm": "none", "step": 3000, "kb": 4, "secs": 745.9, "attached": {"acc": 0.0352, "bits": 5.85}, "removed": {"acc": 0.0352, "bits": 5.851}}
+{"arm": "none", "step": 3500, "kb": 4, "secs": 883.1, "attached": {"acc": 0.0361, "bits": 5.734}, "removed": {"acc": 0.0361, "bits": 5.734}}
+{"arm": "none", "step": 4000, "kb": 4, "secs": 1009.5, "attached": {"acc": 0.0537, "bits": 5.823}, "removed": {"acc": 0.0537, "bits": 5.824}}
+WROTE results/rag_lookup_v2/lookup_f4_qlast_r0_seed0.json

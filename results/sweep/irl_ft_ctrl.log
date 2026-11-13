@@ -1,0 +1,35 @@
+256 held-out articles, 8517 re-mention and 23227 novel targets in 131072 tokens
+
+all 512 positions                      all re-mention   novel  top-1 4-choice   re-mention gain
+none                                 4.854      8.546   8.779  15.7%    87.8%   
+library                              5.069      8.892   9.141  14.1%    87.5%   -0.347
+library, perfect search              6.793     10.932  11.303   7.3%    83.3%   -2.386
+library, BM25 search                 7.279     11.143  11.689   6.2%    82.9%   -2.597
+board, live (swarm of 2)             4.851      8.544   8.779  15.8%    87.8%   +0.002
+board, live, cut                     4.854      8.546   8.779  15.7%    87.8%   +0.000
+notes, own article                   4.849      8.551   8.788  15.9%    87.8%   -0.005
+notes, all articles                  4.849      8.556   8.789  15.9%    87.9%   -0.010
+
+first 256                              all re-mention   novel  top-1 4-choice   re-mention gain
+none (first 256)                     4.945      8.612   8.849  15.9%    88.0%   
+in context (first 256)               4.772      7.595   8.837  23.1%    88.9%   +1.017
+library (first 256)                  5.111      8.882   9.159  14.4%    87.7%   -0.270
+library, perfect search (first 256)   6.392     10.440  10.839   9.0%    85.0%   -1.827
+library, BM25 search (first 256)     6.784     10.630  11.161   7.8%    84.2%   -2.018
+board, live (swarm of 2) (first 256)   4.939      8.609   8.848  16.0%    87.9%   +0.003
+board, live, cut (first 256)         4.945      8.612   8.849  15.9%    88.0%   +0.000
+notes, own article (first 256)       4.936      8.617   8.861  16.1%    88.0%   -0.005
+notes, all articles (first 256)      4.936      8.624   8.863  16.0%    88.1%   -0.012
+
+64-255                                 all re-mention   novel  top-1 4-choice   re-mention gain
+none (64-255)                        4.792      8.318   8.758  17.0%    87.9%   
+BM25 top-4 in context (64-255)       4.737      7.954   8.782  19.8%    88.6%   +0.364
+in context (64-255)                  4.693      7.731   8.775  21.1%    88.5%   +0.588
+library (64-255)                     5.014      8.717   9.178  14.8%    87.5%   -0.399
+library, perfect search (64-255)     6.722     11.021  11.452   6.8%    83.4%   -2.703
+library, BM25 search (64-255)        7.245     11.303  11.888   5.1%    82.3%   -2.984
+board, live (swarm of 2) (64-255)    4.788      8.318   8.758  17.1%    87.8%   +0.000
+board, live, cut (64-255)            4.792      8.318   8.758  17.0%    87.9%   +0.000
+notes, own article (64-255)          4.786      8.328   8.766  17.1%    87.8%   -0.009
+notes, all articles (64-255)         4.786      8.329   8.767  17.0%    87.9%   -0.011
+WROTE results/irl/irl_exealm_ft_ctrl_seed0.json

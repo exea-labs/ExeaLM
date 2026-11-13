@@ -1,0 +1,30 @@
+2026-11-12 17:49:07 START ft_ctrl
+2026-11-12 18:25:49 END ft_ctrl WROTE results/irl/full_small_exealm_ft_ctrl_seed0.json
+2026-11-12 18:25:49 START ft_irl
+2026-11-12 19:01:51 END ft_irl WROTE results/irl/full_small_exealm_ft_irl_seed0.json
+2026-11-12 19:01:51 START irl_ft_ctrl
+2026-11-12 19:03:58 END irl_ft_ctrl WROTE results/irl/irl_exealm_ft_ctrl_seed0.json
+2026-11-12 19:03:58 START irl_ft_irl
+2026-11-12 19:06:06 END irl_ft_irl WROTE results/irl/irl_exealm_ft_irl_seed0.json
+2026-11-12 19:06:06 START ft_lex
+2026-11-12 19:52:48 END ft_lex WROTE results/irl/full_small_exealm_ft_lex_seed0.json
+2026-11-12 19:52:48 START irl_ft_lex
+2026-11-12 19:54:44 END irl_ft_lex WROTE results/irl/irl_exealm_ft_lex_seed0.json
+2026-11-12 19:54:44 START q_llama
+2026-11-12 20:26:21 END q_llama {"model": "llama", "tag": "q_llama", "cfg": "{}", "lr": 0.002, "seed": 1, "tokenizer": "bpe32k", "vocab": 32768, "params_M": 13.1, "steps": 3000, "seconds_budget": 0, "tokens_seen": 49152000, "bytes_s
+2026-11-12 20:26:21 START ft_null
+2026-11-12 20:59:21 END ft_null WROTE results/irl/full_small_exealm_ft_null_seed0.json
+2026-11-12 20:59:21 START irl_ft_null
+2026-11-12 21:00:52 END irl_ft_null WROTE results/irl/irl_exealm_ft_null_seed0.json
+2026-11-12 21:00:52 START ft_wide
+2026-11-12 21:18:18 END ft_wide WROTE results/irl/full_small_exealm_ft_wide_seed0.json
+2026-11-12 21:18:18 START irl_ft_wide
+2026-11-12 21:20:06 END irl_ft_wide WROTE results/irl/irl_exealm_ft_wide_seed0.json
+2026-11-12 21:48:37 START q_qwen35_s1
+2026-11-12 22:11:14 END q_qwen35_s1 {"model": "llama", "tag": "q_qwen35_s1", "cfg": "{}", "lr": 0.002, "seed": 1, "tokenizer": "bpe32k", "vocab": 32768, "params_M": 13.51, "steps": 3000, "seconds_budget": 0, "tokens_seen": 49152000, "by
+2026-11-13 00:12:19 START ft_wide_long
+2026-11-13 01:36:40 END ft_wide_long WROTE results/irl/full_small_exealm_ft_wide_long_seed0.json
+2026-11-13 01:36:40 START irl_ft_wide_long
+2026-11-13 01:39:30 END irl_ft_wide_long WROTE results/irl/irl_exealm_ft_wide_long_seed0.json
+2026-11-13 01:39:30 START skillsA_search_full
+2026-11-13 05:34:32 END skillsA_search_full WROTE results/full_small/full_small_exealm_skillsA_search_seed0.json

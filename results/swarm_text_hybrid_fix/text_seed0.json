@@ -1,0 +1,488 @@
+{
+ "args": {
+  "data": "data/bytes/train",
+  "val": "data/bytes/val",
+  "arms": "split,split_solo",
+  "steps": 4000,
+  "batch": 32,
+  "seq": 512,
+  "swarm": 4,
+  "chunk": 64,
+  "d": 256,
+  "layers": 6,
+  "slots": 8,
+  "h": 32,
+  "lr": 0.002,
+  "eval_every": 500,
+  "eval_batches": 24,
+  "seed": 0,
+  "hybrid": 1,
+  "device": "mps",
+  "out": "results/swarm_text_hybrid_fix"
+ },
+ "device": "mps",
+ "runs": [
+  {
+   "arm": "split",
+   "params": 4986840,
+   "final": {
+    "arm": "split",
+    "step": 4000,
+    "secs": 441.9,
+    "train_loss": 1.33,
+    "shared": {
+     "bpb": 1.6541,
+     "per_agent": [
+      1.6397,
+      1.6635,
+      1.6531,
+      1.66
+     ]
+    },
+    "cut": {
+     "bpb": 1.6574,
+     "per_agent": [
+      1.6432,
+      1.6679,
+      1.6563,
+      1.6623
+     ]
+    },
+    "board_gain": 0.0033
+   },
+   "curve": [
+    {
+     "arm": "split",
+     "step": 500,
+     "secs": 55.6,
+     "train_loss": 1.4428,
+     "shared": {
+      "bpb": 2.1015,
+      "per_agent": [
+       2.0847,
+       2.1154,
+       2.1072,
+       2.0986
+      ]
+     },
+     "cut": {
+      "bpb": 2.103,
+      "per_agent": [
+       2.0857,
+       2.1167,
+       2.1095,
+       2.1002
+      ]
+     },
+     "board_gain": 0.0015
+    },
+    {
+     "arm": "split",
+     "step": 1000,
+     "secs": 110.7,
+     "train_loss": 1.3337,
+     "shared": {
+      "bpb": 1.9613,
+      "per_agent": [
+       1.9421,
+       1.9747,
+       1.9658,
+       1.9624
+      ]
+     },
+     "cut": {
+      "bpb": 1.9622,
+      "per_agent": [
+       1.9429,
+       1.9755,
+       1.9667,
+       1.9636
+      ]
+     },
+     "board_gain": 0.0009
+    },
+    {
+     "arm": "split",
+     "step": 1500,
+     "secs": 166.0,
+     "train_loss": 1.3591,
+     "shared": {
+      "bpb": 1.8978,
+      "per_agent": [
+       1.8803,
+       1.9112,
+       1.9021,
+       1.8976
+      ]
+     },
+     "cut": {
+      "bpb": 1.8996,
+      "per_agent": [
+       1.8821,
+       1.9129,
+       1.904,
+       1.8992
+      ]
+     },
+     "board_gain": 0.0018
+    },
+    {
+     "arm": "split",
+     "step": 2000,
+     "secs": 221.1,
+     "train_loss": 1.311,
+     "shared": {
+      "bpb": 1.8602,
+      "per_agent": [
+       1.8454,
+       1.8711,
+       1.8643,
+       1.86
+      ]
+     },
+     "cut": {
+      "bpb": 1.8607,
+      "per_agent": [
+       1.8461,
+       1.8718,
+       1.8647,
+       1.8603
+      ]
+     },
+     "board_gain": 0.0005
+    },
+    {
+     "arm": "split",
+     "step": 2500,
+     "secs": 276.4,
+     "train_loss": 1.274,
+     "shared": {
+      "bpb": 1.8146,
+      "per_agent": [
+       1.7986,
+       1.8281,
+       1.8171,
+       1.8146
+      ]
+     },
+     "cut": {
+      "bpb": 1.8169,
+      "per_agent": [
+       1.8007,
+       1.8313,
+       1.8197,
+       1.8159
+      ]
+     },
+     "board_gain": 0.0023
+    },
+    {
+     "arm": "split",
+     "step": 3000,
+     "secs": 331.5,
+     "train_loss": 1.2324,
+     "shared": {
+      "bpb": 1.7879,
+      "per_agent": [
+       1.7718,
+       1.8001,
+       1.7926,
+       1.7872
+      ]
+     },
+     "cut": {
+      "bpb": 1.7904,
+      "per_agent": [
+       1.7743,
+       1.8033,
+       1.7948,
+       1.7891
+      ]
+     },
+     "board_gain": 0.0025
+    },
+    {
+     "arm": "split",
+     "step": 3500,
+     "secs": 386.8,
+     "train_loss": 1.1638,
+     "shared": {
+      "bpb": 1.7311,
+      "per_agent": [
+       1.717,
+       1.7419,
+       1.7321,
+       1.7337
+      ]
+     },
+     "cut": {
+      "bpb": 1.7332,
+      "per_agent": [
+       1.7189,
+       1.7448,
+       1.7342,
+       1.7349
+      ]
+     },
+     "board_gain": 0.0021
+    },
+    {
+     "arm": "split",
+     "step": 4000,
+     "secs": 441.9,
+     "train_loss": 1.33,
+     "shared": {
+      "bpb": 1.6541,
+      "per_agent": [
+       1.6397,
+       1.6635,
+       1.6531,
+       1.66
+      ]
+     },
+     "cut": {
+      "bpb": 1.6574,
+      "per_agent": [
+       1.6432,
+       1.6679,
+       1.6563,
+       1.6623
+      ]
+     },
+     "board_gain": 0.0033
+    }
+   ]
+  },
+  {
+   "arm": "split_solo",
+   "params": 4986840,
+   "final": {
+    "arm": "split_solo",
+    "step": 4000,
+    "secs": 441.5,
+    "train_loss": 1.302,
+    "shared": {
+     "bpb": 1.6208,
+     "per_agent": [
+      1.6066,
+      1.6298,
+      1.6177,
+      1.6292
+     ]
+    },
+    "cut": {
+     "bpb": 1.619,
+     "per_agent": [
+      1.605,
+      1.6285,
+      1.616,
+      1.6267
+     ]
+    },
+    "board_gain": -0.0018
+   },
+   "curve": [
+    {
+     "arm": "split_solo",
+     "step": 500,
+     "secs": 55.3,
+     "train_loss": 1.4399,
+     "shared": {
+      "bpb": 2.0926,
+      "per_agent": [
+       2.0756,
+       2.108,
+       2.0955,
+       2.0914
+      ]
+     },
+     "cut": {
+      "bpb": 2.0926,
+      "per_agent": [
+       2.0757,
+       2.108,
+       2.0953,
+       2.0913
+      ]
+     },
+     "board_gain": 0.0
+    },
+    {
+     "arm": "split_solo",
+     "step": 1000,
+     "secs": 110.4,
+     "train_loss": 1.3364,
+     "shared": {
+      "bpb": 1.9662,
+      "per_agent": [
+       1.9479,
+       1.9778,
+       1.9689,
+       1.9703
+      ]
+     },
+     "cut": {
+      "bpb": 1.9608,
+      "per_agent": [
+       1.9427,
+       1.9729,
+       1.9629,
+       1.9648
+      ]
+     },
+     "board_gain": -0.0054
+    },
+    {
+     "arm": "split_solo",
+     "step": 1500,
+     "secs": 165.6,
+     "train_loss": 1.365,
+     "shared": {
+      "bpb": 1.9014,
+      "per_agent": [
+       1.8861,
+       1.9149,
+       1.9031,
+       1.9015
+      ]
+     },
+     "cut": {
+      "bpb": 1.901,
+      "per_agent": [
+       1.8857,
+       1.9148,
+       1.9027,
+       1.901
+      ]
+     },
+     "board_gain": -0.0004
+    },
+    {
+     "arm": "split_solo",
+     "step": 2000,
+     "secs": 220.7,
+     "train_loss": 1.3083,
+     "shared": {
+      "bpb": 1.8504,
+      "per_agent": [
+       1.8364,
+       1.8649,
+       1.8488,
+       1.8516
+      ]
+     },
+     "cut": {
+      "bpb": 1.8504,
+      "per_agent": [
+       1.8364,
+       1.8649,
+       1.8489,
+       1.8514
+      ]
+     },
+     "board_gain": 0.0
+    },
+    {
+     "arm": "split_solo",
+     "step": 2500,
+     "secs": 276.0,
+     "train_loss": 1.2667,
+     "shared": {
+      "bpb": 1.8111,
+      "per_agent": [
+       1.7959,
+       1.8245,
+       1.8135,
+       1.8105
+      ]
+     },
+     "cut": {
+      "bpb": 1.8112,
+      "per_agent": [
+       1.7959,
+       1.8246,
+       1.8136,
+       1.8105
+      ]
+     },
+     "board_gain": 0.0001
+    },
+    {
+     "arm": "split_solo",
+     "step": 3000,
+     "secs": 331.1,
+     "train_loss": 1.2301,
+     "shared": {
+      "bpb": 1.7746,
+      "per_agent": [
+       1.7616,
+       1.7874,
+       1.775,
+       1.7745
+      ]
+     },
+     "cut": {
+      "bpb": 1.7749,
+      "per_agent": [
+       1.7619,
+       1.7879,
+       1.7751,
+       1.7746
+      ]
+     },
+     "board_gain": 0.0003
+    },
+    {
+     "arm": "split_solo",
+     "step": 3500,
+     "secs": 386.4,
+     "train_loss": 1.1476,
+     "shared": {
+      "bpb": 1.6995,
+      "per_agent": [
+       1.6857,
+       1.7098,
+       1.6983,
+       1.7041
+      ]
+     },
+     "cut": {
+      "bpb": 1.6996,
+      "per_agent": [
+       1.6858,
+       1.71,
+       1.6985,
+       1.7042
+      ]
+     },
+     "board_gain": 0.0001
+    },
+    {
+     "arm": "split_solo",
+     "step": 4000,
+     "secs": 441.5,
+     "train_loss": 1.302,
+     "shared": {
+      "bpb": 1.6208,
+      "per_agent": [
+       1.6066,
+       1.6298,
+       1.6177,
+       1.6292
+      ]
+     },
+     "cut": {
+      "bpb": 1.619,
+      "per_agent": [
+       1.605,
+       1.6285,
+       1.616,
+       1.6267
+      ]
+     },
+     "board_gain": -0.0018
+    }
+   ]
+  }
+ ]
+}

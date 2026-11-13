@@ -95,3 +95,87 @@
 2026-11-11 17:58:04 START eqt_100m_llama
 2026-11-11 18:48:17 END eqt_100m_llama {"model": "llama", "tag": "eqt_100m_llama", "cfg": "{}", "lr": 0.001, "seed": 0, "tokenizer": "bpe32k", "vocab": 32768, "params_M": 89.73, "steps": 3491, "seconds_budget": 3000.0, "tokens_seen": 57196
 2026-11-11 18:48:17 START eqt_100m_hybrid_lr1e3
+2026-11-11 19:40:32 END eqt_100m_hybrid_lr1e3 {"model": "tonn_core", "tag": "eqt_100m_hybrid_lr1e3", "cfg": "{\"attn_layers\": [1, 2, 4, 5, 7, 8, 10, 11, 13], \"init_weights\": {\"C\": 4, \"G\": 0.25, \"D\": 0.25}}", "lr": 0.001, "seed": 0, "toke
+2026-11-11 19:40:32 START eqt_100m_hybrid_s1
+2026-11-11 20:29:59 END eqt_100m_hybrid_s1 {"model": "tonn_core", "tag": "eqt_100m_hybrid_s1", "cfg": "{\"attn_layers\": [1, 2, 4, 5, 7, 8, 10, 11, 13], \"init_weights\": {\"C\": 4, \"G\": 0.25, \"D\": 0.25}}", "lr": 0.0015, "seed": 1, "tokeni
+2026-11-11 20:29:59 START eqt_100m_llama_s1
+2026-11-11 21:17:41 END eqt_100m_llama_s1 {"model": "llama", "tag": "eqt_100m_llama_s1", "cfg": "{}", "lr": 0.001, "seed": 1, "tokenizer": "bpe32k", "vocab": 32768, "params_M": 89.73, "steps": 3231, "seconds_budget": 3000.0, "tokens_seen": 52
+2026-11-11 21:17:41 START eqt_100m_hybrid_lr1e3_s1
+2026-11-11 22:08:01 END eqt_100m_hybrid_lr1e3_s1 {"model": "tonn_core", "tag": "eqt_100m_hybrid_lr1e3_s1", "cfg": "{\"attn_layers\": [1, 2, 4, 5, 7, 8, 10, 11, 13], \"init_weights\": {\"C\": 4, \"G\": 0.25, \"D\": 0.25}}", "lr": 0.001, "seed": 1, "t
+2026-11-11 22:09:01 START full_small_exealm
+2026-11-12 01:04:56 END full_small_exealm WROTE results/full_small/full_small_exealm_seed0.json
+2026-11-12 01:04:56 START skills_exealm
+2026-11-12 02:52:16 END skills_exealm WROTE results/full_small/full_small_exealm_skills_seed0.json
+2026-11-12 02:52:16 START skills_llama
+2026-11-12 04:14:46 END skills_llama AttributeError: 'Llama' object has no attribute 'generate'
+2026-11-12 04:14:46 START schedA
+2026-11-12 04:24:35 END schedA WROTE results/full_small_check/full_small_exealm_schedA_seed0.json
+2026-11-12 04:24:35 START schedB
+2026-11-12 04:34:17 END schedB WROTE results/full_small_check/full_small_exealm_schedB_seed0.json
+2026-11-12 04:34:17 START schedR
+2026-11-12 04:43:49 END schedR WROTE results/full_small_check/full_small_exealm_schedR_seed0.json
+2026-11-12 04:43:49 START skills_llama_eqc
+2026-11-12 06:30:52 END skills_llama_eqc WROTE results/full_small/full_small_llama_skills_eqc_seed0.json
+2026-11-12 06:30:52 START skills_exealm_s1
+2026-11-12 08:15:00 END skills_exealm_s1 WROTE results/full_small/full_small_exealm_skills_seed1.json
+2026-11-12 08:15:00 START skills_llama_s1
+2026-11-12 09:37:20 END skills_llama_s1 WROTE results/full_small/full_small_llama_skills_seed1.json
+2026-11-12 09:37:20 START schedA_s1
+2026-11-12 09:46:27 END schedA_s1 WROTE results/full_small_check/full_small_exealm_schedA_seed1.json
+2026-11-12 09:46:27 START skillsA_exealm
+2026-11-12 11:34:02 END skillsA_exealm WROTE results/full_small/full_small_exealm_skillsA_seed0.json
+2026-11-12 11:34:02 START skillsA_exealm_s1
+2026-11-12 13:17:54 END skillsA_exealm_s1 WROTE results/full_small/full_small_exealm_skillsA_seed1.json
+2026-11-12 13:17:54 START full_small_llama
+2026-11-12 14:41:15 END full_small_llama WROTE results/full_small/full_small_llama_seed0.json
+2026-11-12 14:41:15 START swarmfix_hybrid
+2026-11-12 14:56:00 END swarmfix_hybrid WROTE results/swarm_text_hybrid_fix/text_seed0.json
+2026-11-12 14:56:00 START swarmfix_hybrid_s1
+2026-11-12 15:10:20 END swarmfix_hybrid_s1 WROTE results/swarm_text_hybrid_fix/text_seed1.json
+2026-11-12 15:10:20 START swarmfix_tonn
+2026-11-12 15:28:27 END swarmfix_tonn WROTE results/swarm_text_fix/text_seed0.json
+2026-11-12 15:28:27 START eqt_100m_llama_s1_rerun
+2026-11-12 16:18:50 END eqt_100m_llama_s1_rerun {"model": "llama", "tag": "eqt_100m_llama_s1_rerun", "cfg": "{}", "lr": 0.001, "seed": 1, "tokenizer": "bpe32k", "vocab": 32768, "params_M": 89.73, "steps": 3581, "seconds_budget": 3000.0, "tokens_see
+2026-11-12 16:18:50 START eqt_100m_hybrid_s1_rerun
+2026-11-12 17:09:17 END eqt_100m_hybrid_s1_rerun {"model": "tonn_core", "tag": "eqt_100m_hybrid_s1_rerun", "cfg": "{\"attn_layers\": [1, 2, 4, 5, 7, 8, 10, 11, 13], \"init_weights\": {\"C\": 4, \"G\": 0.25, \"D\": 0.25}}", "lr": 0.0015, "seed": 1, "
+2026-11-12 17:10:18 START swarm_nomask_hybrid
+2026-11-12 17:25:01 END swarm_nomask_hybrid WROTE results/swarm_text_hybrid_nomask/text_seed0.json
+2026-11-12 17:25:01 START swarm_mask_repeat
+2026-11-12 17:32:23 END swarm_mask_repeat WROTE results/swarm_text_hybrid_fix_repeat/text_seed0.json
+2026-11-12 17:32:23 START swarm_nomask_hybrid_s1
+2026-11-12 17:47:15 END swarm_nomask_hybrid_s1 WROTE results/swarm_text_hybrid_nomask/text_seed1.json
+2026-11-12 17:47:15 START llama_textonly
+2026-11-12 19:54:34 END llama_textonly WROTE results/full_small/full_small_llama_textonly_seed0.json
+2026-11-12 19:54:34 START skillsA_100m_check
+2026-11-12 20:52:09 END skillsA_100m_check experiments/run_queue.sh: line 19: 60404 Terminated: 15          /Users/avneh/exea_work/venv/bin/python experiments/full_small.py --model exealm --preset 100m --steps 24000 --stop_at 3000 --eval_every
+2026-11-12 20:52:09 START q_qwen35
+2026-11-12 21:13:43 END q_qwen35 {"model": "llama", "tag": "q_qwen35", "cfg": "{}", "lr": 0.002, "seed": 0, "tokenizer": "bpe32k", "vocab": 32768, "params_M": 13.51, "steps": 3000, "seconds_budget": 0, "tokens_seen": 49152000, "bytes
+2026-11-12 21:13:43 START q_hybrid_delta
+2026-11-12 21:27:16 END q_hybrid_delta {"model": "tonn_core", "tag": "q_hybrid_delta", "cfg": "{\"attn_layers\": [1, 2, 4, 5], \"init_weights\": {\"C\": 4, \"G\": 0.25, \"D\": 0.25}, \"delta_layers\": [1, 4], \"attn_gate\": true, \"qk_norm
+2026-11-12 21:27:16 START q_hybrid_gate
+2026-11-12 21:37:16 END q_hybrid_gate {"model": "tonn_core", "tag": "q_hybrid_gate", "cfg": "{\"attn_layers\": [1, 2, 4, 5], \"init_weights\": {\"C\": 4, \"G\": 0.25, \"D\": 0.25}, \"attn_gate\": true, \"qk_norm\": true}", "lr": 0.002, "s
+2026-11-12 21:37:16 START q_hybrid
+2026-11-12 21:46:38 END q_hybrid {"model": "tonn_core", "tag": "q_hybrid", "cfg": "{\"attn_layers\": [1, 2, 4, 5], \"init_weights\": {\"C\": 4, \"G\": 0.25, \"D\": 0.25}}", "lr": 0.002, "seed": 0, "tokenizer": "bpe32k", "vocab": 3276
+2026-11-12 21:46:38 START search_check
+2026-11-12 21:58:14 END search_check WROTE results/full_small_check/full_small_exealm_search_check_seed0.json
+2026-11-12 21:58:14 START q_llama_gate
+2026-11-12 22:12:37 END q_llama_gate {"model": "llama", "tag": "q_llama_gate", "cfg": "{}", "lr": 0.002, "seed": 0, "tokenizer": "bpe32k", "vocab": 32768, "params_M": 13.49, "steps": 3000, "seconds_budget": 0, "tokens_seen": 49152000, "b
+2026-11-12 22:12:37 START q_hybrid_gate_s1
+2026-11-12 22:22:16 END q_hybrid_gate_s1 {"model": "tonn_core", "tag": "q_hybrid_gate_s1", "cfg": "{\"attn_layers\": [1, 2, 4, 5], \"init_weights\": {\"C\": 4, \"G\": 0.25, \"D\": 0.25}, \"attn_gate\": true, \"qk_norm\": true}", "lr": 0.002,
+2026-11-12 23:18:19 START eqt_q_hybrid_gate
+2026-11-12 23:28:32 END eqt_q_hybrid_gate {"model": "tonn_core", "tag": "eqt_q_hybrid_gate", "cfg": "{\"attn_layers\": [1, 2, 4, 5], \"init_weights\": {\"C\": 4, \"G\": 0.25, \"D\": 0.25}, \"attn_gate\": true, \"qk_norm\": true}", "lr": 0.002
+2026-11-12 23:28:32 START eqt_q_llama_gate
+2026-11-12 23:38:44 END eqt_q_llama_gate {"model": "llama", "tag": "eqt_q_llama_gate", "cfg": "{}", "lr": 0.002, "seed": 0, "tokenizer": "bpe32k", "vocab": 32768, "params_M": 13.49, "steps": 3233, "seconds_budget": 600.0, "tokens_seen": 5296
+2026-11-12 23:38:44 START eqt_q_qwen35
+2026-11-12 23:50:18 END eqt_q_qwen35 {"model": "llama", "tag": "eqt_q_qwen35", "cfg": "{}", "lr": 0.002, "seed": 0, "tokenizer": "bpe32k", "vocab": 32768, "params_M": 13.51, "steps": 2592, "seconds_budget": 600.0, "tokens_seen": 42467328
+2026-11-12 23:50:18 START eqt_q_llama
+2026-11-13 00:01:17 END eqt_q_llama {"model": "llama", "tag": "eqt_q_llama", "cfg": "{}", "lr": 0.002, "seed": 0, "tokenizer": "bpe32k", "vocab": 32768, "params_M": 13.1, "steps": 3020, "seconds_budget": 600.0, "tokens_seen": 49479680, 
+2026-11-13 00:01:18 START eqt_q_hybrid_gate_search
+2026-11-13 00:11:32 END eqt_q_hybrid_gate_search {"model": "tonn_core_search", "tag": "eqt_q_hybrid_gate_search", "cfg": "{\"attn_layers\": [1, 2, 4, 5], \"init_weights\": {\"C\": 4, \"G\": 0.25, \"D\": 0.25}, \"attn_gate\": true, \"qk_norm\": true}
+2026-11-13 00:11:32 START q_hybrid_gate_search
+2026-11-13 00:31:06 END q_hybrid_gate_search {"model": "tonn_core_search", "tag": "q_hybrid_gate_search", "cfg": "{\"attn_layers\": [1, 2, 4, 5], \"init_weights\": {\"C\": 4, \"G\": 0.25, \"D\": 0.25}, \"attn_gate\": true, \"qk_norm\": true}", "
+2026-11-13 00:31:06 START skillsA_100m
+2026-11-13 02:23:47 END skillsA_100m WROTE results/full_small_check/full_small_exealm_skillsA_100m_seed0.json
+2026-11-13 02:23:47 START skillsA_gate
+2026-11-13 06:03:43 END skillsA_gate WROTE results/full_small/full_small_exealm_skillsA_gate_seed0.json
+data/sweep_launch.sh: line 5: 24686 Terminated: 15          caffeinate -i bash experiments/run_queue.sh results/sweep/queue.txt

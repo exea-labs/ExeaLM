@@ -1,0 +1,519 @@
+{
+ "args": {
+  "arms": "rag,none",
+  "steps": 4000,
+  "facts": 1024,
+  "grow": 16,
+  "grow_every": 400,
+  "questions": 4,
+  "batch": 32,
+  "chunk": 8,
+  "topk": 4,
+  "d": 128,
+  "layers": 4,
+  "slots": 8,
+  "h": 32,
+  "enc_dim": 64,
+  "lr": 0.002,
+  "eval_every": 250,
+  "eval_batches": 8,
+  "seed": 0,
+  "device": "cpu",
+  "out": "results/rag_lookup"
+ },
+ "device": "cpu",
+ "chance": {
+  "acc": 0.0156,
+  "bits": 6.0
+ },
+ "runs": [
+  {
+   "arm": "rag",
+   "params": 1130412,
+   "final": {
+    "arm": "rag",
+    "step": 4000,
+    "kb": 1024,
+    "secs": 1680.6,
+    "attached": {
+     "acc": 0.0234,
+     "bits": 6.001
+    },
+    "removed": {
+     "acc": 0.0234,
+     "bits": 6.001
+    }
+   },
+   "curve": [
+    {
+     "arm": "rag",
+     "step": 250,
+     "kb": 16,
+     "secs": 88.2,
+     "attached": {
+      "acc": 0.0166,
+      "bits": 6.086
+     },
+     "removed": {
+      "acc": 0.0166,
+      "bits": 6.084
+     }
+    },
+    {
+     "arm": "rag",
+     "step": 500,
+     "kb": 32,
+     "secs": 175.6,
+     "attached": {
+      "acc": 0.0215,
+      "bits": 6.037
+     },
+     "removed": {
+      "acc": 0.0215,
+      "bits": 6.039
+     }
+    },
+    {
+     "arm": "rag",
+     "step": 750,
+     "kb": 32,
+     "secs": 273.2,
+     "attached": {
+      "acc": 0.0166,
+      "bits": 6.018
+     },
+     "removed": {
+      "acc": 0.0166,
+      "bits": 6.019
+     }
+    },
+    {
+     "arm": "rag",
+     "step": 1000,
+     "kb": 64,
+     "secs": 411.8,
+     "attached": {
+      "acc": 0.0195,
+      "bits": 6.025
+     },
+     "removed": {
+      "acc": 0.0195,
+      "bits": 6.025
+     }
+    },
+    {
+     "arm": "rag",
+     "step": 1250,
+     "kb": 128,
+     "secs": 558.6,
+     "attached": {
+      "acc": 0.0146,
+      "bits": 6.002
+     },
+     "removed": {
+      "acc": 0.0146,
+      "bits": 6.002
+     }
+    },
+    {
+     "arm": "rag",
+     "step": 1500,
+     "kb": 128,
+     "secs": 701.8,
+     "attached": {
+      "acc": 0.0137,
+      "bits": 6.008
+     },
+     "removed": {
+      "acc": 0.0137,
+      "bits": 6.008
+     }
+    },
+    {
+     "arm": "rag",
+     "step": 1750,
+     "kb": 256,
+     "secs": 819.3,
+     "attached": {
+      "acc": 0.0176,
+      "bits": 6.003
+     },
+     "removed": {
+      "acc": 0.0176,
+      "bits": 6.003
+     }
+    },
+    {
+     "arm": "rag",
+     "step": 2000,
+     "kb": 256,
+     "secs": 918.4,
+     "attached": {
+      "acc": 0.0215,
+      "bits": 5.999
+     },
+     "removed": {
+      "acc": 0.0215,
+      "bits": 6.0
+     }
+    },
+    {
+     "arm": "rag",
+     "step": 2250,
+     "kb": 512,
+     "secs": 1014.7,
+     "attached": {
+      "acc": 0.0137,
+      "bits": 6.004
+     },
+     "removed": {
+      "acc": 0.0137,
+      "bits": 6.004
+     }
+    },
+    {
+     "arm": "rag",
+     "step": 2500,
+     "kb": 1024,
+     "secs": 1109.4,
+     "attached": {
+      "acc": 0.0127,
+      "bits": 6.006
+     },
+     "removed": {
+      "acc": 0.0127,
+      "bits": 6.006
+     }
+    },
+    {
+     "arm": "rag",
+     "step": 2750,
+     "kb": 1024,
+     "secs": 1203.6,
+     "attached": {
+      "acc": 0.0137,
+      "bits": 6.006
+     },
+     "removed": {
+      "acc": 0.0137,
+      "bits": 6.006
+     }
+    },
+    {
+     "arm": "rag",
+     "step": 3000,
+     "kb": 1024,
+     "secs": 1301.4,
+     "attached": {
+      "acc": 0.0146,
+      "bits": 6.006
+     },
+     "removed": {
+      "acc": 0.0156,
+      "bits": 6.006
+     }
+    },
+    {
+     "arm": "rag",
+     "step": 3250,
+     "kb": 1024,
+     "secs": 1394.4,
+     "attached": {
+      "acc": 0.0186,
+      "bits": 6.002
+     },
+     "removed": {
+      "acc": 0.0186,
+      "bits": 6.002
+     }
+    },
+    {
+     "arm": "rag",
+     "step": 3500,
+     "kb": 1024,
+     "secs": 1493.5,
+     "attached": {
+      "acc": 0.0137,
+      "bits": 6.004
+     },
+     "removed": {
+      "acc": 0.0137,
+      "bits": 6.004
+     }
+    },
+    {
+     "arm": "rag",
+     "step": 3750,
+     "kb": 1024,
+     "secs": 1585.0,
+     "attached": {
+      "acc": 0.0127,
+      "bits": 6.0
+     },
+     "removed": {
+      "acc": 0.0127,
+      "bits": 6.0
+     }
+    },
+    {
+     "arm": "rag",
+     "step": 4000,
+     "kb": 1024,
+     "secs": 1680.6,
+     "attached": {
+      "acc": 0.0234,
+      "bits": 6.001
+     },
+     "removed": {
+      "acc": 0.0234,
+      "bits": 6.001
+     }
+    }
+   ]
+  },
+  {
+   "arm": "none",
+   "params": 1130412,
+   "final": {
+    "arm": "none",
+    "step": 4000,
+    "kb": 1024,
+    "secs": 941.2,
+    "attached": {
+     "acc": 0.0234,
+     "bits": 6.001
+    },
+    "removed": {
+     "acc": 0.0234,
+     "bits": 6.001
+    }
+   },
+   "curve": [
+    {
+     "arm": "none",
+     "step": 250,
+     "kb": 16,
+     "secs": 62.1,
+     "attached": {
+      "acc": 0.0156,
+      "bits": 6.061
+     },
+     "removed": {
+      "acc": 0.0156,
+      "bits": 6.061
+     }
+    },
+    {
+     "arm": "none",
+     "step": 500,
+     "kb": 32,
+     "secs": 134.3,
+     "attached": {
+      "acc": 0.0215,
+      "bits": 6.046
+     },
+     "removed": {
+      "acc": 0.0215,
+      "bits": 6.045
+     }
+    },
+    {
+     "arm": "none",
+     "step": 750,
+     "kb": 32,
+     "secs": 204.0,
+     "attached": {
+      "acc": 0.0166,
+      "bits": 6.017
+     },
+     "removed": {
+      "acc": 0.0176,
+      "bits": 6.016
+     }
+    },
+    {
+     "arm": "none",
+     "step": 1000,
+     "kb": 64,
+     "secs": 264.9,
+     "attached": {
+      "acc": 0.0195,
+      "bits": 6.022
+     },
+     "removed": {
+      "acc": 0.0195,
+      "bits": 6.021
+     }
+    },
+    {
+     "arm": "none",
+     "step": 1250,
+     "kb": 128,
+     "secs": 327.8,
+     "attached": {
+      "acc": 0.0146,
+      "bits": 6.001
+     },
+     "removed": {
+      "acc": 0.0146,
+      "bits": 6.0
+     }
+    },
+    {
+     "arm": "none",
+     "step": 1500,
+     "kb": 128,
+     "secs": 384.5,
+     "attached": {
+      "acc": 0.0137,
+      "bits": 6.009
+     },
+     "removed": {
+      "acc": 0.0137,
+      "bits": 6.009
+     }
+    },
+    {
+     "arm": "none",
+     "step": 1750,
+     "kb": 256,
+     "secs": 440.4,
+     "attached": {
+      "acc": 0.0137,
+      "bits": 6.002
+     },
+     "removed": {
+      "acc": 0.0137,
+      "bits": 6.002
+     }
+    },
+    {
+     "arm": "none",
+     "step": 2000,
+     "kb": 256,
+     "secs": 497.5,
+     "attached": {
+      "acc": 0.0215,
+      "bits": 5.999
+     },
+     "removed": {
+      "acc": 0.0215,
+      "bits": 5.999
+     }
+    },
+    {
+     "arm": "none",
+     "step": 2250,
+     "kb": 512,
+     "secs": 553.1,
+     "attached": {
+      "acc": 0.0137,
+      "bits": 6.003
+     },
+     "removed": {
+      "acc": 0.0137,
+      "bits": 6.003
+     }
+    },
+    {
+     "arm": "none",
+     "step": 2500,
+     "kb": 1024,
+     "secs": 609.7,
+     "attached": {
+      "acc": 0.0156,
+      "bits": 6.007
+     },
+     "removed": {
+      "acc": 0.0156,
+      "bits": 6.007
+     }
+    },
+    {
+     "arm": "none",
+     "step": 2750,
+     "kb": 1024,
+     "secs": 665.4,
+     "attached": {
+      "acc": 0.0127,
+      "bits": 6.005
+     },
+     "removed": {
+      "acc": 0.0137,
+      "bits": 6.005
+     }
+    },
+    {
+     "arm": "none",
+     "step": 3000,
+     "kb": 1024,
+     "secs": 717.7,
+     "attached": {
+      "acc": 0.0156,
+      "bits": 6.006
+     },
+     "removed": {
+      "acc": 0.0156,
+      "bits": 6.006
+     }
+    },
+    {
+     "arm": "none",
+     "step": 3250,
+     "kb": 1024,
+     "secs": 773.5,
+     "attached": {
+      "acc": 0.0156,
+      "bits": 6.002
+     },
+     "removed": {
+      "acc": 0.0156,
+      "bits": 6.002
+     }
+    },
+    {
+     "arm": "none",
+     "step": 3500,
+     "kb": 1024,
+     "secs": 828.6,
+     "attached": {
+      "acc": 0.0137,
+      "bits": 6.004
+     },
+     "removed": {
+      "acc": 0.0137,
+      "bits": 6.004
+     }
+    },
+    {
+     "arm": "none",
+     "step": 3750,
+     "kb": 1024,
+     "secs": 883.4,
+     "attached": {
+      "acc": 0.0127,
+      "bits": 6.0
+     },
+     "removed": {
+      "acc": 0.0127,
+      "bits": 6.0
+     }
+    },
+    {
+     "arm": "none",
+     "step": 4000,
+     "kb": 1024,
+     "secs": 941.2,
+     "attached": {
+      "acc": 0.0234,
+      "bits": 6.001
+     },
+     "removed": {
+      "acc": 0.0234,
+      "bits": 6.001
+     }
+    }
+   ]
+  }
+ ]
+}
