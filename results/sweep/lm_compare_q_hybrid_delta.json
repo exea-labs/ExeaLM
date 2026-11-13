@@ -1,0 +1,78 @@
+{
+ "args": {
+  "root": "data/tokpack",
+  "toks": "bpe32k",
+  "mix": "0.5,0.3,0.2",
+  "steps": 3000,
+  "seconds": 0,
+  "batch": 32,
+  "seq": 512,
+  "lr": 0.002,
+  "eval_batches": 16,
+  "models": "tonn_core",
+  "seeds": "0",
+  "cfg": "{\"attn_layers\": [1, 2, 4, 5], \"init_weights\": {\"C\": 4, \"G\": 0.25, \"D\": 0.25}, \"delta_layers\": [1, 4], \"attn_gate\": true, \"qk_norm\": true}",
+  "llama_cfg": "{}",
+  "size": "{}",
+  "tag": "q_hybrid_delta",
+  "device": "mps",
+  "out": "results/sweep"
+ },
+ "device": "mps",
+ "rows": [
+  {
+   "model": "tonn_core",
+   "tag": "q_hybrid_delta",
+   "cfg": "{\"attn_layers\": [1, 2, 4, 5], \"init_weights\": {\"C\": 4, \"G\": 0.25, \"D\": 0.25}, \"delta_layers\": [1, 4], \"attn_gate\": true, \"qk_norm\": true}",
+   "lr": 0.002,
+   "seed": 0,
+   "tokenizer": "bpe32k",
+   "vocab": 32768,
+   "params_M": 13.37,
+   "steps": 3000,
+   "seconds_budget": 0,
+   "tokens_seen": 49152000,
+   "bytes_seen": 193458598,
+   "secs": 806.7,
+   "bits_per_byte": {
+    "en": 1.4356,
+    "ja_wiki": 1.5056,
+    "ja_web": 1.3909,
+    "code": 1.7166
+   },
+   "architecture": [
+    {
+     "RP": 1,
+     "MI": 3,
+     "EP": 1,
+     "MIM": 1,
+     "OS": 1,
+     "SM": 1
+    },
+    {
+     "G": 1,
+     "EP": 1,
+     "OS": 1,
+     "SM": 1,
+     "RP": 1,
+     "GI": 1,
+     "C": 2
+    }
+   ],
+   "train_loss_every_250": [
+    7.4407,
+    5.7316,
+    5.2603,
+    4.8671,
+    4.5939,
+    4.4858,
+    4.3802,
+    4.3099,
+    4.2679,
+    4.1994,
+    4.0939,
+    3.965
+   ]
+  }
+ ]
+}

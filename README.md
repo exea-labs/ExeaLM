@@ -216,7 +216,7 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [x] (starter) Script that prints what RG retrieved for a prompt (`python -m exealm.eval.show_retrieval`)
 - [x] Swap the datastore at inference: on synthetic facts the model never saw, 94% correct with a fresh library (two seeds, 17M)
 - [ ] The same on real text: a library of documents the model never trained on ([#27](https://github.com/exea-labs/ExeaLM/issues/27)); the read is being trained on the right real document (`--wiki_oracle`)
-- [ ] Ordinary RAG baseline for the real-text test: BM25 and the retrieved text in the prompt ([#32](https://github.com/exea-labs/ExeaLM/issues/32))
+- [x] Ordinary RAG baseline for the real-text test: BM25 and the retrieved text in the prompt gains 0.34 bits on re-mentions; the right article in context 1.0 ([#32](https://github.com/exea-labs/ExeaLM/issues/32))
 - [ ] Make retrieval pay off on real text. A perfect search would gain 0.040 bits per token on a Wikipedia knowledge task. Rare-word codes in the keys raise the search's hit rate from 12% to 30%, but the net gain over a no-retrieval model is not yet established (+0.026 and -0.002 on two seeds; results §6). Next: better pooling, hard negatives, a bigger encoder, larger models ([#22](https://github.com/exea-labs/ExeaLM/issues/22))
 
 ### Architecture (`exealm/model/`)
@@ -226,7 +226,8 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [ ] Hybrid layout: which layers get attention, and how many (layout variants queued)
 - [ ] Re-run the swarm and retrieval experiments on the hybrid (they ran on pure TONN)
 - [ ] Ablations at `small` size: with and without RG, AG and swarms
-- [x] Gated DeltaNet, Qwen3.5's linear attention, as a layer (`exealm/model/delta.py`, tested against the recurrence); gated attention and QK-norm as options. The 13M comparison against Llama and a Qwen3.5-style model is running
+- [x] Gated DeltaNet, Qwen3.5's linear attention, as a layer (`exealm/model/delta.py`, tested against the recurrence); gated attention and QK-norm as options. At 13M (one seed) gated attention + QK-norm improve the hybrid by 0.025 bits per byte and put it ahead of a Qwen3.5-style model; DeltaNet layers add nothing on top ([results §12](results/README.md))
+- [ ] Make gated attention + QK-norm the default after a second seed, a gated Llama and an equal-compute check
 - [ ] Gated DeltaNet as a TONN circuit type the search can choose ([#30](https://github.com/exea-labs/ExeaLM/issues/30)); other new types, for example sliding-window attention
 - [ ] Shape sweep at fixed parameters: depth, width, slots per layer, channels per slot
 - [ ] Search schedule: how long to search, how much to replace, how long new circuits are protected (on the hybrid with a good start it adds about 0.001 today)

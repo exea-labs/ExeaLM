@@ -1,0 +1,212 @@
+{
+ "ckpt": "results/irl/exealm_ft_wide_seed0_ckpt.pt",
+ "model": "ExeaLM",
+ "articles": 256,
+ "re_mentions": 8517,
+ "novel": 23227,
+ "reader_windows_in_notes": 1134,
+ "args": {
+  "ckpt": "results/irl/exealm_ft_wide_seed0_ckpt.pt",
+  "wiki": "data/tokpack/bpe32k/store_wiki",
+  "articles": 256,
+  "seq": 512,
+  "min_tokens": 1024,
+  "common": 1000,
+  "batch": 16,
+  "seed": 0,
+  "device": "auto",
+  "out": ""
+ },
+ "results": {
+  "none": {
+   "all": 4.8709,
+   "re-mention": 8.5317,
+   "novel": 8.7674,
+   "re-mention top-1": 0.1535,
+   "re-mention 4-choice": 0.8853
+  },
+  "none (first 256)": {
+   "all": 4.9655,
+   "re-mention": 8.6162,
+   "novel": 8.8486,
+   "re-mention top-1": 0.1541,
+   "re-mention 4-choice": 0.8825
+  },
+  "none (64-255)": {
+   "all": 4.797,
+   "re-mention": 8.2832,
+   "novel": 8.7293,
+   "re-mention top-1": 0.1642,
+   "re-mention 4-choice": 0.8835
+  },
+  "BM25 top-4 in context (64-255)": {
+   "all": 4.7475,
+   "re-mention": 7.944,
+   "novel": 8.7519,
+   "re-mention top-1": 0.1947,
+   "re-mention 4-choice": 0.8852,
+   "right article retrieved": 0.6406
+  },
+  "in context (first 256)": {
+   "all": 4.7733,
+   "re-mention": 7.5644,
+   "novel": 8.7955,
+   "re-mention top-1": 0.227,
+   "re-mention 4-choice": 0.8916
+  },
+  "in context (64-255)": {
+   "all": 4.6972,
+   "re-mention": 7.6855,
+   "novel": 8.7316,
+   "re-mention top-1": 0.2074,
+   "re-mention 4-choice": 0.8897
+  },
+  "library": {
+   "all": 4.9128,
+   "re-mention": 8.5839,
+   "novel": 8.8335,
+   "re-mention top-1": 0.1517,
+   "re-mention 4-choice": 0.8851
+  },
+  "library (first 256)": {
+   "all": 4.9999,
+   "re-mention": 8.6573,
+   "novel": 8.9117,
+   "re-mention top-1": 0.1532,
+   "re-mention 4-choice": 0.8823
+  },
+  "library (64-255)": {
+   "all": 4.8429,
+   "re-mention": 8.344,
+   "novel": 8.8147,
+   "re-mention top-1": 0.1628,
+   "re-mention 4-choice": 0.8832
+  },
+  "library, perfect search": {
+   "all": 4.962,
+   "re-mention": 8.6675,
+   "novel": 8.929,
+   "re-mention top-1": 0.1484,
+   "re-mention 4-choice": 0.8832
+  },
+  "library, perfect search (first 256)": {
+   "all": 5.0385,
+   "re-mention": 8.727,
+   "novel": 8.9917,
+   "re-mention top-1": 0.1511,
+   "re-mention 4-choice": 0.8815
+  },
+  "library, perfect search (64-255)": {
+   "all": 4.8944,
+   "re-mention": 8.4471,
+   "novel": 8.9229,
+   "re-mention top-1": 0.1597,
+   "re-mention 4-choice": 0.8821
+  },
+  "library, BM25 search": {
+   "all": 5.0046,
+   "re-mention": 8.6989,
+   "novel": 8.9755,
+   "re-mention top-1": 0.1472,
+   "re-mention 4-choice": 0.8818
+  },
+  "library, BM25 search (first 256)": {
+   "all": 5.0718,
+   "re-mention": 8.7485,
+   "novel": 9.0211,
+   "re-mention top-1": 0.1496,
+   "re-mention 4-choice": 0.8808
+  },
+  "library, BM25 search (64-255)": {
+   "all": 4.9388,
+   "re-mention": 8.4788,
+   "novel": 8.9627,
+   "re-mention top-1": 0.1574,
+   "re-mention 4-choice": 0.8809
+  },
+  "board, live (swarm of 2)": {
+   "all": 4.8652,
+   "re-mention": 8.5211,
+   "novel": 8.7616,
+   "re-mention top-1": 0.1538,
+   "re-mention 4-choice": 0.8854
+  },
+  "board, live (swarm of 2) (first 256)": {
+   "all": 4.9565,
+   "re-mention": 8.6021,
+   "novel": 8.8391,
+   "re-mention top-1": 0.1549,
+   "re-mention 4-choice": 0.8819
+  },
+  "board, live (swarm of 2) (64-255)": {
+   "all": 4.7913,
+   "re-mention": 8.2751,
+   "novel": 8.7253,
+   "re-mention top-1": 0.1645,
+   "re-mention 4-choice": 0.884
+  },
+  "board, live, cut": {
+   "all": 4.8709,
+   "re-mention": 8.5317,
+   "novel": 8.7674,
+   "re-mention top-1": 0.1535,
+   "re-mention 4-choice": 0.8853
+  },
+  "board, live, cut (first 256)": {
+   "all": 4.9655,
+   "re-mention": 8.6162,
+   "novel": 8.8486,
+   "re-mention top-1": 0.1541,
+   "re-mention 4-choice": 0.8825
+  },
+  "board, live, cut (64-255)": {
+   "all": 4.797,
+   "re-mention": 8.2832,
+   "novel": 8.7293,
+   "re-mention top-1": 0.1642,
+   "re-mention 4-choice": 0.8835
+  },
+  "notes, own article": {
+   "all": 4.8543,
+   "re-mention": 8.4927,
+   "novel": 8.7561,
+   "re-mention top-1": 0.1544,
+   "re-mention 4-choice": 0.8866
+  },
+  "notes, own article (first 256)": {
+   "all": 4.9354,
+   "re-mention": 8.5568,
+   "novel": 8.8278,
+   "re-mention top-1": 0.1559,
+   "re-mention 4-choice": 0.8838
+  },
+  "notes, own article (64-255)": {
+   "all": 4.7882,
+   "re-mention": 8.2724,
+   "novel": 8.7259,
+   "re-mention top-1": 0.1656,
+   "re-mention 4-choice": 0.8857
+  },
+  "notes, all articles": {
+   "all": 4.8577,
+   "re-mention": 8.5181,
+   "novel": 8.7548,
+   "re-mention top-1": 0.1533,
+   "re-mention 4-choice": 0.8865
+  },
+  "notes, all articles (first 256)": {
+   "all": 4.9423,
+   "re-mention": 8.5903,
+   "novel": 8.8287,
+   "re-mention top-1": 0.1547,
+   "re-mention 4-choice": 0.8831
+  },
+  "notes, all articles (64-255)": {
+   "all": 4.7899,
+   "re-mention": 8.2845,
+   "novel": 8.7216,
+   "re-mention top-1": 0.1642,
+   "re-mention 4-choice": 0.8843
+  }
+ }
+}

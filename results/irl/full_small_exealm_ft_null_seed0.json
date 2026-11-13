@@ -1,0 +1,234 @@
+{
+ "model": "exealm",
+ "params": 18080798,
+ "library_chunks": 483270,
+ "eval_library_chunks": 53467,
+ "train_articles": 14209,
+ "eval_articles": 1578,
+ "args": {
+  "model": "exealm",
+  "preset": "small",
+  "search": 0,
+  "search_every": 250,
+  "search_until": 0.5,
+  "search_mix": "text:3,wiki:1,relay:1,lookup:1",
+  "wiki_oracle": 0.5,
+  "init_ckpt": "results/full_small/exealm_skillsA_seed0_ckpt.pt",
+  "rag_null": 1,
+  "memory_slots": 0,
+  "lib_search": "learned",
+  "root": "data/tokpack",
+  "toks": "bpe32k",
+  "train": "train_en_big,train_ja_big,train_code_big",
+  "mix": "0.5,0.3,0.2",
+  "p_kinds": "0.55,0.15,0.075,0.075,0.15",
+  "warm_steps": 0,
+  "warm_kinds": "0.2,0,0.4,0.4",
+  "schedule": "",
+  "facts": 1024,
+  "grow": 16,
+  "dense": 1,
+  "relay_chunk": 8,
+  "relay_facts": 4,
+  "grow_every": 150,
+  "d": 320,
+  "slots": 10,
+  "steps": 4000,
+  "batch": 32,
+  "seq": 512,
+  "chunk": 64,
+  "min_tokens": 1024,
+  "lr": 0.001,
+  "warmup": 200,
+  "refresh_every": 1000,
+  "eval_every": 2000,
+  "eval_batches": 12,
+  "save_every": 4000,
+  "key_dim": 128,
+  "lexical": 128,
+  "gen_tokens": 60,
+  "prompts": "The history of the city begins||Photosynthesis is the process by which||日本の首都は||def fibonacci(n):",
+  "tokenizer": "results/tokenizer/bpe32k/tokenizer.json",
+  "lib_on": "wiki",
+  "board_chunk": 8,
+  "pool": "mean",
+  "tag": "ft_null",
+  "stop_at": 0,
+  "seed": 0,
+  "smoke": 0,
+  "device": "auto",
+  "out": "results/irl"
+ },
+ "curve": [
+  {
+   "step": 2000,
+   "secs": 979.2,
+   "tokens": 32768000,
+   "train_loss": 3.592,
+   "batches": {
+    "text": 1155,
+    "wiki": 272,
+    "relay": 142,
+    "lookup": 149,
+    "pair": 282
+   },
+   "val_en": {
+    "removed": 1.3708,
+    "attached": 1.3717
+   },
+   "val_ja_wiki": {
+    "removed": 1.5059,
+    "attached": 1.5066
+   },
+   "val_ja_web": {
+    "removed": 1.4131,
+    "attached": 1.4114
+   },
+   "val_code": {
+    "removed": 1.7225,
+    "attached": 1.7294
+   },
+   "swarm": {
+    "shared": 1.3724,
+    "cut": 1.373,
+    "board_gain": 0.0007
+   },
+   "knowledge": {
+    "removed": 4.9438,
+    "attached": 4.9511,
+    "retrieval_gain": -0.0074,
+    "same_article_hits": 0.252
+   },
+   "relay": {
+    "shared": 0.9993,
+    "cut": 0.012
+   },
+   "lookup": {
+    "attached": 0.8665,
+    "removed": 0.0148
+   }
+  },
+  {
+   "step": 4000,
+   "secs": 1936.5,
+   "tokens": 65536000,
+   "train_loss": 4.5919,
+   "batches": {
+    "text": 2271,
+    "wiki": 571,
+    "relay": 298,
+    "lookup": 296,
+    "pair": 564
+   },
+   "val_en": {
+    "removed": 1.3244,
+    "attached": 1.3248
+   },
+   "val_ja_wiki": {
+    "removed": 1.4443,
+    "attached": 1.4451
+   },
+   "val_ja_web": {
+    "removed": 1.3369,
+    "attached": 1.3375
+   },
+   "val_code": {
+    "removed": 1.6345,
+    "attached": 1.6354
+   },
+   "swarm": {
+    "shared": 1.3259,
+    "cut": 1.3267,
+    "board_gain": 0.0008
+   },
+   "knowledge": {
+    "removed": 4.7616,
+    "attached": 4.7622,
+    "retrieval_gain": -0.0007,
+    "same_article_hits": 0.2568
+   },
+   "relay": {
+    "shared": 1.0,
+    "cut": 0.0111
+   },
+   "lookup": {
+    "attached": 0.9309,
+    "removed": 0.0175
+   }
+  }
+ ],
+ "searches": [],
+ "samples": {
+  "free": [
+   {
+    "prompt": "The history of the city begins",
+    "text": " in 1900, when the city came into existence, with the city of Goldwater and the town is the site of the city. It is known for its significance as the town of Goldwater and is the location of an area that is now known as Goldwater. The"
+   },
+   {
+    "prompt": "Photosynthesis is the process by which",
+    "text": " a user can take the form of a product, as many different types of features from one another become more efficient, often with their own products.\n\nAnglican technology is highly beneficial with all aspects of their design, although it does not exist on an individual's natural environment. It is"
+   },
+   {
+    "prompt": "日本の首都は",
+    "text": "、その2つの大きな都市は、その1つの都市（以下の国）にあり、その2つの都市は、その2つの都市には、この都市は、その出に「神の町」とされ、そのすべての都市は、他の都市である。\n\nこ"
+   },
+   {
+    "prompt": "def fibonacci(n):",
+    "text": " sx.p): p.p): p.p.p; p.p.p): p.p.\nKosurik is a highly sought-at-home researcher in the field of economics and political economics. He has been a member of the Mudor Institute of"
+   }
+  ],
+  "retrieval": [
+   {
+    "article_start": "Boonsboro is a town in Washington County, Maryland, United States, located at the foot of South Mountain. It nearly borders Frederick County and is proximate to the Antietam National Battlefield. The population was 3,336",
+    "prompt": " body of the Town. In Boonsboro, from 1831 through 1939, Mayors (originally called Burgesses) were elected annually. From 1940 through 1975, they served two-year terms. Since 1976, Mayors have been chosen for four-year terms, except for the previous mayor, who had been in office from 1988 through 2016.\n\nBoonsboro's current Mayor is Howard W. Long.\n\nPrevious Mayors include:\n\n 1831–1835 Jonathan Shafer\n 1835–1836 David Brookhart\n 1836–1837 Lewis F",
+    "with_library": ". W. Grant\n 1838–1842 Charles A. K. R. Wilson\n 1837–1847 George H. Wilson\n 1842–1852 Henry McLaughlin\n 1845–1853 William H. Williams\n 1847–1857 Edward H. Wilson\n",
+    "without_library": ". W. Grant\n 1838–1842 Charles A. K. Rufley\n 1837–1847 George H. Wilson\n 1842–1852 Henry McLaughton\n 1845–1853 William H. K. P. K. Johnson\n 1854–18",
+    "truth": "letcher\n 1837–1838 Joseph O'neal\n 1838–1839 Anthony McBride\n 1839–1840 Joseph Knox\n 1840–1841 Charles Perry\n 1841–1843 Jacob Smith\n 1843–1845 James Chambers\n"
+   },
+   {
+    "article_start": "A macrobiotic diet (or macrobiotics) is a fad diet based on ideas about types of food drawn from Zen Buddhism. The diet tries to balance the supposed yin and yang elements of food and cookware.",
+    "prompt": " and nut butters, seasonings, sweeteners, fruits, and beverages may be enjoyed occasionally, two to three times per week. Other naturally-raised animal products may be included if needed during dietary transition or according to individual needs.\n\nKitchenware \nCooking utensils should be made from certain materials such as wood or glass, while some materials including plastic, copper, and non-stick coatings are to be avoided. Electric ovens should not be used.\n\nJapanese popularity and influence\nThe macrobiotic way of eating was developed and popularized by the Japanese. During",
+    "with_library": " the early 20th century, when the development of synthetic fertilizers began to change, some new techniques were used in the late 20th century. In the late 20th century, the earliest use of synthetic fertilizers to be used in agricultural and agricultural applications was to be used in traditional Chinese medicine.",
+    "without_library": " the early 20th century, when the development of a diet that is considered essential to its popularity, the use of alcohol in Japanese culture in China and Japan was not a success. The earliest use of alcohol was in China in the 1950s and 1980s, after Japan's first ever-new generation",
+    "truth": " the Edo period in Japan peasants had a diet based on staples of rice and soybeans. According to some macrobiotic advocates, a majority of the world population in the past ate a diet based primarily on grains, vegetables, and other plants. Because the macrobiotic diet was"
+   },
+   {
+    "article_start": "The BNC connector (initialism of \"Bayonet Neill–Concelman\") is a miniature quick connect/disconnect radio frequency connector used for coaxial cable. It is designed to maintain the same",
+    "prompt": " not mate with standard interface connectors. The SHV connector is a high-voltage BNC variant that uses this reverse polarity configuration.\n\nSmaller versions of the BNC connector, called Mini BNC and High Density BNC (HD BNC), are manufactured by Amphenol. While retaining the electrical characteristics of the original specification, they have smaller footprints giving a higher packing density on circuit boards and equipment backplanes. These connectors have true 75 ohm impedance making them suitable for HD video applications.\n\nCompatibility\nThe different",
+    "with_library": "ial component of the BNC signal is the same as the DK. It is also used in the BNC, because it is used as a source for the DK.\n\nMajor components of the BNC signal are the following:\n\nIn the Amphenol ANC",
+    "without_library": "ial component of the BNC signal is the same as the DK. It is also used in the BNC, because it is used as a source for the DK.\n\nMajor components of the BNC signal are the following:\n\nIn the U.S., Amp",
+    "truth": " versions are designed to mate with each other,\nand a 75 ohm and a 50 ohm BNC connector which both comply with the 2007 IEC standard, IEC 61169-8, will mate non-destructively. At least one manufacturer claims"
+   },
+   {
+    "article_start": "Salvation (from Latin: salvatio, from salva, 'safe, saved') is the state of being saved or protected from harm or a dire situation. In religion and theology, salvation generally refers to",
+    "prompt": " of Jesus Christ of Latter-day Saints, the plan of salvation is God's plan to save, redeem, and exalt all humankind who chose, either in this life, or in the world of spirits of the dead, to accept the grace of Jesus Christ by exercising faith in Him, repenting of their sins, and by making and keeping sacred covenants (including baptism). Since the vast majority of God's children depart this life without that opportunity, Christ's gospel is preached to the unbelieving spirits in spirit prison (1 Peter 3: 19) so that they",
+    "with_library": " do not speak in the same way as Jesus Christ. The God of God's Word-on-the-world, God is the Son of God's Word, and the Son of God's Word is the Son of God's Word.\nThe Son of God's Word is Jesus Christ in the",
+    "without_library": " do not speak in the same way as Jesus Christ. The God of God's Word-on-the-world, God is the Son of God's Word, and the Son of God's Word is the Son of God's Word.\nThe Son of God's Word is Jesus Christ in the",
+    "truth": " might be judged by the same standards as the living and live by following God in their spirit form (1 Peter 4: 6). If they accept Christ, sincerely repent of their sins, and accept ordinances done on their behalf, they can, by the grace of Christ"
+   }
+  ]
+ },
+ "architecture": [
+  {
+   "RG": 1,
+   "AG": 1,
+   "RP": 1,
+   "MI": 3,
+   "EP": 1,
+   "MIM": 1,
+   "OS": 1,
+   "SM": 1
+  },
+  {
+   "RG": 1,
+   "AG": 1,
+   "G": 1,
+   "EP": 1,
+   "OS": 1,
+   "SM": 1,
+   "RP": 1,
+   "GI": 1,
+   "C": 2
+  }
+ ]
+}

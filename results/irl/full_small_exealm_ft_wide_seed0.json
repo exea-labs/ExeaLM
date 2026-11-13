@@ -1,0 +1,229 @@
+{
+ "model": "exealm",
+ "params": 18080798,
+ "library_chunks": 483270,
+ "eval_library_chunks": 53467,
+ "train_articles": 14209,
+ "eval_articles": 1578,
+ "args": {
+  "model": "exealm",
+  "preset": "small",
+  "search": 0,
+  "search_every": 250,
+  "search_until": 0.5,
+  "search_mix": "text:3,wiki:1,relay:1,lookup:1",
+  "wiki_oracle": 0.5,
+  "init_ckpt": "results/full_small/exealm_skillsA_seed0_ckpt.pt",
+  "rag_null": 1,
+  "memory_slots": 3,
+  "lib_search": "learned",
+  "root": "data/tokpack",
+  "toks": "bpe32k",
+  "train": "train_en_big,train_ja_big,train_code_big",
+  "mix": "0.5,0.3,0.2",
+  "p_kinds": "0.55,0.15,0.075,0.075,0.15",
+  "warm_steps": 0,
+  "warm_kinds": "0.2,0,0.4,0.4",
+  "schedule": "",
+  "facts": 1024,
+  "grow": 16,
+  "dense": 1,
+  "relay_chunk": 8,
+  "relay_facts": 4,
+  "grow_every": 150,
+  "d": 320,
+  "slots": 10,
+  "steps": 2000,
+  "batch": 32,
+  "seq": 512,
+  "chunk": 64,
+  "min_tokens": 1024,
+  "lr": 0.001,
+  "warmup": 200,
+  "refresh_every": 1000,
+  "eval_every": 1000,
+  "eval_batches": 12,
+  "save_every": 4000,
+  "key_dim": 128,
+  "lexical": 128,
+  "gen_tokens": 60,
+  "prompts": "The history of the city begins||Photosynthesis is the process by which||日本の首都は||def fibonacci(n):",
+  "tokenizer": "results/tokenizer/bpe32k/tokenizer.json",
+  "lib_on": "wiki",
+  "board_chunk": 8,
+  "pool": "mean",
+  "tag": "ft_wide",
+  "stop_at": 0,
+  "seed": 0,
+  "smoke": 0,
+  "device": "auto",
+  "out": "results/irl"
+ },
+ "curve": [
+  {
+   "step": 1000,
+   "secs": 468.8,
+   "tokens": 16384000,
+   "train_loss": 3.0931,
+   "batches": {
+    "text": 583,
+    "wiki": 130,
+    "relay": 86,
+    "lookup": 65,
+    "pair": 136
+   },
+   "val_en": {
+    "removed": 1.3901,
+    "attached": 1.4059
+   },
+   "val_ja_wiki": {
+    "removed": 1.5257,
+    "attached": 1.5485
+   },
+   "val_ja_web": {
+    "removed": 1.4156,
+    "attached": 1.4389
+   },
+   "val_code": {
+    "removed": 1.7541,
+    "attached": 1.7973
+   },
+   "swarm": {
+    "shared": 1.3864,
+    "cut": 1.3897,
+    "board_gain": 0.0032
+   },
+   "knowledge": {
+    "removed": 5.0607,
+    "attached": 5.1287,
+    "retrieval_gain": -0.0679,
+    "same_article_hits": 0.2588
+   },
+   "relay": {
+    "shared": 0.9964,
+    "cut": 0.0146
+   },
+   "lookup": {
+    "attached": 0.8892,
+    "removed": 0.0126
+   }
+  },
+  {
+   "step": 2000,
+   "secs": 984.7,
+   "tokens": 32768000,
+   "train_loss": 3.5466,
+   "batches": {
+    "text": 1155,
+    "wiki": 272,
+    "relay": 142,
+    "lookup": 149,
+    "pair": 282
+   },
+   "val_en": {
+    "removed": 1.3439,
+    "attached": 1.3513
+   },
+   "val_ja_wiki": {
+    "removed": 1.4626,
+    "attached": 1.4768
+   },
+   "val_ja_web": {
+    "removed": 1.3531,
+    "attached": 1.3664
+   },
+   "val_code": {
+    "removed": 1.673,
+    "attached": 1.7027
+   },
+   "swarm": {
+    "shared": 1.3449,
+    "cut": 1.3471,
+    "board_gain": 0.0022
+   },
+   "knowledge": {
+    "removed": 4.8708,
+    "attached": 4.9149,
+    "retrieval_gain": -0.0442,
+    "same_article_hits": 0.2578
+   },
+   "relay": {
+    "shared": 0.9997,
+    "cut": 0.0107
+   },
+   "lookup": {
+    "attached": 0.8398,
+    "removed": 0.0141
+   }
+  }
+ ],
+ "searches": [],
+ "samples": {
+  "free": [
+   {
+    "prompt": "The history of the city begins",
+    "text": " to dominate the city.\n\nIn 2009, the city of Geskowo had expanded its name from its original name to the village's namesake, a name of the new Townhouse, and the new Townhouse. In the 2022 census, the city was named by the new"
+   },
+   {
+    "prompt": "Photosynthesis is the process by which",
+    "text": " any individual is given the same degree as the size, and only the result is the same as the size of a building. Since the image is the result of the length of the building, the physical area is a reflection of the size of the building.\n\nExposures and decomposition"
+   },
+   {
+    "prompt": "日本の首都は",
+    "text": "アメリカへ留学\n その他にはアメリカのアメリカで世界経済の発展に特化した英語「英米人」の英語と日本経済には、アメリカのアメリカ・アメリカに留学先々の英語と英米語学である。\n\n日本語の英語と英語の英語\n ("
+   },
+   {
+    "prompt": "def fibonacci(n):",
+    "text": " dismocampa(n.. )[2(4..)]]] [x] [y] [x] [y] [y] [y] [x] [y] [y] [y] [y] [x] [x] [c]"
+   }
+  ],
+  "retrieval": [
+   {
+    "article_start": "Boonsboro is a town in Washington County, Maryland, United States, located at the foot of South Mountain. It nearly borders Frederick County and is proximate to the Antietam National Battlefield. The population was 3,336",
+    "prompt": " body of the Town. In Boonsboro, from 1831 through 1939, Mayors (originally called Burgesses) were elected annually. From 1940 through 1975, they served two-year terms. Since 1976, Mayors have been chosen for four-year terms, except for the previous mayor, who had been in office from 1988 through 2016.\n\nBoonsboro's current Mayor is Howard W. Long.\n\nPrevious Mayors include:\n\n 1831–1835 Jonathan Shafer\n 1835–1836 David Brookhart\n 1836–1837 Lewis F",
+    "with_library": ". W. Hoy\n 1836–1843 William D.\n 1848-1847 John B. Kowan\n 1849–1842 William D. McLaren\n 1849–1847 John B. W. McLaren\n 1849–1850 William D",
+    "without_library": ". W. Hoy\n 1836–1843 James D.\n 1848-1847 John B. Knight\n 1852–1907 Charles B. Knight\n 1927–1808 William B. W. W. W. Hoy\n 1928–1909 William",
+    "truth": "letcher\n 1837–1838 Joseph O'neal\n 1838–1839 Anthony McBride\n 1839–1840 Joseph Knox\n 1840–1841 Charles Perry\n 1841–1843 Jacob Smith\n 1843–1845 James Chambers\n"
+   },
+   {
+    "article_start": "A macrobiotic diet (or macrobiotics) is a fad diet based on ideas about types of food drawn from Zen Buddhism. The diet tries to balance the supposed yin and yang elements of food and cookware.",
+    "prompt": " and nut butters, seasonings, sweeteners, fruits, and beverages may be enjoyed occasionally, two to three times per week. Other naturally-raised animal products may be included if needed during dietary transition or according to individual needs.\n\nKitchenware \nCooking utensils should be made from certain materials such as wood or glass, while some materials including plastic, copper, and non-stick coatings are to be avoided. Electric ovens should not be used.\n\nJapanese popularity and influence\nThe macrobiotic way of eating was developed and popularized by the Japanese. During",
+    "with_library": " the 1950s, the use of epoxy and non-stressing compounds to produce a popular use of the syrup for their purposes. In 1962, in a press release of the United Nations, the \"Babbiese\" and the United Nations (USSR) adopted a new",
+    "without_library": " the 1950s, the early 1980s saw the growth of the diet by becoming more dominant in the area. In the late 1990s, the country's growth in the economy increased significantly during the 1980s and 1980s.\n\nIn the 1980s, the European Commission introduced a new approach to",
+    "truth": " the Edo period in Japan peasants had a diet based on staples of rice and soybeans. According to some macrobiotic advocates, a majority of the world population in the past ate a diet based primarily on grains, vegetables, and other plants. Because the macrobiotic diet was"
+   },
+   {
+    "article_start": "The BNC connector (initialism of \"Bayonet Neill–Concelman\") is a miniature quick connect/disconnect radio frequency connector used for coaxial cable. It is designed to maintain the same",
+    "prompt": " not mate with standard interface connectors. The SHV connector is a high-voltage BNC variant that uses this reverse polarity configuration.\n\nSmaller versions of the BNC connector, called Mini BNC and High Density BNC (HD BNC), are manufactured by Amphenol. While retaining the electrical characteristics of the original specification, they have smaller footprints giving a higher packing density on circuit boards and equipment backplanes. These connectors have true 75 ohm impedance making them suitable for HD video applications.\n\nCompatibility\nThe different",
+    "with_library": "iality of the BNC signal is the same as the DSM. This is due to the high-voltage ANT signal. It is not limited to a high-voltage ANT signal but is also capable of being used to power the current (i.e. the ANT",
+    "without_library": "iality of the BNC signal is the same as the DSM signal.\n\nThe BNC is the most commonly used signal in the FIRE, which is a common component of the BNC and is used in the DC-8, which is used as a reference to the B",
+    "truth": " versions are designed to mate with each other,\nand a 75 ohm and a 50 ohm BNC connector which both comply with the 2007 IEC standard, IEC 61169-8, will mate non-destructively. At least one manufacturer claims"
+   },
+   {
+    "article_start": "Salvation (from Latin: salvatio, from salva, 'safe, saved') is the state of being saved or protected from harm or a dire situation. In religion and theology, salvation generally refers to",
+    "prompt": " of Jesus Christ of Latter-day Saints, the plan of salvation is God's plan to save, redeem, and exalt all humankind who chose, either in this life, or in the world of spirits of the dead, to accept the grace of Jesus Christ by exercising faith in Him, repenting of their sins, and by making and keeping sacred covenants (including baptism). Since the vast majority of God's children depart this life without that opportunity, Christ's gospel is preached to the unbelieving spirits in spirit prison (1 Peter 3: 19) so that they",
+    "with_library": " do not have any time and time to do so with the God of God.\n\nThe world of God is the world of God. He is that all God’s God, God and God are all and to be the world of God (0 Peter 3:2). He is in the",
+    "without_library": " do not fully understand the world of God's life. The God is a good man, and God will never forget the world of life. He is not all in a world of life. He is also the world of God's life.\n\nSenatorial love\n\nSenator",
+    "truth": " might be judged by the same standards as the living and live by following God in their spirit form (1 Peter 4: 6). If they accept Christ, sincerely repent of their sins, and accept ordinances done on their behalf, they can, by the grace of Christ"
+   }
+  ]
+ },
+ "architecture": [
+  {
+   "RG": 3,
+   "AG": 3,
+   "RP": 1,
+   "MI": 1,
+   "EP": 1,
+   "MIM": 1
+  },
+  {
+   "RG": 3,
+   "AG": 3,
+   "G": 1,
+   "EP": 1,
+   "OS": 1,
+   "SM": 1
+  }
+ ]
+}

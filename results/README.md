@@ -883,3 +883,35 @@ cannot be plotted.
 for s in 0 1 2; do python -m exealm.train.pretrain --preset tiny --data synthetic --steps 2000 --seed $s --out runs/search_arch/seed$s; done
 python experiments/plot_search.py runs/search_arch/seed{0,1,2}/log.jsonl --labels "seed 0" "seed 1" "seed 2" --out results/search_arch/search_arch.png
 ```
+
+## 12. Parts from Qwen3.5 (`exealm/model/delta.py`, `experiments/tokenizer_lm.py --llama_cfg`)
+
+**Setup.** 13M parameters (width 256, 6 layers, the 32k vocabulary), 3,000 steps, learning rate 2e-3, seed 0 only
+(2026-11-12, a last check before losing the Mac Studio). The hybrid is the default 2:1 layout (TONN at layers 0 and
+3) without memory circuits. The parts:
+- **Gated attention** (`attn_gate`): each attention output channel is multiplied by a sigmoid of the layer's input
+  (Qiu et al. 2025; Qwen3-Next and Qwen3.5).
+- **QK-norm** (`qk_norm`): RMSNorm on each head's queries and keys (Qwen3).
+- **Gated DeltaNet** (`delta_layers`): Qwen3.5's linear attention, in plain PyTorch, tested against the token-by-token
+  recurrence.
+
+The Qwen3.5-style baseline is a Llama with Gated DeltaNet at layers 0, 1, 2 and 4 and gated attention with QK-norm
+at 3 and 5. That is close to Qwen3.5's 3:1 ratio of DeltaNet to attention.
+
+| Model | Parameters | English | Japanese wiki | Japanese web | Code | Mean |
+|---|---|---|---|---|---|---|
+| Llama | 13.1M | 1.461 | 1.535 | 1.413 | 1.762 | 1.543 |
+| Qwen3.5-style | 13.5M | 1.442 | 1.512 | 1.399 | 1.728 | 1.520 |
+| ExeaLM hybrid | 13.1M | 1.453 | 1.526 | 1.408 | 1.759 | 1.536 |
+| **ExeaLM hybrid + gated attention + QK-norm** | 13.4M | **1.434** | **1.506** | 1.395 | **1.708** | **1.511** |
+| ExeaLM hybrid + gate + QK-norm + Gated DeltaNet at layers 1 and 4 | 13.4M | 1.436 | 1.506 | **1.391** | 1.717 | 1.512 |
+
+- The Qwen3.5-style model beats Llama by 0.023 bits per byte on every kind of text. It is the stronger baseline.
+- **Gated attention and QK-norm improve the hybrid by 0.025**, more than anything since the convolution-heavy start.
+  With them the hybrid beats the Qwen3.5-style model by 0.009 and Llama by 0.032.
+- Gated DeltaNet layers on top add nothing at this size (1.512 against 1.511). They are slower, since the fast
+  kernels need an NVIDIA GPU (#31).
+- Caveats: one seed. The gate adds 2% parameters, and the Llama did not get one. Equal steps only: the runs shared
+  the GPU with others, so their times are not comparable. The next checks are a second seed, a gated Llama, and
+  equal compute.
+
