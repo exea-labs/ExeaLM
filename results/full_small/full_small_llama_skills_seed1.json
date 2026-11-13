@@ -1,0 +1,412 @@
+{
+ "model": "llama",
+ "params": 17832000,
+ "library_chunks": 483270,
+ "eval_library_chunks": 53467,
+ "train_articles": 14209,
+ "eval_articles": 1578,
+ "args": {
+  "model": "llama",
+  "root": "data/tokpack",
+  "toks": "bpe32k",
+  "train": "train_en_big,train_ja_big,train_code_big",
+  "mix": "0.5,0.3,0.2",
+  "p_kinds": "0.7,0.15,0.075,0.075",
+  "warm_steps": 0,
+  "warm_kinds": "0.2,0,0.4,0.4",
+  "schedule": "400:0,0,1,0;2000:0.3,0.2,0.25,0.25",
+  "facts": 1024,
+  "grow": 16,
+  "dense": 1,
+  "relay_chunk": 8,
+  "relay_facts": 4,
+  "grow_every": 150,
+  "d": 320,
+  "slots": 10,
+  "steps": 24000,
+  "batch": 32,
+  "seq": 512,
+  "chunk": 64,
+  "min_tokens": 1024,
+  "lr": 0.002,
+  "warmup": 500,
+  "refresh_every": 1000,
+  "eval_every": 3000,
+  "eval_batches": 12,
+  "save_every": 4000,
+  "key_dim": 128,
+  "lexical": 128,
+  "gen_tokens": 60,
+  "prompts": "The history of the city begins||Photosynthesis is the process by which||日本の首都は||def fibonacci(n):",
+  "tokenizer": "results/tokenizer/bpe32k/tokenizer.json",
+  "lib_on": "wiki",
+  "board_chunk": 8,
+  "pool": "mean",
+  "tag": "skills",
+  "stop_at": 0,
+  "seed": 1,
+  "smoke": 0,
+  "device": "auto",
+  "out": "results/full_small"
+ },
+ "curve": [
+  {
+   "step": 3000,
+   "secs": 596.5,
+   "tokens": 49152000,
+   "train_loss": 5.8258,
+   "batches": {
+    "text": 1175,
+    "wiki": 467,
+    "relay": 863,
+    "lookup": 495
+   },
+   "val_en": {
+    "removed": 1.9001
+   },
+   "val_ja_wiki": {
+    "removed": 2.1936
+   },
+   "val_ja_web": {
+    "removed": 1.8307
+   },
+   "val_code": {
+    "removed": 3.3968
+   },
+   "swarm": {
+    "shared": 1.8974,
+    "cut": 1.8974,
+    "board_gain": 0.0
+   },
+   "knowledge": {
+    "removed": 7.3421
+   },
+   "relay": {
+    "shared": 0.0182,
+    "cut": 0.0182
+   },
+   "lookup": {
+    "removed": 0.0135
+   }
+  },
+  {
+   "step": 6000,
+   "secs": 1215.3,
+   "tokens": 98304000,
+   "train_loss": 5.0917,
+   "batches": {
+    "text": 3261,
+    "wiki": 935,
+    "relay": 1082,
+    "lookup": 722
+   },
+   "val_en": {
+    "removed": 1.6072
+   },
+   "val_ja_wiki": {
+    "removed": 1.7776
+   },
+   "val_ja_web": {
+    "removed": 1.6041
+   },
+   "val_code": {
+    "removed": 2.2165
+   },
+   "swarm": {
+    "shared": 1.6114,
+    "cut": 1.6114,
+    "board_gain": 0.0
+   },
+   "knowledge": {
+    "removed": 6.0398
+   },
+   "relay": {
+    "shared": 0.0133,
+    "cut": 0.0133
+   },
+   "lookup": {
+    "removed": 0.0131
+   }
+  },
+  {
+   "step": 9000,
+   "secs": 1834.7,
+   "tokens": 147456000,
+   "train_loss": 3.4775,
+   "batches": {
+    "text": 5340,
+    "wiki": 1424,
+    "relay": 1290,
+    "lookup": 946
+   },
+   "val_en": {
+    "removed": 1.5281
+   },
+   "val_ja_wiki": {
+    "removed": 1.6814
+   },
+   "val_ja_web": {
+    "removed": 1.5158
+   },
+   "val_code": {
+    "removed": 1.9934
+   },
+   "swarm": {
+    "shared": 1.5307,
+    "cut": 1.5307,
+    "board_gain": 0.0
+   },
+   "knowledge": {
+    "removed": 5.6841
+   },
+   "relay": {
+    "shared": 0.0166,
+    "cut": 0.0166
+   },
+   "lookup": {
+    "removed": 0.0294
+   }
+  },
+  {
+   "step": 12000,
+   "secs": 2453.2,
+   "tokens": 196608000,
+   "train_loss": 3.8272,
+   "batches": {
+    "text": 7412,
+    "wiki": 1895,
+    "relay": 1522,
+    "lookup": 1171
+   },
+   "val_en": {
+    "removed": 1.4866
+   },
+   "val_ja_wiki": {
+    "removed": 1.6215
+   },
+   "val_ja_web": {
+    "removed": 1.4789
+   },
+   "val_code": {
+    "removed": 1.9009
+   },
+   "swarm": {
+    "shared": 1.4891,
+    "cut": 1.4891,
+    "board_gain": 0.0
+   },
+   "knowledge": {
+    "removed": 5.5166
+   },
+   "relay": {
+    "shared": 0.0127,
+    "cut": 0.0127
+   },
+   "lookup": {
+    "removed": 0.0293
+   }
+  },
+  {
+   "step": 15000,
+   "secs": 3071.9,
+   "tokens": 245760000,
+   "train_loss": 4.0434,
+   "batches": {
+    "text": 9500,
+    "wiki": 2352,
+    "relay": 1752,
+    "lookup": 1396
+   },
+   "val_en": {
+    "removed": 1.4626
+   },
+   "val_ja_wiki": {
+    "removed": 1.5961
+   },
+   "val_ja_web": {
+    "removed": 1.4657
+   },
+   "val_code": {
+    "removed": 1.8474
+   },
+   "swarm": {
+    "shared": 1.4651,
+    "cut": 1.4651,
+    "board_gain": 0.0
+   },
+   "knowledge": {
+    "removed": 5.4373
+   },
+   "relay": {
+    "shared": 0.0179,
+    "cut": 0.0179
+   },
+   "lookup": {
+    "removed": 0.0339
+   }
+  },
+  {
+   "step": 18000,
+   "secs": 3690.8,
+   "tokens": 294912000,
+   "train_loss": 4.2711,
+   "batches": {
+    "text": 11621,
+    "wiki": 2802,
+    "relay": 1971,
+    "lookup": 1606
+   },
+   "val_en": {
+    "removed": 1.4409
+   },
+   "val_ja_wiki": {
+    "removed": 1.5573
+   },
+   "val_ja_web": {
+    "removed": 1.4307
+   },
+   "val_code": {
+    "removed": 1.8069
+   },
+   "swarm": {
+    "shared": 1.4425,
+    "cut": 1.4425,
+    "board_gain": 0.0
+   },
+   "knowledge": {
+    "removed": 5.3371
+   },
+   "relay": {
+    "shared": 0.015,
+    "cut": 0.015
+   },
+   "lookup": {
+    "removed": 0.0327
+   }
+  },
+  {
+   "step": 21000,
+   "secs": 4309.9,
+   "tokens": 344064000,
+   "train_loss": 3.2545,
+   "batches": {
+    "text": 13728,
+    "wiki": 3243,
+    "relay": 2198,
+    "lookup": 1831
+   },
+   "val_en": {
+    "removed": 1.4029
+   },
+   "val_ja_wiki": {
+    "removed": 1.5085
+   },
+   "val_ja_web": {
+    "removed": 1.3858
+   },
+   "val_code": {
+    "removed": 1.7533
+   },
+   "swarm": {
+    "shared": 1.4036,
+    "cut": 1.4036,
+    "board_gain": 0.0
+   },
+   "knowledge": {
+    "removed": 5.1731
+   },
+   "relay": {
+    "shared": 0.0133,
+    "cut": 0.0133
+   },
+   "lookup": {
+    "removed": 0.0296
+   }
+  },
+  {
+   "step": 24000,
+   "secs": 4929.6,
+   "tokens": 393216000,
+   "train_loss": 3.8216,
+   "batches": {
+    "text": 15854,
+    "wiki": 3681,
+    "relay": 2399,
+    "lookup": 2066
+   },
+   "val_en": {
+    "removed": 1.3322
+   },
+   "val_ja_wiki": {
+    "removed": 1.4264
+   },
+   "val_ja_web": {
+    "removed": 1.3185
+   },
+   "val_code": {
+    "removed": 1.6367
+   },
+   "swarm": {
+    "shared": 1.3356,
+    "cut": 1.3356,
+    "board_gain": 0.0
+   },
+   "knowledge": {
+    "removed": 4.896
+   },
+   "relay": {
+    "shared": 0.015,
+    "cut": 0.015
+   },
+   "lookup": {
+    "removed": 0.0303
+   }
+  }
+ ],
+ "samples": {
+  "free": [
+   {
+    "prompt": "The history of the city begins",
+    "text": " with an unprecedented economic and political environment with the help of the city to create a new economy and its economic development.\nThe city is connected with a combination of traditional economic and economic development and cultural and human activities and to the construction of an economic development community. The city has a diverse cultural centre,"
+   },
+   {
+    "prompt": "Photosynthesis is the process by which",
+    "text": " a liquid is produced through a liquid. This process, called liquid, is formed from the liquid through a liquid, which then can be absorbed through the liquid and the liquid in the liquid.\n\nThe liquid is produced through a liquid through a liquid that is produced by the liquid and then it is"
+   },
+   {
+    "prompt": "日本の首都は",
+    "text": "、その都市は「南は世界各地」にある都市である。北は北は「北は世界各地」と南西部には、北は北は南に東に北陸地区と北西と南は東に東に面している。東は東部は南"
+   },
+   {
+    "prompt": "def fibonacci(n):",
+    "text": "\n\tdb\t$f6, $f6, $f8, $f8, $f8, $f8\n\t;\t\tLocations\n\tdb\t$f8, $f8, $f8, $f8, $f8, $"
+   }
+  ],
+  "retrieval": [
+   {
+    "article_start": "Boonsboro is a town in Washington County, Maryland, United States, located at the foot of South Mountain. It nearly borders Frederick County and is proximate to the Antietam National Battlefield. The population was 3,336",
+    "prompt": " body of the Town. In Boonsboro, from 1831 through 1939, Mayors (originally called Burgesses) were elected annually. From 1940 through 1975, they served two-year terms. Since 1976, Mayors have been chosen for four-year terms, except for the previous mayor, who had been in office from 1988 through 2016.\n\nBoonsboro's current Mayor is Howard W. Long.\n\nPrevious Mayors include:\n\n 1831–1835 Jonathan Shafer\n 1835–1836 David Brookhart\n 1836–1837 Lewis F",
+    "without_library": ". Moore\n 1838–1841 Jonathan Shafer\n 1831–1853 James F. Moore\n 1836–1859 John B. Gimmer\n 1839–1850 William H. Brewer\n 1838–1853 William H. Moore\n 1838",
+    "truth": "letcher\n 1837–1838 Joseph O'neal\n 1838–1839 Anthony McBride\n 1839–1840 Joseph Knox\n 1840–1841 Charles Perry\n 1841–1843 Jacob Smith\n 1843–1845 James Chambers\n"
+   },
+   {
+    "article_start": "A macrobiotic diet (or macrobiotics) is a fad diet based on ideas about types of food drawn from Zen Buddhism. The diet tries to balance the supposed yin and yang elements of food and cookware.",
+    "prompt": " and nut butters, seasonings, sweeteners, fruits, and beverages may be enjoyed occasionally, two to three times per week. Other naturally-raised animal products may be included if needed during dietary transition or according to individual needs.\n\nKitchenware \nCooking utensils should be made from certain materials such as wood or glass, while some materials including plastic, copper, and non-stick coatings are to be avoided. Electric ovens should not be used.\n\nJapanese popularity and influence\nThe macrobiotic way of eating was developed and popularized by the Japanese. During",
+    "without_library": " the early 20th century, when the Chinese were introduced into the United States, the Chinese used to create a single, super-medicine. The Chinese used a \"super-tubule\" and \"super-tubule\" for the Indian people, as well as the",
+    "truth": " the Edo period in Japan peasants had a diet based on staples of rice and soybeans. According to some macrobiotic advocates, a majority of the world population in the past ate a diet based primarily on grains, vegetables, and other plants. Because the macrobiotic diet was"
+   },
+   {
+    "article_start": "The BNC connector (initialism of \"Bayonet Neill–Concelman\") is a miniature quick connect/disconnect radio frequency connector used for coaxial cable. It is designed to maintain the same",
+    "prompt": " not mate with standard interface connectors. The SHV connector is a high-voltage BNC variant that uses this reverse polarity configuration.\n\nSmaller versions of the BNC connector, called Mini BNC and High Density BNC (HD BNC), are manufactured by Amphenol. While retaining the electrical characteristics of the original specification, they have smaller footprints giving a higher packing density on circuit boards and equipment backplanes. These connectors have true 75 ohm impedance making them suitable for HD video applications.\n\nCompatibility\nThe different",
+    "without_library": " systems used for the BNC interface were used for a variety of purposes. It was used in many ways by the company's owner. For example, BNC, a \"supercomputer\" and \"supercomputer\" were used for the BNC interface.\n\nCryptography",
+    "truth": " versions are designed to mate with each other,\nand a 75 ohm and a 50 ohm BNC connector which both comply with the 2007 IEC standard, IEC 61169-8, will mate non-destructively. At least one manufacturer claims"
+   },
+   {
+    "article_start": "Salvation (from Latin: salvatio, from salva, 'safe, saved') is the state of being saved or protected from harm or a dire situation. In religion and theology, salvation generally refers to",
+    "prompt": " of Jesus Christ of Latter-day Saints, the plan of salvation is God's plan to save, redeem, and exalt all humankind who chose, either in this life, or in the world of spirits of the dead, to accept the grace of Jesus Christ by exercising faith in Him, repenting of their sins, and by making and keeping sacred covenants (including baptism). Since the vast majority of God's children depart this life without that opportunity, Christ's gospel is preached to the unbelieving spirits in spirit prison (1 Peter 3: 19) so that they",
+    "without_library": " do not have any special experience of the life of Jesus Christ, to the heart of the world, to the heart of the heart of the world.\n\nThe first step in the process of making the world of the world was to save the life of the world, to preserve the world in the",
+    "truth": " might be judged by the same standards as the living and live by following God in their spirit form (1 Peter 4: 6). If they accept Christ, sincerely repent of their sins, and accept ordinances done on their behalf, they can, by the grace of Christ"
+   }
+  ]
+ }
+}

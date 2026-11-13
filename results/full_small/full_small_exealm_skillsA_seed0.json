@@ -1,0 +1,480 @@
+{
+ "model": "exealm",
+ "params": 18080796,
+ "library_chunks": 483270,
+ "eval_library_chunks": 53467,
+ "train_articles": 14209,
+ "eval_articles": 1578,
+ "args": {
+  "model": "exealm",
+  "root": "data/tokpack",
+  "toks": "bpe32k",
+  "train": "train_en_big,train_ja_big,train_code_big",
+  "mix": "0.5,0.3,0.2",
+  "p_kinds": "0.7,0.15,0.075,0.075",
+  "warm_steps": 0,
+  "warm_kinds": "0.2,0,0.4,0.4",
+  "schedule": "400:0,0,0.5,0.5;2000:0.3,0.2,0.25,0.25",
+  "facts": 1024,
+  "grow": 16,
+  "dense": 1,
+  "relay_chunk": 8,
+  "relay_facts": 4,
+  "grow_every": 150,
+  "d": 320,
+  "slots": 10,
+  "steps": 24000,
+  "batch": 32,
+  "seq": 512,
+  "chunk": 64,
+  "min_tokens": 1024,
+  "lr": 0.002,
+  "warmup": 500,
+  "refresh_every": 1000,
+  "eval_every": 3000,
+  "eval_batches": 12,
+  "save_every": 4000,
+  "key_dim": 128,
+  "lexical": 128,
+  "gen_tokens": 60,
+  "prompts": "The history of the city begins||Photosynthesis is the process by which||日本の首都は||def fibonacci(n):",
+  "tokenizer": "results/tokenizer/bpe32k/tokenizer.json",
+  "lib_on": "wiki",
+  "board_chunk": 8,
+  "pool": "mean",
+  "tag": "skillsA",
+  "stop_at": 0,
+  "seed": 0,
+  "smoke": 0,
+  "device": "auto",
+  "out": "results/full_small"
+ },
+ "curve": [
+  {
+   "step": 3000,
+   "secs": 798.4,
+   "tokens": 49152000,
+   "train_loss": 5.7184,
+   "batches": {
+    "text": 1201,
+    "wiki": 457,
+    "relay": 663,
+    "lookup": 679
+   },
+   "val_en": {
+    "removed": 1.7997,
+    "attached": 1.8135
+   },
+   "val_ja_wiki": {
+    "removed": 2.0552,
+    "attached": 2.0779
+   },
+   "val_ja_web": {
+    "removed": 1.7454,
+    "attached": 1.7615
+   },
+   "val_code": {
+    "removed": 3.2203,
+    "attached": 3.2319
+   },
+   "swarm": {
+    "shared": 1.7955,
+    "cut": 1.7962,
+    "board_gain": 0.0008
+   },
+   "knowledge": {
+    "removed": 6.9492,
+    "attached": 6.9294,
+    "retrieval_gain": 0.0198,
+    "same_article_hits": 0.2477
+   },
+   "relay": {
+    "shared": 0.984,
+    "cut": 0.0156
+   },
+   "lookup": {
+    "attached": 0.7747,
+    "removed": 0.0176
+   }
+  },
+  {
+   "step": 6000,
+   "secs": 1606.2,
+   "tokens": 98304000,
+   "train_loss": 4.2424,
+   "batches": {
+    "text": 3271,
+    "wiki": 962,
+    "relay": 874,
+    "lookup": 893
+   },
+   "val_en": {
+    "removed": 1.5585,
+    "attached": 1.5623
+   },
+   "val_ja_wiki": {
+    "removed": 1.7174,
+    "attached": 1.7186
+   },
+   "val_ja_web": {
+    "removed": 1.5631,
+    "attached": 1.5652
+   },
+   "val_code": {
+    "removed": 2.1242,
+    "attached": 2.1274
+   },
+   "swarm": {
+    "shared": 1.5581,
+    "cut": 1.5587,
+    "board_gain": 0.0006
+   },
+   "knowledge": {
+    "removed": 5.7783,
+    "attached": 5.7857,
+    "retrieval_gain": -0.0074,
+    "same_article_hits": 0.2077
+   },
+   "relay": {
+    "shared": 0.9896,
+    "cut": 0.013
+   },
+   "lookup": {
+    "attached": 0.8494,
+    "removed": 0.0142
+   }
+  },
+  {
+   "step": 9000,
+   "secs": 2411.6,
+   "tokens": 147456000,
+   "train_loss": 4.7253,
+   "batches": {
+    "text": 5347,
+    "wiki": 1432,
+    "relay": 1086,
+    "lookup": 1135
+   },
+   "val_en": {
+    "removed": 1.4885,
+    "attached": 1.4904
+   },
+   "val_ja_wiki": {
+    "removed": 1.6255,
+    "attached": 1.6264
+   },
+   "val_ja_web": {
+    "removed": 1.485,
+    "attached": 1.4862
+   },
+   "val_code": {
+    "removed": 1.942,
+    "attached": 1.9473
+   },
+   "swarm": {
+    "shared": 1.4901,
+    "cut": 1.4906,
+    "board_gain": 0.0004
+   },
+   "knowledge": {
+    "removed": 5.4786,
+    "attached": 5.4783,
+    "retrieval_gain": 0.0003,
+    "same_article_hits": 0.2578
+   },
+   "relay": {
+    "shared": 0.9941,
+    "cut": 0.0098
+   },
+   "lookup": {
+    "attached": 0.886,
+    "removed": 0.0139
+   }
+  },
+  {
+   "step": 12000,
+   "secs": 3215.1,
+   "tokens": 196608000,
+   "train_loss": 4.2576,
+   "batches": {
+    "text": 7435,
+    "wiki": 1909,
+    "relay": 1303,
+    "lookup": 1353
+   },
+   "val_en": {
+    "removed": 1.4544,
+    "attached": 1.4567
+   },
+   "val_ja_wiki": {
+    "removed": 1.5903,
+    "attached": 1.5917
+   },
+   "val_ja_web": {
+    "removed": 1.4567,
+    "attached": 1.4587
+   },
+   "val_code": {
+    "removed": 1.8906,
+    "attached": 1.8912
+   },
+   "swarm": {
+    "shared": 1.4563,
+    "cut": 1.4565,
+    "board_gain": 0.0002
+   },
+   "knowledge": {
+    "removed": 5.385,
+    "attached": 5.3911,
+    "retrieval_gain": -0.0061,
+    "same_article_hits": 0.2565
+   },
+   "relay": {
+    "shared": 0.9967,
+    "cut": 0.0156
+   },
+   "lookup": {
+    "attached": 0.8927,
+    "removed": 0.0145
+   }
+  },
+  {
+   "step": 15000,
+   "secs": 4017.9,
+   "tokens": 245760000,
+   "train_loss": 4.8989,
+   "batches": {
+    "text": 9539,
+    "wiki": 2372,
+    "relay": 1515,
+    "lookup": 1574
+   },
+   "val_en": {
+    "removed": 1.4347,
+    "attached": 1.4376
+   },
+   "val_ja_wiki": {
+    "removed": 1.5542,
+    "attached": 1.5584
+   },
+   "val_ja_web": {
+    "removed": 1.433,
+    "attached": 1.4373
+   },
+   "val_code": {
+    "removed": 1.8413,
+    "attached": 1.8496
+   },
+   "swarm": {
+    "shared": 1.4381,
+    "cut": 1.4384,
+    "board_gain": 0.0003
+   },
+   "knowledge": {
+    "removed": 5.3176,
+    "attached": 5.3546,
+    "retrieval_gain": -0.037,
+    "same_article_hits": 0.2604
+   },
+   "relay": {
+    "shared": 0.971,
+    "cut": 0.0111
+   },
+   "lookup": {
+    "attached": 0.8945,
+    "removed": 0.0168
+   }
+  },
+  {
+   "step": 18000,
+   "secs": 4822.8,
+   "tokens": 294912000,
+   "train_loss": 4.4167,
+   "batches": {
+    "text": 11619,
+    "wiki": 2853,
+    "relay": 1735,
+    "lookup": 1793
+   },
+   "val_en": {
+    "removed": 1.4234,
+    "attached": 1.4496
+   },
+   "val_ja_wiki": {
+    "removed": 1.5459,
+    "attached": 1.5768
+   },
+   "val_ja_web": {
+    "removed": 1.4188,
+    "attached": 1.4523
+   },
+   "val_code": {
+    "removed": 1.7953,
+    "attached": 1.8641
+   },
+   "swarm": {
+    "shared": 1.4276,
+    "cut": 1.4277,
+    "board_gain": 0.0002
+   },
+   "knowledge": {
+    "removed": 5.2975,
+    "attached": 5.6625,
+    "retrieval_gain": -0.365,
+    "same_article_hits": 0.2598
+   },
+   "relay": {
+    "shared": 0.9997,
+    "cut": 0.0163
+   },
+   "lookup": {
+    "attached": 0.8974,
+    "removed": 0.0141
+   }
+  },
+  {
+   "step": 21000,
+   "secs": 5622.9,
+   "tokens": 344064000,
+   "train_loss": 3.9568,
+   "batches": {
+    "text": 13746,
+    "wiki": 3293,
+    "relay": 1954,
+    "lookup": 2007
+   },
+   "val_en": {
+    "removed": 1.3837,
+    "attached": 1.3855
+   },
+   "val_ja_wiki": {
+    "removed": 1.4963,
+    "attached": 1.4983
+   },
+   "val_ja_web": {
+    "removed": 1.3839,
+    "attached": 1.386
+   },
+   "val_code": {
+    "removed": 1.7247,
+    "attached": 1.7279
+   },
+   "swarm": {
+    "shared": 1.387,
+    "cut": 1.3873,
+    "board_gain": 0.0003
+   },
+   "knowledge": {
+    "removed": 5.0934,
+    "attached": 5.5702,
+    "retrieval_gain": -0.4768,
+    "same_article_hits": 0.2601
+   },
+   "relay": {
+    "shared": 0.9993,
+    "cut": 0.0133
+   },
+   "lookup": {
+    "attached": 0.9314,
+    "removed": 0.015
+   }
+  },
+  {
+   "step": 24000,
+   "secs": 6430.0,
+   "tokens": 393216000,
+   "train_loss": 3.644,
+   "batches": {
+    "text": 15830,
+    "wiki": 3774,
+    "relay": 2171,
+    "lookup": 2225
+   },
+   "val_en": {
+    "removed": 1.3204,
+    "attached": 1.3213
+   },
+   "val_ja_wiki": {
+    "removed": 1.4217,
+    "attached": 1.4226
+   },
+   "val_ja_web": {
+    "removed": 1.3223,
+    "attached": 1.3231
+   },
+   "val_code": {
+    "removed": 1.6115,
+    "attached": 1.6142
+   },
+   "swarm": {
+    "shared": 1.3231,
+    "cut": 1.3236,
+    "board_gain": 0.0005
+   },
+   "knowledge": {
+    "removed": 4.8375,
+    "attached": 4.9094,
+    "retrieval_gain": -0.0718,
+    "same_article_hits": 0.2591
+   },
+   "relay": {
+    "shared": 1.0,
+    "cut": 0.0091
+   },
+   "lookup": {
+    "attached": 0.9402,
+    "removed": 0.0149
+   }
+  }
+ ],
+ "samples": {
+  "free": [
+   {
+    "prompt": "The history of the city begins",
+    "text": " in 1900, when the town of Pereira was the site of a new location in the town.\n\nLater years after the discovery of the first church in the city, the new Town of Pereira is the only two-day structure in the town, with a few small towns"
+   },
+   {
+    "prompt": "Photosynthesis is the process by which",
+    "text": " any of these parts are made to the Earth, as many as 10% of the Earth's time.\nWith an understanding of the planet, this type of planet is not the same as the planet.\nIn fact, it was the first planet that had been the planet in space, but it"
+   },
+   {
+    "prompt": "日本の首都は",
+    "text": "、その都市は「国営都市の都市は都市（以下の国）である。\n\n都市は、南アフリカ、メキシコ、西アジア、アラブリウア、オマド・マレー、西アジア、バリア・グーカル・バリア、西アジア（"
+   },
+   {
+    "prompt": "def fibonacci(n):",
+    "text": " sx.pm.pg.z2(n,q.l)<n>1&f=2&q.\nTo get a new, more complex, and reliable, user-friendly interface, you can find the best way to help. Here's some suggestions and"
+   }
+  ],
+  "retrieval": [
+   {
+    "article_start": "Boonsboro is a town in Washington County, Maryland, United States, located at the foot of South Mountain. It nearly borders Frederick County and is proximate to the Antietam National Battlefield. The population was 3,336",
+    "prompt": " body of the Town. In Boonsboro, from 1831 through 1939, Mayors (originally called Burgesses) were elected annually. From 1940 through 1975, they served two-year terms. Since 1976, Mayors have been chosen for four-year terms, except for the previous mayor, who had been in office from 1988 through 2016.\n\nBoonsboro's current Mayor is Howard W. Long.\n\nPrevious Mayors include:\n\n 1831–1835 Jonathan Shafer\n 1835–1836 David Brookhart\n 1836–1837 Lewis F",
+    "with_library": ". W. H. W.\n 1837-1881 Charles G. Duncan\n 1883–1960 Thomas H. W. H. W. H. W.\n 1837-1882 Edward B. W. W.\n 1838-1882 William B. W",
+    "without_library": "itzgerald\n 1837–1841 William Smith\n 1836–1917 William Smith\n 1837–1921 William Smith\n 1838–1842 William Smith\n 1839–1850 William Smith\n 1853–1851 John Smith\n 1852–1854 William Smith\n",
+    "truth": "letcher\n 1837–1838 Joseph O'neal\n 1838–1839 Anthony McBride\n 1839–1840 Joseph Knox\n 1840–1841 Charles Perry\n 1841–1843 Jacob Smith\n 1843–1845 James Chambers\n"
+   },
+   {
+    "article_start": "A macrobiotic diet (or macrobiotics) is a fad diet based on ideas about types of food drawn from Zen Buddhism. The diet tries to balance the supposed yin and yang elements of food and cookware.",
+    "prompt": " and nut butters, seasonings, sweeteners, fruits, and beverages may be enjoyed occasionally, two to three times per week. Other naturally-raised animal products may be included if needed during dietary transition or according to individual needs.\n\nKitchenware \nCooking utensils should be made from certain materials such as wood or glass, while some materials including plastic, copper, and non-stick coatings are to be avoided. Electric ovens should not be used.\n\nJapanese popularity and influence\nThe macrobiotic way of eating was developed and popularized by the Japanese. During",
+    "with_library": " the early 20th century, when the use of a plastic, plastic or plastic to make it had to be used, the use of water-tolerant chemicals (for example, water and water from the water), in which the use of a plastic may have been reduced, as they have to",
+    "without_library": " the 1950's, the use of durable pads and a variety of materials to produce and maintain a significant amount of energy during their daily consumption was not limited by the use of durable pads. In the 1950s, the use of durable pads was generally considered as a \"d",
+    "truth": " the Edo period in Japan peasants had a diet based on staples of rice and soybeans. According to some macrobiotic advocates, a majority of the world population in the past ate a diet based primarily on grains, vegetables, and other plants. Because the macrobiotic diet was"
+   },
+   {
+    "article_start": "The BNC connector (initialism of \"Bayonet Neill–Concelman\") is a miniature quick connect/disconnect radio frequency connector used for coaxial cable. It is designed to maintain the same",
+    "prompt": " not mate with standard interface connectors. The SHV connector is a high-voltage BNC variant that uses this reverse polarity configuration.\n\nSmaller versions of the BNC connector, called Mini BNC and High Density BNC (HD BNC), are manufactured by Amphenol. While retaining the electrical characteristics of the original specification, they have smaller footprints giving a higher packing density on circuit boards and equipment backplanes. These connectors have true 75 ohm impedance making them suitable for HD video applications.\n\nCompatibility\nThe different",
+    "with_library": "ial applications of the BNC encodings are:\n\nProperties\nRibers\nRibers\nRibers\nRibers\nRibers\nRibers\nRibers\nRibers\nRibers (Ribers)\nRib",
+    "without_library": "ial applications of the BNC encoding are known as the DSM.\n\nRogers\n\nRogers\n\nRogers that are used as a primary source of charge and also are usually worn in different directions. Some of the following examples are:\n Rogers (",
+    "truth": " versions are designed to mate with each other,\nand a 75 ohm and a 50 ohm BNC connector which both comply with the 2007 IEC standard, IEC 61169-8, will mate non-destructively. At least one manufacturer claims"
+   },
+   {
+    "article_start": "Salvation (from Latin: salvatio, from salva, 'safe, saved') is the state of being saved or protected from harm or a dire situation. In religion and theology, salvation generally refers to",
+    "prompt": " of Jesus Christ of Latter-day Saints, the plan of salvation is God's plan to save, redeem, and exalt all humankind who chose, either in this life, or in the world of spirits of the dead, to accept the grace of Jesus Christ by exercising faith in Him, repenting of their sins, and by making and keeping sacred covenants (including baptism). Since the vast majority of God's children depart this life without that opportunity, Christ's gospel is preached to the unbelieving spirits in spirit prison (1 Peter 3: 19) so that they",
+    "with_library": " do not have any special gifts (1 Peter 6:20, 1 Peter 7:13, 4:17, 5:45, 1:00, and 5:15).\n\nMedian's people also have the following characteristics: (1) to be God's God's God's",
+    "without_library": " do not have any special interest in the life and that the God of God's life is in the world (2 Peter 5: 20); the God of God's life (1 Peter 8: 12) and the God of God's will and the God of God's will, as in the world",
+    "truth": " might be judged by the same standards as the living and live by following God in their spirit form (1 Peter 4: 6). If they accept Christ, sincerely repent of their sins, and accept ordinances done on their behalf, they can, by the grace of Christ"
+   }
+  ]
+ }
+}

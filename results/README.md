@@ -555,21 +555,20 @@ TONN at layers 0, 3, 6, 9, 12; 3,000 seconds; seed 0):
 | ExeaLM 2:1 hybrid (1.5e-3) | 3,151 | 1.386 | 1.462 | 1.347 | 1.702 | 1.474 |
 | Llama (1e-3) | 3,491 | 1.392 | 1.468 | 1.352 | 1.713 | 1.481 |
 
-**Seed 1** (same settings; both runs got about 8% fewer steps than seed 0 because the Mac ran slower during them):
+**Seed 1** (same settings, every run at normal speed; the first seed-1 Llama and 1.5e-3 hybrid ran on a slowed Mac
+and were rerun):
 
 | Same training time, seed 1 | Steps | English | Japanese wiki | Japanese web | Code | Mean |
 |---|---|---|---|---|---|---|
-| **ExeaLM 2:1 hybrid** (1.5e-3) | 2,902 | **1.398** | **1.468** | **1.359** | **1.702** | **1.482** |
-| Llama (1e-3) | 3,231 | 1.406 | 1.481 | 1.365 | 1.741 | 1.498 |
-| ExeaLM 2:1 hybrid (1e-3), run at normal speed | 3,206 | 1.368 | 1.438 | 1.331 | 1.648 | 1.446 |
-
-The last row is not a fair comparison yet: it ran at normal speed while the Llama and hybrid rows above it ran on a
-slowed Mac (Llama got 3,231 steps here against 3,491 on seed 0). Both slowed runs are queued to rerun.
+| **ExeaLM 2:1 hybrid** (1e-3) | 3,206 | **1.368** | **1.438** | **1.331** | **1.648** | **1.446** |
+| ExeaLM 2:1 hybrid (1.5e-3) | 3,217 | 1.384 | 1.453 | 1.344 | 1.686 | 1.467 |
+| Llama (1e-3) | 3,581 | 1.389 | 1.462 | 1.345 | 1.710 | 1.477 |
 
 At the size we plan to train, the default ExeaLM beats a same-size Llama at equal compute on every kind of text, on
-both seeds. At 1.5e-3 the margin is 0.007 (seed 0) and 0.016 (seed 1), 0.012 on average. At Llama's learning rate
-(1e-3) it is 0.017 on seed 0; seed 1 at 1e-3 is running. Caveats: Llama was run only at 1e-3 (its best rate at 27M
-and 48M), and both models are badly under-trained here (about 50M tokens for 90M parameters).
+both seeds. At 1e-3 the margin is 0.017 (seed 0) and 0.031 (seed 1), 0.024 on average; at 1.5e-3 it is 0.007 and
+0.010. Caveats: these runs have no memory circuits (`tonn_core`: the language part of the architecture only); Llama was run only
+at 1e-3 (its best rate at 27M and 48M); both models are badly under-trained here (about 50M tokens for 90M
+parameters). The slowed seed-1 runs are kept in `results/sweep/` (`eqt_100m_*_s1`).
 
 **Layouts at 13M** (equal steps, convolution-heavy start, 2 seeds each):
 
@@ -740,13 +739,12 @@ checkpoint the search works but the read doesn't:
 - With a single table, which is always retrieved, the model still gets 0% of the values.
 
 So the model finds the table but never learned to take the value from it. On seed 0 the read formed between steps
-6,000 and 9,000. Teaching relay and lookup together from step 0 learned both by step 1,000 on seed 0 (below). That
-schedule is queued on both seeds (`schedA_s1`, `skillsA_exealm`, `skillsA_exealm_s1`).
+6,000 and 9,000. Teaching relay and lookup together from step 0 fixes this on both seeds (the third recipe, below).
 
 **What it shows.**
 - One 18M model trained mostly on real text also passes facts between agents (100% vs 0.5% with the board cut) and,
   on seed 0, looks up facts in an unseen library (90% vs 0.6% without it). Both skills come from the circuits we
-  built for them.
+  built for them. With the third recipe (below) both skills form on both seeds.
 - Lookup was learned late, between steps 6,000 and 9,000. Inspecting the step-4,000 checkpoint, the search already
   found the right table more often than chance, but the read had not formed yet.
 
@@ -756,7 +754,7 @@ schedule is queued on both seeds (`schedA_s1`, `skillsA_exealm`, `skillsA_exealm
 - The lookup and relay tasks are synthetic.
 - Language is a little behind the first recipe (English 1.316 vs 1.294, code 1.606 vs 1.581), which spent 80% of its
   steps on text instead of 70%.
-- Lookup is not reliable with this recipe: it formed on one seed of two.
+- Lookup is not reliable with this recipe: it formed on one seed of two. The third recipe (below) fixes that.
 
 **Against a same-size Llama on the same batches** (`--model llama`, same arguments; the Llama can't do relay or
 lookup, so those batches only teach it the token statistics). Bits per byte, lower is better:
@@ -770,7 +768,8 @@ lookup, so those batches only teach it the token statistics). Bits per byte, low
 ExeaLM first, Llama second. Held-out Wikipedia with no library: 4.818 vs 4.906 bits per token.
 
 - At equal steps ExeaLM is ahead on every kind of text, by 0.017 to 0.035 bits per byte at the end (0.024 on
-  average). The lead shrinks with training: 0.21 on English at step 3,000, 0.023 at step 24,000.
+  average). The lead shrinks with training: 0.21 on English at step 3,000, 0.023 at step 24,000. This is seed 0
+  only; with a second seed the lead is much smaller (the two-seed table below).
 - That is equal steps. ExeaLM, with both memory circuits and board posts every 8 tokens, took 6,414 seconds against
   the Llama's 4,942 (1.30 times as long, evaluations included).
 - ExeaLM has 18.08M parameters, the Llama 17.83M.
@@ -786,8 +785,7 @@ match), which took 6,414 seconds, the same as ExeaLM's 24,000. Same batches, sam
 - **A tie on language.** The Llama is ahead on the three prose sets by 0.002 to 0.005 bits per byte, ExeaLM on code
   by 0.003. The mean differs by 0.002. Held-out Wikipedia with no library: 4.818 (ExeaLM) vs 4.833 bits per token.
 - At the same time cost, ExeaLM also does the relay (100% vs the Llama's 1.8%) and the lookup (90.3% vs 3.2%).
-  So the two memory skills come at no cost in language at equal steps. At equal compute they cost the 30% extra
-  time, which buys the Llama back about 0.002.
+  At equal compute the 30% extra time buys the Llama about 0.002 on this seed.
 - We haven't profiled where the 30% goes. The likely places are the board posts every 8 tokens and the search, both
   plain PyTorch on the Mac's GPU, while attention uses a fused kernel. Making those faster is the way to win at
   equal compute here.
@@ -802,5 +800,41 @@ first 400 steps differ; steps 400 to 2,000 are the same warm mix. At step 2,000:
 | **Relay and lookup together** | **94.2% / 1.0%** | **67.9% / 1.5%** | 2.024 |
 
 Whichever skill is learned alone first blocks the other for a long time: the relay never started after lookup, and
-in the full run lookup started only after step 6,000. Teaching both together learns both by step 1,000. Full runs
-with that schedule are queued on seeds 0 and 1 (`skillsA_exealm`, `skillsA_exealm_s1`).
+in the full run lookup started only after step 6,000. Teaching both together learns both by step 1,000. On seed 1
+the same check gave 99.8% / 1.5% relay and 81.6% / 1.6% lookup at step 2,000.
+
+**Third recipe: both skills together from step 0** (the recipe to use: `--schedule "400:0,0,0.5,0.5;2000:0.3,0.2,0.25,0.25"`,
+everything else as the second recipe). Final step, 24,000:
+
+| Recipe | Seed | English | Japanese Wikipedia | Japanese web | Code | Relay, shared / cut | Lookup, attached / removed |
+|---|---|---|---|---|---|---|---|
+| Relay first (second) | 0 | 1.316 | 1.422 | 1.319 | 1.606 | 100.0% / 0.5% | 90.3% / 0.6% |
+| Relay first (second) | 1 | 1.326 | 1.426 | 1.316 | 1.644 | 100.0% / 1.8% | 1.4% / 1.4% |
+| **Both together (third)** | 0 | 1.320 | 1.422 | 1.322 | 1.612 | **100.0% / 0.9%** | **94.0% / 1.5%** |
+| **Both together (third)** | 1 | 1.328 | 1.428 | 1.318 | 1.636 | **100.0% / 1.0%** | **94.3% / 1.7%** |
+
+- Both skills formed on both seeds. Lookup was at 77% (seed 0) and 80% (seed 1) by step 3,000, where the second
+  recipe was still at chance.
+- Lookup ends higher than the second recipe's one success (94% against 90%).
+- Language is the same as the second recipe's within seed noise (means 1.419 and 1.427 against 1.416 and 1.428).
+- The library on held-out Wikipedia stays about zero at the end (-0.072 and -0.011 bits per token), but on seed 0 it
+  swung to -0.37 and -0.48 at steps 18,000 and 21,000 before coming back. Real-text retrieval is still #22.
+
+**Language against the Llama, two seeds** (equal steps, the same batches; ExeaLM with the third recipe):
+
+| Model | Seed | English | Japanese Wikipedia | Japanese web | Code | Mean |
+|---|---|---|---|---|---|---|
+| ExeaLM | 0 | 1.320 | 1.422 | 1.322 | 1.612 | 1.419 |
+| Llama | 0 | 1.339 | 1.444 | 1.336 | 1.641 | 1.440 |
+| ExeaLM | 1 | 1.328 | 1.428 | 1.318 | 1.636 | 1.427 |
+| Llama | 1 | 1.332 | 1.426 | 1.319 | 1.637 | 1.428 |
+
+- ExeaLM leads by 0.021 on seed 0 and by 0.001 on seed 1, 0.011 on average. The seed-0 lead above (0.024) does not
+  hold up: the Llama's seed 1 is 0.012 better than its seed 0.
+- **This comparison flatters ExeaLM.** 15% of the steps are relay and lookup batches. ExeaLM learns from them; for
+  the Llama they are noise. In the first recipe, where neither model learned the skills (5% relay, nothing else
+  synthetic), the Llama matched or beat ExeaLM at equal steps: English 1.294 vs 1.294, Japanese Wikipedia 1.383 vs
+  1.387, Japanese web 1.282 vs 1.286, code 1.558 vs 1.581 (Llama first, seed 0; `full_small_llama_seed0.json`).
+- So on language alone the 17M ExeaLM is about even with a same-size Llama at equal steps, and a little behind at
+  equal compute. What it adds is the two skills. A Llama trained on text and Wikipedia only (no synthetic batches) is
+  running (`llama_textonly`); it is the fair measure of what the skills cost in language.

@@ -71,7 +71,7 @@ def run(arm, a, dev, train, evals):
     for step in range(a.steps):
         for g in opt.param_groups:
             g["lr"] = lr_at(step, a.steps, a.lr, 200, 0.2)
-        x, y, _ = train.batch(a.batch, a.seq, rng, group, policy)
+        x, y, _ = train.batch(a.batch, a.seq, rng, group, policy, mask_seams=bool(a.mask_seams))
         loss = model(x.to(dev), MemoryContext(swarm_size=train_swarm), y.to(dev))[1]
         opt.zero_grad(set_to_none=True)
         loss.backward()
@@ -106,14 +106,15 @@ def main():
     ap.add_argument("--eval_every", type=int, default=500)
     ap.add_argument("--eval_batches", type=int, default=24)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--hybrid", type=int, default=0, help="1: the default ExeaLM hybrid (attention on odd layers)")
+    ap.add_argument("--hybrid", type=int, default=0, help="1: the default ExeaLM hybrid (every third layer TONN)")
+    ap.add_argument("--mask_seams", type=int, default=1, help="0: score and train on the seam targets too (as before the fix)")
     ap.add_argument("--device", default="auto")
     ap.add_argument("--out", default="results/swarm_text")
     a = ap.parse_args()
     dev = pick_device(a.device)
     train, val = TokenShards(a.data), TokenShards(a.val)
     erng = np.random.default_rng(10_000)
-    evals = [val.batch(a.batch, a.seq, erng, a.swarm, "split")[:2] for _ in range(a.eval_batches)]
+    evals = [val.batch(a.batch, a.seq, erng, a.swarm, "split", mask_seams=bool(a.mask_seams))[:2] for _ in range(a.eval_batches)]
     os.makedirs(a.out, exist_ok=True)
     runs = []
     path = os.path.join(a.out, f"text_seed{a.seed}.json")
