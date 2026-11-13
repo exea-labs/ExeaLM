@@ -251,3 +251,29 @@ def test_persistent_board_reads_are_cached_until_the_next_post():
     board.merge(other)
     after = board.read(0, [0], "cpu")
     assert after[0].shape == (1, 3, 4) and sorted(after[3][0].tolist()) == [7, 7, 8]
+
+
+def test_a_keyword_library_feeds_the_retrieval_circuit_and_stays_causal():
+    from exealm.memory.lexical import LexicalDatastore
+    torch.manual_seed(0)
+    cfg = get_config("tiny", swarm_size=1)
+    m = ExeaLM(cfg)
+    C = cfg.chunk
+    lib = torch.randint(0, cfg.vocab_size, (30, cfg.rag_chunk_len))
+    ds = LexicalDatastore(lib, torch.arange(30))
+    x = torch.randint(0, cfg.vocab_size, (2, 5 * C))
+    x[0, :C] = lib[7, :C]                                               # chunk 0 repeats library chunk 7 word for word
+    mem = MemoryContext(datastore=ds, doc_ids=torch.full(x.shape, 99))
+    m.train()
+    m(x, mem)                                                           # set each slot's running output scale
+    m.eval()
+    idx, ok = ds.search_tokens(x[:, :C], 3)
+    assert idx[0, 0] == 7 and ok[0, 0]
+    with torch.no_grad():
+        a = m(x, mem)[0]
+        x2 = x.clone()
+        x2[1, 2 * C + 3] = (x2[1, 2 * C + 3] + 1) % cfg.vocab_size
+        b = m(x2, mem)[0]
+        none = m(x, MemoryContext())[0]
+    assert torch.allclose(a[:, :2 * C + 3], b[:, :2 * C + 3], atol=1e-5)   # a later token changes nothing before it
+    assert not torch.allclose(a[0, C:], none[0, C:])                   # and the library is read from chunk 1 on

@@ -5,6 +5,7 @@ from typing import Any, Optional
 import torch
 
 from .board import AgentBoard
+from .lexical import LexicalDatastore
 from .datastore import Datastore
 
 
@@ -34,4 +35,4 @@ class MemoryContext:
     cache: Any = None
 
 
-__all__ = ["AgentBoard", "Datastore", "MemoryContext"]
+__all__ = ["AgentBoard", "Datastore", "LexicalDatastore", "MemoryContext"]

@@ -126,7 +126,8 @@ class RetrievalCircuit(nn.Module):
         n = -(-T // C)
         ds = None if mem is None else mem.datastore
         self.last = None
-        if ds is None or ds.keys is None or mem.encoder is None or mem.tokens is None or n < 2:
+        lexical = ds is not None and hasattr(ds, "search_tokens")         # a keyword-searched library (lexical.py)
+        if ds is None or (ds.keys is None and not lexical) or mem.encoder is None or mem.tokens is None or n < 2:
             return A * 0.0                                                 # zeros, still attached to the graph
         ends = torch.arange(1, n, device=A.device) * C - 1                 # last position of chunks 0 .. n-2
         if self.query == "mean":
@@ -143,7 +144,17 @@ class RetrievalCircuit(nn.Module):
         docs = None
         if mem.doc_ids is not None:
             docs = mem.doc_ids[:, ends].unsqueeze(-1).expand(B, n - 1, g).reshape(M)
-        idx, valid = ds.search(qf.detach(), self.topk, exclude=docs)       # candidates from the stored index
+        if lexical:                                                        # BM25 over the previous chunk's tokens,
+            if "lex" not in mem.cache:                                     # shared by every RG slot in this pass
+                prev = F.pad(mem.tokens, (0, n * C - T)).view(B, n, C)[:, :n - 1].reshape(B * (n - 1), C)
+                dex = None if mem.doc_ids is None else mem.doc_ids[:, ends].reshape(B * (n - 1))
+                mem.cache["lex"] = ds.search_tokens(prev, self.topk, exclude=dex)
+            li, lv = mem.cache["lex"]
+            k = li.shape[1]
+            idx = li.view(B, n - 1, 1, k).expand(B, n - 1, g, k).reshape(M, k)
+            valid = lv.view(B, n - 1, 1, k).expand(B, n - 1, g, k).reshape(M, k)
+        else:
+            idx, valid = ds.search(qf.detach(), self.topk, exclude=docs)   # candidates from the stored index
         k = idx.shape[1]
         tok = ds.tokens[idx].reshape(M * k, -1)
         keys = mem.encoder(tok, mem.emb)[1]                                # re-encoded live: gradients flow

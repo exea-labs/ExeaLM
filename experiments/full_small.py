@@ -39,6 +39,7 @@ HERE = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(HERE, ".."))
 sys.path.insert(0, HERE)
 from exealm import Datastore, ExeaLM, MemoryContext, count_params, get_config  # noqa: E402
+from exealm.memory.lexical import LexicalDatastore  # noqa: E402
 from exealm.data.loader import MultiShards, SyntheticShards, TokenShards  # noqa: E402
 from exealm.model.baseline import Llama  # noqa: E402
 from exealm.model.search import Searcher  # noqa: E402
@@ -297,6 +298,9 @@ def main():
     ap.add_argument("--wiki_oracle", type=float, default=0.0, help="share of Wikipedia batches whose search is perfect "
                     "(it returns chunks of the right article's first half), so the read learns on real retrieved text")
     ap.add_argument("--init_ckpt", default="", help="start from this checkpoint (same architecture arguments)")
+    ap.add_argument("--lib_search", default="learned", choices=["learned", "lexical"],
+                    help="how Wikipedia batches search the library: the model's own embeddings, or BM25 keywords "
+                    "(exealm/memory/lexical.py; the read stays learned)")
     ap.add_argument("--root", default="data/tokpack")
     ap.add_argument("--toks", default="bpe32k")
     ap.add_argument("--train", default="train_en_big,train_ja_big,train_code_big")
@@ -376,6 +380,7 @@ def main():
         data.lib_train.refresh(model.encoder, model.emb, step=0)
         data.oracle_train = OracleDatastore(data.lib_train.tokens, data.lib_train.doc_ids)
         data.oracle_train.keys = data.lib_train.keys
+        data.lib_lex = LexicalDatastore(data.lib_train.tokens, data.lib_train.doc_ids) if a.lib_search == "lexical" else None
     p = kinds_p(a.p_kinds)
     phases = [(int(u), kinds_p(sh)) for u, sh in (ph.split(":") for ph in a.schedule.split(";") if ph)] if a.schedule \
         else [(a.warm_steps, kinds_p(a.warm_kinds))]
@@ -405,6 +410,8 @@ def main():
             x, y, d, swarm = batch(kind, data, a, rng)
             use_lib = kind == "wiki" or (kind == "text" and a.lib_on == "all")
             lib = data.lib_train if use_lib else None
+            if kind == "wiki" and a.model == "exealm" and data.lib_lex is not None:
+                lib = data.lib_lex
             if kind == "wiki" and a.wiki_oracle and a.model == "exealm" and rng.random() < a.wiki_oracle:
                 lib = data.oracle_train
             mem = mem_for(a.model, lib, d, swarm, dev)

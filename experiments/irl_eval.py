@@ -6,7 +6,8 @@ know is in the FIRST half, which it never saw in training and which is not in it
 first half, each a different path through the model:
 
   library     RG: the first halves of every held-out article form a library the model never trained on; the model's
-              own search must find the right one (and "library, perfect search": OracleDatastore, the right article)
+              own search must find the right one ("library, perfect search": OracleDatastore, the right article;
+              "library, BM25 search": keyword search, exealm/memory/lexical.py, with the model's own read)
   board       AG, live: a second agent reads the first half at the same time, in a swarm of 2, and the reader hears
               its posts through the in-batch board (a post is visible from the next 8-token stretch on)
   notes       AG, from a knowledge base: a reader agent reads the first half once, ahead of time, and its posts are
@@ -18,7 +19,10 @@ Baselines without built-in memory:
   in context  the last half-window of the first half placed before the text (what an ordinary RAG system does: paste
               the right document into the prompt). Scored on the first half-window of the second half, so every
               path is also reported on that shorter stretch ("first 256")
-  --model llama  a same-size Llama checkpoint: no memory, and the first half in context
+  BM25 RAG    ordinary RAG: a BM25 keyword search over the library with the first 64 tokens read, and the top chunks
+              pasted before the text; scored from position 64 on, so the search never saw what is scored (#32).
+              Every path is also reported on that stretch ("64-255")
+  --model llama  a same-size Llama checkpoint: no memory, the first half in context, and BM25 RAG
 
 Scored in bits per token on three sets of target tokens in the second half:
   all         every token
@@ -48,6 +52,7 @@ from exealm.config import ModelConfig  # noqa: E402
 from exealm.model.baseline import Llama  # noqa: E402
 from exealm.data.loader import TokenShards  # noqa: E402
 from exealm.memory.board import AgentBoard  # noqa: E402
+from exealm.memory.lexical import BM25, LexicalDatastore  # noqa: E402
 from exealm.train.pretrain import pick_device  # noqa: E402
 from rag_wiki_split import TEXT_DOC_OFFSET, OracleDatastore, split_articles  # noqa: E402
 
@@ -138,12 +143,13 @@ def write_notes(model, windows, dev, capacity):
     return board, author
 
 
-def scores(out3, rem, nov, upto=None):
-    """Bits per token on all, re-mention and novel targets; top-1 and four-choice accuracy on re-mentions. upto: only
-    the first `upto` positions."""
+def scores(out3, rem, nov, upto=None, start=0):
+    """Bits per token on all, re-mention and novel targets; top-1 and four-choice accuracy on re-mentions. Only
+    positions start .. upto - 1 count."""
     nll, ok, ch = out3
     T = nll.shape[1]
-    lim = torch.arange(T) < (upto or T)
+    pos = torch.arange(T)
+    lim = (pos < (upto or T)) & (pos >= start)
     rem, nov = rem[:, :T] & lim, nov[:, :T] & lim
     out = {}
     for name, m in (("all", lim.expand_as(rem)), ("re-mention", rem), ("novel", nov)):
@@ -205,13 +211,28 @@ def main():
     def plain(mem):
         return lambda i0, i1: (x[i0:i1], mem(i0, i1), slice(None))
 
-    def both(name, out3):                                               # the full window and its first half-window
+    Q = C                                                              # BM25 reads the first chunk, scored after it
+
+    def both(name, out3):                                               # full window, first half-window, after the query
         res[name] = scores(out3, rem, nov)
         res[name + " (first 256)"] = scores(out3, rem, nov, upto=H)
+        res[name + f" ({Q}-255)"] = scores(out3, rem, nov, upto=H, start=Q)
 
     both("none", run(model, x, y, plain(lambda i0, i1: MemoryContext()), dev, a.batch, cands))
+    lib_chunks = [c for _, f, _ in eval_arts for c in f]
+    bm25 = BM25(np.stack(lib_chunks))
+    k_bm = H // C
+    got = torch.stack([torch.from_numpy(np.concatenate([lib_chunks[j] for j in bm25.top(x[i, :Q].numpy(), k_bm)[0]]).astype(np.int64))
+                       for i in range(len(x))])
+    doc_of = np.concatenate([np.full(len(f), dd) for dd, f, _ in eval_arts])
+    hit = np.mean([any(doc_of[j] == arts[i][0] for j in bm25.top(x[i, :Q].numpy(), k_bm)[0]) for i in range(len(x))])
+    rag = lambda i0, i1: (torch.cat([got[i0:i1], x[i0:i1, :H]], 1), MemoryContext(), slice(None))
+    res[f"BM25 top-{k_bm} in context ({Q}-255)"] = scores(run(model, x[:, :H], y[:, :H], rag, dev, a.batch, cands[:, :H], offset=H), rem, nov, start=Q)
+    res[f"BM25 top-{k_bm} in context ({Q}-255)"]["right article retrieved"] = round(float(hit), 4)
     ctx = lambda i0, i1: (torch.cat([tail[i0:i1], x[i0:i1, :H]], 1), MemoryContext(), slice(None))
-    res["in context (first 256)"] = scores(run(model, x[:, :H], y[:, :H], ctx, dev, a.batch, cands[:, :H], offset=H), rem, nov)
+    ic = run(model, x[:, :H], y[:, :H], ctx, dev, a.batch, cands[:, :H], offset=H)
+    res["in context (first 256)"] = scores(ic, rem, nov)
+    res[f"in context ({Q}-255)"] = scores(ic, rem, nov, start=Q)
     n_auth = 0
     if isinstance(model, ExeaLM):
         lib_tok = np.concatenate([f for _, f, _ in eval_arts]).astype(np.int64)
@@ -222,6 +243,8 @@ def main():
         oracle.refresh(model.encoder, model.emb)
         both("library", run(model, x, y, plain(lambda i0, i1: MemoryContext(datastore=lib, doc_ids=d[i0:i1].to(dev))), dev, a.batch, cands))
         both("library, perfect search", run(model, x, y, plain(lambda i0, i1: MemoryContext(datastore=oracle, doc_ids=d[i0:i1].to(dev))), dev, a.batch, cands))
+        lex = LexicalDatastore(torch.from_numpy(lib_tok), torch.from_numpy(lib_doc)).to(dev)
+        both("library, BM25 search", run(model, x, y, plain(lambda i0, i1: MemoryContext(datastore=lex, doc_ids=d[i0:i1].to(dev))), dev, a.batch, cands))
 
         # board, live: rows [first-half window, second-half window] as swarms of 2; score the second
         fw = torch.stack([F.pad(w[0], (0, T - len(w[0])), value=0) if len(w[0]) < T else w[0] for w in firsts])
@@ -240,12 +263,13 @@ def main():
         board, n_auth = write_notes(model, firsts, dev, capacity=10 ** 7)
         both("notes, all articles", run(model, x, y, plain(lambda i0, i1: MemoryContext(board=board, agent_ids=torch.full((i1 - i0,), reader, device=dev))), dev, a.batch, cands))
 
-    for span in ("", " (first 256)"):
+    spans = ("", " (first 256)", f" ({Q}-255)")
+    for span in spans:
         base = res["none" + span]
-        print(f"\n{('positions 0-' + str(H - 1)) if span else 'all ' + str(T) + ' positions':34s} {'all':>7s} {'re-mention':>10s} "
+        print(f"\n{span.strip(' ()') or 'all ' + str(T) + ' positions':34s} {'all':>7s} {'re-mention':>10s} "
               f"{'novel':>7s} {'top-1':>6s} {'4-choice':>8s}   re-mention gain")
         for k, v in res.items():
-            if (span and not k.endswith(span)) or (not span and k.endswith(" (first 256)")):
+            if (span and not k.endswith(span)) or (not span and any(k.endswith(z) for z in spans[1:])):
                 continue
             print(f"{k:34s} {v['all']:7.3f} {v['re-mention']:10.3f} {v['novel']:7.3f} {100 * v['re-mention top-1']:5.1f}% "
                   f"{100 * v['re-mention 4-choice']:7.1f}%   " + ("" if v is base else f"{base['re-mention'] - v['re-mention']:+.3f}"))
