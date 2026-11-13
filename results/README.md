@@ -838,3 +838,45 @@ everything else as the second recipe). Final step, 24,000:
 - So on language alone the 17M ExeaLM is about even with a same-size Llama at equal steps, and a little behind at
   equal compute. What it adds is the two skills. A Llama trained on text and Wikipedia only (no synthetic batches) is
   running (`llama_textonly`); it is the fair measure of what the skills cost in language.
+
+## 11. What the search chooses (`experiments/plot_search.py`, `results/search_arch/`)
+
+**Setup.** The `tiny` preset (2 TONN layers of 8 slots, 127K parameters) on synthetic data, 2,000 steps on a 4-core
+CPU (2026-11-12), with the default search: a round every 100 steps for the first half of training, so 9 rounds.
+Seeds 0, 1 and 2, about a minute each. Every search record in the log now carries the architecture it leaves behind.
+
+![Circuits in each TONN layer after every search round, seeds 0 to 2](search_arch/search_arch.png)
+
+All three runs start from the same circuits. `--seed` changes the weights, the batches and the search's random draws,
+but not the starting circuits: `exealm/train/pretrain.py` leaves `cfg.seed` at 0 (`experiments/tokenizer_lm.py` passes
+its seed to the config instead).
+
+| | Slots replaced | Layer 0 | Layer 1 | Validation bits per token |
+|---|---|---|---|---|
+| Start (every seed) | | RG, AG, C, GI, MI, MIM, EP ×2 | RG, AG, C ×3, MI, EP, SM | |
+| End, seed 0 | 3 | RG, AG ×2, C, GI, EP ×3 | unchanged | 2.002 |
+| End, seed 1 | 3 | RG, AG, C ×2, EP ×4 | unchanged | 1.963 |
+| End, seed 2 | 2 | RG, AG ×2, C, GI, MI, EP ×2 | RG, AG, C ×4, EP, SM | 1.992 |
+
+Every round, per seed: `python experiments/plot_search.py results/search_arch/seed*/log.jsonl --table_only`.
+
+**What it shows.**
+- The search changes little here: 2 or 3 of 16 slots per run, all by step 700. It only replaces slots worth nothing
+  or less, and the share it may replace shrinks to zero by the end of the search: at steps 800 and 900 that share
+  rounds to zero slots.
+- The same circuits go first. MIM (gated product memory) left layer 0 in all three runs, and MI left a layer in all
+  three. What replaced them differs by seed: EP (softmax pooling), C (short convolution) or a second AG. Seed 0
+  tried an RP (rotary attention) at step 100 and replaced it at step 300.
+- Layer 1 kept its starting circuits in two of three runs.
+
+**What it does not show.** Whether these choices hold on real text. In this data the next token depends only on the
+current one (a random Markov chain, 4 possible successors per token, 1.996 bits per token of randomness on average;
+the runs end at 1.96 to 2.00), so circuits that recall pairs from further back have nothing to find. That is a likely
+reason MIM and MI were dropped, not a tested one. The next step is the same plot for the `small` preset on real
+tokens. `experiments/tokenizer_lm.py` does not keep its search records yet, so the sweep's searched runs (section 8)
+cannot be plotted.
+
+```bash
+for s in 0 1 2; do python -m exealm.train.pretrain --preset tiny --data synthetic --steps 2000 --seed $s --out runs/search_arch/seed$s; done
+python experiments/plot_search.py runs/search_arch/seed{0,1,2}/log.jsonl --labels "seed 0" "seed 1" "seed 2" --out results/search_arch/search_arch.png
+```
