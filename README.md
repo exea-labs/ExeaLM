@@ -32,6 +32,10 @@ python -m exealm.data.download llmjp --subset ja/ja_wiki --max_files 1 --out dat
 python -m exealm.data.sources                                    # print the two candidate 100B-token mixes
 ```
 
+New to this? [notebooks/tiny_tour.ipynb](notebooks/tiny_tour.ipynb) is a guided tour that needs no GPU: under 5 minutes on
+one CPU thread ([open in Colab](https://colab.research.google.com/github/exea-labs/ExeaLM/blob/main/notebooks/tiny_tour.ipynb)).
+Train the `tiny` model, look at its circuits, switch some off, and watch two agents learn to talk over the board.
+
 Full data walkthrough (filter, tokenizer, pack, then train the 17M `small` preset, which fits on a laptop or a free Colab GPU): [docs/data.md](docs/data.md).
 
 ## The plan
@@ -289,7 +293,7 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [x] (starter) Diagrams: a TONN layer, RG, AG, a swarm (interactive, on the blog: https://blog.exealabs.org/architecture/)
 - [ ] (starter) Japanese translation of this README ([#13](https://github.com/exea-labs/ExeaLM/issues/13))
 - [x] (starter) Glossary of terms ([docs/glossary.md](docs/glossary.md))
-- [ ] (starter) Beginner notebook: train the `tiny` model and look inside it ([#14](https://github.com/exea-labs/ExeaLM/issues/14))
+- [x] (starter) Beginner notebook: train the `tiny` model and look inside it ([notebooks/tiny_tour.ipynb](notebooks/tiny_tour.ipynb), [open in Colab](https://colab.research.google.com/github/exea-labs/ExeaLM/blob/main/notebooks/tiny_tour.ipynb), [#14](https://github.com/exea-labs/ExeaLM/issues/14))
 - [ ] Technical report
 
 ## Repo layout
@@ -315,6 +319,7 @@ docs/                    architecture, memory (RAG + agents), swarms, data, trai
 experiments/             one script per experiment (swarm relay, swarms on text, RAG lookup, RAG on text,
                          tokenizer, TONN vs Llama, speed)
 results/                 what they found: results/README.md, plus the raw JSON and logs
+notebooks/               tiny_tour.ipynb: a guided tour of the tiny model for new contributors (Colab, CPU)
 tests/                   run with pytest
 ```
 
