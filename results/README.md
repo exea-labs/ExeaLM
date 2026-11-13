@@ -926,6 +926,21 @@ at 3 and 5. That is close to Qwen3.5's 3:1 ratio of DeltaNet to attention.
 - Caveats: equal steps only, since the runs shared the GPU and their times are not comparable. The gated Llama ran
   on one seed. Equal compute is the next check.
 
+**Equal compute** (600 seconds each on the Mac Studio, run one at a time with nothing else on the GPU, seed 0):
+
+| Model | Steps in 600 s | English | Japanese wiki | Japanese web | Code | Mean |
+|---|---|---|---|---|---|---|
+| Llama | 3,020 (655 s) | 1.460 | 1.535 | 1.414 | 1.760 | 1.542 |
+| Llama + gated attention + QK-norm | 3,233 | 1.429 | 1.507 | 1.392 | 1.732 | 1.515 |
+| Qwen3.5-style | 2,592 (684 s) | 1.462 | 1.533 | 1.415 | 1.758 | 1.542 |
+| **ExeaLM hybrid + gated attention + QK-norm** | 3,070 | 1.432 | **1.503** | **1.392** | **1.709** | **1.509** |
+
+- At equal compute the gated hybrid leads the gated Llama by 0.006 and Llama by 0.033. Its lead is mostly code.
+- The Qwen3.5-style model falls to Llama's level at equal compute, since its Gated DeltaNet runs in plain PyTorch
+  on the Mac (2,592 steps). On an NVIDIA GPU with fused kernels (#31) this would change.
+- The step counts come from timing the first 50 steps. Two runs overshot the budget (655 s and 684 s), which favours
+  them. One seed.
+
 **The circuit search with both memory skills** (`full_small.py --search 1`, 17M, the third recipe, stopped at
 step 1,500, one seed; `results/full_small/full_small_exealm_search_check_seed0.json`):
 - Both skills still form: relay 99.6% (1.3% cut), lookup 56% (1.4% removed) at step 1,500.
