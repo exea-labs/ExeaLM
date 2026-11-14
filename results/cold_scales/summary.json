@@ -1,0 +1,200 @@
+{
+  "torch": "2.14.1",
+  "baseline": "04d2289 current-batch RMS fallback",
+  "config": {
+    "preset": "tiny",
+    "steps": 100,
+    "batch": 4,
+    "seq": 64,
+    "eval_batches": 2,
+    "search_every": 20,
+    "datastore_chunks": 100,
+    "refresh_every": 40,
+    "threads": 1
+  },
+  "training_input_tokens_per_run": 25600,
+  "model_configs": {
+    "0": {
+      "vocab_size": 256,
+      "d": 64,
+      "n_layers": 2,
+      "slots": 8,
+      "h": 8,
+      "ffn": -1,
+      "menu": [
+        "D",
+        "I",
+        "GI",
+        "M",
+        "MI",
+        "MIM",
+        "EP",
+        "G",
+        "C",
+        "RP",
+        "SM",
+        "OS",
+        "RG",
+        "AG"
+      ],
+      "lags": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        8,
+        12,
+        16,
+        32,
+        64,
+        128
+      ],
+      "tie_embeddings": true,
+      "pinned": {
+        "RG": 1,
+        "AG": 1
+      },
+      "init_weights": null,
+      "attn_layers": [],
+      "delta_layers": [],
+      "attn_gate": false,
+      "qk_norm": false,
+      "seed": 0,
+      "chunk": 8,
+      "rag_topk": 2,
+      "rag_chunk_len": 8,
+      "enc_dim": 32,
+      "rag_query": "last",
+      "rag_null": false,
+      "rag_key_dim": 0,
+      "rag_lexical": 0,
+      "swarm_size": 2,
+      "board_read_self": true,
+      "board_chunk": 0,
+      "chunk_pool": "mean"
+    },
+    "1": {
+      "vocab_size": 256,
+      "d": 64,
+      "n_layers": 2,
+      "slots": 8,
+      "h": 8,
+      "ffn": -1,
+      "menu": [
+        "D",
+        "I",
+        "GI",
+        "M",
+        "MI",
+        "MIM",
+        "EP",
+        "G",
+        "C",
+        "RP",
+        "SM",
+        "OS",
+        "RG",
+        "AG"
+      ],
+      "lags": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        8,
+        12,
+        16,
+        32,
+        64,
+        128
+      ],
+      "tie_embeddings": true,
+      "pinned": {
+        "RG": 1,
+        "AG": 1
+      },
+      "init_weights": null,
+      "attn_layers": [],
+      "delta_layers": [],
+      "attn_gate": false,
+      "qk_norm": false,
+      "seed": 1,
+      "chunk": 8,
+      "rag_topk": 2,
+      "rag_chunk_len": 8,
+      "enc_dim": 32,
+      "rag_query": "last",
+      "rag_null": false,
+      "rag_key_dim": 0,
+      "rag_lexical": 0,
+      "swarm_size": 2,
+      "board_read_self": true,
+      "board_chunk": 0,
+      "chunk_pool": "mean"
+    }
+  },
+  "leakage": {
+    "previous": {
+      "future_prefix_max_diff": 0.0038401782512664795,
+      "unrelated_row_max_diff": 0.04935125634074211
+    },
+    "causal": {
+      "future_prefix_max_diff": 1.4901161193847656e-07,
+      "unrelated_row_max_diff": 0.0
+    },
+    "prefix_candidate": {
+      "future_prefix_max_diff": 1.7881393432617188e-07,
+      "unrelated_row_max_diff": 0.0
+    }
+  },
+  "runs": [
+    {
+      "normalization": "previous",
+      "seed": 0,
+      "params": 127432,
+      "val_bits_per_token": 5.0181,
+      "train_loss": 4.5843
+    },
+    {
+      "normalization": "previous",
+      "seed": 1,
+      "params": 127432,
+      "val_bits_per_token": 5.1083,
+      "train_loss": 4.6057
+    },
+    {
+      "normalization": "causal",
+      "seed": 0,
+      "params": 127432,
+      "val_bits_per_token": 5.0003,
+      "train_loss": 4.5745
+    },
+    {
+      "normalization": "causal",
+      "seed": 1,
+      "params": 127432,
+      "val_bits_per_token": 5.1593,
+      "train_loss": 4.6062
+    },
+    {
+      "normalization": "prefix_candidate",
+      "seed": 0,
+      "params": 127432,
+      "val_bits_per_token": 5.0668,
+      "train_loss": 4.5916
+    },
+    {
+      "normalization": "prefix_candidate",
+      "seed": 1,
+      "params": 127432,
+      "val_bits_per_token": 5.1539,
+      "train_loss": 4.6143
+    }
+  ],
+  "numpy": "2.4.6",
+  "platform": "macOS-27.0.1-arm64-arm-64bit"
+}
