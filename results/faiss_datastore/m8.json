@@ -1,0 +1,75 @@
+{
+  "config": {
+    "keys": 1000000,
+    "queries": 256,
+    "dim": 32,
+    "threads": 4,
+    "pq_m": 8,
+    "rerank": 4,
+    "seed": 0,
+    "repeats": 3,
+    "out": "results/faiss_datastore/m8.json"
+  },
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "torch": "2.14.1",
+  "numpy": "2.4.6",
+  "faiss": "1.14.3",
+  "build_seconds": 2.8213348749559373,
+  "index_bytes": 16067764,
+  "rows": [
+    {
+      "backend": "exact",
+      "exclude": false,
+      "recall_at_4": 1.0,
+      "seconds": 0.24007470905780792
+    },
+    {
+      "backend": "ivf-pq",
+      "nprobe": 8,
+      "exclude": false,
+      "recall_at_4": 0.4033203125,
+      "seconds": 0.0058672919403761625
+    },
+    {
+      "backend": "ivf-pq",
+      "nprobe": 32,
+      "exclude": false,
+      "recall_at_4": 0.515625,
+      "seconds": 0.02090558293275535
+    },
+    {
+      "backend": "ivf-pq",
+      "nprobe": 128,
+      "exclude": false,
+      "recall_at_4": 0.5283203125,
+      "seconds": 0.08209854201413691
+    },
+    {
+      "backend": "exact",
+      "exclude": true,
+      "recall_at_4": 1.0,
+      "seconds": 0.3582652499899268
+    },
+    {
+      "backend": "ivf-pq",
+      "nprobe": 8,
+      "exclude": true,
+      "recall_at_4": 0.4033203125,
+      "seconds": 0.04539683391340077
+    },
+    {
+      "backend": "ivf-pq",
+      "nprobe": 32,
+      "exclude": true,
+      "recall_at_4": 0.515625,
+      "seconds": 0.13476183405146003
+    },
+    {
+      "backend": "ivf-pq",
+      "nprobe": 128,
+      "exclude": true,
+      "recall_at_4": 0.5283203125,
+      "seconds": 0.4955070421565324
+    }
+  ]
+}
