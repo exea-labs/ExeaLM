@@ -1,0 +1,446 @@
+[
+  {
+    "repo": "IFM/TxT360-v2",
+    "subset": "web-high-nltk-qa",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "token_count": 12
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "token_count": 12
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  },
+  {
+    "repo": "IFM/TxT360-v2",
+    "subset": "web-high-medium",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "jais_token_count": 12,
+        "meta.lang": "en",
+        "quality_category": "invented metadata"
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "jais_token_count": 12,
+        "meta.lang": "en",
+        "quality_category": "invented metadata"
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  },
+  {
+    "repo": "IFM/TxT360-v2",
+    "subset": "txt360-qa",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "meta": {
+          "url": "https://example.test/",
+          "timestamp": "2026-11-14T00:00:00"
+        },
+        "subset": "invented"
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "meta": {
+          "url": "https://example.test/",
+          "timestamp": "2026-11-14T00:00:00"
+        },
+        "subset": "invented"
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  },
+  {
+    "repo": "IFM/Pretrain-Behaviors",
+    "subset": "reasoning",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "token_count": 12
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "token_count": 10
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  },
+  {
+    "repo": "IFM/Pretrain-Behaviors",
+    "subset": "general",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "token_count": 12
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "token_count": 10
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  },
+  {
+    "repo": "IFM/Pretrain-Behaviors",
+    "subset": "planning",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "token_count": 12
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "token_count": 10
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  },
+  {
+    "repo": "IFM/Pretrain-Behaviors",
+    "subset": "data-science",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "token_count": 12
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "token_count": 10
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  },
+  {
+    "repo": "IFM/Pretrain-Behaviors",
+    "subset": "games",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "token_count": 12
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "token_count": 10
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  },
+  {
+    "repo": "IFM/Pretrain-Behaviors",
+    "subset": "other",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "token_count": 12
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "token_count": 10
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  },
+  {
+    "repo": "IFM/Pretrain-Behaviors",
+    "subset": "format-rewrites",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "token_count": 12
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "token_count": 10
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  },
+  {
+    "repo": "IFM/Math-Reasoning",
+    "subset": "math-thinking-qwen",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "token_count": 12
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "token_count": 10
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  },
+  {
+    "repo": "IFM/Math-Reasoning",
+    "subset": "math-thinking-oss",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "token_count": 12
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "token_count": 10
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  },
+  {
+    "repo": "IFM/Math-Reasoning",
+    "subset": "math-rewrite",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "token_count": 12
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "token_count": 10
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  },
+  {
+    "repo": "IFM/Math-Reasoning",
+    "subset": "math-dialogue",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "token_count": 12
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "token_count": 10
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  },
+  {
+    "repo": "IFM/Math-Reasoning",
+    "subset": "socratic-math-dialogue",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "token_count": 12
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "token_count": 10
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  },
+  {
+    "repo": "IFM/Code-Reasoning",
+    "subset": "code-no-thinking",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "token_count": 12
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "token_count": 10
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  },
+  {
+    "repo": "IFM/Code-Reasoning",
+    "subset": "code-no-thinking-hard",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "token_count": 12
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "token_count": 10
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  },
+  {
+    "repo": "IFM/Code-Reasoning",
+    "subset": "code-thinking-v1",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "token_count": 12
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "token_count": 10
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  },
+  {
+    "repo": "IFM/Code-Reasoning",
+    "subset": "code-thinking-hard",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "token_count": 12
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "token_count": 10
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  },
+  {
+    "repo": "IFM/Code-Reasoning",
+    "subset": "code-thinking-v0",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "token_count": 12
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "token_count": 10
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  },
+  {
+    "repo": "IFM/Code-Reasoning",
+    "subset": "codeio",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "token_count": 12
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "token_count": 10
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  },
+  {
+    "repo": "IFM/Code-Reasoning",
+    "subset": "code-task-synthesis",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "token_count": 12
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "token_count": 10
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  },
+  {
+    "repo": "IFM/SFT-Reasoning",
+    "subset": "instruction-following",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "token_count": 12
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "token_count": 10
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  },
+  {
+    "repo": "IFM/SFT-Reasoning",
+    "subset": "3efforts-pretrain",
+    "rows": [
+      {
+        "text": "user\nInvented question.\n\nassistant\nInvented reasoning and answer.\n",
+        "token_count": 12
+      },
+      {
+        "text": "def invented_double(x):\n    return 2 * x\n",
+        "token_count": 10
+      },
+      {
+        "text": null,
+        "metadata": "A long metadata description must never become a training document."
+      }
+    ]
+  }
+]

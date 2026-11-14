@@ -92,3 +92,35 @@ python -m exealm.train.pretrain --preset small --data data/packed/train --val da
 The open data tasks are in the README's [to-do list](../README.md#to-do-list): counting tokens,
 decontamination, a Japanese quality classifier, swarm construction, the retrieval datastore, and scaling the
 download.
+
+### K2 pretraining and SFT subset formatters
+
+The current releases of all **24 subsets** in `sources.K2` provide a preformatted
+`text` column. Their chat/reasoning/code content is already serialized upstream;
+there is no need to infer a new conversation schema or append metadata fields.
+`formatters.K2_FORMATTERS` registers a named callable for each repository/subset,
+with shared validation of that verified column. `download hf` selects the registered
+formatter for known K2 repositories and refuses unknown subsets. Other repositories
+continue to use the generic extractor.
+
+Valid text is preserved byte-for-byte as a Python string, including existing role
+markers, line breaks, leading whitespace and code indentation. Blank, missing and
+non-string text fields are dropped. A malformed K2 row can no longer fall through
+to a metadata description, guessed question/answer pair or stringified object.
+`--max_rows` counts retained documents and must be positive. These formatters do
+not choose a new chat template, filter valid content, or change mix proportions.
+
+Sources and card licenses (checked 2026-11-14):
+
+- [TxT360-v2](https://huggingface.co/datasets/IFM/TxT360-v2): CC-BY-4.0; 3 subsets.
+- [Pretrain-Behaviors](https://huggingface.co/datasets/IFM/Pretrain-Behaviors): Apache-2.0; 7 subsets.
+- [Math-Reasoning](https://huggingface.co/datasets/IFM/Math-Reasoning): Apache-2.0; 5 subsets.
+- [Code-Reasoning](https://huggingface.co/datasets/IFM/Code-Reasoning): Apache-2.0; 7 subsets.
+- [SFT-Reasoning](https://huggingface.co/datasets/IFM/SFT-Reasoning): Apache-2.0; 2 subsets.
+
+Two live rows per subset were checked against their public schemas; every retained
+row matched the original `text` exactly. Offline fixtures use invented text with
+those schemas, not copied corpus content. Results/revisions are recorded in
+`results/k2_formatters/`. This covers the pretraining/SFT subset list in `sources.K2`.
+The separately listed guru-RL release requires a task/reward-aware RL loader; it is
+outside this text-formatting registry and is not claimed as complete here.

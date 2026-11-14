@@ -1,0 +1,329 @@
+[
+  {
+    "repo": "IFM/TxT360-v2",
+    "subset": "web-high-nltk-qa",
+    "reported_revision": "a86bdfb101ebaaf71b445f95fb0f9b9bc2a47511",
+    "rows_checked": 2,
+    "fields": [
+      "text",
+      "token_count"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "CC BY 4.0"
+  },
+  {
+    "repo": "IFM/TxT360-v2",
+    "subset": "web-high-medium",
+    "reported_revision": "a86bdfb101ebaaf71b445f95fb0f9b9bc2a47511",
+    "rows_checked": 2,
+    "fields": [
+      "FormatClassifier",
+      "TopicClassifier",
+      "bucket_fasttext_eli5",
+      "bucket_fasttext_preselect",
+      "bucket_fineweb_edu_classifier",
+      "fasttext_eli5_score",
+      "fasttext_preselect_score",
+      "final_bucket",
+      "fineweb_edu_classifier_score",
+      "jais_token_count",
+      "meta.lang",
+      "meta.lang_score",
+      "meta.token_count",
+      "quality_category",
+      "subset",
+      "text"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "CC BY 4.0"
+  },
+  {
+    "repo": "IFM/TxT360-v2",
+    "subset": "txt360-qa",
+    "reported_revision": "a86bdfb101ebaaf71b445f95fb0f9b9bc2a47511",
+    "rows_checked": 2,
+    "fields": [
+      "meta",
+      "subset",
+      "text"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "CC BY 4.0"
+  },
+  {
+    "repo": "IFM/Pretrain-Behaviors",
+    "subset": "reasoning",
+    "reported_revision": "3345e13d7f3f6d0ecb5fdd67b37aed289f3191f5",
+    "rows_checked": 2,
+    "fields": [
+      "text",
+      "token_count"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "Apache 2.0"
+  },
+  {
+    "repo": "IFM/Pretrain-Behaviors",
+    "subset": "general",
+    "reported_revision": "3345e13d7f3f6d0ecb5fdd67b37aed289f3191f5",
+    "rows_checked": 2,
+    "fields": [
+      "text",
+      "token_count"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "Apache 2.0"
+  },
+  {
+    "repo": "IFM/Pretrain-Behaviors",
+    "subset": "planning",
+    "reported_revision": "3345e13d7f3f6d0ecb5fdd67b37aed289f3191f5",
+    "rows_checked": 2,
+    "fields": [
+      "text",
+      "token_count"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "Apache 2.0"
+  },
+  {
+    "repo": "IFM/Pretrain-Behaviors",
+    "subset": "data-science",
+    "reported_revision": "3345e13d7f3f6d0ecb5fdd67b37aed289f3191f5",
+    "rows_checked": 2,
+    "fields": [
+      "text",
+      "token_count"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "Apache 2.0"
+  },
+  {
+    "repo": "IFM/Pretrain-Behaviors",
+    "subset": "games",
+    "reported_revision": "3345e13d7f3f6d0ecb5fdd67b37aed289f3191f5",
+    "rows_checked": 2,
+    "fields": [
+      "text",
+      "token_count"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "Apache 2.0"
+  },
+  {
+    "repo": "IFM/Pretrain-Behaviors",
+    "subset": "other",
+    "reported_revision": "3345e13d7f3f6d0ecb5fdd67b37aed289f3191f5",
+    "rows_checked": 2,
+    "fields": [
+      "text",
+      "token_count"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "Apache 2.0"
+  },
+  {
+    "repo": "IFM/Pretrain-Behaviors",
+    "subset": "format-rewrites",
+    "reported_revision": "3345e13d7f3f6d0ecb5fdd67b37aed289f3191f5",
+    "rows_checked": 2,
+    "fields": [
+      "text",
+      "token_count"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "Apache 2.0"
+  },
+  {
+    "repo": "IFM/Math-Reasoning",
+    "subset": "math-thinking-qwen",
+    "reported_revision": "e249295774c3a66943e1483dbf53e0c811bc41dd",
+    "rows_checked": 2,
+    "fields": [
+      "text",
+      "token_count"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "Apache 2.0"
+  },
+  {
+    "repo": "IFM/Math-Reasoning",
+    "subset": "math-thinking-oss",
+    "reported_revision": "e249295774c3a66943e1483dbf53e0c811bc41dd",
+    "rows_checked": 2,
+    "fields": [
+      "text",
+      "token_count"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "Apache 2.0"
+  },
+  {
+    "repo": "IFM/Math-Reasoning",
+    "subset": "math-rewrite",
+    "reported_revision": "e249295774c3a66943e1483dbf53e0c811bc41dd",
+    "rows_checked": 2,
+    "fields": [
+      "text",
+      "token_count"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "Apache 2.0"
+  },
+  {
+    "repo": "IFM/Math-Reasoning",
+    "subset": "math-dialogue",
+    "reported_revision": "e249295774c3a66943e1483dbf53e0c811bc41dd",
+    "rows_checked": 2,
+    "fields": [
+      "text",
+      "token_count"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "Apache 2.0"
+  },
+  {
+    "repo": "IFM/Math-Reasoning",
+    "subset": "socratic-math-dialogue",
+    "reported_revision": "e249295774c3a66943e1483dbf53e0c811bc41dd",
+    "rows_checked": 2,
+    "fields": [
+      "text",
+      "token_count"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "Apache 2.0"
+  },
+  {
+    "repo": "IFM/Code-Reasoning",
+    "subset": "code-no-thinking",
+    "reported_revision": "e971bd7801485b24bb217dcde9d46f4bad42ea00",
+    "rows_checked": 2,
+    "fields": [
+      "text",
+      "token_count"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "Apache 2.0"
+  },
+  {
+    "repo": "IFM/Code-Reasoning",
+    "subset": "code-no-thinking-hard",
+    "reported_revision": "e971bd7801485b24bb217dcde9d46f4bad42ea00",
+    "rows_checked": 2,
+    "fields": [
+      "text",
+      "token_count"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "Apache 2.0"
+  },
+  {
+    "repo": "IFM/Code-Reasoning",
+    "subset": "code-thinking-v1",
+    "reported_revision": "e971bd7801485b24bb217dcde9d46f4bad42ea00",
+    "rows_checked": 2,
+    "fields": [
+      "text",
+      "token_count"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "Apache 2.0"
+  },
+  {
+    "repo": "IFM/Code-Reasoning",
+    "subset": "code-thinking-hard",
+    "reported_revision": "e971bd7801485b24bb217dcde9d46f4bad42ea00",
+    "rows_checked": 2,
+    "fields": [
+      "text",
+      "token_count"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "Apache 2.0"
+  },
+  {
+    "repo": "IFM/Code-Reasoning",
+    "subset": "code-thinking-v0",
+    "reported_revision": "e971bd7801485b24bb217dcde9d46f4bad42ea00",
+    "rows_checked": 2,
+    "fields": [
+      "text",
+      "token_count"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "Apache 2.0"
+  },
+  {
+    "repo": "IFM/Code-Reasoning",
+    "subset": "codeio",
+    "reported_revision": "e971bd7801485b24bb217dcde9d46f4bad42ea00",
+    "rows_checked": 2,
+    "fields": [
+      "text",
+      "token_count"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "Apache 2.0"
+  },
+  {
+    "repo": "IFM/Code-Reasoning",
+    "subset": "code-task-synthesis",
+    "reported_revision": "e971bd7801485b24bb217dcde9d46f4bad42ea00",
+    "rows_checked": 2,
+    "fields": [
+      "text",
+      "token_count"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "Apache 2.0"
+  },
+  {
+    "repo": "IFM/SFT-Reasoning",
+    "subset": "instruction-following",
+    "reported_revision": "4d4dbbe65e478a2ca179c4cce43b5e1f051aacd2",
+    "rows_checked": 2,
+    "fields": [
+      "text",
+      "token_count"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "Apache 2.0"
+  },
+  {
+    "repo": "IFM/SFT-Reasoning",
+    "subset": "3efforts-pretrain",
+    "reported_revision": "4d4dbbe65e478a2ca179c4cce43b5e1f051aacd2",
+    "rows_checked": 2,
+    "fields": [
+      "text",
+      "token_count"
+    ],
+    "format": "preformatted text",
+    "verbatim": true,
+    "license": "Apache 2.0"
+  }
+]

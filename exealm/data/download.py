@@ -66,7 +66,7 @@ def download_llmjp(subset, max_files, out, max_mb=None, skip=0):
 
 def extract_text(rec):
     """One training document from a record whose fields we do not know in advance (K2 Horizon subsets differ).
-    TODO(data): a proper formatter per subset (chat turns, question/answer, code with tests)."""
+    Known K2 subsets use the verified formatters in formatters.py instead of this heuristic."""
     if isinstance(rec.get("text"), str):
         return rec["text"]
     for key in ("messages", "conversations", "conversation"):
@@ -81,16 +81,18 @@ def extract_text(rec):
 
 
 def download_hf(repo, config, max_rows, out):
+    if max_rows < 1:
+        raise ValueError("max_rows must be positive")
+    from .formatters import get_k2_formatter
+    formatter = get_k2_formatter(repo, config) if repo in K2 else extract_text
     from datasets import load_dataset
-    if repo in K2 and config not in K2[repo][1]:
-        print(f"note: {config} is not in the subsets we listed for {repo}: {K2[repo][1]}")
     ds = load_dataset(repo, config, split="train", streaming=True)
     os.makedirs(out, exist_ok=True)
     dst = os.path.join(out, f"hf__{repo.replace('/', '__')}__{config}.jsonl.gz")
     n = 0
     with gzip.open(dst, "wt", encoding="utf-8") as f:
         for rec in ds:
-            text = extract_text(rec)
+            text = formatter(rec)
             if text:
                 f.write(json.dumps({"text": text, "source": f"{repo}/{config}"}, ensure_ascii=False) + "\n")
                 n += 1
