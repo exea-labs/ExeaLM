@@ -39,9 +39,18 @@ class AgentBoard:
         self._cache.clear()
 
     def merge(self, other):
-        """Add every message of another board (for example notes written by readers that worked separately)."""
+        """Add another board's messages in posting order, keeping this board's capacity per channel.
+
+        As in post(), replacing a message makes it newest. The source board is left unchanged.
+        """
         for ch, msgs in other.channels.items():
-            self.channels.setdefault(ch, {}).update(msgs)
+            dest = self.channels.setdefault(ch, {})
+            for ident, message in list(msgs.items()):       # snapshot also permits merging a board into itself
+                dest.pop(ident, None)
+                dest[ident] = message
+            while len(dest) > self.capacity:
+                dest.pop(next(iter(dest)))
+        self.clock += 1
         self._cache.clear()
 
     def read(self, layer, slots, device):
