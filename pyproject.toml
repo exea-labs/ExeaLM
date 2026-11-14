@@ -10,6 +10,7 @@ dependencies = ["torch>=2.3", "numpy>=1.24"]
 [project.optional-dependencies]
 data = ["tokenizers>=0.19", "datasets>=2.18"]
 dev = ["pytest>=8"]
+eval = ["lm_eval>=0.4.13,<0.5", "tokenizers>=0.19"]
 
 [build-system]
 requires = ["setuptools>=68"]

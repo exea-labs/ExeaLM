@@ -12,5 +12,6 @@ Planned (each is a good first project):
   * Speed: tokens per second for training and generation against the Llama baseline of the same size. Built:
     python -m exealm.eval.speed --preset small (exealm/eval/speed.py).
 
-  TODO(evals): an lm-evaluation-harness model wrapper (exealm/eval/harness.py) around ExeaLM.
+  Built: lm-evaluation-harness adapter, python -m exealm.eval.harness --ckpt PATH --tasks hellaswag --limit 20.
+  See docs/evaluation.md for tokenizer requirements, supported requests and limits.
 """

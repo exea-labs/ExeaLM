@@ -1,0 +1,116 @@
+{
+  "results": {
+    "hellaswag": {
+      "name": "hellaswag",
+      "alias": "hellaswag",
+      "sample_len": 20,
+      "acc,none": 0.3,
+      "acc_stderr,none": "N/A",
+      "acc_norm,none": 0.35,
+      "acc_norm_stderr,none": "N/A"
+    }
+  },
+  "n-samples": {
+    "hellaswag": {
+      "original": 10042,
+      "effective": 20
+    }
+  },
+  "config": {
+    "model": "ExeaLMHarness",
+    "model_args": null,
+    "checkpoint_sha256": "ba37b05f7fe9739b4e4cc8e607fc51d8a3a75d8867ae365afa98af66dcca8275",
+    "tokenizer_sha256": "fd584748f23a1bd769703bb445390d9d55cb8716ce372ef42b18f5cb391789a4",
+    "max_length": 256,
+    "evaluation_memory": "solo; no external datastore or board",
+    "batch_size": null,
+    "batch_sizes": [],
+    "device": "cpu",
+    "use_cache": null,
+    "limit": 20,
+    "bootstrap_iters": 0,
+    "gen_kwargs": null,
+    "random_seed": 0,
+    "numpy_seed": 1234,
+    "torch_seed": 1234,
+    "fewshot_seed": 1234
+  },
+  "versions": {
+    "hellaswag": 1.0
+  },
+  "source": {
+    "tokenizer_repo": "exea-labs/ExeaLM",
+    "tokenizer_path": "tokenizer/tokenizer.json",
+    "revision": "36ce8b6fc71a4d05e57c8ac800985c81d9f6863d",
+    "seed": 0,
+    "cfg": {
+      "vocab_size": 32768,
+      "d": 64,
+      "n_layers": 2,
+      "slots": 8,
+      "h": 8,
+      "ffn": -1,
+      "menu": [
+        "D",
+        "I",
+        "GI",
+        "M",
+        "MI",
+        "MIM",
+        "EP",
+        "G",
+        "C",
+        "RP",
+        "SM",
+        "OS",
+        "RG",
+        "AG"
+      ],
+      "lags": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        8,
+        12,
+        16,
+        32,
+        64,
+        128
+      ],
+      "tie_embeddings": true,
+      "pinned": {
+        "RG": 1,
+        "AG": 1
+      },
+      "init_weights": null,
+      "attn_layers": [],
+      "delta_layers": [],
+      "attn_gate": false,
+      "qk_norm": false,
+      "seed": 0,
+      "chunk": 8,
+      "rag_topk": 2,
+      "rag_chunk_len": 8,
+      "enc_dim": 32,
+      "rag_query": "last",
+      "rag_null": false,
+      "rag_key_dim": 0,
+      "rag_lexical": 0,
+      "swarm_size": 2,
+      "board_read_self": true,
+      "board_chunk": 0,
+      "chunk_pool": "mean"
+    },
+    "training_steps": 3,
+    "training_data": "independent uniform token IDs; no benchmark training data"
+  },
+  "environment": {
+    "lm_eval": "0.4.13",
+    "torch": "2.14.1",
+    "datasets": "5.2.0",
+    "tokenizers": "0.23.3"
+  }
+}
