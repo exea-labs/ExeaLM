@@ -92,3 +92,42 @@ python -m exealm.train.pretrain --preset small --data data/packed/train --val da
 The open data tasks are in the README's [to-do list](../README.md#to-do-list): counting tokens,
 decontamination, a Japanese quality classifier, swarm construction, the retrieval datastore, and scaling the
 download.
+
+### Checking packed text against held-out benchmarks
+
+`exealm.data.decontam` scans packed training sources on CPU and writes filtered
+copies plus a per-source `report.json`. Pack held-out benchmark text with the same
+exact tokenizer first; benchmark inputs should contain the questions, choices,
+reference answers or other text intended for exclusion, as appropriate to that
+evaluation. Keep benchmarks separate so the report identifies each one.
+
+```bash
+python -m exealm.data.decontam data/packed/web data/packed/code \
+  --benchmark hellaswag=data/benchmarks/hellaswag \
+  --benchmark gsm8k=data/benchmarks/gsm8k \
+  --ngram 13 --min_matches 1 --out data/decontaminated
+```
+
+Each source gets its own numbered output directory with `tokens.bin`,
+`offsets.npy` and updated `meta.json`; document order and complete token sequences
+are preserved for retained documents. The command refuses to overwrite an output
+directory. Training data is memory-mapped; the exact benchmark n-gram index lives
+in RAM. Tokenizer JSON hashes must agree across all inputs (or all use `bytes`).
+Tokenizer paths stored by the packer must still be accessible when running this
+command. Use the original working directory for relative tokenizer paths.
+
+The default drops a document with any exact 13-token overlap. These are tokenizer
+tokens, **not words** (UTF-8 bytes with `--tokenizer bytes`). No window crosses a
+document boundary or includes a trailing end-of-text marker. `--min_matches`
+counts matching window occurrences against each benchmark separately, including
+repeated occurrences. Reports count documents meeting this threshold per benchmark;
+a document matching several benchmarks is dropped once. Benchmark entries with no
+eligible windows are reported with zero windows. All-dropped sources produce empty
+shards; omit those sources when constructing a training loader.
+
+This is the packed-shard filtering part of issue #20. Download/schema adapters for
+HellaSwag, ARC, MMLU, GSM8K, HumanEval and JCommonsenseQA remain to be supplied and
+validated against their evaluation configurations. A successful scan only establishes
+exact token overlap for the benchmark text provided; it does not establish semantic
+or paraphrase decontamination. Select thresholds and text fields explicitly before
+reporting model results. This command does not change the default training mix.
