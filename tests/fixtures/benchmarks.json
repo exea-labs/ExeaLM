@@ -1,0 +1,9 @@
+{
+  "hellaswag": {"ind": 1, "ctx": "An invented evaluation context.", "endings": ["First ending.", "Second ending.", "Third ending.", "Fourth ending."]},
+  "arc_easy": {"id": "fixture-easy", "question": "An invented science question?", "choices": {"text": ["Water", "Stone"], "label": ["A", "B"]}, "answerKey": "A"},
+  "arc_challenge": {"id": "fixture-hard", "question": "Another invented science question?", "choices": [{"text": "Light", "label": "1"}, {"text": "Sound", "label": "2"}], "answerKey": "2"},
+  "mmlu": {"question": "An invented subject question?", "subject": "abstract_algebra", "choices": ["First", "Second", "Third", "Fourth"], "answer": 2},
+  "gsm8k": {"question": "Invented: two bags have three apples each. How many?", "answer": "Two times three is six.\n#### 6"},
+  "humaneval": {"task_id": "fixture/0", "prompt": "def invented_add(a, b):\n    \"\"\"Return their sum.\"\"\"\n", "canonical_solution": "    return a + b\n", "test": "def check(candidate):\n    assert candidate(1, 2) == 3\n", "entry_point": "invented_add"},
+  "jcommonsenseqa": {"q_id": 1, "question": "これはテスト用に作った質問ですか？", "choice0": "はい", "choice1": "いいえ", "choice2": "不明", "choice3": "別の答え", "choice4": "最後の答え", "label": 0}
+}

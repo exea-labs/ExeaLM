@@ -92,3 +92,49 @@ python -m exealm.train.pretrain --preset small --data data/packed/train --val da
 The open data tasks are in the README's [to-do list](../README.md#to-do-list): counting tokens,
 decontamination, a Japanese quality classifier, swarm construction, the retrieval datastore, and scaling the
 download.
+
+### Held-out benchmark inputs for decontamination
+
+`python -m exealm.data.benchmarks` exports exclusion text using explicit schemas,
+not the generic training-data extractor. Install `pip install -e '.[data]'` first.
+
+| Export name | Dataset | Configuration / split | License stated by dataset card |
+|---|---|---|---|
+| `hellaswag` | [Rowan/hellaswag](https://huggingface.co/datasets/Rowan/hellaswag) | default / validation | Not confirmed in card metadata; review upstream terms before redistribution |
+| `arc_easy` | [allenai/ai2_arc](https://huggingface.co/datasets/allenai/ai2_arc) | ARC-Easy / test | CC-BY-SA-4.0 |
+| `arc_challenge` | [allenai/ai2_arc](https://huggingface.co/datasets/allenai/ai2_arc) | ARC-Challenge / test | CC-BY-SA-4.0 |
+| `mmlu` | [cais/mmlu](https://huggingface.co/datasets/cais/mmlu) | all / test | MIT |
+| `gsm8k` | [openai/gsm8k](https://huggingface.co/datasets/openai/gsm8k) | main / test | MIT |
+| `humaneval` | [openai/openai_humaneval](https://huggingface.co/datasets/openai/openai_humaneval) | openai_humaneval / test | MIT |
+| `jcommonsenseqa` | [sbintuitions/JCommonsenseQA](https://huggingface.co/datasets/sbintuitions/JCommonsenseQA) | default / validation | CC-BY-SA-4.0 |
+
+HellaSwag and JCommonsenseQA use their public validation sets. ARC includes separate
+Easy and Challenge exports. These selections must match the evaluation being
+reported; they do not cover private tests, other splits or benchmark variants.
+Dataset cards and their licenses were checked on 2026-11-14. Exported benchmark
+text is for exclusion, never added to a training mix or committed to this repository.
+
+```bash
+python -m exealm.data.benchmarks --benchmark gsm8k --out data/benchmarks/gsm8k
+python -m exealm.data.pack data/benchmarks/gsm8k/text.jsonl.gz \
+  --tokenizer tokenizer --out data/benchmarks/gsm8k-packed
+# Feed gsm8k-packed to exealm.data.decontam's --benchmark gsm8k=... option (PR #41).
+```
+
+Repeat with each export name in the table. Resolve `main` to a dataset commit before
+streaming, or pass `--revision COMMIT` to reproduce an earlier export. Each new output
+directory contains `text.jsonl.gz` plus a manifest recording the resolved revision,
+source URL, split, row and segment counts, stated license, and compressed-file SHA-256.
+`--limit 3` is useful for a smoke test; it always sets `sample: true` and provides no
+claim of full benchmark coverage. Omit `--limit` for a full split. A malformed row
+fails the export with its index; partial exports are not published and existing
+outputs are not overwritten.
+
+Raw questions, every answer option, GSM8K reasoning/answers, and HumanEval prompts,
+solutions and test text are preserved as separate documents. HellaSwag also includes
+each context-plus-ending; HumanEval includes prompt-plus-solution to catch code
+spanning that boundary. Code is treated purely as text and never executed. Unrelated
+answer options are never joined into an artificial n-gram. This is an explicit raw
+field policy, not a claim to reproduce every harness prompt template or normalized
+benchmark variant. Exact token-overlap filtering retains the limitations documented
+by the decontamination tool, especially short segments and paraphrases.
