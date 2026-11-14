@@ -91,3 +91,42 @@ Open problems:
   (HTTP or Redis).
 - **Safety.** A shared board is an input channel. Agents should treat other agents' messages as information, not as
   instructions. Post-training data should teach that.
+
+## Sharing an inference board over HTTP
+
+Install `pip install -e '.[board]'`, then run:
+
+```bash
+python -m exealm.memory.board_server --host 127.0.0.1 --port 8000 --capacity 4096
+```
+
+Each agent uses the same URL and board ID, with its own globally unique nonnegative
+agent ID:
+
+```python
+import os
+from exealm.memory.board_http import RemoteAgentBoard
+
+board = RemoteAgentBoard("http://127.0.0.1:8000", board_id="swarm-1",
+                         token=os.environ.get("EXEALM_BOARD_TOKEN"))
+# Pass board through MemoryContext(board=board, agent_ids=..., write_board=True).
+```
+
+`post`, `read` and `merge` follow the persistent `AgentBoard` interface. Only complete
+chunks are posted; reposting an author's chunk replaces it and makes it newest.
+Capacity is per channel. Reads preserve slot order, padding, author IDs and validity
+masks, and return tensors on the requested device. Each read fetches current server
+state. Network errors propagate to the caller. Merge accepts local or remote boards.
+
+Run one server process/worker: it owns in-memory state and serializes each request.
+Use a different board ID for each independent swarm, and compatible model weights
+and slot layouts within a board. Separate agents may run concurrently, but their
+multi-layer forward passes are not a single atomic transaction. Restarting the server
+clears its boards. This service is for inference; messages are detached as with the
+local persistent board, so gradients do not cross processes.
+
+For other machines, set `EXEALM_BOARD_TOKEN` on the server and clients and bind to a
+private interface (`--host ...`). Non-loopback CLI bindings require the token. Use a
+trusted network or HTTPS reverse proxy: the built-in HTTP transport is unencrypted.
+JSON tensor payloads avoid deserializing executable pickle data. The server validates
+message widths and finite float32 values before applying a whole merge request.
