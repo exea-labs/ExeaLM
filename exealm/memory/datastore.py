@@ -34,16 +34,24 @@ class Datastore:
 
     @classmethod
     def from_shards(cls, shards, n_chunks, chunk_len, seed=0):
-        """Sample n_chunks chunks that each sit inside one document of a TokenShards corpus (exealm/data/loader.py).
+        """Sample uniformly, with replacement, from windows inside documents of a TokenShards corpus.
         TODO(data): a curated datastore (encyclopedias, textbooks, code docs) instead of a random sample."""
+        if n_chunks <= 0 or chunk_len <= 0:
+            raise ValueError("n_chunks and chunk_len must be positive")
+        offsets = np.asarray(shards.offsets, dtype=np.int64)
+        if (offsets.ndim != 1 or (len(offsets) and
+                (offsets[0] != 0 or offsets[-1] >= len(shards.tokens) or np.any(np.diff(offsets) <= 0)))):
+            raise ValueError("invalid document offsets")
+        lengths = np.diff(np.append(offsets, len(shards.tokens))) if len(offsets) else np.array([], dtype=np.int64)
+        counts = np.maximum(lengths - chunk_len + 1, 0)
+        cumulative = np.cumsum(counts)
+        if not len(cumulative) or cumulative[-1] == 0:
+            raise ValueError("no document is long enough for chunk_len")
         rng = np.random.default_rng(seed)
-        starts, docs = [], []
-        while len(starts) < n_chunks:
-            s = rng.integers(0, len(shards.tokens) - chunk_len, size=4 * n_chunks)
-            d0, d1 = shards.doc_of(s), shards.doc_of(s + chunk_len - 1)
-            ok = d0 == d1
-            starts += list(s[ok]); docs += list(d0[ok])
-        starts, docs = np.array(starts[:n_chunks]), np.array(docs[:n_chunks])
+        windows = rng.integers(0, cumulative[-1], size=n_chunks)
+        docs = np.searchsorted(cumulative, windows, side="right")
+        before = np.concatenate(([0], cumulative[:-1]))
+        starts = offsets[docs] + windows - before[docs]
         toks = np.stack([shards.tokens[s:s + chunk_len] for s in starts]).astype(np.int64)
         return cls(toks, docs)
 
