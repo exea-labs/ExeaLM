@@ -1,8 +1,11 @@
+import json
 import random
+from dataclasses import replace
 
+import pytest
 import torch
 
-from exealm import ExeaLM, Llama, MemoryContext, count_params, get_config
+from exealm import ExeaLM, Llama, MemoryContext, ModelConfig, count_params, get_config, llama_baseline
 from exealm.config import MENU
 from exealm.model.circuits import CIRCUITS
 from exealm.model.scan import decay_scan, gated_scan
@@ -64,9 +67,32 @@ def test_search_never_removes_the_last_pinned_circuit():
 def test_100m_preset_is_about_a_tenth_of_a_billion_parameters():
     cfg = get_config("100m")
     with torch.device("meta"):
-        tonn, base = ExeaLM(cfg), Llama(cfg)
+        tonn, base = ExeaLM(cfg), Llama(llama_baseline(cfg))
     assert 90e6 < count_params(tonn) < 115e6
     assert abs(count_params(tonn) - count_params(base)) / count_params(base) < 0.05   # a fair baseline
+
+
+def test_hybrid_presets_use_gated_attention_and_qk_norm_and_the_baseline_stays_plain():
+    for name in ("100m", "small"):
+        cfg = get_config(name)
+        assert cfg.attn_gate and cfg.qk_norm
+        assert not llama_baseline(cfg).attn_gate and not llama_baseline(cfg).qk_norm
+        with torch.device("meta"):
+            att = [m for m in ExeaLM(cfg).modules() if type(m).__name__ == "Attention"]
+            plain = [m for m in Llama(llama_baseline(cfg)).modules() if type(m).__name__ == "Attention"]
+        assert att and all(m.gate is not None and m.qn is not None for m in att)
+        assert plain and all(m.gate is None and m.qn is None for m in plain)
+
+
+def test_configs_saved_before_the_gate_existed_load_as_trained():
+    d = json.loads(get_config("small").to_json())
+    for k in ("attn_gate", "qk_norm"):
+        d.pop(k)
+    old = ModelConfig.from_dict(d)
+    assert not old.attn_gate and not old.qk_norm
+    gated, ungated = ExeaLM(replace(old, attn_gate=True, qk_norm=True)), ExeaLM(old)
+    with pytest.raises(RuntimeError):                          # an ungated checkpoint never loads into a gated model
+        gated.load_state_dict(ungated.state_dict())
 
 
 def test_baseline_runs():

@@ -13,7 +13,7 @@ import time
 import torch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from exealm import Datastore, ExeaLM, Llama, MemoryContext, count_params, get_config  # noqa: E402
+from exealm import Datastore, ExeaLM, Llama, MemoryContext, count_params, get_config, llama_baseline  # noqa: E402
 from exealm.train.pretrain import make_optimizer, pick_device  # noqa: E402
 
 
@@ -62,7 +62,7 @@ def main():
     cfg = get_config(a.preset)
     rows = []
     torch.manual_seed(0)
-    rows.append(bench("llama", Llama(cfg).to(dev), lambda: None, a, dev))
+    rows.append(bench("llama", Llama(llama_baseline(cfg)).to(dev), lambda: None, a, dev))
     model = ExeaLM(cfg).to(dev)
     rows.append(bench("tonn, memory idle", model, lambda: MemoryContext(), a, dev))
     ds = Datastore(torch.randint(0, cfg.vocab_size, (a.datastore_chunks, cfg.rag_chunk_len)),

@@ -1,8 +1,8 @@
 """Model configuration.
 
 Presets:
-    "100m"        the model we plan to train: 101M parameters (31M of them the embedding table), on about 100B tokens;
-                  a hybrid (every third layer TONN, the others attention)
+    "100m"        the model we plan to train: about 0.1B parameters (31M of them the embedding table), on about 100B
+                  tokens; a hybrid (every third layer TONN, the others gated attention with QK-norm)
     "100m-tonn"   the same size, every layer TONN
     "small"       17M parameters (13M embedding table) with the same vocabulary, hybrid: for real-data experiments on
                   a laptop or a free Colab GPU
@@ -35,8 +35,10 @@ class ModelConfig:
     init_weights: dict = None        # relative chance of each type in the starting circuits (unlisted: 1)
     attn_layers: tuple = ()          # layers that are a full multi-head attention block instead of a TONN layer
     delta_layers: tuple = ()         # of those (or of a Llama's layers), the ones that are Gated DeltaNet instead (Qwen3.5)
-    attn_gate: bool = False          # gated attention: a sigmoid gate on each attention output channel (Qwen3-Next, 3.5)
-    qk_norm: bool = False            # RMSNorm on each head's queries and keys (Qwen3)
+    attn_gate: bool = False          # gated attention: a sigmoid gate on each attention output channel (Qwen3-Next, 3.5);
+                                     # on in the hybrid presets. False here so configs saved before it existed load as
+                                     # they were trained
+    qk_norm: bool = False            # RMSNorm on each head's queries and keys (Qwen3); on in the hybrid presets
     seed: int = 0
     # memory circuits
     chunk: int = 64                  # RG retrieves and AG posts once per chunk of this many tokens
@@ -74,7 +76,10 @@ class ModelConfig:
 # TONN's starting circuits favour short convolutions. Pure TONN lost to a same-size Llama on real tokens; the hybrid
 # beats it at equal size and steps (13M, 27M, 48M) and, with this 2:1 layout, at equal compute at 48M too, on both
 # seeds and every kind of text (results/README.md, sections 7 and 8).
-HYBRID = dict(init_weights={"C": 4.0, "G": 0.25, "D": 0.25})
+# Its attention layers use two parts from Qwen3.5: gated attention and QK-norm. They improve the hybrid by 0.025 bits
+# per byte at 13M (2 seeds) and the full 17M model with both memory skills by 0.026 (1 seed), and with them the hybrid
+# leads a Qwen3.5-style model at 13M (results/README.md, sections 10 and 12).
+HYBRID = dict(init_weights={"C": 4.0, "G": 0.25, "D": 0.25}, attn_gate=True, qk_norm=True)
 
 PRESETS = {
     "100m": ModelConfig(attn_layers=tuple(i for i in range(14) if i % 3), **HYBRID),        # TONN at 0, 3, 6, 9, 12
@@ -88,3 +93,9 @@ PRESETS = {
 
 def get_config(name="100m", **overrides):
     return replace(PRESETS[name], **overrides)
+
+
+def llama_baseline(cfg):
+    """The config of the same-size Llama baseline for `cfg`: a plain Llama, without the Qwen3.5 parts the hybrid
+    presets turn on. For a gated Llama, set attn_gate and qk_norm on the result."""
+    return replace(cfg, attn_gate=False, qk_norm=False)

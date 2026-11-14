@@ -299,8 +299,10 @@ def main():
                     "(it returns chunks of the right article's first half), so the read learns on real retrieved text")
     ap.add_argument("--init_ckpt", default="", help="start from this checkpoint (same architecture arguments)")
     ap.add_argument("--rag_null", type=int, default=0, help="1: RG's read can attend to nothing (cfg.rag_null)")
-    ap.add_argument("--attn_gate", type=int, default=0, help="1: gated attention in the attention layers (Qwen3.5)")
-    ap.add_argument("--qk_norm", type=int, default=0, help="1: RMSNorm on each head's queries and keys (Qwen3)")
+    ap.add_argument("--attn_gate", type=int, default=-1, help="gated attention in the attention layers (Qwen3.5): 1 on, "
+                    "0 off, -1 the default (on for ExeaLM, off for the Llama baseline, as trained for --init_ckpt)")
+    ap.add_argument("--qk_norm", type=int, default=-1, help="RMSNorm on each head's queries and keys (Qwen3): 1, 0 or "
+                    "-1 as for --attn_gate")
     ap.add_argument("--memory_slots", type=int, default=0, help="with --init_ckpt: turn the last language circuits of "
                     "each TONN layer into RG and AG until each layer has this many of each (no new parameters)")
     ap.add_argument("--lib_search", default="learned", choices=["learned", "lexical"],
@@ -358,11 +360,15 @@ def main():
     torch.manual_seed(a.seed)
     data = Data(a)
     size = dict(d=a.d, slots=a.slots, h=a.d // a.slots) if a.preset == "small" else {}
+    init = torch.load(a.init_ckpt, map_location="cpu", weights_only=False) if a.init_ckpt else None
+    qwen = {}                                    # attn_gate, qk_norm: explicit flags win; else what --init_ckpt was
+    for k in ("attn_gate", "qk_norm"):           # trained with; else the preset's (on), or off for the Llama baseline
+        v = getattr(a, k)
+        qwen[k] = bool(v) if v >= 0 else (init["cfg"].get(k, False) if init else a.model == "exealm")
     cfg = get_config(a.preset, vocab_size=data.vocab, chunk=a.chunk, rag_chunk_len=a.chunk, rag_key_dim=a.key_dim,
                      rag_lexical=a.lexical, chunk_pool=a.pool, board_chunk=a.board_chunk, seed=a.seed, **size,
-                     rag_null=bool(a.rag_null), attn_gate=bool(a.attn_gate), qk_norm=bool(a.qk_norm),
+                     rag_null=bool(a.rag_null), **qwen,
                      **({"enc_dim": 32, "n_layers": 3, "attn_layers": (1,)} if a.smoke else {}))
-    init = torch.load(a.init_ckpt, map_location="cpu", weights_only=False) if a.init_ckpt else None
     specs = init.get("specs") if init else None
     if specs and a.memory_slots:
         specs = [[dict(s) for s in row] for row in specs]

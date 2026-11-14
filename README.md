@@ -57,7 +57,10 @@ After each TONN layer comes a gated MLP, as in a transformer.
 TONN layer, (e) the SwiGLU MLP. Drawn by `docs/figures/arch_compare.py`.*
 
 **ExeaLM is a hybrid.** Every third layer is a TONN layer and the others are full attention layers (5 TONN and 9
-attention layers in the 0.1B model), and TONN's starting circuits favour short convolutions. Pure TONN lost to a
+attention layers in the 0.1B model), and TONN's starting circuits favour short convolutions. The attention layers use
+two parts from Qwen3.5: gated attention (a sigmoid gate on each output channel) and QK-norm (RMSNorm on each head's
+queries and keys). They improve the hybrid by 0.025 bits per byte at 13M (2 seeds) and by 0.026 in the full 17M model
+with both memory skills (1 seed), and they add 4% to the 0.1B model's parameters (105M with the planned vocabulary). Pure TONN lost to a
 same-size Llama on real tokens, mostly on code. The hybrid beats it, with both seeds, on every kind of text (bits per
 byte, lower is better):
 
@@ -240,7 +243,8 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [x] Re-run the swarm and retrieval experiments on the hybrid (they ran on pure TONN)
 - [ ] Ablations at `small` size: with and without RG, AG and swarms
 - [x] Gated DeltaNet, Qwen3.5's linear attention, as a layer (`exealm/model/delta.py`, tested against the recurrence); gated attention and QK-norm as options. At 13M (one seed) gated attention + QK-norm improve the hybrid by 0.025 bits per byte and put it ahead of a Qwen3.5-style model; DeltaNet layers add nothing on top ([results §12](results/README.md))
-- [ ] Make gated attention + QK-norm the default: it holds on two seeds (1.511, 1.512) and beats a gated Llama and a Qwen3.5-style model at equal steps; equal compute is the last check ([results §12](results/README.md))
+- [x] Make gated attention + QK-norm the default: it holds on two seeds (1.511, 1.512), beats a gated Llama and a Qwen3.5-style model at equal steps and at equal compute (1.509 against 1.515 and 1.542), and improves the full 17M model with both skills (1.393 against 1.419) ([results §10, §12](results/README.md#12-parts-from-qwen35-exealmmodeldeltapy-experimentstokenizer_lmpy---llama_cfg))
+- [ ] The full 17M model against a gated Llama on the same batches (the fair baseline now that ExeaLM is gated)
 - [ ] Gated DeltaNet as a TONN circuit type the search can choose ([#30](https://github.com/exea-labs/ExeaLM/issues/30)); other new types, for example sliding-window attention
 - [ ] Shape sweep at fixed parameters: depth, width, slots per layer, channels per slot
 - [ ] Search schedule: how long to search, how much to replace, how long new circuits are protected (on the hybrid with a good start it adds about 0.001 today)
@@ -314,7 +318,7 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 
 ```
 exealm/
-  config.py              model sizes: "100m" (the real one, 101M parameters), "small" (17M, laptop/Colab), "tiny" (tests)
+  config.py              model sizes: "100m" (the real one, 105M parameters), "small" (17M, laptop/Colab), "tiny" (tests)
   model/
     tonn.py              the TONN layer and the full model
     circuits.py          the circuit menu

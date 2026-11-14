@@ -21,7 +21,7 @@ import time
 
 import torch
 
-from ..config import get_config
+from ..config import get_config, llama_baseline
 from ..memory import Datastore, MemoryContext
 from ..model import ExeaLM, Llama, count_params
 from ..train.pretrain import make_optimizer, pick_device
@@ -38,7 +38,7 @@ def build(kind, cfg, dev, datastore_chunks=0, seed=0):
     """A fresh model and the datastore it reads. TONN with datastore_chunks > 0 retrieves from a random datastore of
     that many chunks, so the timing includes the search and the live re-encoding of the retrieved chunks."""
     torch.manual_seed(seed)
-    model = (ExeaLM(cfg) if kind == "tonn" else Llama(cfg)).to(dev)
+    model = (ExeaLM(cfg) if kind == "tonn" else Llama(llama_baseline(cfg))).to(dev)
     ds = None
     if kind == "tonn" and datastore_chunks:
         g = torch.Generator().manual_seed(seed)

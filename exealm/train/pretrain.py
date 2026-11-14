@@ -153,6 +153,9 @@ def main(argv=None):
         over = json.load(open(a.config)) if a.config else {}
         over["vocab_size"] = int(data.meta["vocab_size"])
         over.setdefault("seed", a.seed)                                # --seed also draws the starting circuits
+        if a.model == "llama":                                         # the baseline is a plain Llama unless the
+            over.setdefault("attn_gate", False)                        # --config asks for the Qwen3.5 parts
+            over.setdefault("qk_norm", False)
         cfg = get_config(a.preset, **over)
         model = (ExeaLM(cfg) if a.model == "tonn" else Llama(cfg)).to(dev)
     opt = make_optimizer(model, a.lr, a.wd)
