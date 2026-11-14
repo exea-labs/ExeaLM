@@ -91,3 +91,20 @@ Open problems:
   (HTTP or Redis).
 - **Safety.** A shared board is an input channel. Agents should treat other agents' messages as information, not as
   instructions. Post-training data should teach that.
+
+### Sampling datastore chunks
+
+`Datastore.from_shards(shards, n_chunks, chunk_len, seed=0)` samples uniformly
+with replacement over every valid window contained in one document. A document of
+length L contributes `max(0, L - chunk_len + 1)` windows, so longer documents are
+weighted by their eligible windows rather than chosen with equal probability.
+The final window of the final document is included. Document IDs remain the row
+indices in the shard offsets, including when earlier documents are too short.
+
+Sampling uses cumulative valid-window counts and terminates without rejection
+loops. Positive sizes are required; if no document is long enough it raises a
+`ValueError` instead of waiting indefinitely. A fixed seed reproduces samples with
+this implementation. The mapping from seeds to sampled windows differs from the
+previous rejection sampler; reproducing a checkpoint created with that older
+sampler requires the older code and data, since checkpoints retain retrieval keys
+but do not include the sampled datastore tokens.
