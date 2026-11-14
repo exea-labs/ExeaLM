@@ -152,7 +152,9 @@ class TONNLayer(nn.Module):
         with torch.no_grad():
             rms = y.detach().float().pow(2).mean(dim=(0, 1, 3)).sqrt()
             sc = self.scale.index_select(0, o)
-            used = torch.where(sc > 0, sc, rms)
+            # A new/replaced slot has no past measurement. Using this batch's
+            # RMS would leak future tokens and unrelated rows into its outputs.
+            used = torch.where(sc > 0, sc, torch.ones_like(sc))
             if self.training:
                 self.scale.index_copy_(0, o, torch.where(sc > 0, 0.99 * sc + 0.01 * rms, rms))
         return y / (used.view(1, 1, -1, 1).to(y.dtype) + 1e-3)

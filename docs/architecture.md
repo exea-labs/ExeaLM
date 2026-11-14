@@ -93,3 +93,20 @@ Not known yet (each is a great project):
 - Do RG and AG earn their place? Compare with them switched off (`--datastore_chunks 0`, `pinned={}`).
 - Which circuit types are dead weight at scale? Could a new type beat them?
 - How fast can TONN get with fused kernels for `decay_scan` and `gated_scan`?
+
+### Proposed initialization for unmeasured output scales
+
+A slot with no prior RMS measurement (initially, or after search replaces it) must
+not normalize its output using the full current batch: that exposes later tokens
+and unrelated rows to earlier predictions. The proposed correction uses a constant
+unit prior until a training batch has supplied a past measurement. Subsequent
+running-average updates and measured-slot outputs are unchanged; evaluation never
+updates the statistics. Checkpoint tensor layouts are unchanged.
+
+This correction is a **draft** pending a satisfactory training comparison. Causality
+and row-isolation regressions pass, but the two-seed tiny pilot has mixed validation
+loss, with a worse mean. The comparison and a rejected prefix-normalization
+candidate are recorded in [results/cold_scales](../results/cold_scales/README.md).
+It is not evidence that any published experiment is invalid, or that its result
+variation has been explained. Existing unmeasured slots intentionally change
+behavior; exact replay of an older training trajectory still requires its old code.
