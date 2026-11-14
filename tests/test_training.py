@@ -36,7 +36,19 @@ def test_dpo_prefers_the_chosen_answer():
     assert (lc.grad < 0).all()
 
 
-def test_resumed_run_matches_an_uninterrupted_one(tmp_path):
+def test_resumed_run_matches_an_uninterrupted_one(tmp_path, monkeypatch):
+    from exealm.model import search
+
+    real_worth = search.group_worth
+
+    def replacement_worth(model, batches):
+        # Exercise search RNG, grace periods and optimizer row resets after resume
+        # regardless of whether this platform/data sample happens to learn useful slots.
+        worth, per_type, base = real_worth(model, batches)
+        worth.fill_(-1.0)
+        return worth, {kind: [-1.0] for kind in per_type}, base
+
+    monkeypatch.setattr(search, "group_worth", replacement_worth)
     common = ["--preset", "tiny", "--data", "synthetic", "--steps", "40", "--eval_every", "20", "--search_every", "4",
               "--search_until", "0.9", "--datastore_chunks", "300", "--refresh_every", "15", "--device", "cpu"]
     a, b = tmp_path / "a", tmp_path / "b"
