@@ -3,7 +3,7 @@ import json
 import numpy as np
 import pytest
 
-from exealm.data.decontam import PackedDocuments, decontaminate, main
+from exealm.data.decontam import PackedDocuments, decontaminate, main, ngrams, window_hashes
 from exealm.data.pack import pack
 
 
@@ -99,3 +99,35 @@ def test_trained_tokenizer_round_trip_and_identity_check(tmp_path):
     result = PackedDocuments(tmp_path / 'out' / '000-src')
     assert [d.tolist() for d in result] == [d.tolist() for d in PackedDocuments(src)]
     assert result.meta['bytes_per_token'] == PackedDocuments(src).meta['bytes_per_token']
+
+
+def test_hash_precheck_never_misses_an_exact_window():
+    """Equal windows have equal hashes, and on random tokens the hashes separate different windows."""
+    rng = np.random.default_rng(0)
+    for dtype, vocab, n in [(np.uint16, 5, 3), (np.uint16, 257, 13), (np.uint32, 70_000, 13)]:
+        tokens = rng.integers(0, vocab, size=400).astype(dtype)
+        hashes = window_hashes(tokens, n)
+        grams = list(ngrams(tokens, n))
+        assert hashes.dtype == np.uint64 and len(hashes) == len(grams)
+        by_gram = {}
+        for g, h in zip(grams, hashes.tolist()):
+            assert by_gram.setdefault(g, h) == h
+        assert len(set(by_gram.values())) == len(by_gram)
+    assert len(window_hashes(np.arange(5, dtype=np.uint16), 6)) == 0
+    assert window_hashes(np.zeros(3, dtype=np.uint16), 3)[0] != window_hashes(np.zeros(4, dtype=np.uint16), 4)[0]
+
+
+def test_filter_matches_the_plain_exact_scan_on_random_documents(tmp_path):
+    """The whole filter against a slow reference that compares every window exactly."""
+    rng = np.random.default_rng(1)
+    alphabet = 'abcd'
+    text = lambda k: ''.join(rng.choice(list(alphabet), size=k))
+    bench_texts = [text(12) for _ in range(6)]
+    docs = [text(int(rng.integers(1, 40))) for _ in range(300)] + [text(9) + bench_texts[0] + text(5)]
+    bench, src = packed(tmp_path, 'bench', bench_texts), packed(tmp_path, 'src', docs)
+    result = decontaminate([src], {'b': bench}, tmp_path / 'out', n=6)
+    grams = {b[i:i + 6] for b in bench_texts for i in range(len(b) - 5)}
+    expected = [d for d in docs if not any(d[i:i + 6] in grams for i in range(len(d) - 5))]
+    kept = [bytes(d[:-1].tolist()).decode() for d in PackedDocuments(tmp_path / 'out' / '000-src')]
+    assert kept == expected and 0 < len(expected) < len(docs)
+    assert result['sources'][str(src)]['dropped'] == len(docs) - len(expected)

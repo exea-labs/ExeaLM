@@ -4,6 +4,13 @@ Benchmark inputs are held-out text already packed by exealm.data.pack. No n-gram
 crosses a document boundary or includes its trailing end-of-text token. A match
 means exact token overlap, not semantic equivalence. The index lives in RAM;
 training tokens are memory-mapped and processed one document at a time.
+
+Speed: every window gets a 64-bit hash, computed for a whole document at once in
+numpy, a block of the token file at a time. A document goes through the exact
+(slow, pure Python) comparison only if one of its hashes is also a benchmark hash,
+and the exact index holds only the benchmark windows that some training window
+shares a hash with. Equal windows always have equal
+hashes, so the result is the same as comparing every window exactly.
 """
 import argparse
 import hashlib
@@ -63,6 +70,21 @@ class PackedDocuments:
         return len(self.tokenizer.decode(doc[:-1].tolist(), skip_special_tokens=False).encode('utf-8'))
 
 
+_MULT = np.uint64(0x9E3779B97F4A7C15)                      # odd, so multiplying by it mod 2**64 loses nothing
+
+
+def window_hashes(tokens, n):
+    """One uint64 per window of n tokens (arithmetic mod 2**64). Equal windows give equal hashes."""
+    if len(tokens) < n:
+        return np.empty(0, dtype=np.uint64)
+    with np.errstate(over='ignore'):
+        h = np.zeros(len(tokens) - n + 1, dtype=np.uint64)
+        t = np.asarray(tokens).astype(np.uint64) + np.uint64(1)          # so token 0 changes the hash too
+        for j in range(n):
+            h = h * _MULT + t[j:j + len(h)]
+    return h
+
+
 def ngrams(tokens, n):
     for i in range(len(tokens) - n + 1):
         yield tuple(int(t) for t in tokens[i:i + n])
@@ -81,15 +103,57 @@ def decontaminate(sources, benchmarks, out, n=13, min_matches=1):
     identity = sources[0].identity
     if any(s.identity != identity for s in [*sources, *benches.values()]):
         raise ValueError('all shards must use the identical tokenizer')
-    index = {}
     bench_report = {}
+    bench_hashes = []
     for name, shard in benches.items():
         count = 0
         for doc in shard:
-            for gram in ngrams(doc[:-1], n):
-                index.setdefault(gram, set()).add(name)
-                count += 1
+            h = window_hashes(doc[:-1], n)
+            bench_hashes.append(h)
+            count += len(h)
         bench_report[name] = dict(path=str(shard.path.resolve()), windows=count)
+    bench_hashes = np.unique(np.concatenate(bench_hashes)) if bench_hashes else np.empty(0, dtype=np.uint64)
+
+    # A table of 2**27 flags, set at the low bits of every benchmark hash: most windows are ruled out by one lookup.
+    bits = 27
+    table = np.zeros(1 << bits, dtype=bool)
+    table[(bench_hashes & np.uint64((1 << bits) - 1)).astype(np.int64)] = True
+
+    def suspects(shard, block=1 << 22):
+        """Per document: might it hold a benchmark window? Hashes the token file a block at a time, ignoring document
+        boundaries (a window that crosses one can only add a false alarm, which the exact check then clears)."""
+        flag = np.zeros(len(shard.offsets), dtype=bool)
+        total = len(shard.tokens)
+        seen = []
+        if not len(bench_hashes):
+            return flag, seen
+        for start in range(0, max(0, total - n + 1), block):
+            h = window_hashes(shard.tokens[start:start + block + n - 1], n)
+            near = np.flatnonzero(table[(h & np.uint64((1 << bits) - 1)).astype(np.int64)])
+            if not len(near):
+                continue
+            at = np.minimum(np.searchsorted(bench_hashes, h[near]), len(bench_hashes) - 1)
+            ok = bench_hashes[at] == h[near]
+            seen.append(h[near][ok])
+            flag[np.searchsorted(shard.offsets, near[ok] + start, side='right') - 1] = True
+        return flag, seen
+
+    # Pass 1: which documents might match, and which benchmark hashes they share. Pass 2 (below) compares exactly,
+    # against an index that holds only the benchmark windows with one of those hashes.
+    suspect, seen = [], []
+    for shard in sources:
+        flag, hashes = suspects(shard)
+        suspect.append(flag)
+        seen += hashes
+    seen = np.unique(np.concatenate(seen)) if seen else np.empty(0, dtype=np.uint64)
+    index = {}
+    if len(seen):
+        for name, shard in benches.items():
+            for doc in shard:
+                h = window_hashes(doc[:-1], n)
+                for i in np.flatnonzero(np.isin(h, seen)):
+                    index.setdefault(tuple(int(t) for t in doc[i:i + n]), set()).add(name)
+
     out = Path(out)
     out.mkdir(parents=True, exist_ok=False)  # never overwrite a previous run or an input
     report = dict(n=n, min_matches=min_matches, unit='token', benchmarks=bench_report, sources={})
@@ -99,11 +163,12 @@ def decontaminate(sources, benchmarks, out, n=13, min_matches=1):
         counts = dict(read=0, kept=0, dropped=0, matched_documents={name: 0 for name in benches})
         offsets, total, byte_count = [], 0, 0
         with (dest / 'tokens.bin').open('wb') as f:
-            for doc in shard:
+            for k, doc in enumerate(shard):
                 hits = {name: 0 for name in benches}
-                for gram in ngrams(doc[:-1], n):
-                    for name in index.get(gram, ()):
-                        hits[name] += 1
+                if suspect[i][k]:                                       # the exact check, only where it can matter
+                    for gram in ngrams(doc[:-1], n):
+                        for name in index.get(gram, ()):
+                            hits[name] += 1
                 counts['read'] += 1
                 for name, count in hits.items():
                     counts['matched_documents'][name] += count >= min_matches

@@ -111,8 +111,13 @@ python -m exealm.data.decontam data/packed/web data/packed/code \
 Each source gets its own numbered output directory with `tokens.bin`,
 `offsets.npy` and updated `meta.json`; document order and complete token sequences
 are preserved for retained documents. The command refuses to overwrite an output
-directory. Training data is memory-mapped; the exact benchmark n-gram index lives
-in RAM. Tokenizer JSON hashes must agree across all inputs (or all use `bytes`).
+directory. Training data is memory-mapped; the benchmark window hashes live in RAM.
+Every window gets a 64-bit hash, computed in numpy a block of the token file at a
+time. Only a document that shares a hash with a benchmark window goes through the
+exact token comparison, so the output is the same as comparing every window exactly.
+On one laptop core this scans about 4 million training tokens per second (random
+32k-vocabulary tokens against 3 million benchmark tokens); run one process per source
+to use more cores. Tokenizer JSON hashes must agree across all inputs (or all use `bytes`).
 Tokenizer paths stored by the packer must still be accessible when running this
 command. Use the original working directory for relative tokenizer paths.
 
