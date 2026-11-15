@@ -30,7 +30,6 @@ What's missing:
 - a streaming data loader for the full mix with per-source weights
 - context extension
 - `torch.compile`
-- logging to Weights & Biases
 
 ## Post-training
 

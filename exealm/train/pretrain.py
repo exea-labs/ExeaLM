@@ -21,7 +21,10 @@ without changing the learning-rate schedule, for sessions with a time limit such
 
 Single GPU only for now.
   TODO(infra): multi-GPU (DDP first, then FSDP), with the datastore search sharded across GPUs.
-  TODO(infra): torch.compile; logging to Weights & Biases.
+  TODO(infra): torch.compile.
+
+--wandb PROJECT also sends every eval, search and resume record to Weights & Biases (pip install wandb). A resumed run
+continues the same W&B run: its id is kept in <out>/wandb_id.txt.
 """
 import argparse
 import json
@@ -69,6 +72,24 @@ def board_summary(usage):
     out = {k: round(sum(d[k] for d in flat) / len(flat), 4) for k in flat[0]}
     for k in ("read_nothing", "post_strength"):
         out[k + "_per_layer"] = [round(sum(d[k] for d in u) / len(u), 4) if u else None for u in usage]
+    return out
+
+
+def wandb_record(rec, prefix=""):
+    """A log record's numbers as flat "eval/val_bits_per_token"-style keys: W&B plots numbers, so nested dicts are
+    flattened, lists become one key per item, and text and missing values are left out."""
+    out = {}
+    if not prefix:
+        prefix = str(rec.get("event", "log")) + "/"
+    for k, v in rec.items():
+        if k in ("event", "step") and prefix.count("/") == 1:
+            continue
+        if isinstance(v, bool) or isinstance(v, (int, float)):
+            out[prefix + k] = v
+        elif isinstance(v, dict):
+            out.update(wandb_record(v, prefix + k + "/"))
+        elif isinstance(v, (list, tuple)):
+            out.update(wandb_record({str(i): x for i, x in enumerate(v)}, prefix + k + "/"))
     return out
 
 
@@ -129,6 +150,8 @@ def main(argv=None):
                     help="checkpoint to continue from, or 'auto' for <out>/ckpt.pt if it exists")
     ap.add_argument("--stop_at", type=int, default=0,
                     help="save <out>/ckpt.pt and stop after this step, keeping the --steps schedule (for time limits)")
+    ap.add_argument("--wandb", default=None, help="Weights & Biases project to log to (default: no W&B logging)")
+    ap.add_argument("--wandb_name", default=None, help="name of the W&B run (default: the --out folder's name)")
     a = ap.parse_args(argv)
 
     torch.manual_seed(a.seed)
@@ -221,10 +244,22 @@ def main(argv=None):
     os.makedirs(a.out, exist_ok=True)
     log = open(os.path.join(a.out, "log.jsonl"), "a")
 
+    run = None
+    if a.wandb:
+        import wandb
+        id_file = os.path.join(a.out, "wandb_id.txt")                    # so a resumed run continues the same W&B run
+        run_id = open(id_file).read().strip() if resume and os.path.exists(id_file) else None
+        run = wandb.init(project=a.wandb, name=a.wandb_name or os.path.basename(os.path.normpath(a.out)), id=run_id,
+                         resume="allow", config=dict(vars(a), model_cfg=asdict(cfg), params=count_params(model)))
+        with open(id_file, "w") as f:
+            f.write(str(run.id))
+
     def emit(rec):
         print(json.dumps(rec), flush=True)
         log.write(json.dumps(rec) + "\n")
         log.flush()
+        if run is not None and "step" in rec:
+            run.log(wandb_record(rec), step=rec["step"])
 
     def train_state(losses, secs):
         """Everything besides the weights and the optimizer that the next step depends on."""
@@ -282,10 +317,14 @@ def main(argv=None):
             save(ckpt_path, model, opt, step + 1, cfg, a.model, train_state(losses, time.time() - t0))
         if step + 1 == a.stop_at and step + 1 < a.steps:
             emit(dict(event="stop", step=step + 1, ckpt=ckpt_path))
+            if run is not None:
+                run.finish()
             return model
     if a.model == "tonn":
         emit(dict(event="end", architecture=model.architecture()))
     save(os.path.join(a.out, "model.pt"), model, opt, a.steps, cfg, a.model, train_state(losses, time.time() - t0))
+    if run is not None:
+        run.finish()
     return model
 
 

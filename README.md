@@ -19,7 +19,7 @@ The repo is public, so you can open an issue or pull request without signing up.
 ```bash
 git clone https://github.com/exea-labs/ExeaLM && cd ExeaLM
 pip install -e ".[dev,data]"
-pytest                                                           # 17 tests, a few seconds, CPU is fine
+pytest                                                           # about a minute, CPU is fine
 
 # train a tiny model on made-up data (no download, about 10 seconds on a laptop CPU)
 python -m exealm.train.pretrain --preset tiny --data synthetic --steps 300 --datastore_chunks 2000
@@ -30,6 +30,17 @@ python -m exealm.train.pretrain --preset tiny --data synthetic --steps 300 --mod
 # real data: one file of Japanese Wikipedia from the LLM-jp corpus (~320 MB)
 python -m exealm.data.download llmjp --subset ja/ja_wiki --max_files 1 --out data/raw
 python -m exealm.data.sources                                    # print the two candidate 100B-token mixes
+```
+
+Load a research checkpoint from [Hugging Face](https://huggingface.co/exea-labs/ExeaLM) in one line, or write with it in the terminal (`pip install huggingface_hub`). These are base models: they continue text, they do not chat yet.
+
+```python
+import exealm
+model, tok = exealm.from_pretrained("17m/exealm_together_gated_seed0")
+```
+
+```bash
+python -m exealm.chat --ckpt 17m/exealm_together_gated_seed0 --raw --swarm 4    # four agents continue your text together
 ```
 
 New to this? [notebooks/tiny_tour.ipynb](notebooks/tiny_tour.ipynb) is a guided tour that needs no GPU: under 5 minutes on
@@ -216,15 +227,16 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [ ] Swarm SFT loop: loss on the answering agent, trained through the board (test on the `tiny` preset)
 - [ ] Swarm RL (GRPO): whole-swarm attempts with a shared reward (test on the `tiny` preset)
 - [ ] Swarm task suite: split-information QA, divide-and-conquer math, write-and-test code, propose-and-check, cross-lingual QA
-- [ ] Swarm generation: all agents generate in lockstep in one batch
-- [ ] Board server so agents on different machines share one board (HTTP or Redis) ([#35](https://github.com/exea-labs/ExeaLM/issues/35))
+- [x] Swarm generation: all agents generate in lockstep in one batch (`exealm/generate.py`: one new token per agent per step, each agent stops on its own, the swarm shares the in-batch board)
+- [x] Board server so agents on different machines share one board (HTTP: `python -m exealm.memory.board_server`, `RemoteAgentBoard`; [docs/memory.md](docs/memory.md), [#35](https://github.com/exea-labs/ExeaLM/issues/35)). One server process, boards live in memory
 - [ ] Message decoder: turn board messages into text people can read ([#34](https://github.com/exea-labs/ExeaLM/issues/34))
 - [ ] Safety: agents treat other agents' messages as information, not instructions (data and an eval)
 - [ ] Swarm eval: the same tasks solo vs swarms of 2, 4 and 8
 - [ ] Headline eval: a swarm of 0.1B agents with retrieval vs a single larger open model (for example 1B) on the same large tasks at the same inference compute. Build and test the harness now on `tiny` checkpoints and small open models
 
 ### Retrieval (`exealm/model/retrieval.py`, `exealm/memory/datastore.py`)
-- [ ] FAISS (IVF-PQ) index for the datastore (FAISS runs on a CPU, so start there) ([#15](https://github.com/exea-labs/ExeaLM/issues/15))
+- [x] FAISS (IVF-PQ) index for the datastore (`exealm/memory/faiss.py`, optional, exact search stays the default; on 1M random keys 16 subquantizers and 32 probes find 85% of the exact top 4 and are faster than exact search, [results/faiss_datastore](results/faiss_datastore/README.md), [#15](https://github.com/exea-labs/ExeaLM/issues/15))
+- [ ] Compare FAISS against exact search on real retrieval keys and on the model's loss before using it in a run
 - [ ] Choose what goes in the datastore: a curated few billion tokens of reference text
 - [ ] Re-indexing schedule: how stale can the stored keys get? (`small` preset)
 - [ ] Cheaper retrieval: cache encodings, share retrievals across layers, tune top-k and chunk length
@@ -246,6 +258,7 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [x] Make gated attention + QK-norm the default: it holds on two seeds (1.511, 1.512), beats a gated Llama and a Qwen3.5-style model at equal steps and at equal compute (1.509 against 1.515 and 1.542), and improves the full 17M model with both skills (1.393 against 1.419) ([results §10, §12](results/README.md#12-parts-from-qwen35-exealmmodeldeltapy-experimentstokenizer_lmpy---llama_cfg))
 - [ ] The full 17M model against a gated Llama on the same batches (the fair baseline now that ExeaLM is gated)
 - [ ] Gated DeltaNet as a TONN circuit type the search can choose ([#30](https://github.com/exea-labs/ExeaLM/issues/30)); other new types, for example sliding-window attention
+- [ ] A circuit that has not been measured yet is scaled by the batch it is reading, so its output depends on later tokens and on other rows until its first training step. Draft fix in [#47](https://github.com/exea-labs/ExeaLM/pull/47): it needs a longer real-text comparison before it goes in
 - [ ] Shape sweep at fixed parameters: depth, width, slots per layer, channels per slot
 - [ ] Search schedule: how long to search, how much to replace, how long new circuits are protected (on the hybrid with a good start it adds about 0.001 today)
 - [ ] Which circuit types survive the search, and does that change from `tiny` to `small`?
@@ -267,9 +280,10 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 ### Data ([DATA.md](DATA.md), `exealm/data/`)
 - [ ] Download and stage every DATA.md source: parallel, resumable, checksummed (build and test it on samples)
 - [ ] (starter) Count tokens in each K2 Horizon subset (streams, no big download) ([#8](https://github.com/exea-labs/ExeaLM/issues/8))
-- [ ] (starter) Write a formatter for each K2 Horizon subset, since their fields differ ([#9](https://github.com/exea-labs/ExeaLM/issues/9))
+- [x] (starter) A checked formatter for each of the 24 K2 Horizon pretraining and SFT subsets (`exealm/data/formatters.py`: broken rows are dropped instead of turned into text from their metadata; [#9](https://github.com/exea-labs/ExeaLM/issues/9))
+- [ ] Loader for the K2 guru-RL tasks and rewards (the part of [#9](https://github.com/exea-labs/ExeaLM/issues/9) still open)
 - [x] Remove near-duplicates across all sources (MinHash LSH, runs on a CPU): `python -m exealm.data.dedup`
-- [ ] Decontaminate against every benchmark we report ([#20](https://github.com/exea-labs/ExeaLM/issues/20))
+- [ ] Decontaminate against every benchmark we report ([#20](https://github.com/exea-labs/ExeaLM/issues/20)). Built: the held-out text of seven benchmarks exported with its dataset revision (`exealm/data/benchmarks.py`) and a filter that drops packed documents sharing a 13-token run with it (`exealm/data/decontam.py`). Left: run it on the real mix, and make the filter fast enough for 100B tokens (it is plain Python today)
 - [ ] Filter personal data and toxicity
 - [ ] Quality classifier for Japanese web text (small classifier, Colab-sized) ([#25](https://github.com/exea-labs/ExeaLM/issues/25))
 - [ ] Mix ablations: three or four versions of the mix with the `small` preset; the best two get confirmed at 0.1B **(GPU)**
@@ -284,7 +298,7 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 ### Training (`exealm/train/pretrain.py`)
 - [ ] Multi-GPU: DDP, then FSDP (DDP is testable on a CPU with two processes) ([#17](https://github.com/exea-labs/ExeaLM/issues/17))
 - [x] Exact resume from checkpoints (`--save_every`, `--stop_at`, `--resume auto`)
-- [ ] Weights & Biases logging
+- [x] Weights & Biases logging (`--wandb PROJECT` in `exealm.train.pretrain`; a resumed run continues the same W&B run)
 - [ ] Context extension near the end of training
 - [ ] Optimizer: Muon vs AdamW (`small` preset) ([#21](https://github.com/exea-labs/ExeaLM/issues/21))
 - [ ] Multi-token prediction heads (`small` preset)
@@ -295,19 +309,20 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [ ] SFT loop and data loader (pack conversations so they can't see each other; test on `tiny`)
 - [ ] DPO loop
 - [ ] GRPO loop with math and code rewards
-- [ ] Chat template
+- [x] Chat template (`exealm/chat.py`: `chat_prompt` and the same format as a Jinja template, tested to give the same tokens)
 - [ ] Do long reasoning traces help a model this small? Test on an existing small open model such as SmolLM2-135M (Colab)
 
 ### Evals (`exealm/eval/`)
-- [ ] (starter) lm-evaluation-harness wrapper (test it on a `tiny` checkpoint) ([#12](https://github.com/exea-labs/ExeaLM/issues/12))
+- [x] (starter) lm-evaluation-harness wrapper (`python -m exealm.eval.harness --ckpt ... --tasks hellaswag`; [docs/evaluation.md](docs/evaluation.md), [#12](https://github.com/exea-labs/ExeaLM/issues/12)). Solo, greedy, no chat template yet
 - [ ] Japanese evals (llm-jp-eval)
 - [x] Retrieval eval: answers that are in the library but not in the prompt (`experiments/irl_eval.py`: re-mentioned rare words of held-out Wikipedia, bits, top-1 and four choices) ([#18](https://github.com/exea-labs/ExeaLM/issues/18))
 - [ ] Run evals automatically on every checkpoint
 - [ ] Results table in this README
 
 ### Release, docs and community
-- [ ] Hugging Face model card and a loader, so the model loads with one line
-- [ ] Demo: chat with one agent or a swarm (build it on a `tiny` checkpoint now)
+- [x] Hugging Face model card and a loader, so the model loads with one line (`exealm.from_pretrained("17m/exealm_together_gated_seed0")`, `exealm/hub.py`)
+- [x] Demo: chat with one agent or a swarm (`python -m exealm.chat`; `--raw` continues text, which is what today's base checkpoints can do)
+- [ ] Put the demo on the web (a Hugging Face Space) once a checkpoint has been through post-training
 - [x] (starter) Diagrams: a TONN layer, RG, AG, a swarm (interactive, on the blog: https://blog.exealabs.org/architecture/)
 - [ ] (starter) Japanese translation of this README ([#13](https://github.com/exea-labs/ExeaLM/issues/13))
 - [x] (starter) Glossary of terms ([docs/glossary.md](docs/glossary.md))
@@ -328,11 +343,15 @@ exealm/
     scan.py              the running-sum recurrences (needs a fast kernel)
     baseline.py          Llama-style transformer to compare against
   memory/
-    datastore.py         read-only retrieval datastore
-    board.py             persistent read-write agent board
-  data/                  sources + licenses, download, quality filters, tokenizer, packing, swarm batches
+    datastore.py         read-only retrieval datastore (faiss.py: optional approximate search)
+    board.py             persistent read-write agent board (board_server.py, board_http.py: shared over HTTP)
+  generate.py            lockstep generation for one agent or a swarm
+  chat.py                chat template and terminal demo
+  hub.py                 from_pretrained: load a checkpoint from a file or from Hugging Face
+  data/                  sources + licenses, download, K2 formatters, quality filters, tokenizer, packing, swarm batches,
+                         benchmark exports and decontamination
   train/                 pretrain, sft, dpo, grpo
-  eval/                  evaluation plan
+  eval/                  evaluation plan, lm-evaluation-harness adapter, retrieval and swarm evals
 docs/                    architecture, memory (RAG + agents), swarms, data, training, ideas
 experiments/             one script per experiment (swarm relay, swarms on text, RAG lookup, RAG on text,
                          tokenizer, TONN vs Llama, speed)

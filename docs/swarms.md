@@ -74,6 +74,22 @@ board). Eval records also carry `board_gain_bits_per_token`: the loss with the b
 loss with it shared. A board that is worth something, read selectively (`read_nothing` well above zero on random
 swarms) and posted to selectively (`quiet_posts` above zero) is the first sign agents are learning to talk.
 
+## Generating as a swarm
+
+`exealm/generate.py` writes for several agents at once, in lockstep: every agent gets one new token per step, and
+with `swarm=True` they share the in-batch board, exactly as in training. An agent stops at its own end token and the
+others go on. Prompts of different lengths are padded on the left.
+
+```python
+from exealm.generate import generate
+new = generate(model, [ids_a, ids_b, ids_c, ids_d], max_new_tokens=64, swarm=True, stop=[end_of_text])
+```
+
+`python -m exealm.chat --ckpt <checkpoint> --swarm 4` does this in the terminal (`--raw` continues your text; the chat
+template needs a checkpoint that has been through post-training). It re-reads the whole context for each new token,
+so it is for demos, not long outputs. Agents on different machines use the HTTP board instead
+([memory.md](memory.md)).
+
 ## What we don't know yet
 
 - Does a split swarm predict its text better than solo agents reading the same text? At 5M to 13M parameters, yes, by a
