@@ -306,7 +306,8 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [x] (starter) Budget sheet: GPU-hours per run, checkpoint cadence, what we can afford ([docs/budget.md](docs/budget.md))
 
 ### Post-training (`exealm/train/`)
-- [ ] SFT loop and data loader (pack conversations so they can't see each other; test on `tiny`)
+- [x] SFT loop and data loader (`python -m exealm.train.sft --ckpt ... --data conversations.jsonl.gz`): one conversation per row, padded on the right and grouped by length, so conversations cannot see each other. Tested on `tiny`: it learns a toy question-answer task and answers through the chat demo
+- [ ] SFT data: download and format the sources (IFM/SFT-Reasoning, LLM-jp instruction data) into conversation files, with licenses
 - [ ] DPO loop
 - [ ] GRPO loop with math and code rewards
 - [x] Chat template (`exealm/chat.py`: `chat_prompt` and the same format as a Jinja template, tested to give the same tokens)
