@@ -317,7 +317,7 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [x] (starter) lm-evaluation-harness wrapper (`python -m exealm.eval.harness --ckpt ... --tasks hellaswag`; [docs/evaluation.md](docs/evaluation.md), [#12](https://github.com/exea-labs/ExeaLM/issues/12)). Solo, greedy, no chat template yet
 - [ ] Japanese evals (llm-jp-eval)
 - [x] Retrieval eval: answers that are in the library but not in the prompt (`experiments/irl_eval.py`: re-mentioned rare words of held-out Wikipedia, bits, top-1 and four choices) ([#18](https://github.com/exea-labs/ExeaLM/issues/18))
-- [ ] Run evals automatically on every checkpoint
+- [x] Run evals automatically on every checkpoint (`python -m exealm.eval.auto --run <run folder> --tasks hellaswag --watch 300`: scores each checkpoint once, beside training, into `evals.jsonl` and a table in `evals.md`)
 - [ ] Results table in this README
 
 ### Release, docs and community

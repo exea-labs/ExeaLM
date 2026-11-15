@@ -67,3 +67,20 @@ model quality. The output directory must be new. The source record includes the
 resolved tokenizer revision and model configuration; results include file hashes.
 A recorded run is in `results/harness_smoke/`. The actual checkpoint and downloaded
 data stay outside version control.
+
+## Scoring every checkpoint of a run
+
+```bash
+python -m exealm.eval.auto --run runs/pretrain --tokenizer tokenizer \
+  --tasks hellaswag,arc_easy --limit 200 --watch 300
+```
+
+This watches a training run's folder. Each time it finds a checkpoint it has not scored (`ckpt.pt`, which pretraining
+rewrites every `--save_every` steps, or the final `model.pt`), it runs the tasks on a copy of it. It adds a line to
+`<run>/evals.jsonl` and rewrites the table in `<run>/evals.md`, one row per step. It is its own process, so training
+does not wait for it; run it on a CPU or a second GPU. Stopping and restarting it is safe: a checkpoint with a record
+for the same step, tasks and `--limit` is skipped. It exits once `model.pt` has been scored; without `--watch` it
+scores what is there and exits.
+
+`ckpt.pt` is rewritten in place, so a checkpoint that is replaced before the watcher looks is never scored. Keep
+`--watch` below the time between saves. The limits above (solo, greedy, no chat template) apply to these scores too.

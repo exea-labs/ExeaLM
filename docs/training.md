@@ -54,3 +54,5 @@ single larger model on the same tasks at the same inference compute.
 ## Evaluation during training
 
 Validation bits per token and per byte (`--val`). See `exealm/eval/__init__.py` for the benchmark plan.
+Benchmarks on every checkpoint, beside the run: `python -m exealm.eval.auto --run <out folder> --watch 300`
+([evaluation.md](evaluation.md)).

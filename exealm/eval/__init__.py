@@ -14,4 +14,5 @@ Planned (each is a good first project):
 
   Built: lm-evaluation-harness adapter, python -m exealm.eval.harness --ckpt PATH --tasks hellaswag --limit 20.
   See docs/evaluation.md for tokenizer requirements, supported requests and limits.
+  Built: python -m exealm.eval.auto --run RUN --watch 300 scores every checkpoint of a training run as it is written.
 """

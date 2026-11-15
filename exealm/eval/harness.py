@@ -163,6 +163,17 @@ class ExeaLMHarness(TemplateLM):
         return results
 
 
+def evaluate_checkpoint(ckpt, tokenizer, tasks, limit=None, include_path=None, max_length=1024, max_gen_toks=128,
+                        device='cpu'):
+    """Run harness tasks on one checkpoint and return the harness's result dict (used by main and by eval/auto.py)."""
+    model = ExeaLMHarness(ckpt, tokenizer, device, max_length, max_gen_toks)
+    from lm_eval import simple_evaluate
+    from lm_eval.tasks import TaskManager
+    manager = TaskManager(include_path=include_path) if include_path else None
+    return simple_evaluate(model=model, tasks=list(tasks), limit=limit, num_fewshot=0, log_samples=False,
+                           bootstrap_iters=0, task_manager=manager, device=str(model.device))
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--ckpt', required=True)
@@ -181,12 +192,8 @@ def main(argv=None):
     if args.out and Path(args.out).exists():
         parser.error('--out must be a new file')
     torch.set_num_threads(args.threads)
-    model = ExeaLMHarness(args.ckpt, args.tokenizer, args.device, args.max_length, args.max_gen_toks)
-    from lm_eval import simple_evaluate
-    from lm_eval.tasks import TaskManager
-    manager = TaskManager(include_path=args.include_path) if args.include_path else None
-    result = simple_evaluate(model=model, tasks=args.tasks.split(','), limit=args.limit,
-                             num_fewshot=0, log_samples=False, bootstrap_iters=0, task_manager=manager, device=str(model.device))
+    result = evaluate_checkpoint(args.ckpt, args.tokenizer, args.tasks.split(','), args.limit, args.include_path,
+                                 args.max_length, args.max_gen_toks, args.device)
     encoded = json.dumps(result, default=handle_non_serializable, indent=2, ensure_ascii=False)
     if args.out:
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
