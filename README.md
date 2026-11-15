@@ -287,7 +287,7 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [ ] Filter personal data and toxicity
 - [ ] Quality classifier for Japanese web text (small classifier, Colab-sized) ([#25](https://github.com/exea-labs/ExeaLM/issues/25))
 - [ ] Mix ablations: three or four versions of the mix with the `small` preset; the best two get confirmed at 0.1B **(GPU)**
-- [ ] Streaming loader with per-source weights over many shard files (`MultiShards` in `loader.py` mixes one file per source)
+- [x] Loader with per-source weights over many shard files (`ShardSet`, `MultiShards` and `open_data` in `loader.py`; `--data mix.json` in pretraining). Token files are memory-mapped on first use and only a few stay open
 - [ ] (starter) Data card: every source, license, filter and token count ([#10](https://github.com/exea-labs/ExeaLM/issues/10))
 
 ### Tokenizer (`exealm/data/tokenizer.py`)

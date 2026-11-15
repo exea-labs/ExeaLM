@@ -25,9 +25,13 @@ What exists: `exealm/train/pretrain.py` runs this loop on one device, with the s
 evaluation and checkpoints. A run can stop and pick up again exactly where it left off (`--save_every`, `--stop_at`,
 `--resume auto`), which is what lets a long run span several Colab sessions or preemptible GPU jobs.
 
+The full mix: `--data mix.json` names the sources, where each one lives (one packed directory or many) and what
+share of the training tokens it gets. The form is in `exealm/data/loader.py` (`open_data`). Token files are
+memory-mapped when first used, so nothing is loaded up front. With a mix, name the retrieval library with
+`--datastore_data`.
+
 What's missing:
 - multi-GPU (DDP, then FSDP)
-- a streaming data loader for the full mix with per-source weights
 - context extension
 - `torch.compile`
 

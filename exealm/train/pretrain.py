@@ -11,6 +11,9 @@ The fair comparison every architecture change must win (same data, same steps, s
 On real data, after exealm.data.pack:
     python -m exealm.train.pretrain --preset 100m --data data/packed/train --val data/packed/val --seq 2048 --batch 16
 
+A mix of sources with weights, each source in many packed directories (the form is in exealm/data/loader.py: open_data):
+    python -m exealm.train.pretrain --preset 100m --data mix.json --val data/packed/val --datastore_data data/packed/library
+
 Resuming: --save_every N writes the full training state to <out>/ckpt.pt every N steps (the model, the optimizer, the
 current architecture, every random number generator, the search's state and the datastore's keys). Pick the run up
 with --resume <out>/ckpt.pt, or --resume auto to use <out>/ckpt.pt if it exists. With the same arguments, a resumed run
@@ -37,7 +40,7 @@ import numpy as np
 import torch
 
 from ..config import ModelConfig, get_config
-from ..data.loader import SyntheticShards, TokenShards
+from ..data.loader import TokenShards, open_data
 from ..memory import Datastore, MemoryContext
 from ..model import ExeaLM, Llama, count_params
 from ..model.search import Searcher
@@ -123,8 +126,10 @@ def main(argv=None):
     ap.add_argument("--preset", default="tiny")
     ap.add_argument("--config", default=None, help="JSON file of ModelConfig fields to override")
     ap.add_argument("--model", default="tonn", choices=["tonn", "llama"])
-    ap.add_argument("--data", default="synthetic")
-    ap.add_argument("--val", default=None, help="packed validation split (default: windows of --data)")
+    ap.add_argument("--data", default="synthetic",
+                    help="'synthetic', a packed directory, a pattern of packed directories, or a mix .json with "
+                         "per-source weights (exealm/data/loader.py: open_data)")
+    ap.add_argument("--val", default=None, help="validation split, same forms as --data (default: windows of --data)")
     ap.add_argument("--steps", type=int, default=300)
     ap.add_argument("--batch", type=int, default=8)
     ap.add_argument("--seq", type=int, default=128)
@@ -139,6 +144,9 @@ def main(argv=None):
     ap.add_argument("--search_every", type=int, default=100)
     ap.add_argument("--search_until", type=float, default=0.5)
     ap.add_argument("--datastore_chunks", type=int, default=0, help="0: no retrieval (RG slots output zeros)")
+    ap.add_argument("--datastore_data", default=None,
+                    help="one packed directory to sample the retrieval library from (default: --data, which must "
+                         "then be one packed directory)")
     ap.add_argument("--refresh_every", type=int, default=200)
     ap.add_argument("--eval_every", type=int, default=100)
     ap.add_argument("--eval_batches", type=int, default=8)
@@ -157,8 +165,8 @@ def main(argv=None):
     torch.manual_seed(a.seed)
     dev = pick_device(a.device)
     amp = dict(device_type="cuda", dtype=torch.bfloat16) if dev.type == "cuda" else None
-    data = SyntheticShards() if a.data == "synthetic" else TokenShards(a.data)
-    val = data if a.val is None else TokenShards(a.val)
+    data = open_data(a.data)
+    val = data if a.val is None else open_data(a.val)
     ckpt_path = os.path.join(a.out, "ckpt.pt")
     resume = ckpt_path if a.resume == "auto" else a.resume
     if a.resume == "auto" and not os.path.exists(ckpt_path):
@@ -190,7 +198,15 @@ def main(argv=None):
 
     ds = None
     if a.model == "tonn" and a.datastore_chunks:
-        ds = Datastore.from_shards(data, a.datastore_chunks, cfg.rag_chunk_len, seed=a.seed + 1).to(dev)
+        if a.datastore_data:
+            ds = Datastore.from_shards(TokenShards(a.datastore_data), a.datastore_chunks, cfg.rag_chunk_len,
+                                       seed=a.seed + 1)
+            ds.doc_ids += int(data.meta["n_docs"])                     # library documents are not training documents
+        elif hasattr(data, "tokens"):
+            ds = Datastore.from_shards(data, a.datastore_chunks, cfg.rag_chunk_len, seed=a.seed + 1)
+        else:
+            raise ValueError("--data is a mix or has many shards: name the retrieval library with --datastore_data")
+        ds = ds.to(dev)
         ds.refresh(model.encoder, model.emb, step=0)
 
     def mem_for(docs):

@@ -75,23 +75,74 @@ class SyntheticShards:
     batch = TokenShards.batch
 
 
+class ShardSet:
+    """One source stored as many packed directories (shards), e.g. data/packed/web/000, 001, ... from exealm.data.pack.
+    Same batch() interface as TokenShards. Each swarm (or each row, without swarms) reads from one shard, picked in
+    proportion to its token count, so every token of the source is equally likely. Only each shard's meta.json is
+    read up front; token files are memory-mapped when first used and at most max_open stay open, so a source can have
+    thousands of shards. Document ids are unique across the shards."""
+
+    def __init__(self, paths, max_open=64):
+        self.paths = sorted(paths)
+        if not self.paths:
+            raise ValueError("a source needs at least one packed directory")
+        metas = [json.load(open(os.path.join(p, "meta.json"))) for p in self.paths]
+        if len({m["vocab_size"] for m in metas}) != 1:
+            raise ValueError("the shards of one source must share a tokenizer (vocab_size differs)")
+        self.sizes = np.array([m["n_tokens"] for m in metas], dtype=np.int64)
+        self.doc_base = np.concatenate([[0], np.cumsum([m["n_docs"] for m in metas])[:-1]]).astype(np.int64)
+        total = int(self.sizes.sum())
+        self.meta = dict(vocab_size=metas[0]["vocab_size"], n_tokens=total, n_docs=int(sum(m["n_docs"] for m in metas)),
+                         bytes_per_token=float(sum(m.get("bytes_per_token", 1.0) * m["n_tokens"] for m in metas)
+                                               / max(1, total)))
+        self.max_open, self._open = max_open, {}
+
+    def shard(self, i):
+        if i in self._open:
+            self._open[i] = self._open.pop(i)                          # most recently used goes last
+        else:
+            while len(self._open) >= self.max_open:
+                self._open.pop(next(iter(self._open)))                 # drop the least recently used
+            self._open[i] = TokenShards(self.paths[i])
+        return self._open[i]
+
+    def batch(self, B, T, rng, swarm_size=1, policy="random", p_split=0.5, mask_seams=True):
+        g = swarm_size if (swarm_size > 1 and B % swarm_size == 0) else 1
+        fits = self.sizes > g * T + 2                                  # shards long enough for one swarm's windows
+        if not fits.any():
+            raise ValueError(f"no shard holds the {g * T + 2} tokens one group of windows needs")
+        p = self.sizes * fits / (self.sizes * fits).sum()
+        xs, ys, ds = [], [], []
+        for _ in range(B // g):
+            i = int(rng.choice(len(self.paths), p=p))
+            x, y, d = self.shard(i).batch(g, T, rng, g, policy, p_split, mask_seams)
+            xs.append(x)
+            ys.append(y)
+            ds.append(d + int(self.doc_base[i]))
+        return torch.cat(xs), torch.cat(ys), torch.cat(ds)
+
+
 class MultiShards:
-    """Several packed sources mixed by weight (default: by token count), e.g. English, Japanese and code packed
-    separately. Each swarm (or each row, without swarms) draws all its windows from one source. Document ids stay
-    unique across sources. Same batch() interface as TokenShards.
-      TODO(data): stream from many shard files per source instead of one file each."""
+    """Several sources mixed by weight (default: by token count), e.g. English, Japanese and code packed separately.
+    A source is one packed directory, or a list of them (a ShardSet). Each swarm (or each row, without swarms) draws
+    all its windows from one source, so the weights are shares of the tokens the model reads. Document ids stay
+    unique across sources. Same batch() interface as TokenShards."""
 
     def __init__(self, paths, weights=None):
-        self.sources = [TokenShards(p) for p in paths]
+        self.sources = [TokenShards(p) if isinstance(p, str) else ShardSet(p) for p in paths]
         sizes = np.array([s.meta["n_tokens"] for s in self.sources], dtype=float)
         w = np.array(weights, dtype=float) if weights is not None else sizes
+        if len(w) != len(self.sources) or (w < 0).any() or w.sum() <= 0:
+            raise ValueError("one weight per source, none negative, not all zero")
+        if len({s.meta["vocab_size"] for s in self.sources}) != 1:
+            raise ValueError("all sources must share a tokenizer (vocab_size differs)")
         self.p = w / w.sum()
-        self.doc_base = np.concatenate([[0], np.cumsum([len(s.offsets) for s in self.sources])[:-1]])
+        self.doc_base = np.concatenate([[0], np.cumsum([s.meta["n_docs"] for s in self.sources])[:-1]])
         m0 = self.sources[0].meta
         self.meta = dict(vocab_size=m0["vocab_size"], n_tokens=int(sizes.sum()),
-                         n_docs=int(sum(len(s.offsets) for s in self.sources)),
-                         bytes_per_token=float(sum(s.meta["bytes_per_token"] * s.meta["n_tokens"] for s in self.sources)
-                                               / sizes.sum()))
+                         n_docs=int(sum(s.meta["n_docs"] for s in self.sources)),
+                         bytes_per_token=float(sum(s.meta.get("bytes_per_token", 1.0) * q
+                                                   for s, q in zip(self.sources, self.p))))
 
     def batch(self, B, T, rng, swarm_size=1, policy="random", p_split=0.5, mask_seams=True):
         g = swarm_size if (swarm_size > 1 and B % swarm_size == 0) else 1
@@ -103,3 +154,41 @@ class MultiShards:
             ys.append(y)
             ds.append(d + int(self.doc_base[i]))
         return torch.cat(xs), torch.cat(ys), torch.cat(ds)
+
+
+def open_data(spec):
+    """What --data and --val accept:
+        "synthetic"                  the made-up corpus for smoke tests
+        a packed directory           one source in one piece (from exealm.data.pack)
+        a pattern with * or ?        one source in many packed directories, e.g. "data/packed/web/*"
+        a .json file                 a mix of sources with weights:
+            {"sources": {"en_web": {"paths": "data/packed/en_web/*", "weight": 0.5},
+                         "ja_web": {"paths": "data/packed/ja_web/*", "weight": 0.3},
+                         "code":   {"paths": ["data/packed/code"],    "weight": 0.2}}}
+          "paths" is a pattern, a directory or a list of them; "weight" is the share of training tokens read from
+          that source (weights are rescaled to sum to 1; leave every weight out to mix by token count)."""
+    import glob
+
+    def expand(paths):
+        out = []
+        for p in ([paths] if isinstance(paths, str) else paths):
+            found = sorted(glob.glob(p)) if any(c in p for c in "*?[") else [p]
+            out += [f for f in found if os.path.exists(os.path.join(f, "meta.json"))]
+        if not out:
+            raise ValueError(f"no packed directory (with a meta.json) matches {paths}")
+        return out
+
+    if spec == "synthetic":
+        return SyntheticShards()
+    if spec.endswith(".json"):
+        sources = json.load(open(spec))["sources"]
+        weights = [s.get("weight") for s in sources.values()]
+        if any(w is None for w in weights) and not all(w is None for w in weights):
+            raise ValueError("give every source a weight, or none of them")
+        groups = [expand(s["paths"]) for s in sources.values()]
+        mix = MultiShards([g[0] if len(g) == 1 else g for g in groups], None if weights[0] is None else weights)
+        mix.names = list(sources)
+        return mix
+    if any(c in spec for c in "*?["):
+        return ShardSet(expand(spec))
+    return TokenShards(spec)
