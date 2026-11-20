@@ -311,7 +311,7 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 ### Speed (`exealm/model/scan.py`)
 - [ ] Fused Triton kernels for `decay_scan` and `gated_scan` (any NVIDIA GPU works, including a free Colab T4; must also run on AMD MI300X) ([#16](https://github.com/exea-labs/ExeaLM/issues/16))
 - [ ] A compile-friendly TONN layer: one code path for every circuit type, so `torch.compile` can fuse it (today it gains 8% for the hybrid and 20% for Llama) ([#24](https://github.com/exea-labs/ExeaLM/issues/24))
-- [ ] One scan call for all running-sum circuits in a layer
+- [x] One scan call for all real running-sum circuits in a layer (`I`, `GI`, `MI`, `MIM`, `EP`, `SM`)
 - [ ] Profile where the memory circuits' time goes: the 17M model with the board and library on is 1.30x Llama per step ([#29](https://github.com/exea-labs/ExeaLM/issues/29))
 - [ ] In bf16 on the MI300X the hybrid is 1.6 times slower per step than Llama at 0.1B and 0.5B (1.2 times in 32-bit). Find which circuits lose the most from bf16 and fix them ([throughput](results/funding/README.md))
 - [ ] Fast Gated DeltaNet on NVIDIA through flash-linear-attention ([#31](https://github.com/exea-labs/ExeaLM/issues/31))

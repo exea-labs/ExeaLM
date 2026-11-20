@@ -35,6 +35,7 @@ CIRCUITS = {
                             "not in the default menu"),
 }
 MEMORY_CIRCUITS = ("RG", "AG", "WA")
+RUNNING_SUM_TYPES = frozenset(("I", "GI", "MI", "MIM", "EP", "SM"))
 
 
 def shift(U, lags):
@@ -44,6 +45,64 @@ def shift(U, lags):
         return U
     idx = torch.arange(T, device=U.device).view(1, T, 1, 1) - lags.view(1, 1, g, 1)
     return U.gather(1, idx.clamp(min=0).expand(B, T, g, h)) * (idx >= 0)
+
+
+def _running_sum_inputs(t, A, B, lags, lam):
+    """Scan inputs (batch, T, channels) and either fixed (channels,) or per-token decays."""
+    if t == "GI":
+        return A.flatten(2), torch.sigmoid(B.flatten(2) + 2)
+    if t == "SM":
+        dt = F.softplus(B - 2)
+        decay = torch.exp(-dt * torch.exp(2 * lam))
+        return (dt * A).flatten(2), decay.flatten(2)
+    if t == "EP":
+        weights = torch.exp(A.clamp(-8, 8))
+        decay = lam.abs().flatten()
+        return torch.cat(((weights * B).flatten(2), weights.flatten(2)), -1), decay.repeat(2)
+    values = A if t == "I" else shift(A, lags) * B
+    return values.flatten(2), lam.flatten()
+
+
+def _running_sum_output(t, summed, C):
+    if t == "EP":
+        num, den = summed.chunk(2, -1)
+        return (num / (den + 1e-3)).reshape_as(C)
+    summed = summed.reshape_as(C)
+    if t == "MIM":
+        return C * summed
+    if t == "SM":
+        return summed * F.silu(C)
+    return summed
+
+
+def run_running_sums(u, lags, lam, ranges):
+    """Run one scan across the layer's real running-sum slots, then restore each group's shape and dtype."""
+    inputs = []
+    for t, (a, b) in ranges.items():
+        streams = u[:, :, a:b].unbind(3)
+        values, decay = _running_sum_inputs(t, *streams[:2], lags[a:b], lam[a:b])
+        inputs.append((t, values, decay, streams[2]))
+    if not inputs:
+        return {}
+    if len(inputs) == 1:
+        t, values, decay, C = inputs[0]
+        summed = decay_scan(values, decay) if decay.ndim == 1 else gated_scan(values, decay)
+        return {t: _running_sum_output(t, summed, C)}
+
+    values = torch.cat([v for _, v, _, _ in inputs], -1)
+    if all(decay.ndim == 1 for _, _, decay, _ in inputs):
+        summed = decay_scan(values, torch.cat([decay for _, _, decay, _ in inputs]))
+    else:
+        decays = []
+        for _, v, decay, _ in inputs:
+            decay = decay.float()
+            if decay.ndim == 1:
+                # Match decay_scan's signed magnitude floor before expanding over tokens.
+                decay = (decay.sign() * decay.abs().clamp_min(1e-6)).expand_as(v)
+            decays.append(decay)
+        summed = gated_scan(values, torch.cat(decays, -1))
+    parts = summed.split([v.size(-1) for _, v, _, _ in inputs], -1)
+    return {t: _running_sum_output(t, part.to(v.dtype), C) for (t, v, _, C), part in zip(inputs, parts)}
 
 
 def oscillating_memory(u, lam):
@@ -67,40 +126,24 @@ def run(t, S, lags, lam, beta):
     """Run g slots of type t. S: [A, B, C] each (batch, T, g, h); lags (g,); lam (g, h) decays in (-1, 1); beta (g,)
     attention sharpness. Returns (batch, T, g, h)."""
     A, Bs, Cs = S
-    Bn, T, g, h = A.shape
-    flat = lambda u: u.reshape(Bn, T, g * h)
-    back = lambda u: u.view(Bn, T, g, h)
+    if t in RUNNING_SUM_TYPES:
+        values, decay = _running_sum_inputs(t, A, Bs, lags, lam)
+        summed = decay_scan(values, decay) if decay.ndim == 1 else gated_scan(values, decay)
+        return _running_sum_output(t, summed, Cs)
     if t == "D":
         return shift(A, lags)
-    if t == "I":
-        return back(decay_scan(flat(A), lam.reshape(-1)))
-    if t == "GI":
-        return back(gated_scan(flat(A), torch.sigmoid(flat(Bs) + 2)))
     if t == "M":
         return shift(A, lags) * Bs
-    if t == "MI":
-        return back(decay_scan(flat(shift(A, lags) * Bs), lam.reshape(-1)))
-    if t == "MIM":
-        return Cs * back(decay_scan(flat(shift(A, lags) * Bs), lam.reshape(-1)))
-    if t == "EP":                                     # positive decay keeps the denominator positive
-        e = torch.exp(A.clamp(-8, 8))
-        lp = lam.abs().reshape(-1)
-        both = decay_scan(torch.cat([flat(e * Bs), flat(e)], -1), torch.cat([lp, lp]))   # one FFT for both sums
-        num, den = both.split(g * h, -1)
-        return back(num) / (back(den) + 1e-3)
     if t == "G":
         return F.silu(A) * Bs
     if t == "C":
         a = lags.clamp(min=1)
         return F.silu(A + shift(Bs, a) + shift(Cs, 2 * a))
     if t == "RP":
+        g = A.size(2)
         q = rotate(A * beta.view(1, 1, g, 1)).transpose(1, 2)
         k = rotate(shift(Bs, lags)).transpose(1, 2)
         return F.scaled_dot_product_attention(q, k, Cs.transpose(1, 2), is_causal=True).transpose(1, 2)
-    if t == "SM":
-        dt = F.softplus(Bs - 2)
-        decay = torch.exp(-dt * torch.exp(2 * lam).view(1, 1, g, h))
-        return back(gated_scan(flat(dt * A), flat(decay))) * F.silu(Cs)
     if t == "OS":
         return oscillating_memory(A, lam) * F.silu(Bs)
     raise ValueError(f"unknown circuit type {t}")

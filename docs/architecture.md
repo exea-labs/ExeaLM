@@ -32,7 +32,9 @@ mostly convolutions and won, the other drew mostly gated units and lost on code.
 ## A TONN layer
 
 1. Normalize the residual stream and project it, in **one** matrix, into 20 slots × 3 streams (A, B, C) × 32 channels.
-2. Each slot runs its circuit on its streams. Slots of the same type run together as one batched operation.
+2. Each slot runs its circuit on its streams. Slots of the same type run together. The six real running-sum types
+   (`I`, `GI`, `MI`, `MIM`, `EP`, `SM`) share one scan per layer. Fixed decays alone use the FFT, and any token-dependent
+   gate selects the prefix scan for the whole batch of slots.
 3. Each slot's output is divided by its running average size, so no slot drowns out the others. The average comes
    from past batches only, so a prediction never depends on other rows in the batch.
 4. Project all slots back to the residual stream in **one** matrix and add.

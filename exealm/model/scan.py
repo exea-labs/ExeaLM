@@ -1,7 +1,7 @@
 """The two running-sum recurrences most TONN circuits are made of, in plain PyTorch.
 
     decay_scan:  s_t = lam * s_{t-1} + u_t     (one fixed decay per channel, may be negative)
-    gated_scan:  s_t = g_t * s_{t-1} + u_t     (a decay that changes with the input, 0 < g_t < 1)
+    gated_scan:  s_t = g_t * s_{t-1} + u_t     (a per-token decay; also supports signed fixed decays broadcast over time)
 
 Both are exact and causal, in plain PyTorch: an FFT convolution for the first, a parallel prefix scan for the second.
 A fused GPU kernel (Triton or CUDA) for these two is still one of the most useful contributions anyone can make
@@ -25,7 +25,7 @@ def decay_scan(u, lam):
 
 
 def gated_scan(u, g, chunk=None):
-    """u, g (B, T, C), 0 < g < 1. Exact, as a parallel prefix scan (Hillis-Steele): log2(T) rounds of elementwise
+    """u, g (B, T, C), |g| < 1. Exact, as a parallel prefix scan (Hillis-Steele): log2(T) rounds of elementwise
     work, each combining every position with the one 2^r steps back:
         S_t <- S_t + G_t * S_{t-2^r},   G_t <- G_t * G_{t-2^r}
     The decays only ever multiply, so it stays stable. It replaced a chunked version that built a chunk x chunk matrix

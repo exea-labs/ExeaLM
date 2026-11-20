@@ -117,7 +117,8 @@ class TONNLayer(nn.Module):
                 n = sum(1 for sp in self.specs if sp["tmpl"] == t)
                 ranges[t] = (start, start + n)
                 start += n
-            self._plan = dict(order=torch.tensor(order, device=device), slots=order, ranges=ranges,
+            running = {t: bounds for t, bounds in ranges.items() if t in Cc.RUNNING_SUM_TYPES}
+            self._plan = dict(order=torch.tensor(order, device=device), slots=order, ranges=ranges, running=running,
                               lags=torch.tensor([self.specs[k]["lag"] for k in order], device=device))
             self._plan_key = key
         return self._plan
@@ -135,8 +136,12 @@ class TONNLayer(nn.Module):
         u = F.linear(self.norm(x), W, b).view(B, T, K, 3, h)                 # slots in type order
         lam = torch.tanh(self.lam * 3).index_select(0, o)
         beta = self.beta.index_select(0, o)
+        running = Cc.run_running_sums(u, pl["lags"], lam, pl["running"]) if pl["running"] else {}
         outs = []
         for t, (a, c) in pl["ranges"].items():
+            if t in running:
+                outs.append(running[t])
+                continue
             S = [u[:, :, a:c, j] for j in range(3)]
             slots = pl["slots"][a:c]                                          # original slot numbers
             if t == "RG":
