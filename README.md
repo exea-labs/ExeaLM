@@ -258,7 +258,7 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [ ] Retrieval division of labor: do agents in a swarm pull different chunks? Try rewarding it
 - [ ] Swarm-aware multi-GPU training, keeping each swarm on one GPU (testable on a CPU with two processes)
 - [ ] Swarm SFT data: split-information tasks built from multi-hop QA. This also fills the "tool use and agentic" gap in [DATA.md](DATA.md)
-- [ ] Swarm SFT loop: loss on the answering agent, trained through the board (test on the `tiny` preset)
+- [x] Swarm SFT loop: loss on the answering agent, trained through the board (tested on the `tiny` preset, [usage](docs/swarms.md#swarm-sft))
 - [ ] Swarm RL (GRPO): whole-swarm attempts with a shared reward (test on the `tiny` preset)
 - [ ] Swarm task suite: split-information QA, divide-and-conquer math, write-and-test code, propose-and-check, cross-lingual QA
 - [x] Swarm generation: all agents generate in lockstep in one batch (`exealm/generate.py`: one new token per agent per step, each agent stops on its own, the swarm shares the in-batch board)

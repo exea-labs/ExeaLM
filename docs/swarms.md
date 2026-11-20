@@ -52,6 +52,31 @@ Rules that keep it honest:
    - cross-lingual QA (the source is in Japanese, the question in English)
 3. **Roles.** Each agent's prompt says who it is ("agent 2 of 4, checker"), so agents can specialize.
 
+### Swarm SFT
+
+Run SFT with an ExeaLM checkpoint that has AG circuits and the tokenizer used to train it.
+
+```bash
+python -m exealm.train.sft --ckpt runs/pretrain/model.pt --tokenizer tokenizer \
+  --data tasks.jsonl --val heldout.jsonl --swarm 2 --answer_agent 1 --batch 8
+```
+
+Each `.jsonl` or `.jsonl.gz` line contains one task. Its `agents` list has exactly `--swarm` conversations in agent
+order, each in the same `messages` or ShareGPT format as solo SFT. For example, this two-agent task puts a fact in
+agent 0's context and supervises agent 1's answer.
+
+```json
+{"agents":[{"messages":[{"role":"user","content":"The code word is maple."}]},{"messages":[{"role":"user","content":"What is the code word in the other agent's notes?"},{"role":"assistant","content":"maple"}]}]}
+```
+
+`--answer_agent` is zero-based and defaults to 0. Only that agent's assistant tokens contribute directly to the loss.
+`--batch` counts whole tasks. `--max_len` limits each conversation, and the loader drops a task if truncation removes
+all supervised tokens. When `--val` is omitted, the validation split holds out whole tasks.
+
+The board uses its usual causal timing. A prediction can read a helper's post only after that post's chunk. Place the
+supporting facts early enough and the answering turn late enough for the prediction to use them. The chunk length is
+the checkpoint's `board_chunk` when set, otherwise `chunk` (8 tokens on `tiny`, 64 by default).
+
 ## At inference
 
 - **One machine:** run N copies as one batch with the swarm size set to N. The board is in the batch, so a swarm
