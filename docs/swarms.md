@@ -59,6 +59,26 @@ Rules that keep it honest:
 - **Different times or machines:** a persistent `AgentBoard` (`exealm/memory/board.py`). Today it is a file; a small
   board server (HTTP or Redis) is a to-do.
 
+## Swarm GRPO
+
+```bash
+python -m exealm.train.grpo --ckpt runs/sft/model.pt --tokenizer tokenizer \
+  --data tasks.jsonl --val heldout.jsonl --swarm 2 --answer_agent 1 --group 8
+```
+
+Each JSONL record in `--data` and `--val` has `agents`, an ordered list of exactly `--swarm` objects with `prompt`
+or `messages`, plus the task-level `answer` and `reward` used by ordinary GRPO.
+
+```json
+{"agents":[{"prompt":"Find a way to tell the answering agent that the code word is maple."},{"prompt":"What is the code word from the other agent's notes?"}],"answer":"maple","reward":"exact"}
+```
+
+`--group` counts independent attempts per task. The agents in an attempt generate in lockstep and share their own
+causal board. Prompts are left-padded to align the first generated token. The reward scores the completion of the
+zero-based `--answer_agent` (default 0). GRPO normalizes those attempt rewards within the task and applies the
+resulting advantage to every agent's generated tokens, including each agent's stop token if it generated one.
+Policy and reference scoring replay the same board grouping and token alignment as generation.
+
 ## Measuring board use
 
 Every eval record in `log.jsonl` carries a `board` entry, measured on the validation batches, averaged over layers:
