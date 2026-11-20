@@ -30,8 +30,15 @@ share of the training tokens it gets. The form is in `exealm/data/loader.py` (`o
 memory-mapped when first used, so nothing is loaded up front. With a mix, name the retrieval library with
 `--datastore_data`.
 
+Several GPUs: start the same command with `torchrun --nproc_per_node N -m exealm.train.pretrain ...` (DDP, one process
+per GPU; on a CPU, gloo). `--batch` stays the total batch: every process draws the same batch and trains on its own
+rows, whole swarms only, so the data is exactly what one process would see. Process 0 runs the search, evaluates, logs
+and saves; after each search round the other processes copy its circuits, weights and optimizer state, and after each
+datastore refresh its keys. Two CPU processes match one process on the same total batch to within 0.0003 bits per
+token after 300 `tiny` steps (two seeds differ by 0.033), and a two-process run resumes exactly.
+
 What's missing:
-- multi-GPU (DDP, then FSDP)
+- FSDP, and the datastore search sharded across GPUs (with DDP every process holds the whole datastore)
 - context extension
 - `torch.compile`
 
