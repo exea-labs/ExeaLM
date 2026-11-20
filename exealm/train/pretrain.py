@@ -44,6 +44,7 @@ from ..data.loader import TokenShards, open_data
 from ..memory import Datastore, MemoryContext
 from ..model import ExeaLM, Llama, count_params
 from ..model.search import Searcher
+from .muon import Muon
 
 
 def pick_device(name):
@@ -96,11 +97,22 @@ def wandb_record(rec, prefix=""):
     return out
 
 
-def make_optimizer(model, lr, wd):
+def make_optimizer(model, lr, wd, kind="adamw"):
+    """kind "muon": Muon steps for the weights of linear layers other than the embedding and the output head, AdamW for
+    every other parameter, with the same lr and weight decay rule (exealm/train/muon.py)."""
     decay = [p for n, p in model.named_parameters() if p.dim() >= 2 and "emb" not in n]
     rest = [p for n, p in model.named_parameters() if not (p.dim() >= 2 and "emb" not in n)]
-    return torch.optim.AdamW([dict(params=decay, weight_decay=wd), dict(params=rest, weight_decay=0.0)],
-                             lr=lr, betas=(0.9, 0.95), eps=1e-8)
+    if kind == "adamw":
+        return torch.optim.AdamW([dict(params=decay, weight_decay=wd), dict(params=rest, weight_decay=0.0)],
+                                 lr=lr, betas=(0.9, 0.95), eps=1e-8)
+    if kind != "muon":
+        raise ValueError(f"unknown optimizer {kind!r}: use adamw or muon")
+    linear = {id(m.weight) for m in model.modules() if isinstance(m, torch.nn.Linear)}
+    mats = [p for n, p in model.named_parameters() if id(p) in linear and "emb" not in n and "head" not in n]
+    on_muon = {id(p) for p in mats}
+    groups = [dict(params=mats, weight_decay=wd, use_muon=True),
+              dict(params=[p for p in decay if id(p) not in on_muon], weight_decay=wd), dict(params=rest, weight_decay=0.0)]
+    return Muon([g for g in groups if g["params"]], lr=lr, betas=(0.9, 0.95), eps=1e-8)
 
 
 def save(path, model, opt, step, cfg, kind, state=None):
@@ -135,6 +147,8 @@ def main(argv=None):
     ap.add_argument("--seq", type=int, default=128)
     ap.add_argument("--lr", type=float, default=2e-3)
     ap.add_argument("--wd", type=float, default=0.1)
+    ap.add_argument("--optimizer", default="adamw", choices=["adamw", "muon"],
+                    help="muon: Muon for the weight matrices, AdamW for the rest, at the same --lr (exealm/train/muon.py)")
     ap.add_argument("--warmup", type=int, default=None)
     ap.add_argument("--decay_frac", type=float, default=0.2)
     ap.add_argument("--clip", type=float, default=1.0)
@@ -189,7 +203,7 @@ def main(argv=None):
             over.setdefault("qk_norm", False)
         cfg = get_config(a.preset, **over)
         model = (ExeaLM(cfg) if a.model == "tonn" else Llama(cfg)).to(dev)
-    opt = make_optimizer(model, a.lr, a.wd)
+    opt = make_optimizer(model, a.lr, a.wd, a.optimizer)
     if ck is not None:
         opt.load_state_dict(ck["opt"])
     warmup = a.warmup if a.warmup is not None else max(1, min(2000, a.steps // 20))

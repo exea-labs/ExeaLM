@@ -29,7 +29,8 @@ Next:
 
 ## Make it better
 - **Muon optimizer** (Keller Jordan, 2024; shown to scale by Moonshot AI): often reaches the same loss in fewer steps
-  than AdamW.
+  than AdamW. Now an option (`--optimizer muon`, `exealm/train/muon.py`); it needs the fair comparison in #21 before
+  it can become the default.
 - **Multi-token prediction** (DeepSeek-V3): predict the next 2 to 4 tokens with small extra heads; a richer training
   signal.
 - **Distillation** from a larger open model whose license allows it (check LLM-jp-4 and the K2 Horizon models):

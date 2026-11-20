@@ -9,7 +9,7 @@
 | Context | 2,048 tokens, extended to 8,192 near the end | |
 | Batch | about 1M tokens | |
 | Learning rate | warmup, stable, then a linear decay at the end (WSD), where DATA.md's annealing data goes in | during the stable phase we can branch off and try a different final data mix without restarting |
-| Optimizer | AdamW (β 0.9/0.95, weight decay 0.1), gradient clip 1.0 | Muon is worth trying ([ideas.md](ideas.md)) |
+| Optimizer | AdamW (β 0.9/0.95, weight decay 0.1), gradient clip 1.0 | `--optimizer muon` gives the weight matrices Muon steps at the same learning rate and weight decay, and keeps AdamW for the embedding, norms and scalars (`exealm/train/muon.py`); the `small`-preset comparison is issue #21 |
 | Precision | bf16 compute; scans and FFTs in float32 | |
 | Architecture search | during a pilot run (about the first 5B tokens), then frozen | a search round runs one forward pass per (layer, circuit type) on each held-out batch |
 | Retrieval index | re-encoded every few thousand steps | the model's own encoder keeps changing |
