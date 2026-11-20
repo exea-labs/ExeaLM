@@ -12,6 +12,8 @@ python -m exealm.data.tokenizer data/filtered/*.jsonl.gz --vocab 49152 --out tok
 import argparse
 import os
 
+from .files import expand
+
 SPECIAL = ["<|endoftext|>", "<|pad|>", "<|im_start|>", "<|im_end|>", "<|system|>", "<|user|>", "<|assistant|>",
            "<|tool|>", "<|retrieved|>", "<|board|>"]
 
@@ -57,6 +59,7 @@ def main():
     ap.add_argument("--max_docs", type=int, default=2_000_000)
     ap.add_argument("--out", default="tokenizer")
     a = ap.parse_args()
+    a.files = expand(a.files)
     tok = train(a.files, a.vocab, a.out, a.max_docs)
     for s in ["こんにちは、世界。今日は良い天気ですね。", "The quick brown fox jumps over the lazy dog."]:
         ids = tok.encode(s).ids

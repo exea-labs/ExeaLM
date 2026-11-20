@@ -125,7 +125,7 @@ def main(argv=None):
     for r in recs:
         print(json.dumps(r))
         if a.out:
-            with open(a.out, "a") as f:
+            with open(a.out, "a", encoding="utf-8", newline="\n") as f:
                 f.write(json.dumps(r) + "\n")
     return recs
 

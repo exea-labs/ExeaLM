@@ -21,18 +21,18 @@ def run(job):
     if os.path.exists(marker):
         return tag, "skipped (already done)"
     t0 = time.time()
-    with open(f"logs/gpu_session/{tag}.log", "w") as log:
+    with open(f"logs/gpu_session/{tag}.log", "w", encoding="utf-8", newline="\n") as log:
         code = subprocess.run(cmd, shell=True, stdout=log, stderr=subprocess.STDOUT).returncode
     ok = code == 0 and os.path.exists(out)
     if ok:
-        open(marker, "w").write(out + "\n")
+        open(marker, "w", encoding="utf-8", newline="\n").write(out + "\n")
     print(f"{time.strftime('%H:%M:%S')} {'done  ' if ok else 'FAILED'} {tag} ({(time.time() - t0) / 60:.1f} min)", flush=True)
     return tag, "done" if ok else f"FAILED (exit {code}; see logs/gpu_session/{tag}.log)"
 
 
 def main():
     path, parallel = sys.argv[1], int(sys.argv[2])
-    jobs = [line.rstrip("\n").split("\t", 2) for line in open(path) if line.strip() and not line.startswith("#")]
+    jobs = [line.rstrip("\n").split("\t", 2) for line in open(path, encoding="utf-8") if line.strip() and not line.startswith("#")]
     with ThreadPoolExecutor(parallel) as ex:
         results = list(ex.map(run, jobs))
     failed = [f"{t}: {r}" for t, r in results if r.startswith("FAILED")]

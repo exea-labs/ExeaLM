@@ -78,7 +78,7 @@ def main():
     refresh = round(time.time() - t0, 2)
     os.makedirs(a.out, exist_ok=True)
     out = dict(args=vars(a), device=str(dev), rows=rows, datastore_refresh_secs=refresh)
-    json.dump(out, open(os.path.join(a.out, f"speed_{dev.type}.json"), "w"), indent=1)
+    json.dump(out, open(os.path.join(a.out, f"speed_{dev.type}.json"), "w", encoding="utf-8", newline="\n"), indent=1)
     print(json.dumps(dict(datastore_refresh_secs=refresh, chunks=a.datastore_chunks)))
 
 

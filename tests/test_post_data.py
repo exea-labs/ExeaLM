@@ -69,7 +69,7 @@ def test_convert_all_counts_what_it_drops_and_the_loops_can_read_the_files(tmp_p
     prefs, _ = post.convert_all([dict(chosen=[U, A], rejected=[U, dict(role="assistant", content="b")])], "pref", "r")
     post.write(str(tmp_path / "p.jsonl.gz"), prefs)
     assert dpo.load_preferences(str(tmp_path / "p.jsonl.gz")) == ([([U], "a", "b")], 0)
-    with gzip.open(tmp_path / "p.jsonl.gz", "rt") as f:
+    with gzip.open(tmp_path / "p.jsonl.gz", "rt", encoding="utf-8") as f:
         assert json.loads(f.readline())["source"] == "r"
 
 

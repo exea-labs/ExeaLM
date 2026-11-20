@@ -23,7 +23,7 @@ import numpy as np
 class PackedDocuments:
     def __init__(self, path):
         self.path = Path(path)
-        self.meta = json.loads((self.path / 'meta.json').read_text())
+        self.meta = json.loads((self.path / 'meta.json').read_text(encoding="utf-8"))
         dtype = np.dtype(self.meta['dtype'])
         if dtype not in (np.dtype('uint16'), np.dtype('uint32')):
             raise ValueError('packed tokens must be uint16 or uint32')
@@ -184,10 +184,10 @@ def decontaminate(sources, benchmarks, out, n=13, min_matches=1):
         meta = dict(shard.meta, n_tokens=total, n_docs=len(offsets),
                     bytes_per_token=byte_count / max(1, total),
                     decontamination=dict(n=n, min_matches=min_matches, report='../report.json'))
-        (dest / 'meta.json').write_text(json.dumps(meta, indent=2))
+        (dest / 'meta.json').write_text(json.dumps(meta, indent=2), encoding="utf-8", newline="\n")
         counts['output'] = dest.name
         report['sources'][str(shard.path.resolve())] = counts
-    (out / 'report.json').write_text(json.dumps(report, indent=2))
+    (out / 'report.json').write_text(json.dumps(report, indent=2), encoding="utf-8", newline="\n")
     return report
 
 

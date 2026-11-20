@@ -146,7 +146,7 @@ def main():
         for kind in a.models.split(","):
             for seed in [int(x) for x in a.seeds.split(",")]:
                 rows.append(run(tok, a, dev, kind, seed))
-                json.dump(dict(args=vars(a), device=str(dev), rows=rows), open(os.path.join(a.out, name), "w"), indent=1)
+                json.dump(dict(args=vars(a), device=str(dev), rows=rows), open(os.path.join(a.out, name), "w", encoding="utf-8", newline="\n"), indent=1)
 
 
 if __name__ == "__main__":

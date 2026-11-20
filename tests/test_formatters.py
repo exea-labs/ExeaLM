@@ -10,7 +10,7 @@ from exealm.data.download import download_hf
 from exealm.data.formatters import K2_FORMATTERS, get_k2_formatter
 from exealm.data.sources import K2
 
-FIXTURES = json.loads((Path(__file__).parent / 'fixtures' / 'k2_formatters.json').read_text())
+FIXTURES = json.loads((Path(__file__).parent / 'fixtures' / 'k2_formatters.json').read_text(encoding="utf-8"))
 
 
 def test_every_planned_subset_has_fixtures_and_a_formatter():
@@ -43,7 +43,7 @@ def test_download_uses_verified_formatter_before_applying_kept_row_limit(tmp_pat
         raise AssertionError('must stop after one valid document')
     monkeypatch.setitem(sys.modules, 'datasets', SimpleNamespace(load_dataset=rows))
     download_hf('IFM/TxT360-v2', 'txt360-qa', 1, str(tmp_path))
-    with gzip.open(next(tmp_path.glob('*.jsonl.gz')), 'rt') as f:
+    with gzip.open(next(tmp_path.glob('*.jsonl.gz')), 'rt', encoding="utf-8") as f:
         assert [json.loads(line) for line in f] == [dict(text='  user\nhello\n\nassistant\nworld\n',
                                                        source='IFM/TxT360-v2/txt360-qa')]
 

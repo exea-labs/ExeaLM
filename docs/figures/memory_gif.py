@@ -263,7 +263,7 @@ def main():
         if f.endswith(".ttf"):
             font_manager.fontManager.addfont(os.path.join(a.fonts, f))
     fonts = (os.path.join(a.fonts, "DMMono-Regular.ttf"), os.path.join(a.fonts, "Fraunces.ttf"))
-    tr = json.load(open(a.trace))
+    tr = json.load(open(a.trace, encoding="utf-8"))
     frames = relay_frames(tr, fonts) + lookup_frames(tr, fonts) + end_frames(fonts)
     tmp = a.out + "_frames"
     os.makedirs(tmp, exist_ok=True)

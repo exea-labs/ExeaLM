@@ -202,7 +202,7 @@ def main():
     out = dict(args=vars(a), device=str(dev), chance=dict(acc=round(1 / N_VAL, 4), bits=round(math.log2(N_VAL), 3)),
                runs=[run(arm, a, dev) for arm in a.arms.split(",")])
     path = os.path.join(a.out, f"lookup_f{a.facts}_q{a.query}_r{a.restate}_seed{a.seed}.json")
-    json.dump(out, open(path, "w"), indent=1)
+    json.dump(out, open(path, "w", encoding="utf-8", newline="\n"), indent=1)
     print("WROTE", path)
 
 

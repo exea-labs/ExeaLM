@@ -9,7 +9,7 @@ from exealm.data.pack import pack
 
 def packed(tmp, name, texts):
     src = tmp / (name + '.jsonl')
-    src.write_text(''.join(json.dumps({'text': t}) + '\n' for t in texts))
+    src.write_text(''.join(json.dumps({'text': t}) + '\n' for t in texts), encoding="utf-8", newline="\n")
     dest = tmp / name
     pack([str(src)], 'bytes', str(dest))
     return dest
@@ -26,7 +26,7 @@ def test_filter_reports_sources_and_preserves_documents(tmp_path):
     shard = PackedDocuments(tmp_path / 'out' / '000-a')
     assert [bytes(d[:-1].tolist()) for d in shard] == [b'clean']
     assert shard.meta['n_tokens'] == 6 and shard.meta['bytes_per_token'] == 5 / 6
-    assert json.loads((tmp_path / 'out' / 'report.json').read_text()) == report
+    assert json.loads((tmp_path / 'out' / 'report.json').read_text(encoding="utf-8")) == report
 
 
 def test_no_windows_cross_document_boundaries_or_terminators(tmp_path):
@@ -68,9 +68,11 @@ def test_uint32_tokens_round_trip_and_terminator_validation(tmp_path):
     src = packed(tmp_path, 'src', ['clean text'])
     bench = packed(tmp_path, 'bench', ['unrelated'])
     shard = PackedDocuments(src)
-    np.asarray(shard.tokens, dtype=np.uint32).tofile(src / 'tokens.bin')
+    wide = np.asarray(shard.tokens, dtype=np.uint32)
     meta = dict(shard.meta, dtype='uint32')
-    (src / 'meta.json').write_text(json.dumps(meta))
+    del shard  # Windows cannot rewrite a file that is still memory mapped
+    wide.tofile(src / 'tokens.bin')
+    (src / 'meta.json').write_text(json.dumps(meta), encoding="utf-8", newline="\n")
     decontaminate([src], {'test': bench}, tmp_path / 'out')
     out = PackedDocuments(tmp_path / 'out' / '000-src')
     assert out.tokens.dtype == np.uint32
@@ -86,7 +88,7 @@ def test_trained_tokenizer_round_trip_and_identity_check(tmp_path):
     pytest.importorskip('tokenizers')
     from exealm.data.tokenizer import train
     raw = tmp_path / 'raw.jsonl'
-    raw.write_text(json.dumps({'text': 'a training example with clean text'}) + '\n')
+    raw.write_text(json.dumps({'text': 'a training example with clean text'}) + '\n', encoding="utf-8", newline="\n")
     tokenizer = tmp_path / 'tokenizer'
     train([str(raw)], 280, str(tokenizer))
     src = tmp_path / 'src'

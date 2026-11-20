@@ -191,7 +191,7 @@ page = f"""<!doctype html><html><head><meta charset="utf-8">
 {chr(10).join(els)}
 </svg></body></html>"""
 src = os.path.join(HERE, "arch_17m.html")
-open(src, "w").write(page)
+open(src, "w", encoding="utf-8", newline="\n").write(page)
 chrome = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 subprocess.run([chrome, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=2",
                 f"--window-size={W},{H}", "--virtual-time-budget=10000",

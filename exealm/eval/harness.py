@@ -197,7 +197,7 @@ def main(argv=None):
     encoded = json.dumps(result, default=handle_non_serializable, indent=2, ensure_ascii=False)
     if args.out:
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-        with open(args.out, 'x') as f:
+        with open(args.out, 'x', encoding="utf-8", newline="\n") as f:
             f.write(encoded + '\n')
     print(encoded)
     return result

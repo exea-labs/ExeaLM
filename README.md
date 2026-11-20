@@ -34,6 +34,8 @@ python -m exealm.data.download llmjp --subset ja/ja_wiki --max_files 1 --out dat
 python -m exealm.data.sources                                    # print the two candidate 100B-token mixes
 ```
 
+**Windows.** Everything above runs in PowerShell with a CPU-only PyTorch (`pip install torch --index-url https://download.pytorch.org/whl/cpu`); `pytest` is green there and CI checks it on every pull request. Activate the venv with `.venv\Scripts\Activate.ps1`. File patterns such as `data/raw/*.jsonl.gz` are expanded by the tools themselves, because PowerShell and cmd do not do it for you. The `.sh` scripts in `experiments/gpu_session/` need Git Bash or WSL.
+
 Load a research checkpoint from [Hugging Face](https://huggingface.co/exea-labs/ExeaLM) in one line, or write with it in the terminal (`pip install huggingface_hub`). These are base models: they continue text, they do not chat yet.
 
 ```python
@@ -370,6 +372,7 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 
 ### Release, docs and community
 - [x] Hugging Face model card and a loader, so the model loads with one line (`exealm.from_pretrained("17m/exealm_together_gated_seed0")`, `exealm/hub.py`)
+- [x] Windows and CPU-only support: text files are read and written as UTF-8, the tests pass without `PYTHONUTF8`, and CI runs them on `windows-latest`
 - [x] Demo: chat with one agent or a swarm (`python -m exealm.chat`; `--raw` continues text, which is what today's base checkpoints can do)
 - [ ] Put the demo on the web (a Hugging Face Space) once a checkpoint has been through post-training
 - [x] (starter) Diagrams: a TONN layer, RG, AG, a swarm (interactive, on the blog: https://blog.exealabs.org/architecture/)

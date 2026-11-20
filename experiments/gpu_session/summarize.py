@@ -10,7 +10,7 @@ R = "results/gpu_session"
 def lm(folder, prefix):
     runs = {}
     for f in sorted(glob.glob(os.path.join(R, folder, "lm_compare_*.json"))):
-        for r in json.load(open(f))["rows"]:
+        for r in json.load(open(f, encoding="utf-8"))["rows"]:
             name, seed = r["tag"][len(prefix):].rsplit("_s", 1)
             runs.setdefault(name, {})[int(seed)] = (sum(r["bits_per_byte"].values()) / 4, r["steps"], r["secs"], r["params_M"])
     return runs
@@ -32,7 +32,7 @@ def main():
     table("13M, one circuit type left out of the starting menu (none: the default)", lm("leave_one_out", "f13_leave_"))
     rows = []
     for f in sorted(glob.glob(os.path.join(R, "combined", "full_small_*.json"))):
-        d = json.load(open(f))
+        d = json.load(open(f, encoding="utf-8"))
         if d["curve"]:
             e = d["curve"][-1]
             rows.append(f"| {os.path.basename(f)[11:-5]} | {e['step']} | {e['val_en']['removed']:.3f} | {100 * e['relay']['shared']:.1f}% | "
@@ -41,7 +41,7 @@ def main():
         print("\nCombined 0.1B recipe\n| Run | Step | English bits per byte | Relay | Lookup |\n|---|---|---|---|---|\n" + "\n".join(rows))
     cap = {}
     for f in sorted(glob.glob(os.path.join(R, "relay_capacity", "relay*.json"))):
-        d = json.load(open(f))
+        d = json.load(open(f, encoding="utf-8"))
         a, fin = d["args"], d["runs"][0]["final"]
         cap.setdefault((a["facts"], "board" if a["memory"] == "AG" else "weight edits"), []).append(fin["shared"]["acc"])
     if cap:

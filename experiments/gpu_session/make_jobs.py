@@ -81,7 +81,7 @@ def main():
 
     os.makedirs(os.path.join(HERE, "jobs"), exist_ok=True)
     for name, rows in jobs.items():
-        with open(os.path.join(HERE, "jobs", f"{name}.txt"), "w") as f:
+        with open(os.path.join(HERE, "jobs", f"{name}.txt"), "w", encoding="utf-8", newline="\n") as f:
             f.write("".join("\t".join(r) + "\n" for r in rows))
         print(f"jobs/{name}.txt: {len(rows)} jobs")
 

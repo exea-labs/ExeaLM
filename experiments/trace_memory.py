@@ -137,7 +137,7 @@ def main():
     rng = np.random.default_rng(a.seed)
     out = dict(ckpt=a.ckpt, relay=relay(model, cfg, dev, rng), lookup=lookup(model, cfg, dev, rng))
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
-    json.dump(out, open(a.out, "w"), indent=1)
+    json.dump(out, open(a.out, "w", encoding="utf-8", newline="\n"), indent=1)
     print("WROTE", a.out)
 
 

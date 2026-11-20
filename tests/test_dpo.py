@@ -81,7 +81,7 @@ def test_dpo_loop_makes_a_tiny_model_prefer_the_chosen_answers(tmp_path, tok):
     base = ExeaLM(cfg)
     save(str(tmp_path / "base.pt"), base, make_optimizer(base, 1e-3, 0.1), 0, cfg, "tonn")
     rng = np.random.default_rng(0)
-    with open(tmp_path / "prefs.jsonl", "w") as f:
+    with open(tmp_path / "prefs.jsonl", "w", encoding="utf-8", newline="\n") as f:
         for _ in range(240):
             w = WORDS[int(rng.integers(len(WORDS)))]
             f.write(json.dumps(dict(prompt=w, chosen=GOOD[w], rejected=BAD[w])) + "\n")
@@ -90,7 +90,7 @@ def test_dpo_loop_makes_a_tiny_model_prefer_the_chosen_answers(tmp_path, tok):
     dpo.main(["--ckpt", str(tmp_path / "base.pt"), "--tokenizer", tok_dir, "--data", str(tmp_path / "prefs.jsonl"),
               "--steps", "150", "--batch", "16", "--lr", "3e-3", "--beta", "1.0", "--eval_every", "50",
               "--device", "cpu", "--out", str(out)])
-    log = [json.loads(line) for line in open(out / "log.jsonl")]
+    log = [json.loads(line) for line in open(out / "log.jsonl", encoding="utf-8")]
     assert log[0]["event"] == "start" and log[0]["preferences"] == 228 and log[0]["val_preferences"] == 12
     assert log[0]["val_loss"] == pytest.approx(math.log(2), abs=1e-3)          # the policy starts as the reference
     assert log[-1]["step"] == 150 and log[-1]["val_loss"] < 0.2 * log[0]["val_loss"]

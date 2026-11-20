@@ -35,6 +35,7 @@ from collections import Counter
 
 import numpy as np
 
+from .files import expand
 from .quality import is_japanese
 
 P = np.uint64(4294967311)                 # a prime just above 2^32, so (a x + b) mod P stays inside uint64
@@ -136,6 +137,7 @@ def main(argv=None):
     ap.add_argument("--no_verify", action="store_true", help="drop every LSH candidate (faster, more false drops)")
     ap.add_argument("--ngram", type=int, default=5)
     a = ap.parse_args(argv)
+    a.files = expand(a.files)
     report = dedup_files(a.files, a.out, a.num_perm, a.bands, a.threshold, not a.no_verify, a.ngram)
     for name, r in report.items():
         print(f"{name}: kept {r['kept']} of {r['read']}", json.dumps(r["duplicates_of"], ensure_ascii=False))

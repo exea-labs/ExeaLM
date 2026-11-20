@@ -16,6 +16,7 @@ template they see tokens they never trained on. Use --raw to see what a base che
 the post-training work has something to plug into.
 """
 import argparse
+import sys
 
 import torch
 
@@ -79,6 +80,9 @@ def main(argv=None):
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--prompt", default=None, help="answer this once and exit (default: an interactive session)")
     a = ap.parse_args(argv)
+    for stream in (sys.stdin, sys.stdout):
+        if hasattr(stream, "reconfigure"):    # Windows consoles default to a legacy code page
+            stream.reconfigure(encoding="utf-8", errors="replace")
     if a.swarm < 1:
         ap.error("--swarm must be at least 1")
     from .hub import from_pretrained

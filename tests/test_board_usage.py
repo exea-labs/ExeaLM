@@ -55,7 +55,7 @@ def test_too_short_to_read_gives_no_stats():
 def test_pretraining_logs_board_use_and_board_worth(tmp_path):
     main(["--preset", "tiny", "--data", "synthetic", "--steps", "40", "--eval_every", "20", "--search_every", "10",
           "--device", "cpu", "--out", str(tmp_path)])
-    recs = [json.loads(l) for l in (tmp_path / "log.jsonl").read_text().splitlines()]
+    recs = [json.loads(l) for l in (tmp_path / "log.jsonl").read_text(encoding="utf-8").splitlines()]
     evals = [r for r in recs if r["event"] == "eval"]
     searches = [r for r in recs if r["event"] == "search"]
     cfg = get_config("tiny")
@@ -68,5 +68,5 @@ def test_pretraining_logs_board_use_and_board_worth(tmp_path):
 def test_baseline_runs_have_no_board_stats(tmp_path):
     main(["--preset", "tiny", "--data", "synthetic", "--steps", "10", "--eval_every", "10", "--model", "llama",
           "--device", "cpu", "--out", str(tmp_path)])
-    evals = [json.loads(l) for l in (tmp_path / "log.jsonl").read_text().splitlines()]
+    evals = [json.loads(l) for l in (tmp_path / "log.jsonl").read_text(encoding="utf-8").splitlines()]
     assert all("board" not in r for r in evals if r["event"] == "eval")

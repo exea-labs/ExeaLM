@@ -316,7 +316,7 @@ page = f"""<!doctype html><html><head><meta charset="utf-8"><style>html,body{{ma
 <svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}"><defs>{markers}</defs>
 <rect width="{W}" height="{H}" fill="#fff"/>{chr(10).join(els)}</svg></body></html>"""
 src = os.path.join(HERE, "arch_compare.html")
-open(src, "w").write(page)
+open(src, "w", encoding="utf-8", newline="\n").write(page)
 subprocess.run(["/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "--headless=new", "--disable-gpu",
                 "--hide-scrollbars", "--force-device-scale-factor=2", f"--window-size={W},{H}", "--virtual-time-budget=5000",
                 f"--screenshot={os.path.join(HERE, 'arch_compare.png')}", "file://" + src],

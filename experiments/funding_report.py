@@ -21,7 +21,7 @@ NAMES = {"hybrid_gate": "ExeaLM hybrid", "hybrid_gate_norp_fix": "ExeaLM hybrid,
 def load():
     runs = {}
     for f in sorted(glob.glob(os.path.join(R, "funding", "lm_compare_*.json"))):
-        for r in json.load(open(f))["rows"]:
+        for r in json.load(open(f, encoding="utf-8"))["rows"]:
             size, rest = r["tag"].split("_", 1)
             model, seed = rest.rsplit("_s", 1)
             b = r["bits_per_byte"]
@@ -61,7 +61,7 @@ def relay_rows():
     for folder, label in (("weight_alter", ""), ("weight_alter_in", ", edits to the MLP's input matrix"), ("weight_alter_diag", ", rerun scored by question"),
                           ("weight_alter_hkey", ", key from the edited layer")):
         for f in sorted(glob.glob(os.path.join(R, folder, "relay*.json"))):
-            d = json.load(open(f))
+            d = json.load(open(f, encoding="utf-8"))
             a = d["args"]
             for r in d["runs"]:
                 if r["arm"] != "swarm":
@@ -90,7 +90,7 @@ def combined():
         p = os.path.join(R, "combined", f"full_small_{n}.json")
         if not os.path.exists(p):
             continue
-        curve = json.load(open(p))["curve"]
+        curve = json.load(open(p, encoding="utf-8"))["curve"]
         for e in (curve if n in ("exealm_all3_seed0", "llama_base_seed0") else curve[-1:]):
             bpb = sum(e[v]["removed"] for v in ("val_en", "val_ja_wiki", "val_ja_web", "val_code")) / 4
             r, lk, k = e["relay"], e["lookup"], e.get("knowledge", {})
@@ -107,7 +107,7 @@ def throughput():
     if not os.path.exists(p):
         return ""
     out = ["| Size | Model | Parameters | Precision | Seconds per step | Tokens per second | Effective TFLOP/s |", "|---|---|---|---|---|---|---|"]
-    for r in json.load(open(p)):
+    for r in json.load(open(p, encoding="utf-8")):
         out.append(f"| {r['size']} | {'ExeaLM hybrid' if r['model'] == 'hybrid' else 'Llama'} | {r['params_M']}M | {r['precision']} | {r['s_per_step']} | "
                    f"{r['tokens_per_s']:,} | {r['effective_TFLOPs']} |")
     return "\n".join(out)
@@ -117,7 +117,7 @@ def main():
     runs = load()
     small = ["hybrid_gate", "hybrid_gate_norp_fix", "hybrid_gate_fix", "hybrid_gate_search_fix", "hybrid_gate_wa", "hybrid_gate_wahkey_fix", "hybrid_gate_wahkey_in_fix", "qwen35", "llama_gate", "llama"]
     big = ["hybrid_gate_norp_fix_lr1e3", "hybrid_gate_fix_lr1e3", "qwen35_lr1e3", "llama_gate_lr1e3", "llama_lr1e3"]
-    text = open(os.path.join(R, "funding", "README.in.md")).read()
+    text = open(os.path.join(R, "funding", "README.in.md"), encoding="utf-8").read()
     text = (text.replace("{{TABLE_13M}}", table(runs, "f13", small))
             .replace("{{PAIRS_13M}}", paired(runs, "f13", "hybrid_gate", ["qwen35", "llama_gate", "llama"]) + "\n"
                      + paired(runs, "f13", "hybrid_gate_norp_fix", ["qwen35", "llama_gate", "llama"]))
@@ -126,7 +126,7 @@ def main():
             .replace("{{PAIRS_100M}}", paired(runs, "f100", "hybrid_gate_fix_lr1e3", ["qwen35_lr1e3", "llama_gate_lr1e3", "llama_lr1e3"]) + "\n"
                      + paired(runs, "f100", "hybrid_gate_norp_fix_lr1e3", ["qwen35_lr1e3", "llama_gate_lr1e3", "llama_lr1e3"]))
             .replace("{{RELAY}}", relay_rows()).replace("{{COMBINED}}", combined()).replace("{{THROUGHPUT}}", throughput()))
-    open(os.path.join(R, "funding", "README.md"), "w").write(text)
+    open(os.path.join(R, "funding", "README.md"), "w", encoding="utf-8", newline="\n").write(text)
     print(text)
 
 

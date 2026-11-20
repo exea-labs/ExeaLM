@@ -10,7 +10,7 @@ from exealm.train.pretrain import load_model, main
 def test_pretraining_smoke_run_lowers_the_loss_and_saves(tmp_path):
     main(["--preset", "tiny", "--data", "synthetic", "--steps", "120", "--eval_every", "60", "--search_every", "30",
           "--datastore_chunks", "500", "--refresh_every", "50", "--device", "cpu", "--out", str(tmp_path)])
-    lines = (tmp_path / "log.jsonl").read_text().splitlines()
+    lines = (tmp_path / "log.jsonl").read_text(encoding="utf-8").splitlines()
     evals = [json.loads(l) for l in lines]
     bits = [e["val_bits_per_token"] for e in evals if e.get("event") == "eval"]
     assert bits[-1] < 8.0 and bits[-1] < bits[0] + 1e-6
@@ -58,7 +58,7 @@ def test_resumed_run_matches_an_uninterrupted_one(tmp_path, monkeypatch):
     full, _ = load_model(str(a / "model.pt"))
     resumed, ck = load_model(str(b / "model.pt"))
     assert ck["step"] == 40
-    events = [json.loads(l) for l in (b / "log.jsonl").read_text().splitlines()]
+    events = [json.loads(l) for l in (b / "log.jsonl").read_text(encoding="utf-8").splitlines()]
     assert [e["step"] for e in events if e["event"] == "resume"] == [6]
     after = [e for e in events if e["event"] == "search" and e["step"] > 6]
     assert any(e["replaced"] > 0 for e in after)                             # so the search's own state mattered
@@ -70,5 +70,5 @@ def test_resumed_run_matches_an_uninterrupted_one(tmp_path, monkeypatch):
 def test_resume_auto_starts_fresh_without_a_checkpoint(tmp_path):
     main(["--preset", "tiny", "--data", "synthetic", "--steps", "5", "--eval_every", "5", "--device", "cpu",
           "--out", str(tmp_path), "--resume", "auto"])
-    events = [json.loads(l)["event"] for l in (tmp_path / "log.jsonl").read_text().splitlines()]
+    events = [json.loads(l)["event"] for l in (tmp_path / "log.jsonl").read_text(encoding="utf-8").splitlines()]
     assert events[0] == "start" and "resume" not in events

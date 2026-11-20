@@ -22,7 +22,7 @@ def test_table_and_numbers_need_no_harness():
 
 
 @pytest.fixture
-def run(tmp_path):
+def run(tmp_path, short_cache):
     pytest.importorskip("lm_eval")
     pytest.importorskip("tokenizers")
     import yaml
@@ -39,12 +39,12 @@ def run(tmp_path):
     tasks = tmp_path / "tasks"
     tasks.mkdir()
     (tasks / "data.jsonl").write_text("".join(json.dumps(dict(question="hello", choices=[" world", " a"], answer=0))
-                                              + "\n" for _ in range(3)))
+                                              + "\n" for _ in range(3)), encoding="utf-8", newline="\n")
     (tasks / "fixture.yaml").write_text(yaml.safe_dump(dict(
         task="exealm_auto_fixture", dataset_path="json",
-        dataset_kwargs=dict(data_files={"test": str(tasks / "data.jsonl")}, cache_dir=str(tasks / "cache")),
+        dataset_kwargs=dict(data_files={"test": str(tasks / "data.jsonl")}, cache_dir=short_cache),
         test_split="test", output_type="multiple_choice", doc_to_text="question", doc_to_target="answer",
-        doc_to_choice="choices", num_fewshot=0)))
+        doc_to_choice="choices", num_fewshot=0)), encoding="utf-8", newline="\n")
     cfg = get_config("tiny", vocab_size=tok.get_vocab_size())
     model = Llama(cfg)
 
@@ -70,7 +70,7 @@ def test_each_checkpoint_is_scored_once_and_the_table_grows(run):
     write("model.pt", 300)
     done = auto.main(args + ["--watch", "0.01"])                        # exits once the final model is scored
     assert [(r["step"], r["file"]) for r in done] == [(100, "ckpt.pt"), (200, "ckpt.pt"), (300, "model.pt")]
-    rows = (tmp / "run" / "evals.md").read_text().splitlines()
+    rows = (tmp / "run" / "evals.md").read_text(encoding="utf-8").splitlines()
     assert rows[0] == "| step | exealm_auto_fixture |" and [r.split("|")[1].strip() for r in rows[2:]] == ["100", "200", "300"]
     more = auto.main(args[:-4] + ["--limit", "3", "--max_length", "16"])     # another limit is another evaluation
     assert len(more) == 5

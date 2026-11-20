@@ -16,7 +16,7 @@ def shard(path, first, n_tokens, doc_len=50, vocab=256):
     offsets = np.arange(0, n_tokens, doc_len, dtype=np.int64)
     np.save(path / "offsets.npy", offsets)
     (path / "meta.json").write_text(json.dumps(dict(dtype="uint16", vocab_size=vocab, n_tokens=n_tokens,
-                                                    n_docs=len(offsets), bytes_per_token=1.0)))
+                                                    n_docs=len(offsets), bytes_per_token=1.0)), encoding="utf-8", newline="\n")
     return str(path)
 
 
@@ -84,11 +84,11 @@ def test_open_data_reads_every_form(web, tmp_path):
     assert isinstance(many, ShardSet) and len(many.paths) == 4
     spec = tmp_path / "mix.json"
     spec.write_text(json.dumps(dict(sources=dict(web=dict(paths=str(tmp_path / "web" / "*"), weight=0.75),
-                                                 code=dict(paths=[code], weight=0.25)))))
+                                                 code=dict(paths=[code], weight=0.25)))), encoding="utf-8", newline="\n")
     mix = open_data(str(spec))
     assert mix.names == ["web", "code"] and mix.p.tolist() == [0.75, 0.25]
     assert isinstance(mix.sources[0], ShardSet) and isinstance(mix.sources[1], TokenShards)
-    spec.write_text(json.dumps(dict(sources=dict(web=dict(paths=web[:2]), code=dict(paths=code, weight=1)))))
+    spec.write_text(json.dumps(dict(sources=dict(web=dict(paths=web[:2]), code=dict(paths=code, weight=1)))), encoding="utf-8", newline="\n")
     with pytest.raises(ValueError, match="every source a weight"):
         open_data(str(spec))
     with pytest.raises(ValueError, match="no packed directory"):
@@ -104,7 +104,7 @@ def test_pretraining_runs_on_a_mix_with_a_separate_library(tmp_path):
         offsets = np.arange(0, n, 100, dtype=np.int64)
         np.save(path / "offsets.npy", offsets)
         (path / "meta.json").write_text(json.dumps(dict(dtype="uint16", vocab_size=256, n_tokens=n,
-                                                        n_docs=len(offsets), bytes_per_token=1.0)))
+                                                        n_docs=len(offsets), bytes_per_token=1.0)), encoding="utf-8", newline="\n")
         return str(path)
 
     for i in range(3):
@@ -112,11 +112,11 @@ def test_pretraining_runs_on_a_mix_with_a_separate_library(tmp_path):
     ja, library = text(tmp_path / "ja", 4000), text(tmp_path / "library", 2000)
     spec = tmp_path / "mix.json"
     spec.write_text(json.dumps(dict(sources=dict(en=dict(paths=str(tmp_path / "en" / "*"), weight=0.6),
-                                                 ja=dict(paths=ja, weight=0.4)))))
+                                                 ja=dict(paths=ja, weight=0.4)))), encoding="utf-8", newline="\n")
     common = ["--preset", "tiny", "--data", str(spec), "--steps", "6", "--eval_every", "3", "--search", "0",
               "--seq", "32", "--batch", "4", "--device", "cpu"]
     with pytest.raises(ValueError, match="--datastore_data"):
         pretrain.main(common + ["--datastore_chunks", "50", "--out", str(tmp_path / "bad")])
     pretrain.main(common + ["--datastore_chunks", "50", "--datastore_data", library, "--out", str(tmp_path / "run")])
-    log = [json.loads(line) for line in open(tmp_path / "run" / "log.jsonl")]
+    log = [json.loads(line) for line in open(tmp_path / "run" / "log.jsonl", encoding="utf-8")]
     assert log[-2]["event"] == "eval" and log[-2]["step"] == 6 and np.isfinite(log[-2]["val_bits_per_token"])

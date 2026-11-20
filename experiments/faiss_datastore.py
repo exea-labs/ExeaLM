@@ -73,7 +73,7 @@ def main():
     text = json.dumps(result, indent=2)
     print(text)
     if a.out:
-        with open(a.out, 'w') as f:
+        with open(a.out, 'w', encoding="utf-8", newline="\n") as f:
             f.write(text + '\n')
 
 
