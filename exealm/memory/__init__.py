@@ -17,7 +17,7 @@ class MemoryContext:
     doc_ids:     (B, T) the document id of every position, so retrieval never returns the document being read
     swarm_size:  consecutive batch rows that form one swarm and share one in-batch board (AG circuits)
     board:       a persistent AgentBoard (inference, multi-agent post-training); None during pretraining
-    agent_ids:   (B,) which agent each row is, for posting to and reading from the persistent board
+    agent_ids:   (B,) integer author IDs for the persistent board and optional in-batch identity signals
     write_board: post this pass's messages to the persistent board
     board_prior: the first row of each swarm is an agent that has already finished reading: its posts are visible to
                  the other rows from their first token, and it hears no one (training for notes written ahead of time)

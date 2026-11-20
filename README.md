@@ -254,7 +254,7 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [ ] Weight-alter with 4 agents (three writers editing one reader) and with a later layer as the target (`wa_target`)
 - [ ] In the combined 0.1B model with `wa_key="hidden"` the relay went through weight edits alone and the board was unused (1 seed). Does that hold on more seeds, and does the board come back when the facts are longer than one chunk?
 - [ ] A relay built from real text (one agent reads a paragraph, another answers about it), to compare the board and weight-alter outside the toy task
-- [ ] Agent identity: a role or id signal on posts so agents can specialize
+- [x] Agent identity: opt-in learned author signals on board posts ([usage](docs/memory.md#agent-identity))
 - [ ] Retrieval division of labor: do agents in a swarm pull different chunks? Try rewarding it
 - [ ] Swarm-aware multi-GPU training, keeping each swarm on one GPU (testable on a CPU with two processes)
 - [ ] Swarm SFT data: split-information tasks built from multi-hop QA. This also fills the "tool use and agentic" gap in [DATA.md](DATA.md)

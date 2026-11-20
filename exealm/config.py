@@ -55,6 +55,7 @@ class ModelConfig:
     swarm_size: int = 4              # agents that share one board (a swarm); a training batch holds many swarms
     board_read_self: bool = True     # may an agent read its own earlier posts?
     board_chunk: int = 0             # AG posts once per this many tokens (0: every `chunk`, like RG)
+    board_identity_size: int = 0     # number of author IDs with learned AG value signals (0: disabled)
     wa_target: int = -1              # WA (weight alter): the layer whose MLP it changes (-1: the one after its own layer)
     wa_matrix: str = "out"           # which matrix of the target MLP a WA slot changes: its output ("out") or input ("in")
     wa_key: str = "learned"      # "hidden": the key is the target MLP's own activation in the writer's chunk
