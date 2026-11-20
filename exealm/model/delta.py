@@ -43,10 +43,11 @@ def _unit_lower_solve(L, R):
     try:
         return torch.linalg.solve_triangular(L, R, upper=False, unitriangular=True)
     except (NotImplementedError, RuntimeError):                           # a backend without it: forward substitution
-        X = torch.zeros_like(R)
-        for t in range(L.shape[-1]):
-            X[..., t, :] = R[..., t, :] - (L[..., t, :t].unsqueeze(-2) @ X[..., :t, :]).squeeze(-2)
-        return X
+        rows = [R[..., 0, :]]
+        for t in range(1, L.shape[-1]):
+            previous = torch.stack(rows, dim=-2)
+            rows.append(R[..., t, :] - (L[..., t, :t].unsqueeze(-2) @ previous).squeeze(-2))
+        return torch.stack(rows, dim=-2)
 
 
 def chunk_gated_delta(q, k, v, g, beta, chunk=64):

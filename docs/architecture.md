@@ -55,11 +55,18 @@ Since 20 × 32 = 640 = the model width, the two projections cost the same as att
 | RP | rotary attention | ordinary attention, one head of 32 channels |
 | SM | selective state space | Mamba-like memory |
 | OS | oscillating memory | S4D-like, picks up periodic patterns |
+| GD | gated delta rule with a matrix state per slot | update a value by key and read it by query |
 | RG | retrieval from the datastore | the model's own RAG ([memory.md](memory.md)) |
 | AG | agent board, read and write | talking to other agents ([memory.md](memory.md)) |
 
 Each slot also has a time lag (from 0 to 128) and a decay per channel (how fast it forgets), both set when the circuit
 is placed. The decay is then learned.
+
+Append `GD` to `menu` in a pretraining `--config` JSON file to let the search try it. The slot takes keys, values,
+and queries from A, B, and C. Its existing decay vector serves as a learned direction for the forget gate on A and
+the write gate on B. Its existing scalar supplies the write bias. `GD` uses the chunked recurrence from `delta.py`
+with one causal matrix state per slot and adds no parameters. The search cost includes the chunk solve and matrix
+state products. See the [tiny comparison](../results/README.md#16-gated-deltanet-in-the-tonn-search-menu).
 
 ## The search (`exealm/model/search.py`)
 

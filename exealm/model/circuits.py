@@ -13,6 +13,7 @@ import torch
 import torch.nn.functional as F
 
 from .common import rotate
+from .delta import chunk_gated_delta
 from .scan import decay_scan, gated_scan
 
 # type: (streams used, uses a lag, uses decays, what it computes)
@@ -29,6 +30,7 @@ CIRCUITS = {
     "RP": (3, True, False, "rotary attention: softmax_j(rot(A_t) . rot(B[j - lag])) C_j over j <= t"),
     "SM": (3, False, True, "selective state space (Mamba-like): s_t = exp(-dt_t a) s_{t-1} + dt_t A_t, dt = softplus(B)"),
     "OS": (2, False, True, "oscillating memory (S4D-like): complex z_t = r e^{iw} z_{t-1} + A_t, times silu(B_t)"),
+    "GD": (3, False, True, "gated delta-rule memory: query and write to a matrix state (delta.py)"),
     "RG": (3, False, False, "retrieval from the read-only datastore, with the model's own embeddings (retrieval.py)"),
     "AG": (3, False, False, "agent board: post messages, read other agents' messages (board.py)"),
     "WA": (3, False, False, "weight alter: change a weight matrix of this agent or of its swarm (alter.py); "
@@ -63,9 +65,23 @@ def oscillating_memory(u, lam):
     return torch.stack([z.real, z.imag], -1).reshape(B, T, g, h).to(dtype)
 
 
-def run(t, S, lags, lam, beta):
+def gated_delta_slot(key, value, query, direction, write_bias, chunk):
+    """Run one matrix state per slot using a shared learned direction to read the two gates."""
+    h = key.shape[-1]
+    dtype = value.dtype
+    with torch.autocast(device_type=key.device.type, enabled=False):
+        k, v, q = (u.transpose(1, 2).float() for u in (key, value, query))  # (B, g, T, h)
+        direction = direction.float().unsqueeze(1) / math.sqrt(h)
+        log_decay = -F.softplus((k * direction).sum(-1) - 2)
+        write = torch.sigmoid((v * direction).sum(-1) + write_bias.float().unsqueeze(-1))
+        q, k = F.normalize(q, dim=-1) / math.sqrt(h), F.normalize(k, dim=-1)
+        out = chunk_gated_delta(q, k, v, log_decay, write, chunk=min(chunk, key.shape[1]))
+    return out.transpose(1, 2).to(dtype)
+
+
+def run(t, S, lags, lam, beta, *, chunk=64):
     """Run g slots of type t. S: [A, B, C] each (batch, T, g, h); lags (g,); lam (g, h) decays in (-1, 1); beta (g,)
-    attention sharpness. Returns (batch, T, g, h)."""
+    attention sharpness. GD uses lam as a gate direction and beta as a write bias. Returns (batch, T, g, h)."""
     A, Bs, Cs = S
     Bn, T, g, h = A.shape
     flat = lambda u: u.reshape(Bn, T, g * h)
@@ -103,4 +119,6 @@ def run(t, S, lags, lam, beta):
         return back(gated_scan(flat(dt * A), flat(decay))) * F.silu(Cs)
     if t == "OS":
         return oscillating_memory(A, lam) * F.silu(Bs)
+    if t == "GD":
+        return gated_delta_slot(A, Bs, Cs, lam, beta, chunk)
     raise ValueError(f"unknown circuit type {t}")

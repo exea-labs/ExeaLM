@@ -15,8 +15,7 @@ Every number here is a starting point, not a decision: changing them is one of t
 import json
 from dataclasses import asdict, dataclass, field, replace
 
-# Every circuit type a slot can hold (exealm/model/circuits.py). RG and AG are the memory circuits:
-# RG reads from the read-only datastore, AG reads and writes the agent board.
+# Default search menu (exealm/model/circuits.py). Append "GD" to let search try gated delta-rule slots.
 MENU = ("D", "I", "GI", "M", "MI", "MIM", "EP", "G", "C", "RP", "SM", "OS", "RG", "AG")
 LAGS = (0, 1, 2, 3, 4, 6, 8, 12, 16, 32, 64, 128)
 

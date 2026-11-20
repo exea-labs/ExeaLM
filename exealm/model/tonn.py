@@ -60,6 +60,9 @@ def slot_cost(spec, cfg, T):
     proj = 3 * d * h + h * d
     if t == "RP":
         return proj + 2 * h * T
+    if t == "GD":
+        # Per token: chunk dot products and triangular solves, plus three products with the matrix state.
+        return proj + 4 * min(cfg.chunk, T) * h + 3 * h * h + 6 * h
     if t == "RG":
         e, k, Lc = cfg.enc_dim, cfg.rag_topk, cfg.rag_chunk_len
         return proj + k * Lc * (d * e + 4 * e * e + 2 * e * h) / cfg.chunk + 2 * k * Lc * h
@@ -79,8 +82,8 @@ class TONNLayer(nn.Module):
         self.norm = RMSNorm(d)
         self.inp = nn.Linear(d, K * 3 * h)
         self.out = nn.Linear(K * h, d, bias=False)
-        self.lam = nn.Parameter(torch.zeros(K, h))        # decays, through tanh(3 lam)
-        self.beta = nn.Parameter(torch.ones(K))           # attention sharpness
+        self.lam = nn.Parameter(torch.zeros(K, h))        # decays or GD gate direction, through tanh(3 lam)
+        self.beta = nn.Parameter(torch.ones(K))           # attention sharpness or GD write bias
         self.register_buffer("mask", torch.ones(K))       # 0 switches a slot off (worth measurement)
         self.register_buffer("scale", torch.zeros(K))     # running output size per slot (0: not measured yet)
         self.rg = RetrievalCircuit(cfg)
@@ -146,7 +149,7 @@ class TONNLayer(nn.Module):
             elif t == "WA":
                 y = self.wa(S, mem, self, slots)
             else:
-                y = Cc.run(t, S, pl["lags"][a:c], lam[a:c], beta[a:c])
+                y = Cc.run(t, S, pl["lags"][a:c], lam[a:c], beta[a:c], chunk=self.cfg.chunk)
             outs.append(y)
         y = torch.cat(outs, 2) if len(outs) > 1 else outs[0]
         y = self._unit_scale(y, o) * self.mask.index_select(0, o).view(1, 1, -1, 1)
