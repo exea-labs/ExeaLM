@@ -20,14 +20,15 @@ Data: one task per line of a .jsonl or .jsonl.gz file (exealm/data/post.py write
             This RUNS MODEL-WRITTEN CODE. It is refused unless you pass --allow_code_exec, and you should only
             pass that inside a container or a throwaway VM.
 
-One step: pick --prompts tasks, sample --group answers for each (one generate call per task, so every row of a call
-has the same prompt and no padding), score them, then take --epochs optimizer steps on those rows. A frozen copy of
-the starting model is the reference for the KL term. An answer that reaches <|im_end|> is scored with that token, so
-the model also learns when to stop.
+One step: pick --prompts tasks, sample --group attempts for each in one generate call, score them, then take --epochs
+optimizer steps on those rows. A frozen copy of the starting model is the reference for the KL term. An answer that
+reaches <|im_end|> includes that token in the policy loss, so the model also learns when to stop.
+
+With --swarm N (N > 1), each task has an "agents" list of N prompt or messages objects in agent order, alongside its
+top-level "answer" and "reward". Each attempt is a whole swarm with its own board. The completion of --answer_agent
+(zero-based, default 0) earns one reward, and every agent trains on the resulting attempt advantage.
 
   TODO(post-training): rewards for format and Japanese tasks; instruction-following constraints (RLVR).
-  TODO(post-training): multi-agent rewards: a swarm of agents shares a board and is rewarded together for solving a
-                       task none could solve alone. This is how the AG circuits learn to talk (docs/swarms.md).
 """
 import argparse
 import copy
@@ -43,11 +44,15 @@ import re
 import numpy as np
 import torch
 
+from ..memory import MemoryContext
+from .sft import ROLE, pad_batch
 
-def group_advantages(rewards, group_size, eps=1e-6):
-    """rewards (N,) with N = prompts * group_size, grouped consecutively."""
+
+def group_advantages(rewards, group_size, eps=1e-6, swarm=1):
+    """Normalize one reward per attempt within its task, then give that advantage to every agent in the attempt."""
     r = rewards.float().view(-1, group_size)
-    return ((r - r.mean(1, keepdim=True)) / (r.std(1, keepdim=True) + eps)).view(-1)
+    adv = ((r - r.mean(1, keepdim=True)) / (r.std(1, keepdim=True) + eps)).view(-1)
+    return adv.repeat_interleave(swarm) if swarm > 1 else adv
 
 
 def grpo_loss(logp, logp_old, logp_ref, adv, mask, clip=0.2, beta=0.04):
@@ -62,10 +67,10 @@ def grpo_loss(logp, logp_old, logp_ref, adv, mask, clip=0.2, beta=0.04):
     return ((per_tok * mask).sum(1) / mask.sum(1).clamp(min=1)).mean()
 
 
-def token_logprobs(model, ids, mem=None):
+def token_logprobs(model, ids, mem=None, temperature=1.0):
     """Log-prob of each token of ids (N, T) given the ones before it: (N, T-1)."""
     logits = model(ids[:, :-1], mem)[0].float()
-    return torch.log_softmax(logits, -1).gather(-1, ids[:, 1:].unsqueeze(-1)).squeeze(-1)
+    return torch.log_softmax(logits / temperature, -1).gather(-1, ids[:, 1:].unsqueeze(-1)).squeeze(-1)
 
 
 def reward_exact_answer(completion, answer):
@@ -139,8 +144,16 @@ def reward_code(completion, tests, timeout=5.0):
 REWARDS = dict(math=reward_math, exact=reward_exact, code=reward_code)
 
 
-def load_tasks(path):
-    """[(messages, answer, reward name)] from a .jsonl or .jsonl.gz file; unreadable lines are skipped and counted."""
+def _read_prompt(rec):
+    msgs = ([dict(role=m["role"], content=m["content"]) for m in rec["messages"]] if "messages" in rec
+            else [dict(role="user", content=rec["prompt"])])
+    if not msgs or not all(m["role"] in ROLE and isinstance(m["content"], str) for m in msgs):
+        raise ValueError("expected a nonempty prompt with valid roles and string content")
+    return msgs
+
+
+def load_tasks(path, swarm=1):
+    """Read (prompt or agent prompts, answer, reward name) triples. Skip and count malformed records."""
     out, skipped = [], 0
     with (gzip.open(path, "rt", encoding="utf-8") if path.endswith(".gz") else open(path, encoding="utf-8")) as f:
         for line in f:
@@ -148,11 +161,15 @@ def load_tasks(path):
                 continue
             try:
                 rec = json.loads(line)
-                msgs = ([dict(role=m["role"], content=m["content"]) for m in rec["messages"]] if "messages" in rec
-                        else [dict(role="user", content=rec["prompt"])])
+                if swarm > 1:
+                    agents = rec["agents"]
+                    if not isinstance(agents, list) or len(agents) != swarm:
+                        raise ValueError("wrong number of agents")
+                    msgs = [_read_prompt(agent) for agent in agents]
+                else:
+                    msgs = _read_prompt(rec)
                 answer, name = rec["answer"], rec.get("reward", "math")
-                ok = bool(msgs) and all(isinstance(m["content"], str) for m in msgs) and isinstance(answer, str) \
-                    and answer.strip() != "" and name in REWARDS
+                ok = isinstance(answer, str) and answer.strip() != "" and name in REWARDS
             except (KeyError, TypeError, ValueError):
                 ok = False
             if ok:
@@ -165,25 +182,45 @@ def load_tasks(path):
 def sample_group(model, tok, task, group, max_new_tokens, temperature, generator=None):
     """`group` sampled answers to one task. Returns [(ids, mask, text)]: ids is the prompt, the answer and, if the
     answer ended by itself, <|im_end|>; mask is 1 on the answer's tokens (the ending included)."""
+    attempts = _sample_attempts(model, tok, [task[0]], group, max_new_tokens, temperature, generator)
+    return [attempt[0] for attempt in attempts]
+
+
+def sample_swarm_group(model, tok, task, group, max_new_tokens, temperature, generator=None):
+    """Return attempts in sampling order, each with one (ids, mask, text) row per agent in task order."""
+    return _sample_attempts(model, tok, task[0], group, max_new_tokens, temperature, generator)
+
+
+def _sample_attempts(model, tok, messages, group, max_new_tokens, temperature, generator):
     from ..chat import chat_prompt
     from ..generate import generate
     end = tok.token_to_id("<|im_end|>")
-    prompt = chat_prompt(task[0], tok)
+    prompts = [chat_prompt(msgs, tok) for msgs in messages]
+    swarm, width = len(prompts), max(map(len, prompts))
+    prompts = [[end] * (width - len(p)) + p for p in prompts]       # keep the generation positions for replay
     was_training = model.training
     model.eval()
-    new = generate(model, [prompt] * group, max_new_tokens, temperature=temperature, stop=[end], pad=end,
-                   generator=generator)
-    model.train(was_training)
-    out = []
-    for c in new:
+    try:
+        new = generate(model, prompts * group, max_new_tokens, temperature=temperature, stop=[end], pad=end,
+                       mem=MemoryContext(swarm_size=swarm), generator=generator)
+    finally:
+        model.train(was_training)
+    rows = []
+    for prompt, c in zip(prompts * group, new):
         scored = c + [end] if len(c) < max_new_tokens else c       # shorter than the limit: it stopped by itself
-        out.append((prompt + scored, [0] * len(prompt) + [1] * len(scored), tok.decode(c)))
-    return out
+        rows.append((prompt + scored, [0] * width + [1] * len(scored), tok.decode(c)))
+    return [rows[i:i + swarm] for i in range(0, len(rows), swarm)]
 
 
 @torch.no_grad()
-def evaluate(model, tok, tasks, max_new_tokens, batch=16):
+def evaluate(model, tok, tasks, max_new_tokens, batch=16, swarm=1, answer_agent=0):
     """Mean reward of the most likely answer (temperature 0) to each task."""
+    if swarm > 1:
+        total = 0.0
+        for task in tasks:
+            attempt, = sample_swarm_group(model, tok, task, 1, max_new_tokens, temperature=0)
+            total += REWARDS[task[2]](attempt[answer_agent][2], task[1])
+        return total / len(tasks)
     from ..chat import chat_prompt
     from ..generate import generate
     end = tok.token_to_id("<|im_end|>")
@@ -206,7 +243,6 @@ def main(argv=None):
     from ..hub import build_model
     from ..model import ExeaLM, count_params
     from .pretrain import make_optimizer, pick_device, save
-    from .sft import ROLE, pad_batch
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--ckpt", required=True, help="the checkpoint to start from; a frozen copy is the reference")
     ap.add_argument("--tokenizer", default="tokenizer", help="the tokenizer the checkpoint was trained with")
@@ -215,8 +251,10 @@ def main(argv=None):
     ap.add_argument("--val_frac", type=float, default=0.05)
     ap.add_argument("--steps", type=int, default=500)
     ap.add_argument("--prompts", type=int, default=8, help="tasks per step")
-    ap.add_argument("--group", type=int, default=8, help="sampled answers per task")
-    ap.add_argument("--epochs", type=int, default=2, help="optimizer steps on each batch of sampled answers")
+    ap.add_argument("--group", type=int, default=8, help="sampled attempts per task")
+    ap.add_argument("--swarm", type=int, default=1, help="agents per attempt (1 takes solo tasks)")
+    ap.add_argument("--answer_agent", type=int, default=0, help="zero-based agent whose answer determines the reward")
+    ap.add_argument("--epochs", type=int, default=2, help="optimizer steps on each batch of sampled attempts")
     ap.add_argument("--max_new_tokens", type=int, default=256)
     ap.add_argument("--temperature", type=float, default=1.0)
     ap.add_argument("--clip_ratio", type=float, default=0.2)
@@ -230,6 +268,12 @@ def main(argv=None):
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", default="runs/grpo")
     a = ap.parse_args(argv)
+    if a.swarm < 1 or not 0 <= a.answer_agent < a.swarm:
+        ap.error("--swarm must be positive and --answer_agent must be in [0, --swarm)")
+    if a.group < 2 or min(a.prompts, a.epochs, a.max_new_tokens) < 1:
+        ap.error("--group must be at least 2 and --prompts, --epochs and --max_new_tokens must be positive")
+    if a.swarm > 1 and (not np.isfinite(a.temperature) or a.temperature <= 0):
+        ap.error("swarm training requires finite, positive --temperature for sampling")
 
     from ..data.tokenizer import load
     torch.manual_seed(a.seed)
@@ -238,29 +282,33 @@ def main(argv=None):
     tok = load(a.tokenizer)
     ck = torch.load(a.ckpt, map_location="cpu", weights_only=False)
     model = build_model(ck)
+    if a.swarm > 1 and (not isinstance(model, ExeaLM) or not any("AG" in layer for layer in model.architecture())):
+        raise ValueError("swarm GRPO requires an ExeaLM checkpoint with an AG board circuit")
     if tok.get_vocab_size() != model.cfg.vocab_size:
         raise ValueError(f"the tokenizer has {tok.get_vocab_size()} tokens but the checkpoint was trained with "
                          f"{model.cfg.vocab_size}")
     for t in ("<|im_start|>", "<|im_end|>", "<|pad|>", *ROLE.values()):
         if tok.token_to_id(t) is None:
             raise ValueError(f"the tokenizer has no {t} token (train it with exealm.data.tokenizer)")
-    pad = tok.token_to_id("<|pad|>")
-    tasks, skipped = load_tasks(a.data)
-    if any(t[2] == "code" for t in tasks) and not a.allow_code_exec:
-        raise ValueError("these tasks use the \"code\" reward, which runs model-written code: pass --allow_code_exec, "
-                         "inside a container or a throwaway VM only")
+    mem = MemoryContext(swarm_size=a.swarm) if a.swarm > 1 else None
+    pad = tok.token_to_id("<|im_end|>" if mem is not None else "<|pad|>")
+    tasks, skipped = load_tasks(a.data, a.swarm)
     if a.val:
-        train, val = tasks, load_tasks(a.val)[0]
+        train, val = tasks, load_tasks(a.val, a.swarm)[0]
     else:
         n_val = max(1, int(len(tasks) * a.val_frac))
         train, val = tasks[:-n_val], tasks[-n_val:]
+    if not a.allow_code_exec and any(t[2] == "code" for split in (train, val) for t in split):
+        raise ValueError("these tasks use the \"code\" reward, which runs model-written code: pass --allow_code_exec, "
+                         "inside a container or a throwaway VM only")
     if not train or not val:
         raise ValueError("no usable tasks: each needs a prompt, an answer and a known reward")
     model = model.to(dev)
     ref = copy.deepcopy(model).eval()
     for p in ref.parameters():
         p.requires_grad_(False)
-    model.train()
+    # Keep the running circuit scales fixed from sampling through all swarm policy updates.
+    model.train(mem is None)
     kind = "tonn" if isinstance(model, ExeaLM) else "llama"
     gen = torch.Generator(device=dev).manual_seed(a.seed)
 
@@ -272,38 +320,48 @@ def main(argv=None):
         log.write(json.dumps(rec) + "\n")
         log.flush()
 
+    def val_reward():
+        return round(evaluate(model, tok, val, a.max_new_tokens, swarm=a.swarm, answer_agent=a.answer_agent), 4)
+
+    swarm_log = dict(swarm_size=a.swarm, answer_agent=a.answer_agent) if mem is not None else {}
     emit(dict(event="start", model=kind, params=count_params(model), device=str(dev), tasks=len(train),
-              val_tasks=len(val), skipped_lines=skipped, val_reward=round(evaluate(model, tok, val, a.max_new_tokens), 4)))
+              val_tasks=len(val), skipped_lines=skipped, val_reward=val_reward(), **swarm_log))
     opt = make_optimizer(model, a.lr, a.wd)
-    amp = dict(device_type="cuda", dtype=torch.bfloat16) if dev.type == "cuda" else None
+    amp = dict(device_type="cuda", dtype=torch.bfloat16) if dev.type == "cuda" and mem is None else None
+    policy_temperature = a.temperature if mem is not None else 1.0
     seen, t0 = [], time.time()
     for step in range(a.steps):
         rows, rewards = [], []
         for k in rng.choice(len(train), size=min(a.prompts, len(train)), replace=False):
             task = train[int(k)]
-            for ids, mask, text in sample_group(model, tok, task, a.group, a.max_new_tokens, a.temperature, gen):
-                rows.append((ids, mask))
-                rewards.append(REWARDS[task[2]](text, task[1]))
+            messages = task[0] if mem is not None else [task[0]]
+            attempts = _sample_attempts(model, tok, messages, a.group, a.max_new_tokens, a.temperature, gen)
+            for attempt in attempts:
+                rows.extend((ids, mask) for ids, mask, _ in attempt)
+                rewards.append(REWARDS[task[2]](attempt[a.answer_agent][2], task[1]))
         ids, mask = pad_batch(rows, pad)
         ids, mask = ids.to(dev), mask.to(dev)[:, 1:]
-        adv = group_advantages(torch.tensor(rewards), a.group).to(dev)
+        adv = group_advantages(torch.tensor(rewards), a.group, swarm=a.swarm).to(dev)
         with torch.no_grad():
-            logp_old, logp_ref = token_logprobs(model, ids), token_logprobs(ref, ids)
+            logp_old = token_logprobs(model, ids, mem, policy_temperature)
+            logp_ref = token_logprobs(ref, ids, mem, policy_temperature)
         for _ in range(a.epochs):
             with torch.autocast(**amp) if amp else torch.enable_grad():
-                loss = grpo_loss(token_logprobs(model, ids), logp_old, logp_ref, adv, mask, a.clip_ratio, a.beta)
+                logp = token_logprobs(model, ids, mem, policy_temperature)
+                loss = grpo_loss(logp, logp_old, logp_ref, adv, mask, a.clip_ratio, a.beta)
             opt.zero_grad(set_to_none=True)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), a.clip)
             opt.step()
-        seen.append((sum(rewards) / len(rewards), float(mask.sum(1).float().mean())))
+        answer_tokens = mask[a.answer_agent::a.swarm].sum(1).float().mean()
+        seen.append((sum(rewards) / len(rewards), float(answer_tokens)))
         if (step + 1) % a.eval_every == 0 or step + 1 == a.steps:
             emit(dict(event="eval", step=step + 1, sampled_reward=round(sum(r for r, _ in seen) / len(seen), 4),
                       answer_tokens=round(sum(n for _, n in seen) / len(seen), 1),
-                      val_reward=round(evaluate(model, tok, val, a.max_new_tokens), 4), secs=round(time.time() - t0, 1)))
+                      val_reward=val_reward(), secs=round(time.time() - t0, 1)))
             seen = []
     save(os.path.join(a.out, "model.pt"), model, opt, a.steps, model.cfg, kind)
-    return model
+    return model.train()
 
 
 if __name__ == "__main__":

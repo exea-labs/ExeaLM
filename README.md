@@ -259,7 +259,7 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [ ] Swarm-aware multi-GPU training, keeping each swarm on one GPU (testable on a CPU with two processes)
 - [ ] Swarm SFT data: split-information tasks built from multi-hop QA. This also fills the "tool use and agentic" gap in [DATA.md](DATA.md)
 - [ ] Swarm SFT loop: loss on the answering agent, trained through the board (test on the `tiny` preset)
-- [ ] Swarm RL (GRPO): whole-swarm attempts with a shared reward (test on the `tiny` preset)
+- [x] Swarm RL (GRPO): whole-swarm attempts with a shared reward (tested on the `tiny` preset, [usage](docs/swarms.md#swarm-grpo))
 - [ ] Swarm task suite: split-information QA, divide-and-conquer math, write-and-test code, propose-and-check, cross-lingual QA
 - [x] Swarm generation: all agents generate in lockstep in one batch (`exealm/generate.py`: one new token per agent per step, each agent stops on its own, the swarm shares the in-batch board)
 - [x] Board server so agents on different machines share one board (HTTP: `python -m exealm.memory.board_server`, `RemoteAgentBoard`; [docs/memory.md](docs/memory.md), [#35](https://github.com/exea-labs/ExeaLM/issues/35)). One server process, boards live in memory
