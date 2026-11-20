@@ -914,9 +914,9 @@ Seeds 0, 1 and 2, about a minute each. Every search record in the log now carrie
 
 ![Circuits in each TONN layer after every search round, seeds 0 to 2](search_arch/search_arch.png)
 
-All three runs start from the same circuits. `--seed` changes the weights, the batches and the search's random draws,
-but not the starting circuits: `exealm/train/pretrain.py` leaves `cfg.seed` at 0 (`experiments/tokenizer_lm.py` passes
-its seed to the config instead).
+All three runs start from the same circuits. When they ran, `--seed` changed the weights, the batches and the search's
+random draws, but not the starting circuits: `exealm/train/pretrain.py` left `cfg.seed` at 0. Since commit dda032d,
+`--seed` also draws the starting circuits, so the commands below now start each seed from different circuits.
 
 | | Slots replaced | Layer 0 | Layer 1 | Validation bits per token |
 |---|---|---|---|---|
