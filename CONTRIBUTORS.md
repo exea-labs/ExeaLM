@@ -12,3 +12,4 @@ People who have worked on ExeaLM. After your first merged contribution, add your
 <!-- Add yourself below: Name (@github-handle), area (data, architecture, training, evals, docs, community) -->
 
 - Eknoor Ahluwalia (@eknoorahluwalia1), docs
+- Jasraj Tulsi (@jaztulsi), architecture, docs
