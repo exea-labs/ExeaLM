@@ -45,6 +45,9 @@ class WeightAlter(nn.Module):
         if not cfg.ffn_width:
             raise ValueError("the weight-alter circuit edits an MLP: the model needs one (ffn != 0)")
         self.chunk, self.scope, self.target = cfg.board_chunk or cfg.chunk, cfg.wa_scope, cfg.wa_target
+        self.persist = getattr(cfg, "wa_persist", 0.0)
+        if self.persist and cfg.swarm_size != 1:
+            raise ValueError("wa_persist carries one row's weight change to its next window: it needs swarm_size 1")
         if cfg.wa_matrix not in ("out", "in"):
             raise ValueError("wa_matrix must be 'out' or 'in'")
         self.matrix = cfg.wa_matrix
@@ -91,18 +94,44 @@ class WeightAlter(nn.Module):
         u = self.to_u(picked(A, self.pick_u)) * strength.unsqueeze(-1)    # (B, n, g, d)
         v = F.normalize(self.to_v(picked(K, self.pick_v)), dim=-1)        # (B, n, g, f)
         raw = (u, v)
-        extra = {}
-        if self.key == "hidden":                          # the key is filled in by the target MLP (apply_edits)
-            extra = dict(key="hidden", pick=weights(self.pick_v))
-        else:
-            u, v = exact_writes(u, v)
         here = mem.cache["layer"]
         target = here if self.target < 0 else self.target
         if target < here:
             raise ValueError(f"wa_target {target} is before the emitting layer {here}")
+        stream = getattr(mem, "stream", None)
+        prior = (stream.get(("wa", target), {}).get(self.matrix)
+                 if (self.persist and stream is not None) else None)     # the change carried from earlier windows
+        extra = dict(prior=prior)
+        if self.key == "hidden":                          # the key is filled in by the target MLP (apply_edits)
+            extra.update(key="hidden", pick=weights(self.pick_v))
+        else:
+            u, v = exact_writes(correct_for_carried(u, v, prior), v)
         mem.cache.setdefault("wa", {}).setdefault(target, []).append(
             dict(u=u, v=v, raw_u=raw[0], raw_v=raw[1], matrix=self.matrix, chunk=C, swarm=sw, scope=self.scope, complete=T // C, **extra))
         return A.new_zeros(B, T, g, h)
+
+
+def correct_for_carried(u, v, prior):
+    """The delta rule across windows: a write of value u at key v is corrected for what the carried change already
+    returns at v, so writing a key again replaces what it held instead of adding to it. prior (B, rows, cols) or None."""
+    if prior is None:
+        return u
+    return u - torch.einsum("brc,bngc->bngr", prior.float(), v.float()).to(u.dtype)
+
+
+def fold_edits(carried, edits, keep):
+    """The weight change to carry into the next window: the one carried into this window plus every change written in
+    it, times keep. carried: {matrix: (B, rows, cols)} or None; returns the same for "in" and "out"."""
+    out = {}
+    for matrix in ("in", "out"):
+        total = None if carried is None else carried.get(matrix)
+        for e in edits:
+            if e["matrix"] == matrix:
+                d = torch.einsum("bngr,bngc->brc", e["u"].float(), e["v"].float())
+                total = d if total is None else total + d
+        if total is not None:
+            out[matrix] = keep * total
+    return out
 
 
 def exact_writes(u, v, floor=0.1):
@@ -157,7 +186,7 @@ def apply_edits(hidden, edits):
             hc = F.pad(hidden.float(), (0, 0, 0, n * C - T)).view(B, n, C, f)
             v = F.normalize(torch.einsum("bncg,bncf->bngf", a, hc), dim=-1)
             e["raw_v"] = v
-            e["u"], e["v"] = exact_writes(e["raw_u"], v)
+            e["u"], e["v"] = exact_writes(correct_for_carried(e["raw_u"], v, e.get("prior")), v)
             e["done"] = True
         u = e["u"].reshape(ns, -1, e["u"].shape[-1])                      # (ns, E, d)
         v = e["v"].reshape(ns, -1, f)                                     # (ns, E, f)

@@ -23,7 +23,7 @@ import torch
 
 class TokenShards:
     def __init__(self, path):
-        self.meta = json.load(open(os.path.join(path, "meta.json")))
+        self.meta = json.load(open(os.path.join(path, "meta.json"), encoding="utf-8"))
         self.tokens = np.memmap(os.path.join(path, "tokens.bin"), dtype=self.meta["dtype"], mode="r")
         self.offsets = np.load(os.path.join(path, "offsets.npy"))
 
@@ -86,7 +86,7 @@ class ShardSet:
         self.paths = sorted(paths)
         if not self.paths:
             raise ValueError("a source needs at least one packed directory")
-        metas = [json.load(open(os.path.join(p, "meta.json"))) for p in self.paths]
+        metas = [json.load(open(os.path.join(p, "meta.json"), encoding="utf-8")) for p in self.paths]
         if len({m["vocab_size"] for m in metas}) != 1:
             raise ValueError("the shards of one source must share a tokenizer (vocab_size differs)")
         self.sizes = np.array([m["n_tokens"] for m in metas], dtype=np.int64)
@@ -181,7 +181,7 @@ def open_data(spec):
     if spec == "synthetic":
         return SyntheticShards()
     if spec.endswith(".json"):
-        sources = json.load(open(spec))["sources"]
+        sources = json.load(open(spec, encoding="utf-8"))["sources"]
         weights = [s.get("weight") for s in sources.values()]
         if any(w is None for w in weights) and not all(w is None for w in weights):
             raise ValueError("give every source a weight, or none of them")

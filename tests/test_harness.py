@@ -131,13 +131,13 @@ def test_tokenizer_identity_and_checkpoint_validation(adapter, tmp_path):
         ExeaLMHarness(tmp_path / 'model.pt', tmp_path / 'wrong.json')
 
 
-def test_offline_harness_multiple_choice_task(adapter, tmp_path):
+def test_offline_harness_multiple_choice_task(adapter, tmp_path, short_cache):
     from lm_eval import simple_evaluate
     from lm_eval.api.task import ConfigurableTask
     data = tmp_path / 'task.jsonl'
-    data.write_text(json.dumps(dict(question='hello', choices=[' world', ' a'], answer=0)) + '\n')
+    data.write_text(json.dumps(dict(question='hello', choices=[' world', ' a'], answer=0)) + '\n', encoding="utf-8", newline="\n")
     task = ConfigurableTask(config=dict(task='offline_exealm', dataset_path='json',
-                                       dataset_kwargs=dict(data_files={'test': str(data)}, cache_dir=str(tmp_path / 'cache')),
+                                       dataset_kwargs=dict(data_files={'test': str(data)}, cache_dir=short_cache),
                                        test_split='test', output_type='multiple_choice',
                                        doc_to_text='{{question}}', doc_to_choice=lambda d: d['choices'],
                                        doc_to_target='{{answer}}', num_fewshot=0))
@@ -146,23 +146,23 @@ def test_offline_harness_multiple_choice_task(adapter, tmp_path):
     assert result['config']['tokenizer_sha256'] == adapter.tokenizer_hash
 
 
-def test_module_cli_writes_results_with_callable_task_metadata(adapter, tmp_path):
+def test_module_cli_writes_results_with_callable_task_metadata(adapter, tmp_path, short_cache):
     import yaml
     from exealm.eval.harness import main
     tasks = tmp_path / 'tasks'
     tasks.mkdir()
     data = tasks / 'data.jsonl'
-    data.write_text(json.dumps(dict(question='hello', choices=[' world', ' a'], answer=0)) + '\n')
-    (tasks / 'helper.py').write_text('def identity(dataset):\n    return dataset\n')
+    data.write_text(json.dumps(dict(question='hello', choices=[' world', ' a'], answer=0)) + '\n', encoding="utf-8", newline="\n")
+    (tasks / 'helper.py').write_text('def identity(dataset):\n    return dataset\n', encoding="utf-8", newline="\n")
     config = dict(task='exealm_cli_fixture', dataset_path='json',
-                  dataset_kwargs=dict(data_files={'test': str(data)}, cache_dir=str(tasks / 'cache')),
+                  dataset_kwargs=dict(data_files={'test': str(data)}, cache_dir=short_cache),
                   test_split='test', output_type='multiple_choice', doc_to_text='question',
                   doc_to_target='answer', doc_to_choice='choices', num_fewshot=0)
-    (tasks / 'fixture.yaml').write_text(yaml.safe_dump(config) + '\nprocess_docs: !function helper.identity\n')
+    (tasks / 'fixture.yaml').write_text(yaml.safe_dump(config) + '\nprocess_docs: !function helper.identity\n', encoding="utf-8", newline="\n")
     output = tmp_path / 'result.json'
     main(['--ckpt', str(tmp_path / 'model.pt'), '--tokenizer', str(tmp_path),
           '--tasks', 'exealm_cli_fixture', '--include_path', str(tasks), '--limit', '1',
           '--max_length', '16', '--out', str(output)])
-    saved = json.loads(output.read_text())
+    saved = json.loads(output.read_text(encoding="utf-8"))
     assert saved['results']['exealm_cli_fixture']['acc,none'] in (0., 1.)
     assert 'identity' in saved['configs']['exealm_cli_fixture']['process_docs']

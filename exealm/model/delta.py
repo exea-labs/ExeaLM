@@ -43,16 +43,18 @@ def _unit_lower_solve(L, R):
     try:
         return torch.linalg.solve_triangular(L, R, upper=False, unitriangular=True)
     except (NotImplementedError, RuntimeError):                           # a backend without it: forward substitution
-        X = torch.zeros_like(R)
-        for t in range(L.shape[-1]):
-            X[..., t, :] = R[..., t, :] - (L[..., t, :t].unsqueeze(-2) @ X[..., :t, :]).squeeze(-2)
-        return X
+        rows = [R[..., 0, :]]
+        for t in range(1, L.shape[-1]):
+            previous = torch.stack(rows, dim=-2)
+            rows.append(R[..., t, :] - (L[..., t, :t].unsqueeze(-2) @ previous).squeeze(-2))
+        return torch.stack(rows, dim=-2)
 
 
-def chunk_gated_delta(q, k, v, g, beta, chunk=64):
+def chunk_gated_delta(q, k, v, g, beta, chunk=64, state=None, return_state=False):
     """The same recurrence, chunk by chunk. Inside a chunk, with gamma_t the product of the gates so far, the update
     values u_t solve a unit lower-triangular system, so a chunk costs a few (chunk x chunk) matrix products and one
-    triangular solve; only the chunks run in sequence. Shapes as gated_delta_reference."""
+    triangular solve; only the chunks run in sequence. Shapes as gated_delta_reference. state (B, H, Dk, Dv): the matrix
+    the previous window ended with (default zeros); return_state also returns the matrix this one ends with."""
     B, H, T, Dk = q.shape
     Dv = v.shape[-1]
     dtype = v.dtype
@@ -73,14 +75,15 @@ def chunk_gated_delta(q, k, v, g, beta, chunk=64):
     U0 = _unit_lower_solve(L, beta.unsqueeze(-1) * v)                   # (I + A)^-1 diag(beta) V
     W = _unit_lower_solve(L, (beta * lg.exp()).unsqueeze(-1) * k)       # (I + A)^-1 diag(beta gamma) K
     QK = (q @ k.transpose(-1, -2)) * torch.where(incl, diff, neg).exp()
-    P = q.new_zeros(B, H, Dk, Dv)
+    P = q.new_zeros(B, H, Dk, Dv) if state is None else state.float()
     outs = []
     for n in range(N):
         U = U0[:, :, n] - W[:, :, n] @ P                                # the update values u_t of this chunk
         outs.append((lg[:, :, n].exp().unsqueeze(-1) * q[:, :, n]) @ P + QK[:, :, n] @ U)
         tail = (lg[:, :, n, -1:] - lg[:, :, n]).exp().unsqueeze(-1)     # gamma_C / gamma_j
         P = lg[:, :, n, -1].exp()[..., None, None] * P + k[:, :, n].transpose(-1, -2) @ (tail * U)
-    return torch.stack(outs, 2).reshape(B, H, N * C, Dv)[:, :, :T].to(dtype)
+    out = torch.stack(outs, 2).reshape(B, H, N * C, Dv)[:, :, :T].to(dtype)
+    return (out, P) if return_state else out
 
 
 class GatedDeltaNet(nn.Module):
@@ -101,15 +104,33 @@ class GatedDeltaNet(nn.Module):
         self.onorm = RMSNorm(self.D)
         self.out = nn.Linear(d, d, bias=False)
 
-    def forward(self, x):
+    def forward(self, x, ctx=None):
+        """ctx: as for Attention. With ctx["stream"] (a text read window by window, docs/brain.md) the short
+        convolution also reads the last positions of the window before, and the matrix state starts where it ended."""
         Bn, T, d = x.shape
         h = self.norm(x)
-        qkv = F.silu(self.conv(self.qkv(h).transpose(1, 2))[..., :T].transpose(1, 2))
+        z = self.qkv(h)
+        stream = ctx.get("stream") if ctx is not None else None
+        key = getattr(self, "stream_key", None)
+        prev, P = None, self.conv.kernel_size[0] - 1
+        if stream is not None and key is not None:
+            prev = stream.get(key)
+            tail = prev["tail"] if prev is not None else z.new_zeros(Bn, P, z.shape[-1])
+            zf = torch.cat([tail.to(z.dtype), z], 1)
+            qkv = F.silu(self.conv(zf.transpose(1, 2))[..., P:P + T].transpose(1, 2))
+        else:
+            qkv = F.silu(self.conv(z.transpose(1, 2))[..., :T].transpose(1, 2))
         q, k, v = (t.reshape(Bn, T, self.H, self.D).transpose(1, 2) for t in qkv.split(d, -1))
         q, k = F.normalize(q.float(), dim=-1) / math.sqrt(self.D), F.normalize(k.float(), dim=-1)
         a, b = self.ab(h).float().split(self.H, -1)                       # (B, T, H) each
         g = (-self.A_log.float().exp() * F.softplus(a + self.dt_bias.float())).transpose(1, 2)
         beta = torch.sigmoid(b).transpose(1, 2)
-        o = chunk_gated_delta(q, k, v.float(), g, beta, self.chunk).transpose(1, 2)   # (B, T, H, D)
+        if stream is not None and key is not None:
+            o, state = chunk_gated_delta(q, k, v.float(), g, beta, self.chunk,
+                                         state=None if prev is None else prev["state"], return_state=True)
+            stream[key] = dict(tail=z[:, -P:], state=state)
+            o = o.transpose(1, 2)
+        else:
+            o = chunk_gated_delta(q, k, v.float(), g, beta, self.chunk).transpose(1, 2)   # (B, T, H, D)
         o = self.onorm(o.to(x.dtype)) * F.silu(self.gate(h)).view(Bn, T, self.H, self.D)
         return x + self.out(o.reshape(Bn, T, d))

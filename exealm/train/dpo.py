@@ -172,7 +172,7 @@ def main(argv=None):
         raise ValueError("no usable preferences: each needs a prompt and two different answers that fit --max_len")
 
     os.makedirs(a.out, exist_ok=True)
-    log = open(os.path.join(a.out, "log.jsonl"), "a")
+    log = open(os.path.join(a.out, "log.jsonl"), "a", encoding="utf-8", newline="\n")
 
     def emit(rec):
         print(json.dumps(rec), flush=True)

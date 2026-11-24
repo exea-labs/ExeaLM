@@ -16,11 +16,11 @@ def rows(dirs):
     out = []
     for d in dirs:
         for f in sorted(glob.glob(os.path.join(d, "lm_compare*.json"))):
-            for r in json.load(open(f))["rows"]:
+            for r in json.load(open(f, encoding="utf-8"))["rows"]:
                 r = dict(r)
                 r.setdefault("tag", "")
                 r.setdefault("cfg", "{}")
-                r.setdefault("lr", json.load(open(f))["args"].get("lr", 2e-3))
+                r.setdefault("lr", json.load(open(f, encoding="utf-8"))["args"].get("lr", 2e-3))
                 r["mean"] = sum(r["bits_per_byte"][k] for k in DOMS) / len(DOMS)
                 r["source"] = os.path.basename(d.rstrip("/"))
                 out.append(r)

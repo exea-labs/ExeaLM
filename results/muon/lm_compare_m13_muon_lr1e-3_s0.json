@@ -1,0 +1,82 @@
+{
+ "args": {
+  "root": "../ExeaLM-ablation/data/tokpack",
+  "toks": "bpe32k",
+  "mix": "0.5,0.3,0.2",
+  "train": "train_en,train_ja,train_code",
+  "amp": "none",
+  "steps": 3000,
+  "seconds": 0,
+  "batch": 32,
+  "seq": 512,
+  "accum": 2,
+  "lr": 0.001,
+  "optimizer": "muon",
+  "eval_batches": 16,
+  "models": "tonn_core",
+  "seeds": "0",
+  "cfg": "{\"attn_layers\": [1, 2, 4, 5], \"init_weights\": {\"C\": 4, \"G\": 0.25, \"D\": 0.25, \"RP\": 0}, \"attn_gate\": true, \"qk_norm\": true}",
+  "llama_cfg": "{}",
+  "size": "{}",
+  "tag": "m13_muon_lr1e-3_s0",
+  "device": "auto",
+  "out": "results/muon"
+ },
+ "device": "cuda",
+ "rows": [
+  {
+   "model": "tonn_core",
+   "tag": "m13_muon_lr1e-3_s0",
+   "cfg": "{\"attn_layers\": [1, 2, 4, 5], \"init_weights\": {\"C\": 4, \"G\": 0.25, \"D\": 0.25, \"RP\": 0}, \"attn_gate\": true, \"qk_norm\": true}",
+   "lr": 0.001,
+   "optimizer": "muon",
+   "seed": 0,
+   "tokenizer": "bpe32k",
+   "vocab": 32768,
+   "params_M": 13.36,
+   "steps": 3000,
+   "seconds_budget": 0,
+   "amp": "none",
+   "train": "train_en,train_ja,train_code",
+   "tokens_seen": 49152000,
+   "bytes_seen": 206317582,
+   "secs": 1497.7,
+   "bits_per_byte": {
+    "en": 1.4675,
+    "ja_wiki": 1.2369,
+    "ja_web": 1.4526,
+    "code": 1.2222
+   },
+   "architecture": [
+    {
+     "SM": 2,
+     "M": 1,
+     "MIM": 2,
+     "MI": 2,
+     "OS": 1
+    },
+    {
+     "EP": 2,
+     "OS": 1,
+     "SM": 1,
+     "C": 3,
+     "I": 1
+    }
+   ],
+   "train_loss_every_250": [
+    8.1441,
+    5.9357,
+    5.3995,
+    5.0302,
+    4.7137,
+    4.5632,
+    4.4278,
+    4.3373,
+    4.2753,
+    4.225,
+    4.1579,
+    4.0494
+   ]
+  }
+ ]
+}

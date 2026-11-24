@@ -18,7 +18,7 @@ DOMS = ("en", "ja_wiki", "ja_web", "code")
 def load(folder):
     runs = {}
     for f in sorted(glob.glob(os.path.join(folder, "lm_compare_*.json"))):
-        for r in json.load(open(f))["rows"]:
+        for r in json.load(open(f, encoding="utf-8"))["rows"]:
             tag = r["tag"]                                   # f13_<model>_s<seed> or f48_<model>_lr.._s<seed>
             size, rest = tag.split("_", 1)
             model, seed = rest.rsplit("_s", 1)
@@ -61,7 +61,7 @@ def main():
                 print(f"- {o} against {m}: ahead by {st.mean(diffs):+.4f} bits per byte (std {sd:.4f}), "
                       f"better on {wins} of {len(diffs)} seeds; per seed {[round(d, 4) for d in diffs]}")
                 out[f"{size}/{o}_vs_{m}"] = dict(seeds=shared, diffs=diffs, mean=st.mean(diffs), wins=wins)
-    json.dump(out, open(os.path.join(folder, "summary.json"), "w"), indent=1)
+    json.dump(out, open(os.path.join(folder, "summary.json"), "w", encoding="utf-8", newline="\n"), indent=1)
 
 
 if __name__ == "__main__":

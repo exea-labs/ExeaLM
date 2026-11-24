@@ -9,7 +9,7 @@
 | Context | 2,048 tokens, extended to 8,192 near the end | |
 | Batch | about 1M tokens | |
 | Learning rate | warmup, stable, then a linear decay at the end (WSD), where DATA.md's annealing data goes in | during the stable phase we can branch off and try a different final data mix without restarting |
-| Optimizer | AdamW (β 0.9/0.95, weight decay 0.1), gradient clip 1.0 | Muon is worth trying ([ideas.md](ideas.md)) |
+| Optimizer | AdamW (β 0.9/0.95, weight decay 0.1), gradient clip 1.0 | `--optimizer muon` gives the weight matrices Muon steps at the same learning rate and weight decay, and keeps AdamW for the embedding, norms and scalars (`exealm/train/muon.py`). At 13M both were best at lr 4e-3, where Muon was 0.017 and 0.030 bits per byte lower on two seeds ([results/muon](../results/muon/README.md), #21); it has not been tried at 0.1B |
 | Precision | bf16 compute; scans and FFTs in float32 | |
 | Architecture search | during a pilot run (about the first 5B tokens), then frozen | a search round runs one forward pass per (layer, circuit type) on each held-out batch |
 | Retrieval index | re-encoded every few thousand steps | the model's own encoder keeps changing |
@@ -25,23 +25,27 @@ What exists: `exealm/train/pretrain.py` runs this loop with the search, retrieva
 checkpoints. A run can stop and pick up again exactly where it left off (`--save_every`, `--stop_at`,
 `--resume auto`), which is what lets a long run span several Colab sessions or preemptible GPU jobs.
 
-Several GPUs: `torchrun --nproc_per_node 4 -m exealm.train.pretrain ...` starts one process per GPU. Each reads its
-own batches (whole swarms), the gradients are averaged, and every process takes the same step; process 0 alone logs,
-evaluates, searches and saves (`exealm/train/multi.py`). `--batch` is per GPU and per forward pass, and `--accum`
-passes go into one step, so a step is batch × seq × accum × GPUs tokens. This is tested with two processes on a CPU,
-where a resumed run matches an uninterrupted one to the last bit, and has not run on real GPUs yet.
-
-Job time limits: `--save_minutes` writes checkpoints on the clock and `--max_minutes` saves and stops before a limit,
-keeping the schedule. [experiments/expanse](../experiments/expanse/README.md) has the Slurm job that chains such
-sessions on SDSC Expanse, where a node has four H100s.
-
 The full mix: `--data mix.json` names the sources, where each one lives (one packed directory or many) and what
 share of the training tokens it gets. The form is in `exealm/data/loader.py` (`open_data`). Token files are
 memory-mapped when first used, so nothing is loaded up front. With a mix, name the retrieval library with
 `--datastore_data`.
 
+Several GPUs: start the same command with `torchrun --nproc_per_node N -m exealm.train.pretrain ...` (DDP, one process
+per GPU; on a CPU, gloo). `--batch` stays the total batch: every process draws the same batch and trains on its own
+rows, whole swarms only, so the data is exactly what one process would see. Process 0 runs the search, evaluates, logs
+and saves; after each search round the other processes copy its circuits, weights and optimizer state, and after each
+datastore refresh its keys. Two CPU processes match one process on the same total batch to within 0.0003 bits per
+token after 300 `tiny` steps (two seeds differ by 0.033), and a two-process run resumes exactly. `--accum K` runs K
+forward passes of `--batch` rows before each optimizer step (gradients are averaged across processes on the last one
+only), so a step is batch × seq × accum tokens however many GPUs there are.
+
+Job time limits: `--save_minutes` writes checkpoints on the clock and `--max_minutes` saves and stops before a limit,
+keeping the schedule. [experiments/expanse](../experiments/expanse/README.md) has the Slurm job that chains such
+sessions on SDSC Expanse, where a node has four H100s.
+
 What's missing:
 - models that do not fit one GPU (FSDP), and more than one node
+- the datastore search sharded across GPUs (with DDP every process holds the whole datastore)
 - context extension
 - `torch.compile` is behind `--compile 1` (after the search has frozen the architecture) and unmeasured on a GPU
 
@@ -54,8 +58,9 @@ What's missing:
 3. **GRPO** (`exealm/train/grpo.py`): RL with verifiable rewards (math answers, code tests, format). The loop is written
    (`python -m exealm.train.grpo`, tested on `tiny`) with math, exact-match and code rewards; the code reward runs
    model-written code and is refused without `--allow_code_exec`.
-4. **Swarm SFT and swarm RL:** swarms that share a board and solve tasks together ([swarms.md](swarms.md)). Not started,
-   and the part most unique to ExeaLM.
+4. **Swarm SFT** (`python -m exealm.train.sft --swarm N --answer_agent I`): train on the designated agent's answers
+   through the shared board. The loop is tested on `tiny`. See the [swarm SFT data format](swarms.md#swarm-sft).
+5. **Swarm RL:** whole-swarm attempts with a shared reward are planned ([swarms.md](swarms.md)).
 
 The bet: a 0.1B model alone won't be a strong general assistant, but a swarm of them, each looking things up through
 its own retrieval and sharing what it finds on the board, should be able to take on problems far larger than any one

@@ -177,7 +177,7 @@ def main(argv=None):
     write(path, out)
     report.update(name=a.name, repo=s["repo"], config=s["config"], split=s["split"], kind=s["kind"], license=s["license"],
                   file=path)
-    json.dump(report, open(os.path.join(a.out, f"{a.name}.report.json"), "w"), indent=1)
+    json.dump(report, open(os.path.join(a.out, f"{a.name}.report.json"), "w", encoding="utf-8", newline="\n"), indent=1)
     print(json.dumps(report))
     return report
 

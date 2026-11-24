@@ -158,7 +158,7 @@ def run_case(a, dev, matched=False):
         tag += "_in" if a.memory == "WA" and a.wa_matrix == "in" else ""
         tag += "_hkey" if a.memory == "WA" and a.wa_key == "hidden" else ""
     path = Path(a.out) / f"relay{tag}_seed{a.seed}.json"
-    path.write_text(json.dumps(out, indent=1) + "\n")
+    path.write_text(json.dumps(out, indent=1) + "\n", encoding="utf-8", newline="\n")
     print("WROTE", path, flush=True)
     return path, out
 
@@ -190,7 +190,7 @@ def run_sweep(a, dev):
                     f"{final['step']:,} | {final['train_loss']:.4f} | {shared['acc']:.2%} | {cut['acc']:.2%} | "
                     f"{shared['bits']:.3f} | {cut['bits']:.3f} | [JSON]({path.name}) |"
                 )
-    (Path(a.out) / "README.md").write_text("\n".join(lines) + "\n")
+    (Path(a.out) / "README.md").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 
 def int_list(value):

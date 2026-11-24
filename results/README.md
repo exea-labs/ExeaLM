@@ -914,9 +914,9 @@ Seeds 0, 1 and 2, about a minute each. Every search record in the log now carrie
 
 ![Circuits in each TONN layer after every search round, seeds 0 to 2](search_arch/search_arch.png)
 
-All three runs start from the same circuits. `--seed` changes the weights, the batches and the search's random draws,
-but not the starting circuits: `exealm/train/pretrain.py` leaves `cfg.seed` at 0 (`experiments/tokenizer_lm.py` passes
-its seed to the config instead).
+All three runs start from the same circuits. When they ran, `--seed` changed the weights, the batches and the search's
+random draws, but not the starting circuits: `exealm/train/pretrain.py` left `cfg.seed` at 0. Since commit dda032d,
+`--seed` also draws the starting circuits, so the commands below now start each seed from different circuits.
 
 | | Slots replaced | Layer 0 | Layer 1 | Validation bits per token |
 |---|---|---|---|---|
@@ -1099,3 +1099,33 @@ accuracy with communication shared / cut, averaged over seeds 0 and 1.
 **What it shows.** WA carries all 64 facts on both seeds, which is the largest load this relay's key vocabulary
 allows. The board loses accuracy at 32 facts and stays near chance (1.56%) at 64 under the same training budget.
 The [relay capacity report](swarm_relay_capacity/README.md) has the per-seed results, raw JSON, and command.
+
+## 16. Gated DeltaNet in the TONN search menu
+
+Both arms used the `tiny` TONN preset on CPU with 127,432 parameters, 300 steps, batch size 8, and sequence length 64.
+The arms drew the same training batches for each seed from the built-in synthetic Markov-chain corpus. They used the
+same 16 fixed evaluation windows (sampler seed 10,000) and 16 separate search windows (sampler seed 20,000) from that
+corpus. Search ran every 30 steps through step 210. The experimental arm appended `GD` to the default menu, making
+it eligible for both initialization and later replacements.
+
+| Seed | Default at step 300 (bits/token) | Menu + GD at step 300 (bits/token) | Change | GD slots at start → finish |
+|---:|---:|---:|---:|---:|
+| 0 | 2.2555 | 2.2555 | 0.0000 | 0 → 0 |
+| 1 | 2.3002 | 2.2337 | −0.0665 | 1 → 1 |
+| 2 | 2.3165 | 2.3050 | −0.0115 | 1 → 2 |
+| 3 | 2.3411 | 2.3357 | −0.0054 | 1 → 1 |
+
+The expanded menu lowered mean loss by 0.02085 bits/token. Seed 0 followed the same architecture and loss trajectory
+in both arms. On seed 2, search added a second `GD` slot at step 30 and kept both. This synthetic pilot evaluates the
+menu as a whole, including its starting draws. `GD` is opt-in pending the two-seed 13M real-text comparison in
+[#30](https://github.com/exea-labs/ExeaLM/issues/30).
+
+```bash
+export OMP_NUM_THREADS=1
+delta_root=$(mktemp -d)
+python -c 'import json, sys; from exealm.config import MENU; json.dump({"menu": [*MENU, "GD"]}, open(sys.argv[1], "w"))' "$delta_root/gd.json"
+for delta_seed in 0 1 2 3; do
+  python -m exealm.train.pretrain --preset tiny --data synthetic --device cpu --seed "$delta_seed" --steps 300 --batch 8 --seq 64 --search_every 30 --search_until 0.75 --eval_every 100 --eval_batches 16 --out "$delta_root/baseline-$delta_seed"
+  python -m exealm.train.pretrain --preset tiny --data synthetic --device cpu --seed "$delta_seed" --steps 300 --batch 8 --seq 64 --search_every 30 --search_until 0.75 --eval_every 100 --eval_batches 16 --config "$delta_root/gd.json" --out "$delta_root/gd-$delta_seed"
+done
+```

@@ -120,7 +120,7 @@ def main():
     path = os.path.join(a.out, f"text_seed{a.seed}.json")
     for arm in a.arms.split(","):
         runs.append(run(arm, a, dev, train, evals))
-        json.dump(dict(args=vars(a), device=str(dev), runs=runs), open(path, "w"), indent=1)
+        json.dump(dict(args=vars(a), device=str(dev), runs=runs), open(path, "w", encoding="utf-8", newline="\n"), indent=1)
     print("WROTE", path)
 
 

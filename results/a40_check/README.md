@@ -4,6 +4,10 @@ One RunPod machine with two NVIDIA A40s (46 GB each), PyTorch 2.9.0 with CUDA 13
 423f795. An A40 is not the H100 the Expanse nodes have: these runs check that the code is right on CUDA, not how fast
 an H100 is.
 
+The two-GPU runs here used the branch's first multi-GPU trainer (`exealm/train/multi.py`, where `--batch` was the rows
+of each GPU). On 22 November 2026 the branch took the DDP trainer from `main` instead, where `--batch` is the total
+over the GPUs, so the two-GPU command below would now be `--batch 64`. Nothing here has been measured again with it.
+
 ## `python experiments/gpu_check.py`
 
 Every required check passed; the full output is in [gpu_check.txt](gpu_check.txt).

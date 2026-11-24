@@ -76,12 +76,12 @@ def main():
             invariants[name] = leakage()
             for seed in [0, 1]:
                 out = root / f'{name}-seed{seed}'
-                with (root / f'{name}-seed{seed}.txt').open('w') as log, contextlib.redirect_stdout(log):
+                with (root / f'{name}-seed{seed}.txt').open('w', encoding="utf-8", newline="\n") as log, contextlib.redirect_stdout(log):
                     pretrain(['--preset', 'tiny', '--data', 'synthetic', '--steps', '100',
                               '--batch', '4', '--seq', '64', '--eval_every', '100', '--eval_batches', '2',
                               '--search_every', '20', '--datastore_chunks', '100', '--refresh_every', '40',
                               '--device', 'cpu', '--seed', str(seed), '--out', str(out)])
-                events = [json.loads(line) for line in (out / 'log.jsonl').read_text().splitlines()]
+                events = [json.loads(line) for line in (out / 'log.jsonl').read_text(encoding="utf-8").splitlines()]
                 final = next(e for e in reversed(events) if e['event'] == 'eval')
                 if str(seed) in configs:
                     assert configs[str(seed)] == events[0]['cfg']
@@ -94,7 +94,7 @@ def main():
                   config=dict(preset='tiny', steps=100, batch=4, seq=64, eval_batches=2,
                               search_every=20, datastore_chunks=100, refresh_every=40, threads=1),
                   training_input_tokens_per_run=25_600, model_configs=configs, leakage=invariants, runs=records)
-    (root / 'summary.json').write_text(json.dumps(result, indent=2) + '\n')
+    (root / 'summary.json').write_text(json.dumps(result, indent=2) + '\n', encoding="utf-8", newline="\n")
     print(json.dumps(result, indent=2))
 
 

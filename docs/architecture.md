@@ -32,7 +32,9 @@ mostly convolutions and won, the other drew mostly gated units and lost on code.
 ## A TONN layer
 
 1. Normalize the residual stream and project it, in **one** matrix, into 20 slots × 3 streams (A, B, C) × 32 channels.
-2. Each slot runs its circuit on its streams. Slots of the same type run together as one batched operation.
+2. Each slot runs its circuit on its streams. Slots of the same type run together. The six real running-sum types
+   (`I`, `GI`, `MI`, `MIM`, `EP`, `SM`) share one scan per layer. Fixed decays alone use the FFT, and any token-dependent
+   gate selects the prefix scan for the whole batch of slots.
 3. Each slot's output is divided by its running average size, so no slot drowns out the others. The average comes
    from past batches only, so a prediction never depends on other rows in the batch.
 4. Project all slots back to the residual stream in **one** matrix and add.
@@ -55,11 +57,18 @@ Since 20 × 32 = 640 = the model width, the two projections cost the same as att
 | RP | rotary attention | ordinary attention, one head of 32 channels |
 | SM | selective state space | Mamba-like memory |
 | OS | oscillating memory | S4D-like, picks up periodic patterns |
+| GD | gated delta rule with a matrix state per slot | update a value by key and read it by query |
 | RG | retrieval from the datastore | the model's own RAG ([memory.md](memory.md)) |
 | AG | agent board, read and write | talking to other agents ([memory.md](memory.md)) |
 
 Each slot also has a time lag (from 0 to 128) and a decay per channel (how fast it forgets), both set when the circuit
 is placed. The decay is then learned.
+
+Append `GD` to `menu` in a pretraining `--config` JSON file to let the search try it. The slot takes keys, values,
+and queries from A, B, and C. Its existing decay vector serves as a learned direction for the forget gate on A and
+the write gate on B. Its existing scalar supplies the write bias. `GD` uses the chunked recurrence from `delta.py`
+with one causal matrix state per slot and adds no parameters. The search cost includes the chunk solve and matrix
+state products. See the [tiny comparison](../results/README.md#16-gated-deltanet-in-the-tonn-search-menu).
 
 ## The search (`exealm/model/search.py`)
 

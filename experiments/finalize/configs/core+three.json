@@ -1,0 +1,21 @@
+{
+ "pinned": {},
+ "menu": [
+  "D",
+  "I",
+  "GI",
+  "M",
+  "MI",
+  "MIM",
+  "EP",
+  "G",
+  "C",
+  "RP",
+  "SM",
+  "OS"
+ ],
+ "swarm_size": 1,
+ "value_residual": true,
+ "xsa": true,
+ "peri_ln": true
+}

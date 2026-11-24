@@ -13,6 +13,7 @@ board, so posting and reading both get gradients, and swarms never hear each oth
 (exealm/memory/board.py) adds messages from agents that ran earlier or elsewhere, and new posts are written to it.
 
 Every layer starts with one AG slot and the search can never remove the last one (exealm/model/search.py).
+Optional learned author vectors are added to post values when read. Persistent posts keep their existing format.
 
 Measuring board use: set `record = True` on a BoardCircuit and each forward pass leaves a summary in `last` (see
 usage_stats); pretrain.py does this on its validation batches and logs the result with every eval.
@@ -30,12 +31,24 @@ class BoardCircuit(nn.Module):
     def __init__(self, cfg):
         super().__init__()
         self.chunk, self.read_self = cfg.board_chunk or cfg.chunk, cfg.board_read_self
+        self.order = getattr(cfg, "board_order", "time")
+        if self.order not in ("time", "doc"):
+            raise ValueError(f"board_order must be 'time' or 'doc', not {self.order!r}")
         self.post_w = nn.Parameter(torch.zeros(cfg.h))
         self.post_b = nn.Parameter(torch.zeros(()))
         self.log_tau = nn.Parameter(torch.tensor(math.log(10.0)))
         self.pool_w = nn.Parameter(torch.zeros(cfg.h)) if cfg.chunk_pool == "attn" else None   # which positions to post
+        if cfg.board_identity_size < 0:
+            raise ValueError("board_identity_size must be nonnegative")
+        self.author_values = (nn.Parameter(torch.zeros(cfg.board_identity_size, cfg.h))
+                              if cfg.board_identity_size else None)
         self.record = False                                               # if True, keep usage_stats(...) in self.last
         self.last = None
+
+    def _author_signal(self, ids):
+        valid = (ids >= 0) & (ids < self.author_values.size(0))
+        signal = F.embedding(ids.masked_fill(~valid, 0), self.author_values.float())
+        return signal.masked_fill(~valid.unsqueeze(-1), 0)
 
     def forward(self, S, mem, layer, slots):
         A, K, G = S                                                       # each (B, T, g, h)
@@ -62,17 +75,27 @@ class BoardCircuit(nn.Module):
 
         # in-batch board: every swarm member's posts, visible from the next chunk on
         E = sw * n
-        keyT, valT = key.view(ns, E, g, h), val.view(ns, E, g, h)
+        local_ids = torch.arange(sw, device=A.device)
+        agent_ids = mem.agent_ids if mem is not None else None
+        if self.author_values is not None and sw > 1:
+            ids = local_ids.repeat(ns) if agent_ids is None else agent_ids.to(A.device)
+            values = val + self._author_signal(ids)[:, None, None, :]
+        else:
+            values = val
+        keyT, valT = key.view(ns, E, g, h), values.view(ns, E, g, h)
         lin = tau * torch.einsum("atsgh,aegh->atsge", q.view(ns, sw, T, g, h), keyT) \
             + log_w.view(ns, 1, 1, E, g).permute(0, 1, 2, 4, 3)
         e_chunk = torch.arange(n, device=A.device).repeat(sw)
-        e_author = torch.arange(sw, device=A.device).repeat_interleave(n)
+        e_author = local_ids.repeat_interleave(n)
         r_chunk = torch.arange(T, device=A.device) // C
         vis = e_chunk.view(1, 1, 1, 1, E) < r_chunk.view(1, 1, T, 1, 1)
+        author, reader = e_author.view(1, 1, 1, 1, E), local_ids.view(1, sw, 1, 1, 1)
+        if self.order == "doc":                                         # all of the agents before it, none after
+            vis = (author < reader) | (vis & (author == reader))
         if not self.read_self:
-            vis = vis & (e_author.view(1, 1, 1, 1, E) != torch.arange(sw, device=A.device).view(1, sw, 1, 1, 1))
+            vis = vis & (author != reader)
         if mem is not None and getattr(mem, "board_prior", False):     # row 0 finished reading before the others
-            reader = torch.arange(sw, device=A.device).view(1, sw, 1, 1, 1)
+            reader = local_ids.view(1, sw, 1, 1, 1)
             first = e_author.view(1, 1, 1, 1, E) == 0
             vis = (vis & ~((reader == 0) & ~first)) | (first & (reader != 0))
         lin = lin.masked_fill(~vis, float("-inf")).reshape(B, T, g, E)
@@ -86,8 +109,10 @@ class BoardCircuit(nn.Module):
             eK, eV, eW, eA, ok = ext                                      # (g, E2, h), (g, E2, h), (g, E2) x3
             lex = tau * torch.einsum("btgh,geh->btge", q, eK) + eW.view(1, 1, g, -1)
             seen = ok.view(1, g, -1).expand(B, g, -1)
-            if mem.agent_ids is not None:                                 # an agent's own old posts come from context
-                seen = seen & (eA.view(1, g, -1) != mem.agent_ids.view(B, 1, 1))
+            if agent_ids is not None:                                     # an agent's own old posts come from context
+                seen = seen & (eA.view(1, g, -1) != agent_ids.to(A.device).view(B, 1, 1))
+            if self.author_values is not None:
+                eV = eV + self._author_signal(eA)
             parts.append(lex.masked_fill(~seen.view(B, 1, g, -1), float("-inf")))
         parts.append(lin.new_zeros(B, T, g, 1))                          # "read nothing"
         att = torch.cat(parts, -1).softmax(-1)
@@ -99,7 +124,7 @@ class BoardCircuit(nn.Module):
             y = y + torch.einsum("btge,geh->btgh", att[..., E:-1], eV)
 
         if mem is not None and mem.board is not None and mem.write_board:
-            authors = mem.agent_ids if mem.agent_ids is not None else torch.arange(B)
+            authors = agent_ids if agent_ids is not None else torch.arange(B)
             mem.board.post(layer, slots, key, val, log_w, authors, n_complete=T // C)
         return y.to(A.dtype) * F.silu(G)
 

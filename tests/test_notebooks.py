@@ -14,7 +14,7 @@ NOTEBOOKS = sorted((pathlib.Path(__file__).parents[1] / "notebooks").glob("*.ipy
 
 @pytest.mark.parametrize("path", NOTEBOOKS, ids=lambda p: p.name)
 def test_every_code_cell_compiles_and_has_no_outputs(path):
-    nb = json.loads(path.read_text())
+    nb = json.loads(path.read_text(encoding="utf-8"))
     code = [c for c in nb["cells"] if c["cell_type"] == "code"]
     assert code
     for i, cell in enumerate(code):

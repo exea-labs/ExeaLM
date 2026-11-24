@@ -1,0 +1,152 @@
+"""experiments/library/score.py: bits per byte on target tokens, with the library attached or removed or the right entry
+pasted, and how often the model's own search finds the source entry. A mock library (experiments/library/build.py
+with the mock backend) and tiny random models: no download, no network."""
+import importlib.util
+import json
+import math
+import pathlib
+from dataclasses import asdict
+
+import pytest
+import torch
+import torch.nn.functional as F
+
+pytest.importorskip("tokenizers")
+
+from exealm import ExeaLM, get_config  # noqa: E402
+from exealm.config import llama_baseline  # noqa: E402
+from exealm.data.loader import TokenShards  # noqa: E402
+from exealm.model import Llama  # noqa: E402
+
+ROOT = pathlib.Path(__file__).parents[1]
+
+
+def load(name):
+    spec = importlib.util.spec_from_file_location(f"library_{name}", ROOT / "experiments" / "library" / f"{name}.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+lb, sc = load("build"), load("score")
+TEXT = ["Kyoto", "Photosynthesis", "Mitochondrion", "Albert Einstein", "The Beatles", "Tokyo Tower"]
+CODE = ["os.path.join (Python)", "json.load (Python)", "read csv file (Python)", "fs.readFileSync (JavaScript)"]
+
+
+def build_library(d, text, code, heldout, tokenizer):
+    (d / "t.txt").write_text("\n".join(text) + "\n", encoding="utf-8")
+    lb.main(["write", "--topics", str(d / "t.txt"), "--backend", "mock", "--out", str(d / "e.jsonl")])
+    entries = [str(d / "e.jsonl")]
+    if code:
+        (d / "c.txt").write_text("\n".join(code) + "\n", encoding="utf-8")
+        lb.main(["write", "--kind", "code", "--topics", str(d / "c.txt"), "--backend", "mock",
+                 "--out", str(d / "c.jsonl")])
+        entries.append(str(d / "c.jsonl"))
+    lb.main(["morph", *entries, "--backend", "mock", "--heldout", str(heldout), "--out", str(d / "tasks.jsonl")])
+    lb.main(["pack", *entries, "--tasks", str(d / "tasks.jsonl"), "--tokenizer", tokenizer, "--heldout", str(heldout),
+             "--out", str(d / "lib")])
+    return str(d / "lib")
+
+
+@pytest.fixture(scope="module")
+def setup(tmp_path_factory):
+    """A mock library packed with a 400-token tokenizer trained here, and a tiny random ExeaLM and Llama for it."""
+    from exealm.data.tokenizer import train
+    d = tmp_path_factory.mktemp("score")
+    with open(d / "corpus.jsonl", "w", encoding="utf-8") as f:
+        for t in TEXT + CODE:
+            f.write(json.dumps({"text": lb.mock_reply(t) + lb.mock_code_reply(t, "python")}) + "\n")
+    train([str(d / "corpus.jsonl")], 400, str(d / "tok"))
+    lib = build_library(d, TEXT, CODE, 0.5, str(d / "tok"))
+    torch.manual_seed(0)
+    cfg = get_config("tiny", vocab_size=400)
+    exealm, llama = ExeaLM(cfg), Llama(llama_baseline(cfg))
+    paths = dict(exealm=str(d / "exealm.pt"), llama=str(d / "llama.pt"))
+    torch.save(dict(model=exealm.state_dict(), cfg=asdict(cfg), kind="tonn", specs=exealm.specs), paths["exealm"])
+    torch.save(dict(model=llama.state_dict(), cfg=asdict(llama.cfg), kind="llama", specs=None), paths["llama"])
+    return dict(dir=d, lib=lib, tok=str(d / "tok"), **paths)
+
+
+def test_every_model_gets_its_conditions_on_every_set(setup):
+    rows = sc.main([setup["exealm"], setup["llama"], "--library", setup["lib"], "--device", "cpu",
+                    "--out", str(setup["dir"] / "score.jsonl")])
+    got = {(r["model"], r["set"], r["condition"]) for r in rows}
+    assert got == {("ExeaLM", s, c) for s in ("qa", "tasks") for c in ("library", "none", "pasted")} | \
+                  {("Llama", s, c) for s in ("qa", "tasks") for c in ("none", "pasted")}   # no RG: no library
+    for r in rows:
+        n = sum(1 for _ in open(pathlib.Path(setup["lib"]) / r["set"] / "heldout" / "items.jsonl"))
+        assert r["items"] == n and 0 < r["bits_per_byte"] < 20 and math.isfinite(r["bits_per_token"])
+        if r["condition"] == "library":
+            assert r["searchable"] == n and 0 <= r["search_first"] <= r["search_any"] <= 1
+        else:
+            assert "search_first" not in r
+    tasks = next(r for r in rows if r["set"] == "tasks" and r["condition"] == "none")
+    assert set(tasks["by_kind"]) == {"text", "code"}
+    assert [json.loads(line) for line in open(setup["dir"] / "score.jsonl")] == rows
+
+
+def test_bits_count_the_target_tokens_alone(setup):
+    """The batched, padded score equals one row at a time computed by hand, in every condition."""
+    lib = TokenShards(setup["lib"])
+    items, eot, sep = sc.load_items(setup["lib"], ["qa", "tasks"], "heldout")
+    model = sc.build_model(torch.load(setup["exealm"], weights_only=False)).eval()
+    C = model.cfg.chunk
+    for cond in ("none", "pasted", "library"):
+        ds = None
+        if cond == "library":
+            ds = sc.library_store(lib, model.cfg.rag_chunk_len)
+            ds.doc_ids += len(items)
+            ds.refresh(model.encoder, model.emb)
+        bits = sc.score(model, items, cond, eot, sep, lib, ds, len(items), batch=5)[0]
+        for i in (0, len(items) // 2, len(items) - 1):
+            entry = sc.entry_ids(lib, items[i]["source_doc"]) if cond == "pasted" else None
+            ids, ts = sc.layout(items[i], cond, C, eot, sep, entry)
+            assert ids[ts:] == items[i]["target"] and ids[ts - len(items[i]["prefix"]):ts] == items[i]["prefix"]
+            if cond == "pasted":
+                assert ids[1:1 + len(entry)] == entry
+            else:
+                assert ts % C == 0 and set(ids[:ts - len(items[i]["prefix"])]) == {eot}
+            x = torch.tensor([ids])
+            mem = sc.MemoryContext(datastore=ds, doc_ids=torch.full_like(x, i), swarm_size=1)
+            with torch.no_grad():
+                logits = model(x, mem)[0][0]
+            want = F.cross_entropy(logits[ts - 1:-1], x[0, ts:], reduction="sum").item() / math.log(2)
+            assert bits[i] == pytest.approx(want, rel=1e-4)
+
+
+def test_the_search_finds_a_lone_entry_and_scored_rows_never_hide_it(tmp_path, setup):
+    """With one entry in the library every search returns its chunks, so the hit rate is 1. Without shifting the
+    library's document numbers past the scored rows', row 0 would hide library document 0 from itself."""
+    lib_dir = build_library(tmp_path, ["Kyoto"], [], 1.0, setup["tok"])
+    rows = sc.main([setup["exealm"], "--library", lib_dir, "--device", "cpu", "--sets", "qa",
+                    "--conditions", "library"])
+    assert len(rows) == 1 and rows[0]["items"] == 3 and rows[0]["search_first"] == rows[0]["search_any"] == 1.0
+
+    lib = TokenShards(lib_dir)
+    items, eot, sep = sc.load_items(lib_dir, ["qa"], "heldout")
+    model = sc.build_model(torch.load(setup["exealm"], weights_only=False)).eval()
+    ds = sc.library_store(lib, model.cfg.rag_chunk_len)                   # library document 0 is document 0 here
+    ds.refresh(model.encoder, model.emb)
+    first = sc.score(model, items, "library", eot, sep, lib, ds, offset=0)[1]
+    assert first.tolist() == [False, True, True]
+
+
+def test_the_datastore_holds_every_chunk_of_every_entry(setup):
+    lib = TokenShards(setup["lib"])
+    ds = sc.library_store(lib, 8)
+    for d in range(len(lib.offsets)):
+        a = int(lib.offsets[d])
+        b = int(lib.offsets[d + 1]) if d + 1 < len(lib.offsets) else len(lib.tokens)
+        rows = ds.tokens[ds.doc_ids == d]
+        covered = {tuple(r.tolist()) for r in rows}
+        for s in list(range(a, b - 7, 8)) + [b - 8]:                       # cut every 8, and the end
+            assert tuple(int(t) for t in lib.tokens[s:s + 8]) in covered
+    assert len(sc.library_store(lib, 8, n_chunks=50)) == 50                 # or sampled, as pretraining samples
+
+
+def test_a_model_with_another_vocabulary_is_refused(tmp_path, setup):
+    cfg = get_config("tiny", vocab_size=100)
+    small = ExeaLM(cfg)
+    torch.save(dict(model=small.state_dict(), cfg=asdict(cfg), kind="tonn", specs=small.specs), tmp_path / "s.pt")
+    with pytest.raises(SystemExit, match="tokenizer the model was trained with"):
+        sc.main([str(tmp_path / "s.pt"), "--library", setup["lib"], "--device", "cpu"])

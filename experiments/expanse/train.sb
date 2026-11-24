@@ -3,7 +3,7 @@
 #
 #     export SBATCH_ACCOUNT=<your project>
 #     export RUN=exealm_500m_s0
-#     export ARGS="--preset 500m --data experiments/expanse/mix_tokpack.json --val data/tokpack/bpe32k/val_en --seq 512 --batch 16 --steps 3000 --lr 1e-3"
+#     export ARGS="--preset 500m --data experiments/expanse/mix_tokpack.json --val data/tokpack/bpe32k/val_en --seq 512 --batch 64 --steps 3000 --lr 1e-3"
 #     sbatch experiments/expanse/train.sb
 #
 # What a job does:
@@ -18,7 +18,9 @@
 #
 # Settings (environment variables; `export` them before sbatch so that the follow-on jobs get them too):
 #   RUN         name of the run: its folder under KEEP                                          (required)
-#   ARGS        arguments of exealm.train.pretrain, without --out, --resume and the time options (required)
+#   ARGS        arguments of exealm.train.pretrain, without --out, --resume and the time options (required). Its
+#               --batch is the total over the job's GPUs, so a run continued on a different number of GPUs reads
+#               the same batches
 #   KEEP        where runs are kept: a folder, or s3://bucket/prefix (needs s3cmd)               (default: ./runs)
 #   DATA        the packed data to copy in: a folder or s3://bucket/prefix                       (default: ./data)
 #   SAVE_MIN    minutes between checkpoints (default 30)       MARGIN_MIN  minutes kept for the last save and copy (45)

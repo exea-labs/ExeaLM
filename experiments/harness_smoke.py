@@ -45,7 +45,7 @@ def main():
     save(str(root / 'model.pt'), model, opt, 3, cfg, 'tonn')
     (root / 'source.json').write_text(json.dumps(dict(tokenizer_repo='exea-labs/ExeaLM',
         tokenizer_path='tokenizer/tokenizer.json', revision=revision, seed=0, cfg=asdict(cfg),
-        training_steps=3, training_data='independent uniform token IDs; no benchmark training data'), indent=2))
+        training_steps=3, training_data='independent uniform token IDs; no benchmark training data'), indent=2), encoding="utf-8", newline="\n")
     del model, opt
     evaluate(['--ckpt', str(root / 'model.pt'), '--tokenizer', file, '--tasks', 'hellaswag',
               '--limit', str(args.limit), '--max_length', '256', '--threads', '4',

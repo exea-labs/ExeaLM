@@ -4,8 +4,10 @@ Presets:
     "100m"        the model we plan to train: about 0.1B parameters (31M of them the embedding table), on about 100B
                   tokens; a hybrid (every third layer TONN, the others gated attention with QK-norm)
     "100m-tonn"   the same size, every layer TONN
-    "500m", "1b", "3b"   the scaling study: the same hybrid at 0.50B, 0.97B and 2.9B parameters with the 32k
-                  tokenizer (widths 1280, 1664 and 2560; 22, 26 and 34 layers). Not trained yet
+    "250m", "500m", "1b", "3b"   the scaling study: the same hybrid at 0.25B, 0.50B, 0.97B and 2.9B parameters with
+                  the 32k tokenizer (widths 1024, 1280, 1664 and 2560; 16, 22, 26 and 34 layers). Not trained yet
+    "9b"          the run the study is evidence for: 9.1B parameters (width 4096, 42 layers). Only its speed and memory
+                  are measured in the study (docs/budget.md)
     "small"       18M parameters (13M embedding table) with the same vocabulary, hybrid: for real-data experiments on
                   a laptop or a free Colab GPU
     "small-tonn"  the same size, every layer TONN (the base the experiment scripts start from)
@@ -17,8 +19,7 @@ Every number here is a starting point, not a decision: changing them is one of t
 import json
 from dataclasses import asdict, dataclass, field, replace
 
-# Every circuit type a slot can hold (exealm/model/circuits.py). RG and AG are the memory circuits:
-# RG reads from the read-only datastore, AG reads and writes the agent board.
+# Default search menu (exealm/model/circuits.py). Append "GD" to let search try gated delta-rule slots.
 MENU = ("D", "I", "GI", "M", "MI", "MIM", "EP", "G", "C", "RP", "SM", "OS", "RG", "AG")
 LAGS = (0, 1, 2, 3, 4, 6, 8, 12, 16, 32, 64, 128)
 
@@ -43,6 +44,12 @@ class ModelConfig:
                                      # on in the hybrid presets. False here so configs saved before it existed load as
                                      # they were trained
     qk_norm: bool = False            # RMSNorm on each head's queries and keys (Qwen3); on in the hybrid presets
+    # Changes from recent papers, each off unless asked for (exealm/model/baseline.py and common.py say what they do).
+    # They apply to the attention layers and MLPs of both ExeaLM and the baselines; peri_ln to TONN layers too.
+    value_residual: bool = False     # ResFormer, arXiv 2410.17897
+    xsa: bool = False                # exclusive self-attention, arXiv 2603.09078
+    peri_ln: bool = False            # Peri-LN, arXiv 2502.02732
+    canon: bool = False              # Canon layers before attention and before the MLP, arXiv 2512.17351
     seed: int = 0
     # memory circuits
     chunk: int = 64                  # RG retrieves and AG posts once per chunk of this many tokens
@@ -57,10 +64,20 @@ class ModelConfig:
     swarm_size: int = 4              # agents that share one board (a swarm); a training batch holds many swarms
     board_read_self: bool = True     # may an agent read its own earlier posts?
     board_chunk: int = 0             # AG posts once per this many tokens (0: every `chunk`, like RG)
+    board_identity_size: int = 0     # number of author IDs with learned AG value signals (0: disabled)
+    board_order: str = "time"        # which in-batch posts an agent may read. "time": every teammate's posts from
+                                     # chunks before the current one. "doc": every post of the teammates before it in
+                                     # the swarm, from the start, and none of those after it. In a split swarm (one text
+                                     # in consecutive windows) that is all of the text before the agent's window and none
+                                     # of the text after it, so seams need no masking (docs/swarms.md)
     wa_target: int = -1              # WA (weight alter): the layer whose MLP it changes (-1: the one after its own layer)
     wa_matrix: str = "out"           # which matrix of the target MLP a WA slot changes: its output ("out") or input ("in")
     wa_key: str = "learned"      # "hidden": the key is the target MLP's own activation in the writer's chunk
     wa_scope: str = "all"            # whose weights a WA slot changes: "self", "others" (of its swarm) or "all"
+    wa_persist: float = 0.0          # 0: weight changes last one forward pass. k in (0, 1]: when a text is read window by
+                                     # window (MemoryContext(stream=...)), each window's changes are added to a weight
+                                     # change carried to the next window, which keeps k of it (docs/brain.md); one row
+                                     # per text, so swarm_size must be 1
     chunk_pool: str = "mean"         # how a chunk becomes one board post or one retrieval key: "mean" of its positions,
                                      # or "attn", a learned softmax over them that starts as the mean
 
@@ -103,9 +120,11 @@ def hybrid(d, n_layers, h=32):
 PRESETS = {
     "100m": ModelConfig(attn_layers=tuple(i for i in range(14) if i % 3), **HYBRID),        # TONN at 0, 3, 6, 9, 12
     "100m-tonn": ModelConfig(),
+    "250m": hybrid(1024, 16),
     "500m": hybrid(1280, 22),
     "1b": hybrid(1664, 26),
     "3b": hybrid(2560, 34),
+    "9b": hybrid(4096, 42),
     "small": ModelConfig(d=256, n_layers=6, slots=8, h=32, enc_dim=128, attn_layers=(1, 2, 4, 5), **HYBRID),
     "small-tonn": ModelConfig(d=256, n_layers=6, slots=8, h=32, enc_dim=128),
     "tiny": ModelConfig(vocab_size=256, d=64, n_layers=2, slots=8, h=8, chunk=8, rag_topk=2, rag_chunk_len=8,

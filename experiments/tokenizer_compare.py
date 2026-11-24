@@ -45,7 +45,7 @@ def main():
             row[f"bytes_per_token_{name}"], row[f"heldout_bytes_{name}"] = bytes_per_token(tok, path, a.heldout_mb)
         rows.append(row)
         print(json.dumps(row), flush=True)
-        json.dump(dict(args=vars(a), rows=rows), open(os.path.join(a.out, "compare.json"), "w"), indent=1)
+        json.dump(dict(args=vars(a), rows=rows), open(os.path.join(a.out, "compare.json"), "w", encoding="utf-8", newline="\n"), indent=1)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-"""SFT: the conversation loader, batches that keep conversations apart, and the training loop."""
+"""SFT: conversation loading, solo and swarm batches, and the training loop."""
 import gzip
 import json
 
@@ -7,7 +7,7 @@ import pytest
 import torch
 
 pytest.importorskip("tokenizers")
-from exealm import ExeaLM, get_config
+from exealm import ExeaLM, MemoryContext, get_config
 from exealm.chat import answer
 from exealm.hub import from_pretrained
 from exealm.train import sft
@@ -120,3 +120,88 @@ def test_sft_refuses_a_tokenizer_that_does_not_fit(tmp_path, tok):
     (tmp_path / "d.jsonl").write_text("")
     with pytest.raises(ValueError, match="tokenizer has"):
         sft.main(["--ckpt", str(tmp_path / "base.pt"), "--tokenizer", tok_dir, "--data", str(tmp_path / "d.jsonl")])
+
+
+def test_swarm_loader_and_encoder_keep_whole_tasks(tmp_path, tok):
+    t, _ = tok
+    helper = dict(conversations=[dict(**{"from": "human", "value": "red"}),
+                                 dict(**{"from": "gpt", "value": "apple"})])
+    answer = dict(messages=[dict(role="user", content="blue"), dict(role="assistant", content="sky")])
+    late = dict(messages=[dict(role="user", content="blue " * 30), *answer["messages"][1:]])
+    no_answer = dict(messages=[dict(role="user", content="blue")])
+    records = [[helper, answer], [helper], [helper, late], [helper, no_answer], [None, answer]]
+    path = tmp_path / "tasks.jsonl.gz"
+    with gzip.open(path, "wt", encoding="utf-8") as f:
+        f.writelines(json.dumps(dict(agents=agents)) + "\n" for agents in records)
+
+    tasks, skipped = sft.load_conversations(str(path), swarm=2, answer_agent=1)
+    assert len(tasks) == 2 and skipped == 3
+    encoded = sft.encode_swarms(tasks, t, max_len=16, answer_agent=1)
+    assert len(encoded) == 1
+    writer, reader = encoded[0]
+    writer_ids, writer_mask = sft.format_chat(tasks[0][0], t)
+    assert writer[0] == writer_ids and any(writer_mask) and not any(writer[1])
+    assert reader == sft.format_chat(answer["messages"], t)
+
+
+def test_answer_loss_trains_other_agents_ag_posts():
+    torch.manual_seed(0)
+    cfg = get_config("tiny", board_read_self=False)
+    model = ExeaLM(cfg).eval()
+    ids = torch.randint(0, cfg.vocab_size, (3, 2 * cfg.chunk))
+    mask = torch.zeros_like(ids)
+    mask[1, cfg.chunk + 1] = 1
+    board = model.layers[0].ag
+    inputs, outputs = [], []
+    capture_ag = board.register_forward_pre_hook(lambda _, args: inputs.append(args[0]))
+    capture_head = model.head.register_forward_hook(lambda _, args, output: outputs.append(output))
+    try:
+        for swarm in (3, 1):
+            loss = sft.sft_loss(model, ids, mask, MemoryContext(swarm_size=swarm))
+            logits = outputs.pop()
+            expected = torch.nn.functional.cross_entropy(logits[1, cfg.chunk].unsqueeze(0), ids[1, cfg.chunk + 1:cfg.chunk + 2])
+            torch.testing.assert_close(loss, expected)
+            values, keys, _ = inputs.pop()
+            dvalues, dkeys, dpost_w, dpost_b, dlogits = torch.autograd.grad(
+                loss, (values, keys, board.post_w, board.post_b, logits))
+            writers = [0, 2]
+            assert dlogits[writers].count_nonzero() == 0
+            # At the first read position only the helpers' first-chunk posts can supply these gradients.
+            assert dvalues[1].count_nonzero() == 0
+            assert dvalues[writers, cfg.chunk:].count_nonzero() == 0
+            grads = [*dvalues[writers, :cfg.chunk], *dkeys[writers, :cfg.chunk], dpost_w, dpost_b]
+            assert all(torch.isfinite(grad).all() for grad in grads)
+            assert all(bool(grad.count_nonzero()) == (swarm == 3) for grad in grads)
+    finally:
+        capture_ag.remove()
+        capture_head.remove()
+
+
+def test_swarm_sft_tiny_learns_split_information(tmp_path, tok):
+    t, tok_dir = tok
+    torch.manual_seed(0)
+    cfg = get_config("tiny", vocab_size=t.get_vocab_size(), swarm_size=1, board_read_self=False)
+    base = ExeaLM(cfg)
+    ckpt = tmp_path / "base.pt"
+    save(str(ckpt), base, make_optimizer(base, 1e-3, 0.1), 0, cfg, "tonn")
+    question = "What is the word the other agent has?"
+    tasks = [dict(agents=[dict(messages=[dict(role="user", content=w)]),
+                          dict(messages=[dict(role="user", content=question),
+                                         dict(role="assistant", content=REPLY[w])])]) for w in WORDS[:2]]
+    train, val = tmp_path / "train.jsonl", tmp_path / "val.jsonl"
+    train.write_text("\n".join(map(json.dumps, tasks * 5)))
+    val.write_text("\n".join(map(json.dumps, tasks)))
+    out = tmp_path / "run"
+    sft.main(["--ckpt", str(ckpt), "--tokenizer", tok_dir, "--data", str(train), "--val", str(val),
+              "--swarm", "2", "--answer_agent", "1", "--steps", "60", "--batch", "3", "--lr", "3e-3",
+              "--device", "cpu", "--out", str(out)])
+
+    start, end = [json.loads(line) for line in (out / "log.jsonl").read_text().splitlines()]
+    assert (start["swarms"], start["val_swarms"], start["swarm_size"], start["answer_agent"]) == (10, 2, 2, 1)
+    assert end["step"] == 60 and np.isfinite(end["train_loss"])
+    trained, _ = from_pretrained(str(out / "model.pt"), tokenizer=False)
+    val_tasks, _ = sft.load_conversations(str(val), swarm=2, answer_agent=1)
+    encoded = sft.encode_swarms(val_tasks, t, max_len=1024, answer_agent=1)
+    cut = sft.evaluate(trained, [rows[1] for rows in encoded], 3, t.token_to_id("<|pad|>"), "cpu")
+    assert end["val_loss"] < 0.2 * start["val_loss"]
+    assert end["val_loss"] < 0.5 * cut

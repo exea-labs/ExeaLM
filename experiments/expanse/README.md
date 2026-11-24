@@ -8,8 +8,10 @@ and 3B, from our NAIRR Pilot allocation of 2,000 GPU-hours. The plan and its rea
 
 - On two rented NVIDIA A40s ([results/a40_check](../../results/a40_check/README.md)): `gpu_check.py` passes in full,
   two GPUs stay in sync and train 1.86 times as fast as one at the 0.1B shape, and a resumed run is identical to the
-  last bit.
-- On a laptop CPU: training with two processes (`tests/test_multi.py`), the plan's arithmetic and commands
+  last bit. That was this branch's first multi-GPU trainer. Training on several GPUs now goes through DDP (the one on
+  `main`, with this branch's gradient accumulation and time limits added), which has not run on a GPU yet:
+  `gpu_check.py` on any two NVIDIA GPUs checks it before the allocation is spent.
+- On a laptop CPU: training with two processes (`tests/test_ddp.py`), the plan's arithmetic and commands
   (`tests/test_plan.py`), the first job's lead check with tiny models, and `train.sb` end to end with Slurm's commands
   faked (a run stopped by its time limit, copied off the "node", resubmitted and finished by the next job).
 
@@ -29,7 +31,7 @@ From the [Expanse user guide](https://www.sdsc.edu/systems/expanse/user_guide.ht
 | Login | `login.expanse.sdsc.edu`, the same as the rest of Expanse |
 
 Three things follow. A run has to use all four GPUs or it wastes three quarters of what it is charged, so training
-runs as four processes (`exealm/train/multi.py`). A run longer than 48 hours has to stop and continue, and since the
+runs as four processes (DDP under `torchrun`). A run longer than 48 hours has to stop and continue, and since the
 local disk is emptied, its checkpoint has to be copied off the node first. And the data has to be copied onto the
 node at the start of every job.
 
@@ -80,8 +82,8 @@ gradient averaging.
 ExeaLM as it is. Otherwise add `--variant core` to every `plan.py` line below: the memory-free hybrid, every row
 read alone.
 
-Check the 3B rows of `throughput_h100.json` too. The plan trains 3B with 4 rows per forward pass, sized from an
-estimate. If the row with 8 fit with room to spare, pass `--batch 8` for the 3B runs.
+Check the 3B rows of `throughput_h100.json` too. The plan trains 3B with 4 rows per GPU in a forward pass, sized
+from an estimate. If the row with 8 fit with room to spare, pass `--batch 8` to `plan.py` for the 3B runs.
 
 ## 3. The runs of the plan
 
@@ -95,7 +97,7 @@ The last command prints lines to paste, here with a learning rate made up for th
 
 ```bash
 RUN=exealm_500m_s0 \
-ARGS="--preset 500m --search 0 --data experiments/expanse/mix_tokpack.json --val data/tokpack/bpe32k/val_en --seq 512 --batch 32 --accum 4 --steps 114441 --lr 0.0006 --seed 0 --eval_every 500 --eval_batches 16" \
+ARGS="--preset 500m --search 0 --data experiments/expanse/mix_tokpack.json --val data/tokpack/bpe32k/val_en --seq 512 --batch 128 --accum 4 --steps 114441 --lr 0.0006 --seed 0 --eval_every 500 --eval_batches 4" \
 sbatch experiments/expanse/train.sb
 ```
 
@@ -118,7 +120,7 @@ A run that is not in the plan is the same three lines with your own `RUN` and `A
 
 ```bash
 export RUN=pilot_500m_s0
-export ARGS="--preset 500m --search 0 --data experiments/expanse/mix_tokpack.json --val data/tokpack/bpe32k/val_en --seq 512 --batch 16 --steps 3000 --lr 1e-3"
+export ARGS="--preset 500m --search 0 --data experiments/expanse/mix_tokpack.json --val data/tokpack/bpe32k/val_en --seq 512 --batch 64 --steps 3000 --lr 1e-3"
 sbatch experiments/expanse/train.sb
 ```
 
@@ -129,10 +131,11 @@ the job's four GPUs, copies every new checkpoint back to `./runs/$RUN`, stops cl
 limit and submits the next job, until the run has written `model.pt`. Its settings are listed at the top of the file.
 A job that crashes is not resubmitted.
 
-**What one step is.** `--batch` is the rows each GPU reads in one forward pass and `--accum` how many passes go into
-one optimizer step. One step trains on batch × seq × accum × GPUs tokens (32 × 512 × 4 × 4 = 262,144 in the plan's
-0.5B runs, 16 × 512 × 1 × 4 = 32,768 in the pilot), and
-`--steps`, the warm-up and the learning-rate schedule count those steps. Every evaluation line in `log.jsonl` has the
+**What one step is.** `--batch` is the rows of one forward pass over all the job's GPUs (each GPU reads batch / GPUs
+of them, whole swarms only) and `--accum` how many passes go into one optimizer step. One step trains on
+batch × seq × accum tokens (128 × 512 × 4 = 262,144 in the plan's 0.5B runs, 32 rows on each of four GPUs;
+64 × 512 = 32,768 in the pilot, 16 rows on each), and `--steps`, the warm-up and the learning-rate schedule count
+those steps. `plan.py --batch` is different: the rows one GPU reads, which is what has to fit in its memory. Every evaluation line in `log.jsonl` has the
 tokens seen so far (`tokens`), the rate since the last one (`tokens_per_sec`), the peak memory of GPU 0
 (`gpu_mem_gb`) and whether the four processes still hold the same model (`processes_in_sync`, which should always be
 true).
@@ -157,9 +160,10 @@ default, `./runs` in your 100 GB home directory, is enough for the 0.1B runs and
 `KEEP=s3://<bucket>/runs` (and `DATA=s3://<bucket>/data` once the packed data outgrows home), which uses `s3cmd`.
 
 **Memory at 3B.** Weights, gradients and the two optimizer statistics take 16 bytes per parameter in 32-bit: 46 GB of
-an H100's 80 GB at 2.9B parameters, before any activations. That is arithmetic, not a measurement.
+an H100's 80 GB at 2.9B parameters, before any activations (DDP keeps the gradients in its communication buffers,
+so it adds no second copy). That is arithmetic, not a measurement.
 `throughput.py --sizes 3B` reports the real peak and halves the batch until it fits. `plan.py --batch` changes the
-rows per forward pass and keeps the step at 262,144 tokens.
+rows per GPU in a forward pass and keeps the step at 262,144 tokens.
 
 ## To check on the first login
 

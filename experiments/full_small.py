@@ -507,14 +507,14 @@ def main():
             rec.update(evaluate(model, a, data, dev, a.model))
             curve.append(rec)
             print(json.dumps(rec), flush=True)
-            json.dump(dict(info, curve=curve, searches=searches), open(path, "w"), indent=1)
+            json.dump(dict(info, curve=curve, searches=searches), open(path, "w", encoding="utf-8", newline="\n"), indent=1)
         if a.save_every and (step + 1) % a.save_every == 0:
             torch.save(dict(model=model.state_dict(), cfg=vars(cfg), step=step + 1, specs=getattr(model, "specs", None)), os.path.join(a.out, f"{name}_seed{a.seed}_ckpt.pt"))
     torch.save(dict(model=model.state_dict(), cfg=vars(cfg), step=last, specs=getattr(model, "specs", None)), os.path.join(a.out, f"{name}_seed{a.seed}_ckpt.pt"))
     s = samples(model, a, data, dev, a.model, tok)
     json.dump(dict(info, curve=curve, searches=searches, samples=s,
                    architecture=model.architecture() if a.model == "exealm" else None),
-              open(path, "w"), indent=1, ensure_ascii=False)
+              open(path, "w", encoding="utf-8", newline="\n"), indent=1, ensure_ascii=False)
     print(json.dumps(dict(samples=s), ensure_ascii=False), flush=True)
     print("WROTE", path)
 

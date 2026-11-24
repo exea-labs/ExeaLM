@@ -276,7 +276,7 @@ def main():
     out = dict(ckpt=a.ckpt, model=type(model).__name__, articles=len(arts), re_mentions=int(rem.sum()), novel=int(nov.sum()),
                reader_windows_in_notes=n_auth, args=vars(a), results=res)
     path = a.out or os.path.join(os.path.dirname(a.ckpt), "irl_" + os.path.basename(a.ckpt).replace("_ckpt.pt", ".json"))
-    json.dump(out, open(path, "w"), indent=1)
+    json.dump(out, open(path, "w", encoding="utf-8", newline="\n"), indent=1)
     print("WROTE", path)
 
 

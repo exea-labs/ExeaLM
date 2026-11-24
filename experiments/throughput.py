@@ -36,9 +36,9 @@ from exealm import ExeaLM, Llama, MemoryContext, count_params, get_config, llama
 from exealm.config import MENU  # noqa: E402
 from exealm.train.pretrain import make_optimizer, pick_device  # noqa: E402
 
-PRESET = {"0.1B": "100m", "0.5B": "500m", "1B": "1b", "3B": "3b", "tiny": "tiny"}
-BATCH = {"0.1B": 32, "0.5B": 16, "1B": 16, "3B": 8, "tiny": 8}            # 0.1B and 0.5B: as measured on the MI300X
-KINDS = ("hybrid", "llama", "exealm", "gated")
+PRESET = {"0.1B": "100m", "0.25B": "250m", "0.5B": "500m", "1B": "1b", "3B": "3b", "tiny": "tiny"}
+BATCH = {"0.1B": 32, "0.25B": 32, "0.5B": 16, "1B": 16, "3B": 8, "tiny": 8}            # 0.1B and 0.5B: as measured on the MI300X
+KINDS = ("hybrid", "llama", "exealm", "gated", "qwen")
 
 
 def sync(dev):
@@ -57,9 +57,11 @@ def build(size, kind, vocab, dev):
         cfg = get_config(PRESET[size], **over)
         return ExeaLM(cfg).to(dev), MemoryContext(swarm_size=cfg.swarm_size)
     cfg = get_config(PRESET[size], pinned={}, menu=tuple(t for t in MENU if t not in ("RG", "AG")), **over)
-    if kind == "gated":
+    if kind in ("gated", "qwen"):
         cfg = replace(cfg, attn_gate=True, qk_norm=True)
-    model = ExeaLM(cfg) if kind == "hybrid" else Llama(cfg if kind == "gated" else llama_baseline(cfg))
+    if kind == "qwen":                                              # Gated DeltaNet in 3 of every 4 layers
+        cfg = replace(cfg, delta_layers=tuple(i for i in range(cfg.n_layers) if i % 4 != 3))
+    model = ExeaLM(cfg) if kind == "hybrid" else Llama(cfg if kind in ("gated", "qwen") else llama_baseline(cfg))
     return model.to(dev), MemoryContext()
 
 
@@ -116,7 +118,7 @@ def main():
     ap.add_argument("--sizes", default="0.1B,0.5B", help="any of " + ", ".join(PRESET))
     ap.add_argument("--models", default="hybrid,llama", help="any of " + ", ".join(KINDS))
     ap.add_argument("--precision", default="bf16,fp32")
-    ap.add_argument("--batch", type=int, default=0, help="rows per step (default: 32, 16, 16 and 8 for the four sizes)")
+    ap.add_argument("--batch", type=int, default=0, help="rows per step (default: 32, 32, 16, 16 and 8 for the five sizes)")
     ap.add_argument("--seq", type=int, default=512)
     ap.add_argument("--vocab", type=int, default=32768)
     ap.add_argument("--steps", type=int, default=20, help="timed steps")

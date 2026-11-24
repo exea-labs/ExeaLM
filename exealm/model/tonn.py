@@ -18,8 +18,8 @@ import torch.nn.functional as F
 from ..config import ModelConfig
 from ..memory import MemoryContext
 from . import circuits as Cc
-from .baseline import Attention, mixer  # noqa: F401
-from .alter import WeightAlter
+from .baseline import Attention, first_layer_supplies_values, mix, mixer, mlp_options, name_for_streaming  # noqa: F401
+from .alter import WeightAlter, fold_edits
 from .board import BoardCircuit
 from .common import MLP, RMSNorm
 from .retrieval import ChunkEncoder, RetrievalCircuit
@@ -60,6 +60,9 @@ def slot_cost(spec, cfg, T):
     proj = 3 * d * h + h * d
     if t == "RP":
         return proj + 2 * h * T
+    if t == "GD":
+        # Per token: chunk dot products and triangular solves, plus three products with the matrix state.
+        return proj + 4 * min(cfg.chunk, T) * h + 3 * h * h + 6 * h
     if t == "RG":
         e, k, Lc = cfg.enc_dim, cfg.rag_topk, cfg.rag_chunk_len
         return proj + k * Lc * (d * e + 4 * e * e + 2 * e * h) / cfg.chunk + 2 * k * Lc * h
@@ -79,8 +82,9 @@ class TONNLayer(nn.Module):
         self.norm = RMSNorm(d)
         self.inp = nn.Linear(d, K * 3 * h)
         self.out = nn.Linear(K * h, d, bias=False)
-        self.lam = nn.Parameter(torch.zeros(K, h))        # decays, through tanh(3 lam)
-        self.beta = nn.Parameter(torch.ones(K))           # attention sharpness
+        self.onorm = RMSNorm(d) if getattr(cfg, "peri_ln", False) else None   # Peri-LN, as in the attention layers
+        self.lam = nn.Parameter(torch.zeros(K, h))        # decays or GD gate direction, through tanh(3 lam)
+        self.beta = nn.Parameter(torch.ones(K))           # attention sharpness or GD write bias
         self.register_buffer("mask", torch.ones(K))       # 0 switches a slot off (worth measurement)
         self.register_buffer("scale", torch.zeros(K))     # running output size per slot (0: not measured yet)
         self.rg = RetrievalCircuit(cfg)
@@ -117,7 +121,8 @@ class TONNLayer(nn.Module):
                 n = sum(1 for sp in self.specs if sp["tmpl"] == t)
                 ranges[t] = (start, start + n)
                 start += n
-            self._plan = dict(order=torch.tensor(order, device=device), slots=order, ranges=ranges,
+            running = {t: bounds for t, bounds in ranges.items() if t in Cc.RUNNING_SUM_TYPES}
+            self._plan = dict(order=torch.tensor(order, device=device), slots=order, ranges=ranges, running=running,
                               lags=torch.tensor([self.specs[k]["lag"] for k in order], device=device))
             self._plan_key = key
         return self._plan
@@ -135,23 +140,45 @@ class TONNLayer(nn.Module):
         u = F.linear(self.norm(x), W, b).view(B, T, K, 3, h)                 # slots in type order
         lam = torch.tanh(self.lam * 3).index_select(0, o)
         beta = self.beta.index_select(0, o)
+        stream = getattr(mem, "stream", None) if mem is not None else None
+        P, prev, new = 0, None, {}
+        if stream is not None:                    # one window of a longer text: lags also read the last P positions
+            P = 2 * max(self.cfg.lags)            # of the window before, and recurrences start from where it ended
+            prev = stream.get(("tonn", self.index))
+            tail = prev["tail"].to(u.dtype) if prev is not None else u.new_zeros(B, P, K, 3, h)
+            u = torch.cat([tail, u], 1)
+        running, carry = {}, None
+        if pl["running"]:
+            running, carry = Cc.run_running_sums(u, pl["lags"], lam, pl["running"], tail=P,
+                                                 s0=None if prev is None else prev["run"], return_state=True)
         outs = []
         for t, (a, c) in pl["ranges"].items():
+            if t in running:
+                outs.append(running[t])
+                continue
             S = [u[:, :, a:c, j] for j in range(3)]
             slots = pl["slots"][a:c]                                          # original slot numbers
+            if t in ("RG", "AG", "WA"):
+                S = [z[:, P:] for z in S]
             if t == "RG":
                 y = self.rg(S, mem, self, slots)
             elif t == "AG":
                 y = self.ag(S, mem, self.index, slots)
             elif t == "WA":
                 y = self.wa(S, mem, self, slots)
+            elif stream is not None:
+                y, new[t] = Cc.run_stream(t, S, pl["lags"][a:c], lam[a:c], beta[a:c], chunk=self.cfg.chunk, tail=P,
+                                          state=None if prev is None else prev.get(t))
             else:
-                y = Cc.run(t, S, pl["lags"][a:c], lam[a:c], beta[a:c])
+                y = Cc.run(t, S, pl["lags"][a:c], lam[a:c], beta[a:c], chunk=self.cfg.chunk)
             outs.append(y)
+        if stream is not None:
+            stream[("tonn", self.index)] = dict(tail=u[:, -P:], run=carry, **new)
         y = torch.cat(outs, 2) if len(outs) > 1 else outs[0]
         y = self._unit_scale(y, o) * self.mask.index_select(0, o).view(1, 1, -1, 1)
         Wo = self.out.weight.view(-1, K, h).index_select(1, o).reshape(-1, K * h)
-        return x + F.linear(y.reshape(B, T, K * h), Wo)
+        out = F.linear(y.reshape(B, T, K * h), Wo)
+        return x + (out if self.onorm is None else self.onorm(out))
 
     def _unit_scale(self, y, o):
         """Divide each slot by the size its output had on PAST batches (a running average), so a prediction never
@@ -177,8 +204,10 @@ class ExeaLM(nn.Module):
         nn.init.normal_(self.emb.weight, std=0.02)
         self.layers = nn.ModuleList([TONNLayer(cfg, specs[i], i) for i in range(cfg.n_layers - len(cfg.attn_layers))])
         self.attn = nn.ModuleList([mixer(cfg, i) for i in cfg.attn_layers])          # attention or Gated DeltaNet
+        first_layer_supplies_values(self.attn)
+        name_for_streaming(self.attn, cfg.attn_layers)
         f = cfg.ffn_width
-        self.mlps = nn.ModuleList([MLP(cfg.d, f) for _ in range(cfg.n_layers)]) if f else None
+        self.mlps = nn.ModuleList([MLP(cfg.d, f, **mlp_options(cfg)) for _ in range(cfg.n_layers)]) if f else None
         self.norm = RMSNorm(cfg.d)
         self.head = nn.Linear(cfg.d, cfg.vocab_size, bias=False)
         if cfg.tie_embeddings:
@@ -197,16 +226,22 @@ class ExeaLM(nn.Module):
         mem = replace(mem, encoder=self.encoder, emb=self.emb, tokens=idx, cache={})
         x = self.emb(idx)
         ti = ai = 0
+        ctx = {"stream": mem.stream}                          # shared by the attention layers
         for i in range(self.cfg.n_layers):
             if i in self.cfg.attn_layers:                     # a hybrid model's full attention block
-                x = self.attn[ai](x)
+                x = mix(self.attn[ai], x, ctx)
                 ai += 1
             else:
                 mem.cache["layer"] = i
                 x = self.layers[ti](x, mem)
                 ti += 1
             if self.mlps is not None:
-                x = self.mlps[i](x, mem.cache.get("wa", {}).get(i))
+                edits = mem.cache.get("wa", {}).get(i)
+                persist = getattr(self.cfg, "wa_persist", 0.0) and mem.stream is not None
+                carried = mem.stream.get(("wa", i)) if persist else None
+                x = self.mlps[i](x, edits, carried)
+                if persist and (edits or carried):            # this window's changes join the carried one
+                    mem.stream[("wa", i)] = fold_edits(carried, edits or [], self.cfg.wa_persist)
         logits = self.head(self.norm(x))
         loss = None
         if targets is not None:

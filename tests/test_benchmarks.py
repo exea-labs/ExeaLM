@@ -8,7 +8,7 @@ import pytest
 from exealm.data.benchmarks import BENCHMARKS, export_rows, segments
 from exealm.data.pack import pack
 
-FIXTURES = json.loads((Path(__file__).parent / 'fixtures' / 'benchmarks.json').read_text())
+FIXTURES = json.loads((Path(__file__).parent / 'fixtures' / 'benchmarks.json').read_text(encoding="utf-8"))
 
 
 @pytest.mark.parametrize('name', BENCHMARKS)
@@ -19,14 +19,14 @@ def test_export_preserves_text_and_packs_with_provenance(tmp_path, name):
     assert manifest['rows'] == 2 and not manifest['sample']
     assert manifest['split'] in ('test', 'validation')
     assert manifest['sha256'] == hashlib.sha256((out / 'text.jsonl.gz').read_bytes()).hexdigest()
-    with gzip.open(out / 'text.jsonl.gz', 'rt') as f:
+    with gzip.open(out / 'text.jsonl.gz', 'rt', encoding="utf-8") as f:
         records = [json.loads(line) for line in f]
     expected = segments(name, row)
     assert [(r['field'], r['text']) for r in records] == expected * 2
     assert all(r['source'] == name and r['benchmark_id'] for r in records)
     meta = pack([str(out / 'text.jsonl.gz')], 'bytes', str(tmp_path / 'packed'))
     assert meta['n_docs'] == manifest['text_segments']
-    assert json.loads((out / 'manifest.json').read_text()) == manifest
+    assert json.loads((out / 'manifest.json').read_text(encoding="utf-8")) == manifest
 
 
 def test_solution_and_reasoning_whitespace_and_all_choices_preserved():

@@ -92,6 +92,19 @@ Open problems:
 - **Safety.** A shared board is an input channel. Agents should treat other agents' messages as information, not as
   instructions. Post-training data should teach that.
 
+### Agent identity
+
+Set `{"board_identity_size": 4}` in a pretraining `--config` JSON file to learn author vectors for IDs 0–3. The
+default size is zero. Each TONN layer learns one vector per ID and adds it to the values of that author's posts as
+they are read. The vectors start at zero and learn through the board. The chunk visibility and attention masks
+still determine which posts a reader can see.
+
+In a batch, each swarm uses its own row indices. To assign explicit identities, pass a `(batch,)` integer
+`agent_ids` tensor in `MemoryContext`. A standalone agent's in-batch posts have no author signal. A persistent
+board uses each post's stored author ID, including when a single agent reads it. Set matching IDs for training and
+inference. IDs outside the table have a zero signal and can still post and be read. Local and HTTP boards keep the
+same stored key, value, strength, and author fields.
+
 ### Sampling datastore chunks
 
 `Datastore.from_shards(shards, n_chunks, chunk_len, seed=0)` samples uniformly

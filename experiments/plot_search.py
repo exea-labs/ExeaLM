@@ -42,7 +42,7 @@ def read_log(path):
     the end of training. If the log holds several runs (the same --out used twice), the last one is read. A resumed
     run keeps one record per step: rounds that were run again after a resume replace the ones logged before it."""
     recs = []
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if line:

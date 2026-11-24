@@ -16,7 +16,7 @@ spec.loader.exec_module(plot_search)
 
 
 def write_log(path, recs):
-    path.write_text("".join(json.dumps(r) + "\n" for r in recs))
+    path.write_text("".join(json.dumps(r) + "\n" for r in recs), encoding="utf-8", newline="\n")
     return str(path)
 
 
@@ -38,7 +38,7 @@ def test_search_records_carry_the_architecture_and_a_resumed_log_reads_the_same(
     main(common + ["--out", str(b), "--stop_at", "6"])
     main(common + ["--out", str(b), "--resume", "auto"])
     cfg = get_config("tiny")
-    recs = [json.loads(l) for l in (a / "log.jsonl").read_text().splitlines()]
+    recs = [json.loads(l) for l in (a / "log.jsonl").read_text(encoding="utf-8").splitlines()]
     searches = [r for r in recs if r["event"] == "search"]
     assert searches and any(r["replaced"] > 0 for r in searches)
     for r in searches:

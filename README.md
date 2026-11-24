@@ -34,6 +34,8 @@ python -m exealm.data.download llmjp --subset ja/ja_wiki --max_files 1 --out dat
 python -m exealm.data.sources                                    # print the two candidate 100B-token mixes
 ```
 
+**Windows.** Everything above runs in PowerShell with a CPU-only PyTorch (`pip install torch --index-url https://download.pytorch.org/whl/cpu`); `pytest` is green there and CI checks it on every pull request. Activate the venv with `.venv\Scripts\Activate.ps1`. File patterns such as `data/raw/*.jsonl.gz` are expanded by the tools themselves, because PowerShell and cmd do not do it for you. The `.sh` scripts in `experiments/gpu_session/` need Git Bash or WSL.
+
 Load a research checkpoint from [Hugging Face](https://huggingface.co/exea-labs/ExeaLM) in one line, or write with it in the terminal (`pip install huggingface_hub`). These are base models: they continue text, they do not chat yet.
 
 ```python
@@ -254,11 +256,11 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [ ] Weight-alter with 4 agents (three writers editing one reader) and with a later layer as the target (`wa_target`)
 - [ ] In the combined 0.1B model with `wa_key="hidden"` the relay went through weight edits alone and the board was unused (1 seed). Does that hold on more seeds, and does the board come back when the facts are longer than one chunk?
 - [ ] A relay built from real text (one agent reads a paragraph, another answers about it), to compare the board and weight-alter outside the toy task
-- [ ] Agent identity: a role or id signal on posts so agents can specialize
+- [x] Agent identity: opt-in learned author signals on board posts ([usage](docs/memory.md#agent-identity))
 - [ ] Retrieval division of labor: do agents in a swarm pull different chunks? Try rewarding it
-- [ ] Swarm-aware multi-GPU training, keeping each swarm on one GPU. Written: every process draws whole swarms for its own GPU (`exealm/train/multi.py`), tested with two processes on a CPU. **(GPU)** Not yet run on real GPUs
+- [x] Swarm-aware multi-GPU training, keeping each swarm on one GPU: every process trains whole swarms ([#17](https://github.com/exea-labs/ExeaLM/issues/17), [docs/training.md](docs/training.md))
 - [ ] Swarm SFT data: split-information tasks built from multi-hop QA. This also fills the "tool use and agentic" gap in [DATA.md](DATA.md)
-- [ ] Swarm SFT loop: loss on the answering agent, trained through the board (test on the `tiny` preset)
+- [x] Swarm SFT loop: loss on the answering agent, trained through the board (tested on the `tiny` preset, [usage](docs/swarms.md#swarm-sft))
 - [ ] Swarm RL (GRPO): whole-swarm attempts with a shared reward (test on the `tiny` preset)
 - [ ] Swarm task suite: split-information QA, divide-and-conquer math, write-and-test code, propose-and-check, cross-lingual QA
 - [x] Swarm generation: all agents generate in lockstep in one batch (`exealm/generate.py`: one new token per agent per step, each agent stops on its own, the swarm shares the in-batch board)
@@ -291,7 +293,9 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [x] Gated DeltaNet, Qwen3.5's linear attention, as a layer (`exealm/model/delta.py`, tested against the recurrence); gated attention and QK-norm as options. At 13M (one seed) gated attention + QK-norm improve the hybrid by 0.025 bits per byte and put it ahead of a Qwen3.5-style model; DeltaNet layers add nothing on top ([results §12](results/README.md))
 - [x] Make gated attention + QK-norm the default: it holds on two seeds (1.511, 1.512), beats a gated Llama and a Qwen3.5-style model at equal steps and at equal compute (1.509 against 1.515 and 1.542), and improves the full 17M model with both skills (1.393 against 1.419) ([results §10, §12](results/README.md#12-parts-from-qwen35-exealmmodeldeltapy-experimentstokenizer_lmpy---llama_cfg))
 - [ ] The full 17M model against a gated Llama on the same batches (the fair baseline now that ExeaLM is gated)
-- [ ] Gated DeltaNet as a TONN circuit type the search can choose ([#30](https://github.com/exea-labs/ExeaLM/issues/30)); other new types, for example sliding-window attention
+- [x] Gated DeltaNet as an opt-in TONN circuit type the search can choose ([tiny comparison](results/README.md#16-gated-deltanet-in-the-tonn-search-menu))
+- [ ] Compare the Gated DeltaNet circuit on real text at 13M ([#30](https://github.com/exea-labs/ExeaLM/issues/30))
+- [ ] Other circuit types, for example sliding-window attention
 - [x] A circuit that has not been measured yet was scaled by the batch it was reading, so its output depended on later tokens and on other rows until its first training step. Fixed in [#47](https://github.com/exea-labs/ExeaLM/pull/47) (a constant scale until the first measurement). On real text at 13M the fix changes the score by 0.0001 bits per byte (3 seeds, [results/funding](results/funding/README.md))
 - [x] The starting menu without rotary attention is the default for the hybrid (`HYBRID` in `exealm/config.py`; the search can still add the type). It scored 1.511 over 10 seeds at 13M (Qwen3.5-style 1.522, gated Llama 1.522) and 1.413 over 3 seeds at 0.1B (original menu 1.427, gated Llama 1.446, Qwen3.5-style 1.457)
 - [ ] (GPU) The same comparison at equal training time in bf16, where the hybrid is 1.6 times slower per step than Llama at 0.1B: does the 0.033 lead over the gated Llama survive? The queue for this and the next three GPU items is ready to run: [experiments/gpu_session](experiments/gpu_session/README.md)
@@ -312,7 +316,7 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 ### Speed (`exealm/model/scan.py`)
 - [ ] Fused Triton kernels for `decay_scan` and `gated_scan` (any NVIDIA GPU works, including a free Colab T4; must also run on AMD MI300X) ([#16](https://github.com/exea-labs/ExeaLM/issues/16))
 - [ ] A compile-friendly TONN layer: one code path for every circuit type, so `torch.compile` can fuse it (today it gains 8% for the hybrid and 20% for Llama) ([#24](https://github.com/exea-labs/ExeaLM/issues/24))
-- [ ] One scan call for all running-sum circuits in a layer
+- [x] One scan call for all real running-sum circuits in a layer (`I`, `GI`, `MI`, `MIM`, `EP`, `SM`)
 - [ ] Profile where the memory circuits' time goes: the 17M model with the board and library on is 1.30x Llama per step ([#29](https://github.com/exea-labs/ExeaLM/issues/29))
 - [ ] In bf16 on the MI300X the hybrid is 1.6 times slower per step than Llama at 0.1B and 0.5B (1.2 times in 32-bit). Find which circuits lose the most from bf16 and fix them ([throughput](results/funding/README.md))
 - [ ] Fast Gated DeltaNet on NVIDIA through flash-linear-attention ([#31](https://github.com/exea-labs/ExeaLM/issues/31))
@@ -342,12 +346,13 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [ ] Final special tokens: chat roles, agent roles, board
 
 ### Training (`exealm/train/pretrain.py`)
-- [ ] Multi-GPU: DDP, then FSDP ([#17](https://github.com/exea-labs/ExeaLM/issues/17)). The DDP part is written (`torchrun --nproc_per_node 4 -m exealm.train.pretrain`, `exealm/train/multi.py`): averaged gradients, the search and checkpoints on process 0, a resumed run identical to an uninterrupted one. Tested with two processes on a CPU; **(GPU)** not yet run on real GPUs
+- [x] Multi-GPU with DDP: `torchrun --nproc_per_node N -m exealm.train.pretrain ...`; two CPU processes match one process on the same total batch ([#17](https://github.com/exea-labs/ExeaLM/issues/17), [docs/training.md](docs/training.md)). **(GPU)** Not yet run on real GPUs in this form: the A40 check ([results/a40_check](results/a40_check/README.md)) ran an earlier hand-written version
 - [x] Gradient accumulation (`--accum`), checkpoints on the clock (`--save_minutes`) and a clean stop before a job's time limit (`--max_minutes`, or SIGUSR1/SIGTERM)
+- [ ] FSDP, and the datastore search sharded across GPUs
 - [x] Exact resume from checkpoints (`--save_every`, `--stop_at`, `--resume auto`)
 - [x] Weights & Biases logging (`--wandb PROJECT` in `exealm.train.pretrain`; a resumed run continues the same W&B run)
 - [ ] Context extension near the end of training
-- [ ] Optimizer: Muon vs AdamW (`small` preset) ([#21](https://github.com/exea-labs/ExeaLM/issues/21))
+- [x] Optimizer: Muon vs AdamW (`small` preset): `--optimizer muon`. At 13M both did best at lr 4e-3, where Muon was 0.017 and 0.030 bits per byte lower than AdamW on two seeds, on public stand-in data. Not tried at 0.1B yet, so AdamW stays the default ([#21](https://github.com/exea-labs/ExeaLM/issues/21), [results/muon](results/muon/README.md))
 - [ ] Multi-token prediction heads (`small` preset)
 - [ ] Learning-rate transfer from small models (μP): tune on `tiny`/`small`, carry over to 0.1B
 - [x] (starter) Budget sheet: GPU-hours per run, checkpoint cadence, what we can afford ([docs/budget.md](docs/budget.md))
@@ -373,6 +378,7 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 
 ### Release, docs and community
 - [x] Hugging Face model card and a loader, so the model loads with one line (`exealm.from_pretrained("17m/exealm_together_gated_seed0")`, `exealm/hub.py`)
+- [x] Windows and CPU-only support: text files are read and written as UTF-8, the tests pass without `PYTHONUTF8`, and CI runs them on `windows-latest`
 - [x] Demo: chat with one agent or a swarm (`python -m exealm.chat`; `--raw` continues text, which is what today's base checkpoints can do)
 - [ ] Put the demo on the web (a Hugging Face Space) once a checkpoint has been through post-training
 - [x] (starter) Diagrams: a TONN layer, RG, AG, a swarm (interactive, on the blog: https://blog.exealabs.org/architecture/)

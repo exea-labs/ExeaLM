@@ -256,7 +256,7 @@ Mac Studio での以前の小規模なテストです。すべて [results/READM
 - [ ] 実テキストから作るリレー課題（あるエージェントが段落を読み、別のエージェントがそれについて答える）。作り物の課題の外で掲示板と重み書き換えを比べます
 - [ ] エージェントの識別：エージェントが専門化できるよう、投稿に役割または id の信号を付けます
 - [ ] 検索の分業：スウォーム内のエージェントは別々のチャンクを取り出すか。それに報酬を与えてみます
-- [ ] スウォームを考慮したマルチ GPU 学習。各スウォームを 1 つの GPU に置きます。実装済みです：各プロセスが自分の GPU 用にスウォーム単位でバッチを作ります（`exealm/train/multi.py`、CPU 上の 2 プロセスでテスト済み）。**（GPU）** 実際の GPU ではまだ動かしていません
+- [x] スウォームを考慮したマルチ GPU 学習。各スウォームを 1 つの GPU に置きます：各プロセスはスウォーム単位で学習します（[#17](https://github.com/exea-labs/ExeaLM/issues/17)、[docs/training.md](docs/training.md)）
 - [ ] スウォーム SFT のデータ：マルチホップ QA から作る、情報を分割した課題。[DATA.md](DATA.md) の「tool use and agentic」の不足もこれで埋まります
 - [ ] スウォーム SFT ループ：答えるエージェントに損失をかけ、掲示板を通して学習します（`tiny` プリセットでテスト）
 - [ ] スウォーム RL（GRPO）：スウォーム全体で試行し、報酬を共有します（`tiny` プリセットでテスト）
@@ -342,8 +342,9 @@ Mac Studio での以前の小規模なテストです。すべて [results/READM
 - [ ] 特殊トークンの確定：チャットの役割、エージェントの役割、掲示板
 
 ### 学習（`exealm/train/pretrain.py`）
-- [ ] マルチ GPU：DDP、次に FSDP（[#17](https://github.com/exea-labs/ExeaLM/issues/17)）。DDP の部分は実装済みです（`torchrun --nproc_per_node 4 -m exealm.train.pretrain`、`exealm/train/multi.py`）：勾配の平均、プロセス 0 での探索とチェックポイント、中断なしの学習と完全に一致する再開。CPU 上の 2 プロセスでテスト済みで、**（GPU）** 実際の GPU ではまだ動かしていません
+- [x] DDP によるマルチ GPU 学習：`torchrun --nproc_per_node N -m exealm.train.pretrain ...`。CPU 上の 2 プロセスは、同じ合計バッチで学習する 1 プロセスと一致します（[#17](https://github.com/exea-labs/ExeaLM/issues/17)、[docs/training.md](docs/training.md)）。**（GPU）** この形ではまだ実際の GPU で動かしていません：A40 での確認（[results/a40_check](results/a40_check/README.md)）は以前の手書きの実装で行いました
 - [x] 勾配の累積（`--accum`）、一定時間ごとのチェックポイント（`--save_minutes`）、ジョブの制限時間の前に安全に止める機能（`--max_minutes`、または SIGUSR1/SIGTERM）
+- [ ] FSDP、および GPU 間で分割したデータストア検索
 - [x] チェックポイントからの厳密な再開（`--save_every`、`--stop_at`、`--resume auto`）
 - [x] Weights & Biases へのログ記録（`exealm.train.pretrain` の `--wandb PROJECT`。再開した学習は同じ W&B の run を続けます）
 - [ ] 学習の終盤でのコンテキスト拡張

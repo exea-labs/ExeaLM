@@ -1,0 +1,5 @@
+{
+ "attn_gate": true,
+ "qk_norm": true,
+ "canon": true
+}

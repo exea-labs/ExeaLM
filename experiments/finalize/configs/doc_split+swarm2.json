@@ -1,0 +1,22 @@
+{
+ "pinned": {
+  "AG": 1
+ },
+ "menu": [
+  "D",
+  "I",
+  "GI",
+  "M",
+  "MI",
+  "MIM",
+  "EP",
+  "G",
+  "C",
+  "RP",
+  "SM",
+  "OS",
+  "AG"
+ ],
+ "board_order": "doc",
+ "swarm_size": 2
+}

@@ -38,7 +38,7 @@ def numbers(result):
 
 
 def read_log(path):
-    return [json.loads(line) for line in open(path) if line.strip()] if os.path.exists(path) else []
+    return [json.loads(line) for line in open(path, encoding="utf-8") if line.strip()] if os.path.exists(path) else []
 
 
 def table(records):
@@ -102,11 +102,11 @@ def run_once(run, tokenizer, tasks, limit, **kw):
         rec = score(run, name, step, tokenizer, tasks, limit, **kw)
         if rec is None:
             continue
-        with open(log, "a") as f:
+        with open(log, "a", encoding="utf-8", newline="\n") as f:
             f.write(json.dumps(rec) + "\n")
         records.append(rec)
         new.append(rec)
-        with open(os.path.join(run, "evals.md"), "w") as f:
+        with open(os.path.join(run, "evals.md"), "w", encoding="utf-8", newline="\n") as f:
             f.write(table(records))
         print(json.dumps(rec), flush=True)
     return new

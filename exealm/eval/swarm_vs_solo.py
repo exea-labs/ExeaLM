@@ -119,13 +119,15 @@ def main(argv=None):
     if a.datastore_chunks:
         src = data if a.datastore_data is None else TokenShards(a.datastore_data)
         ds = Datastore.from_shards(src, a.datastore_chunks, model.cfg.rag_chunk_len, seed=a.seed + 1).to(a.device)
+        if a.datastore_data is not None:                              # another pack: its document numbers start at 0
+            ds.doc_ids += int(data.meta["n_docs"])                    # too, so they must not hide the scored ones
         ds.refresh(model.encoder, model.emb)
     recs = compare(model, data, baseline, ds, tuple(a.policies.split(",")), a.batches, a.batch, a.seq, a.seed + 3,
                    a.keep_last, a.device)
     for r in recs:
         print(json.dumps(r))
         if a.out:
-            with open(a.out, "a") as f:
+            with open(a.out, "a", encoding="utf-8", newline="\n") as f:
                 f.write(json.dumps(r) + "\n")
     return recs
 

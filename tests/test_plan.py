@@ -38,21 +38,29 @@ def test_the_plans_parameter_counts_are_the_codes():
             counts = dict(exealm=count_params(ExeaLM(get_config(preset, vocab_size=32768))),
                           core=count_params(ExeaLM(get_config(preset, vocab_size=32768, **core))),
                           gated=count_params(Llama(get_config(preset, vocab_size=32768, **gated))))
+        if "qwen" in s:
+            with torch.device("meta"):
+                counts["qwen"] = count_params(Llama(get_config(preset, vocab_size=32768,
+                                                               **overrides(f"qwen_{preset}.json"))))
         for model, n in counts.items():
             assert round(n / 1e6, 2) == s[model], (preset, model, n)
     cfg = get_config("500m", **core)
     assert "RG" not in cfg.menu and "AG" not in cfg.menu and cfg.swarm_size == 1 and not cfg.pinned
+    with torch.device("meta"):
+        nine = count_params(ExeaLM(get_config("9b", vocab_size=32768)))
+    assert 8.5e9 < nine < 9.5e9                                           # the run the study is evidence for
 
 
 def test_the_table_fits_the_allocation_and_is_the_one_in_the_budget_document():
     text = printed([])
-    rows = [l for l in text.splitlines() if l.startswith("| `")]
+    rows = [l for l in text.splitlines() if "| `" in l]
     hours = {l.split("`")[1]: int(l.split("|")[-2].replace(",", "")) for l in rows}
-    assert hours["exealm_500m_s0"] == 307 and hours["gated_500m_s0"] == 204        # 30B tokens at 81 and 124.8 TFLOP/s
-    assert hours["exealm_3b_s0"] == 239 and hours["gated_3b_s0"] == 159
-    assert len(hours) == 10 and all(f"gated_{n[7:]}" in hours for n in hours if n.startswith("exealm_"))
+    assert hours["exealm_3b_4.1x_s0"] == 710 and hours["qwen_3b_4.1x_s0"] == 731    # about 12B tokens at 81 TFLOP/s
+    assert len(hours) == 18 and all(f"qwen_{n[7:]}" in hours for n in hours if n.startswith("exealm_"))
+    assert not [n for n in hours if n.startswith("gated_")]                       # the baseline is the Qwen3.5-style model
+    assert {l.split("|")[5].strip() for l in rows if "exealm" in l} == {"4.1"}    # one ratio: one curve, 0.1B to 3B
     reserve = int(text.split("**Reserve of the 2,000** | | | | | | **")[1].split("**")[0].replace(",", ""))
-    assert 200 < reserve < 400
+    assert 150 < reserve < 400
     budget = open(os.path.join(ROOT, "docs", "budget.md")).read()
     for line in text.splitlines():
         if line.startswith("|"):
@@ -69,39 +77,43 @@ def test_measured_rates_and_the_four_gpu_speed_up_rescale_the_plan(tmp_path):
     path = tmp_path / "throughput_h100.json"
     path.write_text(json.dumps(rows))
     rates, source = plan.measured(rows)
-    assert rates["500m"] == dict(exealm=162.0, gated=124.8) and source["500m"] == dict(exealm="exealm", gated="MI300X")
-    assert rates["1b"] == plan.MI300X["1b"]                               # nothing measured: the MI300X figure stays
+    assert rates["500m"] == dict(exealm=100.0, gated=124.8, qwen=100.0)       # the memory-free hybrid's row, as trained
+    assert source["500m"] == dict(exealm="hybrid", gated="MI300X", qwen="MI300X")
+    assert rates["1b"] == dict(plan.MI300X["1b"], qwen=81.0)             # nothing measured: the MI300X figure stays
     text = printed(["--rates", str(path), "--speedup", "3.2"])
-    row = next(l for l in text.splitlines() if l.startswith("| `exealm_500m_s0`"))
-    assert int(row.split("|")[-2]) == round(307.5 / 2 * 4 / 3.2)           # twice the rate, 4 / 3.2 the charge
-    one = next(l for l in text.splitlines() if l.startswith("| `exealm_100m_s0`"))
-    assert int(one.split("|")[-2]) == 29                                  # a one-GPU run pays nothing for the others
+    row = next(l for l in text.splitlines() if "| `exealm_500m_4.1x_s0`" in l)
+    full = plan.gpu_hours(497.07, plan.steps_of("500m", plan.TPP) * plan.STEP_TOKENS, 81.0)
+    assert int(row.split("|")[-2]) == round(full * 81 / 100 * 4 / 3.2)    # the measured rate, 4 / 3.2 the charge
+    one = next(l for l in text.splitlines() if "| `exealm_250m_4.1x_s0`" in l)
+    assert int(one.split("|")[-2]) == round(plan.gpu_hours(245.3, plan.steps_of("250m", plan.TPP) * plan.STEP_TOKENS, 56.2))
 
 
 def test_every_run_is_a_whole_number_of_swarms_and_passes_per_step():
-    for name, preset, model, seed in plan.runs():
+    for name, part, preset, model, seed, steps in plan.runs("core"):
         text = printed(["--run", name, "--lr", "1e-3"])
         args = text.split('ARGS="')[1].split('"')[0].split()
         get = lambda k: args[args.index(k) + 1]                           # noqa: E731
         gpus = 1 if "nairr-gpu-shared" in text else 4
         assert gpus == plan.SIZES[preset]["gpus"]
-        assert int(get("--batch")) * int(get("--accum")) * gpus * int(get("--seq")) == plan.STEP_TOKENS
-        assert int(get("--batch")) % 4 == 0 and int(get("--batch")) * int(get("--eval_batches")) == 512
-        assert int(get("--steps")) * plan.STEP_TOKENS == pytest.approx(plan.SIZES[preset]["tokens"], rel=1e-4)
+        rows, stream = int(get("--batch")), int(get("--stream"))
+        assert stream == plan.STREAM and rows * int(get("--accum")) * int(get("--seq")) * stream == plan.STEP_TOKENS
+        assert rows * stream == plan.SIZES[preset]["batch"] * gpus                # windows per GPU x GPUs
+        assert rows % gpus == 0 and rows * int(get("--eval_batches")) >= 512
+        assert int(get("--steps")) == steps and name.startswith(f"{model}_{preset}_")
         assert get("--seed") == str(seed) and get("--preset") == preset
-        if model == "gated":
+        if model in ("gated", "qwen"):
             assert get("--model") == "llama" and os.path.exists(os.path.join(ROOT, get("--config")))
         else:
-            assert get("--search") == "0" and "--config" not in args
+            assert get("--search") == "0" and get("--config") == "experiments/expanse/exealm_core.json"
         assert ("--ntasks-per-node=1" in text) == (gpus == 1)
-    core = printed(["--run", "exealm_1b_s0", "--lr", "1e-3", "--variant", "core"])
-    assert "--config experiments/expanse/exealm_core.json" in core
+    memory = printed(["--run", "exealm_3b_4.1x_s0", "--lr", "1e-3", "--variant", "memory"])
+    assert "--config" not in memory.split('ARGS="')[1].split('"')[0]
     with pytest.raises(SystemExit, match="needs --lr"):
-        plan.main(["--run", "exealm_1b_s0"])
+        plan.main(["--run", "exealm_3b_4.1x_s0"])
     with pytest.raises(SystemExit, match="does not divide"):
-        plan.main(["--run", "exealm_3b_s0", "--lr", "1e-3", "--batch", "12"])
-    check = printed(["--lr_check", "1b", "--lrs", "3e-4,6e-4"])
-    assert check.count("sbatch ") == 4 and "--steps 1000 --warmup 100" in check
+        plan.main(["--run", "exealm_3b_4.1x_s0", "--lr", "1e-3", "--batch", "6"])
+    check = printed(["--lr_check", "500m", "--lrs", "3e-4,6e-4"])
+    assert check.count("sbatch ") == 4 and "--steps 1000 --warmup 100" in check and "qwen_500m.json" in check
 
 
 def test_a_run_too_long_for_its_data_is_flagged(tmp_path):
@@ -111,9 +123,9 @@ def test_a_run_too_long_for_its_data_is_flagged(tmp_path):
     mix = tmp_path / "mix.json"
     mix.write_text(json.dumps({"sources": {"en": {"paths": str(pack), "weight": 1.0}}}))
     assert plan.pack_tokens(str(mix)) == 400_000_000
-    assert "NOT READY" in printed(["--run", "exealm_500m_s0", "--lr", "1e-3", "--data", str(mix)])
-    (pack / "meta.json").write_text(json.dumps(dict(n_tokens=8_000_000_000)))
-    assert "NOT READY" not in printed(["--run", "exealm_500m_s0", "--lr", "1e-3", "--data", str(mix)])
+    assert "NOT READY" in printed(["--run", "exealm_3b_4.1x_s0", "--lr", "1e-3", "--data", str(mix)])
+    (pack / "meta.json").write_text(json.dumps(dict(n_tokens=3_000_000_000)))
+    assert "NOT READY" not in printed(["--run", "exealm_3b_4.1x_s0", "--lr", "1e-3", "--data", str(mix)])
 
 
 def test_throughput_times_the_plans_two_models():
@@ -124,8 +136,9 @@ def test_throughput_times_the_plans_two_models():
     assert built["exealm"][1].swarm_size == get_config("tiny").swarm_size and built["hybrid"][1].swarm_size == 1
     kinds = lambda m: {s["tmpl"] for lay in m.specs for s in lay}          # noqa: E731
     assert {"RG", "AG"} <= kinds(built["exealm"][0]) and not {"RG", "AG"} & kinds(built["hybrid"][0])
+    assert built["qwen"][0].cfg.delta_layers and n["qwen"] != n["gated"]   # Gated DeltaNet in 3 of every 4 layers
     with pytest.raises(SystemExit):
-        throughput.build("tiny", "qwen", 256, dev)
+        throughput.build("tiny", "mamba", 256, dev)
 
 
 def pack(path, n_tokens=6000, vocab=256, seed=0):

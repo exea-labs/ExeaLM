@@ -36,9 +36,40 @@ def bits_per_byte(model, val, a, dev):
     nll = 0.0
     for _ in range(a.eval_batches):
         x, y, _ = val.batch(a.batch, a.seq, rng)
-        nll += float(model(x.to(dev), MemoryContext(), y.to(dev))[1])
+        nll += sum(float(model(xs.to(dev), MemoryContext(), ys.to(dev))[1])
+                   for xs, ys in zip(x.chunk(a.accum), y.chunk(a.accum))) / a.accum
     model.train()
     return round(nll / a.eval_batches / math.log(2) / val.meta["bytes_per_token"], 4)
+
+
+def train_step(model, opt, x, y, dev, accum=1, amp="none"):
+    """One optimizer step on the batch x, y, run as `accum` equal micro-batches with about 1/accum of the activation
+    memory. No target is masked here, so the mean of the micro-batch losses is the batch loss and the gradient is the
+    same, except through TONN's running slot scale (TONNLayer._unit_scale), which updates once per micro-batch: later
+    micro-batches are divided by a scale that already includes the earlier ones. The difference is largest on a step
+    where a slot has no scale yet (the first step), when only the first micro-batch is divided by 1. Returns the loss."""
+    if accum < 1 or x.shape[0] % accum:
+        raise ValueError(f"a batch of {x.shape[0]} does not split into {accum} equal micro-batches")
+    opt.zero_grad(set_to_none=True)
+    total = 0.0
+    for xs, ys in zip(x.chunk(accum), y.chunk(accum)):
+        with torch.autocast(device_type=dev.type, dtype=torch.bfloat16) if amp == "bf16" else torch.enable_grad():
+            loss = model(xs.to(dev), MemoryContext(), ys.to(dev))[1] / accum
+        loss.backward()
+        total += float(loss.detach())
+    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+    opt.step()
+    return total
+
+
+def selection_batches(train, a, dev, seed):
+    """The search's 4 selection batches, each cut into `a.accum` equal pieces: the worth pass has no gradients but still
+    holds a whole batch of logits, so uncut it can need more memory than the training step --accum made fit.
+    group_worth averages the per-piece losses, so equal pieces give the same worth as whole batches."""
+    srng = np.random.default_rng(20_000 + seed)
+    return [(xs.to(dev), ys.to(dev), MemoryContext())
+            for x, y, _ in (train.batch(a.batch, a.seq, srng) for _ in range(4))
+            for xs, ys in zip(x.chunk(a.accum), y.chunk(a.accum))]
 
 
 def run(tok, a, dev, kind="tonn", seed=0):
@@ -68,9 +99,8 @@ def run(tok, a, dev, kind="tonn", seed=0):
     searcher, sel = None, None
     if kind.endswith("_search"):
         searcher = Searcher(every=250, until=0.5, seed=seed)
-        srng = np.random.default_rng(20_000 + seed)
-        sel = [(x.to(dev), y.to(dev), MemoryContext()) for x, y, _ in (train.batch(a.batch, a.seq, srng) for _ in range(4))]
-    opt = make_optimizer(model, a.lr, 0.1)
+        sel = selection_batches(train, a, dev, seed)
+    opt = make_optimizer(model, a.lr, 0.1, a.optimizer)
     rng = np.random.default_rng(seed)
     t0, bytes_seen, curve, recent = time.time(), 0.0, [], []
     total = a.steps
@@ -90,22 +120,17 @@ def run(tok, a, dev, kind="tonn", seed=0):
         if searcher is not None:
             searcher.maybe_round(model, opt, step, total, sel, a.seq)
         x, y, _ = train.batch(a.batch, a.seq, rng)
-        with torch.autocast(device_type=dev.type, dtype=torch.bfloat16) if a.amp == "bf16" else torch.enable_grad():
-            loss = model(x.to(dev), MemoryContext(), y.to(dev))[1]
-        opt.zero_grad(set_to_none=True)
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-        opt.step()
+        loss = train_step(model, opt, x, y, dev, a.accum, a.amp)
         bytes_seen += a.batch * a.seq * train.meta["bytes_per_token"]
-        recent.append(float(loss.detach()))
+        recent.append(loss)
         if (step + 1) % 250 == 0:                          # training-loss curve (spikes show instability)
             curve.append(round(sum(recent) / len(recent), 4))
             recent = []
         if dev.type == "mps" and step % 200 == 0:
             torch.mps.empty_cache()
         step += 1
-    rec = dict(model=kind, tag=a.tag, cfg=a.cfg if kind != "llama" else "{}", lr=a.lr, seed=seed, tokenizer=tok,
-               vocab=int(train.meta["vocab_size"]), params_M=round(count_params(model) / 1e6, 2),
+    rec = dict(model=kind, tag=a.tag, cfg=a.cfg if kind != "llama" else "{}", lr=a.lr, optimizer=a.optimizer, seed=seed,
+               tokenizer=tok, vocab=int(train.meta["vocab_size"]), params_M=round(count_params(model) / 1e6, 2),
                steps=total, seconds_budget=a.seconds, amp=a.amp, train=a.train, tokens_seen=total * a.batch * a.seq, bytes_seen=int(bytes_seen),
                secs=round(time.time() - t0, 1),
                bits_per_byte={v[4:]: bits_per_byte(model, s, a, dev) for v, s in vals.items()},
@@ -127,7 +152,13 @@ def main():
     ap.add_argument("--seconds", type=float, default=0, help="equal compute: set the step count to fill this many seconds")
     ap.add_argument("--batch", type=int, default=32)
     ap.add_argument("--seq", type=int, default=512)
+    ap.add_argument("--accum", type=int, default=1, help="run each batch as this many equal micro-batches, for GPUs too "
+                    "small for the whole batch (32 x 512 on the 13M hybrid needs about 9 GB; 2 fits an 8 GB card). Same "
+                    "tokens; same gradient except through TONN's running slot scale, which updates once per micro-batch "
+                    "(see train_step), so results differ a little from one whole batch")
     ap.add_argument("--lr", type=float, default=2e-3)
+    ap.add_argument("--optimizer", default="adamw", choices=["adamw", "muon"], help="muon: Muon for the weight matrices, "
+                    "AdamW for the rest, at the same --lr (exealm/train/muon.py)")
     ap.add_argument("--eval_batches", type=int, default=16)
     ap.add_argument("--models", default="tonn", help="any of tonn, tonn_core, tonn_core_search, llama")
     ap.add_argument("--seeds", default="0")
@@ -138,6 +169,8 @@ def main():
     ap.add_argument("--device", default="auto")
     ap.add_argument("--out", default="results/tokenizer")
     a = ap.parse_args()
+    if a.accum < 1 or a.batch % a.accum:
+        ap.error("--accum must be at least 1 and divide --batch")
     dev = pick_device(a.device)
     os.makedirs(a.out, exist_ok=True)
     rows = []
@@ -146,7 +179,7 @@ def main():
         for kind in a.models.split(","):
             for seed in [int(x) for x in a.seeds.split(",")]:
                 rows.append(run(tok, a, dev, kind, seed))
-                json.dump(dict(args=vars(a), device=str(dev), rows=rows), open(os.path.join(a.out, name), "w"), indent=1)
+                json.dump(dict(args=vars(a), device=str(dev), rows=rows), open(os.path.join(a.out, name), "w", encoding="utf-8", newline="\n"), indent=1)
 
 
 if __name__ == "__main__":

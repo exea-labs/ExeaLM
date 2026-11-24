@@ -1,0 +1,16 @@
+{
+ "sources": {
+  "en": {
+   "paths": "data/tokpack/bpe32k/train_en",
+   "weight": 0.5
+  },
+  "ja": {
+   "paths": "data/tokpack/bpe32k/train_ja",
+   "weight": 0.3
+  },
+  "code": {
+   "paths": "data/tokpack/bpe32k/train_code",
+   "weight": 0.2
+  }
+ }
+}

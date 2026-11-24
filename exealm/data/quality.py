@@ -17,6 +17,8 @@ import json
 import os
 import re
 
+from .files import expand
+
 KANA = re.compile(r"[぀-ヿ]")
 CJK = re.compile(r"[぀-ヿ一-鿿]")
 
@@ -61,6 +63,7 @@ def main():
     ap.add_argument("files", nargs="+")
     ap.add_argument("--out", default="data/filtered")
     a = ap.parse_args()
+    a.files = expand(a.files)
     os.makedirs(a.out, exist_ok=True)
     seen, stats = set(), {}
     for path in a.files:

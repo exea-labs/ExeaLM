@@ -108,7 +108,7 @@ def export_rows(name, rows, out, revision, limit=None):
                         license=license_name, rows=count, text_segments=parts, limit=limit,
                         sample=limit is not None, sha256=digest,
                         policy='raw fields; HellaSwag continuations and completed HumanEval code also included')
-        (work / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
+        (work / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding="utf-8", newline="\n")
         # Refuse an output appearing during export, too.
         if out.exists():
             raise FileExistsError(out)

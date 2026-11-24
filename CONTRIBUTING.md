@@ -9,7 +9,7 @@ You do not need to have trained a model before.
 3. Set up and run the tests (any laptop works, no GPU needed):
    ```bash
    git clone https://github.com/exea-labs/ExeaLM && cd ExeaLM
-   python -m venv .venv && source .venv/bin/activate
+   python -m venv .venv && source .venv/bin/activate     # Windows PowerShell: .venv\Scripts\Activate.ps1
    pip install -e ".[dev,data]"
    pytest
    ```
