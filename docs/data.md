@@ -59,6 +59,7 @@ At 100B tokens nothing needs repeating: we select from roughly 40T available.
 |---|---|
 | `sources.py` | Both candidate mixes as data, plus the LLM-jp sub-corpora and K2 Horizon subsets with their licenses. |
 | `download.py` | Fetches a sample: LLM-jp files directly (no account), or any Hugging Face dataset by streaming. |
+| `stage.py` | Downloads whole source files, several at once: resumable, and each file checked against its published sha256. |
 | `quality.py` | Rule-based filters (with separate rules for Japanese) and exact deduplication. |
 | `dedup.py` | Near-duplicate removal across all sources: MinHash LSH (word 5-grams, character 5-grams for Japanese), CPU only. |
 | `tokenizer.py` | Trains a byte-level BPE tokenizer on a sample. |
@@ -87,6 +88,41 @@ python -m exealm.data.pack data/dedup/<val file>    --tokenizer tokenizer --out 
 
 # 6. train the 18M "small" model on it (laptop or a free Colab GPU)
 python -m exealm.train.pretrain --preset small --data data/packed/train --val data/packed/val --seq 256 --steps 2000
+```
+
+### Staging the full sources
+
+`exealm.data.stage` downloads the files of an LLM-jp path or a Hugging Face dataset as they are on the host. Both
+hosts keep the files in Git LFS, which publishes each file's size and sha256, and a file only gets its final name
+once both match. Stop it at any point and run the same command again: finished files are skipped and partial ones
+continue from the byte they stopped at. `manifest.jsonl` in the output folder lists every finished file. A file in
+the folder that the manifest does not list with the same sha256 (copied in by hand, or the manifest was deleted) is
+hashed before it counts as finished. When the host has a new version of a file, the old one stays in place until the
+new one passes its check.
+
+```bash
+python -m exealm.data.stage --mix v0 --max_files 1 --plan_only       # file count and size of every source, no download
+python -m exealm.data.stage --source ja/ja_wiki --out data/stage      # all 6 files, 1.87 GB
+python -m exealm.data.stage --source en/en_dolma/pes2o --max_tokens 5 # 7 of 39 files, 7.66 GB: under 5B of its 63B
+python -m exealm.data.stage --source IFM/Math-Reasoning/math-dialogue --max_gb 10 --workers 4   # 4 files, 8.05 GB
+```
+
+`--max_files`, `--max_gb` and `--max_tokens` cap each source on its own, and a capped source keeps files spread
+through its file list. A file is never split: several LLM-jp sources are a single file (en/en_wiki is one 7.46 GB
+file), and the plan prints a note when one file is already over the cap. `--max_tokens` needs a published token
+count, so it works for the LLM-jp paths in `sources.LLMJP` (an estimate: LLM-jp counted with its own tokenizer)
+except `ja/ja_cc/level0` to `level2`. Those and K2 have no published counts, so cap them with `--max_gb`; mix v0 has
+both, so `--mix v0` takes `--max_gb` or `--max_files`, not `--max_tokens`. Run `--plan_only` first: some sources
+are large (IFM/Pretrain-Behaviors is 4,165 files, 8.4 TB).
+
+LLM-jp files are `.jsonl.gz` with a `text` field, which `exealm.data.quality` reads directly. Hugging Face files stay
+in their own format (parquet for K2). `--to_jsonl` turns the staged parquet files into the same jsonl.gz files
+`exealm.data.download` writes, through the verified K2 formatters, so step 2 above reads them. `converted.jsonl` in
+the staging folder records the sha256 of the parquet file each output came from, and a rerun skips an output only when
+that matches the manifest, so only new files, new versions and deleted outputs are converted:
+
+```bash
+python -m exealm.data.stage --out data/stage --to_jsonl data/raw
 ```
 
 The open data tasks are in the README's [to-do list](../README.md#to-do-list): counting tokens,

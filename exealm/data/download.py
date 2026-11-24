@@ -16,9 +16,25 @@ import argparse
 import gzip
 import json
 import os
+import time
+import urllib.error
 import urllib.request
 
 from .sources import K2, LLMJP, LLMJP_API, LLMJP_RAW
+
+
+def get_json(req, tries=6, wait=5.0):
+    """json.load of a URL or Request, retried while the server says it is busy or down. GitLab allows 60 API calls a
+    minute without an account, and then answers 429 with a Retry-After."""
+    for i in range(tries):
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                return json.load(r)
+        except urllib.error.HTTPError as e:
+            if e.code not in (429, 500, 502, 503, 504) or i == tries - 1:
+                raise
+            after = (e.headers or {}).get("Retry-After", "")
+            time.sleep(min(float(after) if after.isdigit() else wait * 2 ** i, 120))
 
 
 def llmjp_files(path):
@@ -26,8 +42,7 @@ def llmjp_files(path):
     out, page = [], 1
     while True:
         url = f"{LLMJP_API}?path={path}&recursive=true&per_page=100&page={page}"
-        with urllib.request.urlopen(url, timeout=60) as r:
-            items = json.load(r)
+        items = get_json(url)
         if not items:
             return sorted(out)
         out += [it["path"] for it in items if it["type"] == "blob" and it["path"].endswith(".jsonl.gz")]

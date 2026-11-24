@@ -326,7 +326,7 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 - [ ] (GPU) Run the tests and a short training run on an MI300X and report what breaks
 
 ### Data ([DATA.md](DATA.md), `exealm/data/`)
-- [ ] Download and stage every DATA.md source: parallel, resumable, checksummed (build and test it on samples)
+- [ ] Download and stage every DATA.md source: parallel, resumable, checksummed. Built: `python -m exealm.data.stage` downloads LLM-jp and Hugging Face files several at a time, continues cut downloads, and keeps a file only once it matches its published sha256; `--max_gb` and `--max_tokens` stage part of a source, and `--to_jsonl` turns K2's parquet files into the jsonl.gz files the other data scripts read ([docs/data.md](docs/data.md#staging-the-full-sources)). Left: run it on the real mix
 - [ ] (starter) Count tokens in each K2 Horizon subset (streams, no big download) ([#8](https://github.com/exea-labs/ExeaLM/issues/8))
 - [x] (starter) A checked formatter for each of the 24 K2 Horizon pretraining and SFT subsets (`exealm/data/formatters.py`: broken rows are dropped instead of turned into text from their metadata; [#9](https://github.com/exea-labs/ExeaLM/issues/9))
 - [ ] Loader for the K2 guru-RL tasks and rewards (the part of [#9](https://github.com/exea-labs/ExeaLM/issues/9) still open)
