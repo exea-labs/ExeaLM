@@ -13,3 +13,4 @@ People who have worked on ExeaLM. After your first merged contribution, add your
 
 - Eknoor Ahluwalia (@eknoorahluwalia1), docs
 - Jasraj Tulsi (@jaztulsi), architecture, docs
+- Anthony Nguyen (@ChosenAN), data

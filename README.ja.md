@@ -352,14 +352,16 @@ Mac Studio での以前の小規模なテストです。すべて [results/READM
 ### 事後学習（`exealm/train/`）
 - [x] SFT ループとデータローダー（`python -m exealm.train.sft --ckpt ... --data conversations.jsonl.gz`）：1 行に 1 会話です。右側をパディングし、長さでまとめるので、会話どうしは互いに見えません。`tiny` でテスト済み：作り物の質問応答課題を学習し、チャットのデモで答えます
 - [x] SFT、選好、RL 課題のデータ整形（`python -m exealm.data.post --list`）：公開されている 8 つのソースを、3 つのループが読むファイルに変換します。それぞれにライセンスと確認時のリビジョンを記録しています。ソースごとに実際の 100 行で確認しました（[results/post_data](results/post_data/live_check.json)）。IFM/SFT-Reasoning は発話に分けられないので、事前学習用テキストのままです
-- [ ] DATA.md の配合で SFT のデータを組み、トークン数を数える（数学とコードの推論データ、WildChat はまだ整形していません）
+- [x] DATA.md の配合で SFT のデータを組むスクリプト（`python -m exealm.data.post_mix --missing empty`）：数学、コード、科学の推論データ（OpenMathReasoning、OpenCodeReasoning、OpenThoughts3）と Tulu 3 の安全性サブセットを整形し、トークン数は `sft.py` が学習するとおりに数えます。データのないバケットは「欠けている」と報告し、ほかのバケットのデータでは埋めません。2,705 行の試しの配合で `tiny` を学習できました（[docs/data.md](docs/data.md#the-sft-mix)）
+- [ ] 10 億から 20 億トークンの SFT 配合を実際に組み、トークン数を数える。その前に、長い推論の扱いを決める（`sft.py` の 1,024 トークンでは 99% が答えの前で切れます）、WildChat とツール利用の割合を空けるか（`--missing empty`）配り直すか（`redistribute`）決める、安全性のデータを増やす（Tulu 3 の安全性サブセットは約 1,100 万トークンで、15 億の 1% 未満です）
+- [ ] 実ユーザー会話のバケットのために WildChat-1M を整形する（個人情報と有害表現のフィルターのあと）
 - [x] DPO ループ（`python -m exealm.train.dpo --ckpt ... --data prefs.jsonl.gz`）：開始時のモデルの凍結したコピーを参照にします。SFT と同じく 1 行に 1 つの答えです。`tiny` でテスト済み：選ばれた答えを好むことを学習します
 - [x] DPO データ：英語の選好データ 3 つを整形しました（`exealm/data/post.py` の `tulu3-pref`、`dolci-pref`、`ultrafeedback`）
 - [ ] 日本語の選好ペア：公開されているものがまだ見つかっていません
 - [x] 数学とコードの報酬を使う GRPO ループ（`python -m exealm.train.grpo --ckpt ... --data tasks.jsonl.gz`）：課題ごとに答えのグループをサンプルして採点し、固定した参照モデルに対して更新します。報酬は `math`（boxed の答え、または最後の数）、`exact`、`code`（答えをテストコードと一緒に実行します。`--allow_code_exec` がなければ拒否します）です。`tiny` でテスト済みで、最もありそうな答えが間違っていたモデルを直します
 - [ ] 指示追従の制約（RLVR）と日本語の課題の報酬、コード報酬のための本物のサンドボックス
 - [x] チャットテンプレート（`exealm/chat.py`：`chat_prompt` と、同じ形式の Jinja テンプレート。同じトークンになることをテスト済み）
-- [ ] 長い推論の過程は、これほど小さなモデルの助けになるか。SmolLM2-135M のような既存の小さなオープンモデルでテストします（Colab）
+- [ ] 長い推論の過程は、これほど小さなモデルの助けになるか。SmolLM2-135M のような既存の小さなオープンモデルでテストします（Colab）。比べるデータは `post.py --think strip` と `--max_think_chars` で作れます
 
 ### 評価（`exealm/eval/`）
 - [x] （入門向け）lm-evaluation-harness のラッパー（`python -m exealm.eval.harness --ckpt ... --tasks hellaswag`。[docs/evaluation.md](docs/evaluation.md)、[#12](https://github.com/exea-labs/ExeaLM/issues/12)）。単独、貪欲法で、チャットテンプレートはまだありません

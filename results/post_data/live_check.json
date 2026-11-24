@@ -50,5 +50,50 @@
   "kept": 100,
   "dropped": {},
   "loads": 100
+ },
+ "tulu3-safety": {
+  "read": 87231,
+  "kept": 100,
+  "dropped": {
+   "source not selected": 87131
+  },
+  "loads": 100
+ },
+ "openmath": {
+  "read": 100,
+  "kept": 100,
+  "dropped": {},
+  "loads": 100
+ },
+ "opencode": {
+  "read": 100,
+  "kept": 100,
+  "dropped": {},
+  "loads": 100
+ },
+ "openthoughts3-math": {
+  "read": 100,
+  "kept": 31,
+  "dropped": {
+   "thinking never ends (cut off)": 69
+  },
+  "loads": 31
+ },
+ "openthoughts3-code": {
+  "read": 100,
+  "kept": 42,
+  "dropped": {
+   "thinking never ends (cut off)": 57,
+   "more than one thinking section": 1
+  },
+  "loads": 42
+ },
+ "openthoughts3-science": {
+  "read": 100,
+  "kept": 88,
+  "dropped": {
+   "thinking never ends (cut off)": 12
+  },
+  "loads": 88
  }
 }

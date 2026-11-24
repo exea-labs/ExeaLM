@@ -55,6 +55,14 @@ Three stages after pretraining: SFT, preference tuning, then RL with verifiable 
 | Real user conversations | 5% | [WildChat-1M](https://huggingface.co/datasets/allenai/WildChat-1M), filtered for toxicity and personal data |
 | Tool use and agentic | 5% | Open gap: no verified open set yet |
 
+Status (2026-11-24): `exealm/data/post.py` formats the chat sets (`tulu3-sft`, `smoltalk`, `dolci-sft`), the reasoning sets (`openmath`, `opencode`, `openthoughts3-math`, `-code` and `-science`) and the Tulu 3 safety subsets (`tulu3-safety`). `exealm/data/post_mix.py` samples them at these shares toward a token budget and counts tokens the way `sft.py` trains on them ([docs/data.md](docs/data.md#the-sft-mix)). Still open:
+
+- **Real user conversations and tool use** have no formatted data. The mix reports them as missing and never fills them from other buckets; `--missing empty` leaves their 10% empty, `--missing redistribute` spreads it over the other buckets. The Tulu 3 mixture already holds 100,000 WildChat conversations, counted as general chat today.
+- **K2 Horizon** SFT-Reasoning, Math-Reasoning and Code-Reasoning are one text per row with the turns run together, so they stay pretraining text and are not in the mix.
+- **Safety** is too small for its share: the Tulu 3 safety subsets are about 111,000 short conversations (about 11M tokens), under 1% of a 1.5B-token mix.
+- **Long reasoning traces.** The median thinking section is about 6,400 tokens in OpenMathReasoning, 7,800 in OpenCodeReasoning, and 6,700 (science) to 15,000 (code) in OpenThoughts3 ([results/post_data](results/post_data/lengths.json)). `sft.py` cuts conversations at 1,024 tokens by default, so it would train on the start of 99% of the traces and never on their answers. `post.py --think strip` keeps only the answers, `--max_think_chars` keeps only short traces, and `post_mix.py --long drop` leaves out what does not fit. Which one to use is the open question above, to be settled on a small model first.
+- About two thirds of OpenThoughts3's math answers and half of its code answers were cut off mid-thought when they were generated; those rows are dropped.
+
 **Stage 2, preference tuning:** [Tulu 3 preference mixture](https://huggingface.co/datasets/allenai/llama-3.1-tulu-3-8b-preference-mixture), [Dolci-Instruct-DPO](https://huggingface.co/datasets/allenai/Dolci-Instruct-DPO), [UltraFeedback](https://huggingface.co/datasets/HuggingFaceH4/ultrafeedback_binarized).
 
 **Stage 3, RL with verifiable rewards:** [K2 Horizon guru-RL](https://huggingface.co/datasets/IFM/guru-RL-v1.5), [RLVR GSM, MATH, and instruction-following constraints](https://huggingface.co/datasets/allenai/RLVR-GSM-MATH-IF-Mixed-Constraints).
@@ -64,4 +72,5 @@ Three stages after pretraining: SFT, preference tuning, then RL with verifiable 
 - Most sets are ODC-By, CC-BY, MIT, or Apache 2.0 and need attribution in our data card. Wikipedia is CC-BY-SA. The Stack v2 has per-file code licenses. SmolTalk includes Magpie data generated with Llama, so the Llama license applies to that part. Many Tulu 3 subsets carry their own source terms.
 - The base model trains from scratch with no pretrained weights. About half of K2 Horizon's mix is synthetic text from other models, and sets like OpenThoughts3 and OpenMathReasoning are made of other models' outputs.
 - We left out NVIDIA's Nemotron-CC-v2 and Nemotron-CC-Math, which are gated under an "other" license.
-- License fields were read from each dataset page on November 10, 2026. Confirm them before training.
+- OpenMathReasoning and OpenCodeReasoning are CC-BY-4.0, with answers written by DeepSeek-R1 and QwQ-32B. Each OpenCodeReasoning row names its own license; the 38,191 Codeforces rows whose license is "-" are left out. OpenThoughts3 is Apache 2.0, with answers by QwQ-32B, but its questions come from other sets with their own terms, including StackExchange (CC BY-SA).
+- License fields were read from each dataset page on November 10, 2026, and for the SFT reasoning sets on November 24, 2026. Confirm them before training.

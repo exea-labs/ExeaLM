@@ -64,6 +64,8 @@ At 100B tokens nothing needs repeating: we select from roughly 40T available.
 | `tokenizer.py` | Trains a byte-level BPE tokenizer on a sample. |
 | `pack.py` | Tokenizes documents into one flat token file per split, keeping document boundaries. Retrieval needs them so it can skip the document being read. |
 | `loader.py` | Training batches: random windows, the document id of each position, and swarms ([swarms.md](swarms.md)). |
+| `post.py` | Post-training data: streams open SFT, preference and RL-task sets into the files `sft.py`, `dpo.py` and `grpo.py` read. |
+| `post_mix.py` | The SFT mix: samples `post.py`'s files at DATA.md's Stage 1 shares and counts tokens as `sft.py` trains on them ([below](#the-sft-mix)). |
 
 ## Try it on a sample
 
@@ -212,3 +214,63 @@ those schemas, not copied corpus content. Results/revisions are recorded in
 `results/k2_formatters/`. This covers the pretraining/SFT subset list in `sources.K2`.
 The separately listed guru-RL release requires a task/reward-aware RL loader; it is
 outside this text-formatting registry and is not claimed as complete here.
+
+## The SFT mix
+
+DATA.md's Stage 1 asks for about 1 to 2 billion tokens in seven buckets. `exealm/data/post.py` turns each source into
+conversations (`python -m exealm.data.post --list`), and `exealm/data/post_mix.py` samples them into one file for
+`sft.py`:
+
+| Bucket | Share | `post.py` names |
+|---|---|---|
+| General chat | 35% | `tulu3-sft` (without its safety subsets), `smoltalk`, `dolci-sft` |
+| Math reasoning | 20% | `openmath`, `openthoughts3-math` |
+| Code | 20% | `opencode`, `openthoughts3-code` |
+| Science and general reasoning | 10% | `openthoughts3-science` |
+| Safety and refusals | 5% | `tulu3-safety`, and the safety subsets of `tulu3-sft` |
+| Real user conversations | 5% | none yet (WildChat-1M needs the personal-data and toxicity filter) |
+| Tool use | 5% | none yet |
+
+```bash
+# 1. format each source (streams; --max_rows counts kept rows, so ask for about what the mix needs)
+python -m exealm.data.post tulu3-sft --max_rows 1000000 --out data/post
+python -m exealm.data.post openmath --think strip --max_rows 400000 --out data/post      # or --max_think_chars N
+# ... and smoltalk, dolci-sft, tulu3-safety, opencode, openthoughts3-math, -code, -science
+
+# 2. (optional) benchmark text to check against, packed with the same tokenizer file
+python -m exealm.data.benchmarks --benchmark gsm8k --out data/benchmarks/gsm8k
+python -m exealm.data.pack data/benchmarks/gsm8k/text.jsonl.gz --tokenizer <tokenizer.json> --out data/benchmarks/gsm8k-packed
+
+# 3. the mix: --missing is required (empty: leave the missing buckets' 10% empty; redistribute: share it out)
+python -m exealm.data.post_mix --data data/post --tokens 1.5e9 --missing empty \
+  --benchmark gsm8k=data/benchmarks/gsm8k-packed --out data/post/mix
+
+# 4. train on it
+python -m exealm.train.sft --ckpt runs/pretrain/model.pt --tokenizer <tokenizer.json> --data data/post/mix/mix.jsonl.gz
+```
+
+The mix counts tokens with the project's 32k tokenizer (`--tokenizer hub`, the default) in the chat template of
+`exealm/chat.py`, cut to `--max_len` (1024, `sft.py`'s default) as `sft.py` cuts them. The budget and the shares
+count those tokens; the report also gives the uncut length and the assistant tokens. Rows of a bucket are shuffled
+together and taken until the bucket reaches its target, so each file gives rows in proportion to the rows formatted.
+Exact duplicate conversations are kept once across files, and `--max_per_prompt N` keeps at most N answers per
+question (OpenThoughts3 has 16). `--benchmark` drops conversations that share a 13-token window with a benchmark
+(the test of `decontam.py`, with each window inside one message). `mix.report.json` has rows and tokens per bucket
+and per file, target and achieved shares, and every drop reason, including `post.py`'s.
+
+A trial on 2026-11-24 (small `post.py` files, a 2M-token budget, `--missing empty`, all seven benchmark exports;
+[results/post_data/mix_trial.json](../results/post_data/mix_trial.json)) gave 2,705 conversations and 1.74M tokens
+that `sft.py` read with no skipped or dropped lines, and that trained the `tiny` preset for 20 steps. `sft.encode`
+on the written file gives exactly the report's token counts. What it showed:
+
+- **Reasoning traces are far longer than `--max_len`.** 99 to 100% of the reasoning rows are over 1,024 tokens (median
+  7,400 to 16,600; [lengths.json](../results/post_data/lengths.json)), so at the default cut the mix holds 1.74M
+  trained tokens out of 11.1M, and the model would see the start of each trace but not its answer. Choose
+  `post.py --think strip`, `--max_think_chars`, `post_mix.py --long drop` or a longer `--max_len` before the real mix.
+- **The safety bucket is small.** The Tulu 3 safety subsets are about 111,000 conversations of about 100 tokens,
+  about 11M tokens in all, against 75M for 5% of 1.5B. The bucket is reported as short.
+- **The 13-token benchmark test over-drops.** It dropped 65 of the 2,829 rows checked, almost all for runs of
+  numbers or letters (`1,2,3,4,5,6,7`, the alphabet, the first primes) that HumanEval and MMLU also contain: digits
+  are one token each, so 13 tokens is a short span. No GSM8K text matched.
+- `post.py --max_rows` counts kept rows. OpenThoughts3 drops about two thirds of its math rows (cut off when they
+  were generated), and `tulu3-safety` reads about 87,000 rows of other subsets before its first safety row.

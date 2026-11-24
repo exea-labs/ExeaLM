@@ -46,7 +46,9 @@ What's missing:
 
 1. **SFT** (`exealm/train/sft.py`): conversations in the chat format, loss on the assistant's tokens only. The loss,
    the loader and the loop are written (`python -m exealm.train.sft`). Every conversation gets its own row, padded on
-   the right, and conversations of similar length share a batch. The data sources are not downloaded or formatted yet.
+   the right, and conversations of similar length share a batch. `exealm/data/post.py` formats the data sources and
+   `exealm/data/post_mix.py` mixes them at DATA.md's shares ([data.md](data.md#the-sft-mix)); the full mix is not
+   built yet.
 2. **DPO** (`exealm/train/dpo.py`): preferred versus rejected answers. The loop is written (`python -m exealm.train.dpo`, tested on `tiny`); the preference data is not chosen yet.
 3. **GRPO** (`exealm/train/grpo.py`): RL with verifiable rewards (math answers, code tests, format). The loop is written
    (`python -m exealm.train.grpo`, tested on `tiny`) with math, exact-match and code rewards; the code reward runs

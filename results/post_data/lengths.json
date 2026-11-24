@@ -1,0 +1,73 @@
+{
+ "note": "Conversation lengths in tokens of the 32k tokenizer, in the chat template of exealm/chat.py, on the first kept rows of each exealm/data/post.py file (2026-11-24, default options: --think keep, no --max_think_chars). longer_than_1024: the share sft.py's default --max_len cuts; answer_past_1024: the share it drops.",
+ "sources": {
+  "tulu3-sft": {
+   "rows": 2000,
+   "median_tokens": 425,
+   "mean_tokens": 569,
+   "longer_than_1024": 0.122,
+   "answer_past_1024": 0.002
+  },
+  "smoltalk": {
+   "rows": 1500,
+   "median_tokens": 669,
+   "mean_tokens": 985,
+   "longer_than_1024": 0.389,
+   "answer_past_1024": 0.021
+  },
+  "dolci-sft": {
+   "rows": 1500,
+   "median_tokens": 493,
+   "mean_tokens": 683,
+   "longer_than_1024": 0.223,
+   "answer_past_1024": 0.022
+  },
+  "tulu3-safety": {
+   "rows": 400,
+   "median_tokens": 104,
+   "mean_tokens": 103,
+   "longer_than_1024": 0.0,
+   "answer_past_1024": 0.0
+  },
+  "openmath": {
+   "rows": 1000,
+   "median_tokens": 7390,
+   "mean_tokens": 8370,
+   "longer_than_1024": 0.99,
+   "answer_past_1024": 0.0,
+   "median_thinking_tokens": 6369
+  },
+  "opencode": {
+   "rows": 800,
+   "median_tokens": 8644,
+   "mean_tokens": 9175,
+   "longer_than_1024": 0.995,
+   "answer_past_1024": 0.04,
+   "median_thinking_tokens": 7814
+  },
+  "openthoughts3-math": {
+   "rows": 600,
+   "median_tokens": 14828,
+   "mean_tokens": 14338,
+   "longer_than_1024": 1.0,
+   "answer_past_1024": 0.0,
+   "median_thinking_tokens": 14138
+  },
+  "openthoughts3-code": {
+   "rows": 500,
+   "median_tokens": 16587,
+   "mean_tokens": 15331,
+   "longer_than_1024": 1.0,
+   "answer_past_1024": 0.116,
+   "median_thinking_tokens": 15067
+  },
+  "openthoughts3-science": {
+   "rows": 600,
+   "median_tokens": 7936,
+   "mean_tokens": 9003,
+   "longer_than_1024": 0.998,
+   "answer_past_1024": 0.052,
+   "median_thinking_tokens": 6680
+  }
+ }
+}

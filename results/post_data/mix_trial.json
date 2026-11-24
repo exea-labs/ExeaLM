@@ -1,0 +1,447 @@
+{
+ "rows": 2705,
+ "tokens": 1743475,
+ "tokens_full": 11143233,
+ "assistant_tokens": 1271824,
+ "tokens_target": 2000000,
+ "missing": "empty",
+ "max_len": 1024,
+ "long": "cut",
+ "max_per_prompt": 0,
+ "seed": 0,
+ "benchmarks": {
+  "names": [
+   "gsm8k",
+   "humaneval",
+   "mmlu",
+   "arc_easy",
+   "arc_challenge",
+   "hellaswag",
+   "jcommonsenseqa"
+  ],
+  "ngram": 13,
+  "min_matches": 1
+ },
+ "dropped": {
+  "post.py: source not selected": 87131,
+  "post.py: thinking never ends (cut off)": 2321,
+  "answer starts past --max_len": 59,
+  "shares text with benchmark humaneval": 57,
+  "post.py: more than one thinking section": 35,
+  "shares text with benchmark mmlu": 8,
+  "post.py: empty content": 2,
+  "post.py: no answer after the thinking": 1
+ },
+ "buckets": {
+  "chat": {
+   "share_target": 0.35,
+   "share_planned": 0.35,
+   "tokens_target": 700000,
+   "files": [
+    "tulu3-sft",
+    "smoltalk",
+    "dolci-sft"
+   ],
+   "rows_available": 5000,
+   "rows": 1325,
+   "tokens": 700390,
+   "tokens_full": 881228,
+   "assistant_tokens": 519728,
+   "cut": 267,
+   "short": false,
+   "share": 0.40172070147263367,
+   "share_of_budget": 0.350195
+  },
+  "math": {
+   "share_target": 0.2,
+   "share_planned": 0.2,
+   "tokens_target": 400000,
+   "files": [
+    "openmath",
+    "openthoughts3-math"
+   ],
+   "rows_available": 1600,
+   "rows": 392,
+   "tokens": 400277,
+   "tokens_full": 4135699,
+   "assistant_tokens": 363949,
+   "cut": 387,
+   "short": false,
+   "share": 0.22958574112046345,
+   "share_of_budget": 0.2001385
+  },
+  "code": {
+   "share_target": 0.2,
+   "share_planned": 0.2,
+   "tokens_target": 400000,
+   "files": [
+    "opencode",
+    "openthoughts3-code"
+   ],
+   "rows_available": 1300,
+   "rows": 392,
+   "tokens": 400945,
+   "tokens_full": 4371138,
+   "assistant_tokens": 204671,
+   "cut": 389,
+   "short": false,
+   "share": 0.2299688839817032,
+   "share_of_budget": 0.2004725
+  },
+  "science": {
+   "share_target": 0.1,
+   "share_planned": 0.1,
+   "tokens_target": 200000,
+   "files": [
+    "openthoughts3-science"
+   ],
+   "rows_available": 600,
+   "rows": 196,
+   "tokens": 200704,
+   "tokens_full": 1714009,
+   "assistant_tokens": 151175,
+   "cut": 196,
+   "short": false,
+   "share": 0.11511722278782317,
+   "share_of_budget": 0.100352
+  },
+  "safety": {
+   "share_target": 0.05,
+   "share_planned": 0.05,
+   "tokens_target": 100000,
+   "files": [
+    "tulu3-sft",
+    "tulu3-safety"
+   ],
+   "rows_available": 400,
+   "rows": 400,
+   "tokens": 41159,
+   "tokens_full": 41159,
+   "assistant_tokens": 32301,
+   "cut": 0,
+   "short": true,
+   "share": 0.023607450637376504,
+   "share_of_budget": 0.0205795
+  },
+  "real_users": {
+   "share_target": 0.05,
+   "share_planned": 0.0,
+   "tokens_target": 0,
+   "files": [],
+   "rows_available": 0,
+   "rows": 0,
+   "tokens": 0,
+   "tokens_full": 0,
+   "assistant_tokens": 0,
+   "cut": 0,
+   "short": false,
+   "missing": "allenai/WildChat-1M is not formatted yet: it needs the personal-data and toxicity filter first",
+   "share": 0.0,
+   "share_of_budget": 0.0
+  },
+  "tool_use": {
+   "share_target": 0.05,
+   "share_planned": 0.0,
+   "tokens_target": 0,
+   "files": [],
+   "rows_available": 0,
+   "rows": 0,
+   "tokens": 0,
+   "tokens_full": 0,
+   "assistant_tokens": 0,
+   "cut": 0,
+   "short": false,
+   "missing": "no verified open set yet (DATA.md)",
+   "share": 0.0,
+   "share_of_budget": 0.0
+  }
+ },
+ "files": {
+  "tulu3-sft": {
+   "bucket": "chat",
+   "file": "data/post/tulu3-sft.jsonl.gz",
+   "rows_read": 2000,
+   "rows_available": 2000,
+   "rows": 561,
+   "tokens": 266783,
+   "tokens_full": 314901,
+   "assistant_tokens": 232955,
+   "cut": 65,
+   "unused": 1438,
+   "dropped": {
+    "shares text with benchmark humaneval": 1
+   },
+   "sources": {
+    "ai2-adapt-dev/oasst1_converted": 561
+   },
+   "post": {
+    "read": 2000,
+    "kept": 2000,
+    "dropped": {},
+    "license": "odc-by"
+   }
+  },
+  "smoltalk": {
+   "bucket": "chat",
+   "file": "data/post/smoltalk.jsonl.gz",
+   "rows_read": 1500,
+   "rows_available": 1500,
+   "rows": 357,
+   "tokens": 225032,
+   "tokens_full": 324966,
+   "assistant_tokens": 162020,
+   "cut": 134,
+   "unused": 1131,
+   "dropped": {
+    "answer starts past --max_len": 5,
+    "shares text with benchmark mmlu": 2,
+    "shares text with benchmark humaneval": 5
+   },
+   "sources": {
+    "smol-magpie-ultra": 142,
+    "numina-cot-100k": 49,
+    "openhermes-100k": 42,
+    "smol-summarize": 23,
+    "smol-rewrite": 22,
+    "self-oss-instruct": 19,
+    "metamathqa-50k": 15,
+    "apigen-80k": 15,
+    "explore-instruct-rewriting": 11,
+    "systemchats-30k": 10,
+    "smol-constraints": 8,
+    "everyday-conversations": 1
+   },
+   "post": {
+    "read": 1500,
+    "kept": 1500,
+    "dropped": {},
+    "license": "not stated in the card metadata: read the card"
+   }
+  },
+  "dolci-sft": {
+   "bucket": "chat",
+   "file": "data/post/dolci-sft.jsonl.gz",
+   "rows_read": 1500,
+   "rows_available": 1500,
+   "rows": 407,
+   "tokens": 208575,
+   "tokens_full": 241361,
+   "assistant_tokens": 124753,
+   "cut": 68,
+   "unused": 1077,
+   "dropped": {
+    "shares text with benchmark humaneval": 10,
+    "answer starts past --max_len": 6
+   },
+   "sources": {
+    "Dolci Instruct Python Algorithms": 57,
+    "Logic Puzzles": 48,
+    "Tulu 3 Persona MATH": 44,
+    "Dolci Instruct Precise IF": 44,
+    "FLAN": 34,
+    "Evol CodeAlpaca": 31,
+    "Aya": 29,
+    "Dolci Instruct OpenThoughts3+ Science": 28,
+    "WildJailbreak": 21,
+    "WildGuardMix": 20,
+    "OpenMathInstruct 2": 20,
+    "Tulu 3 Persona GSM": 11,
+    "Tulu 3 Persona Python": 10,
+    "Tulu 3 Persona Algebra": 4,
+    "CoCoNot": 3,
+    "TableGPT": 2,
+    "OpenAssistant": 1
+   },
+   "post": {
+    "read": 1502,
+    "kept": 1500,
+    "dropped": {
+     "empty content": 2
+    },
+    "license": "odc-by"
+   }
+  },
+  "openmath": {
+   "bucket": "math",
+   "file": "data/post/openmath.jsonl.gz",
+   "rows_read": 1000,
+   "rows_available": 1000,
+   "rows": 237,
+   "tokens": 241557,
+   "tokens_full": 1984204,
+   "assistant_tokens": 220333,
+   "cut": 232,
+   "unused": 752,
+   "dropped": {
+    "shares text with benchmark mmlu": 4,
+    "shares text with benchmark humaneval": 7
+   },
+   "sources": {
+    "nvidia/OpenMathReasoning": 237
+   },
+   "post": {
+    "read": 1000,
+    "kept": 1000,
+    "dropped": {},
+    "license": "cc-by-4.0",
+    "think": "keep",
+    "max_think_chars": null
+   }
+  },
+  "openthoughts3-math": {
+   "bucket": "math",
+   "file": "data/post/openthoughts3-math.jsonl.gz",
+   "rows_read": 600,
+   "rows_available": 600,
+   "rows": 155,
+   "tokens": 158720,
+   "tokens_full": 2151495,
+   "assistant_tokens": 143616,
+   "cut": 155,
+   "unused": 440,
+   "dropped": {
+    "shares text with benchmark humaneval": 4,
+    "shares text with benchmark mmlu": 1
+   },
+   "sources": {
+    "ai2-adapt-dev/openmath-2-math": 155
+   },
+   "post": {
+    "read": 1920,
+    "kept": 600,
+    "dropped": {
+     "thinking never ends (cut off)": 1320
+    },
+    "license": "apache-2.0",
+    "think": "keep",
+    "max_think_chars": null
+   }
+  },
+  "opencode": {
+   "bucket": "code",
+   "file": "data/post/opencode.jsonl.gz",
+   "rows_read": 800,
+   "rows_available": 800,
+   "rows": 251,
+   "tokens": 256561,
+   "tokens_full": 2281851,
+   "assistant_tokens": 136524,
+   "cut": 248,
+   "unused": 521,
+   "dropped": {
+    "shares text with benchmark humaneval": 18,
+    "answer starts past --max_len": 10
+   },
+   "sources": {
+    "codeforces": 143,
+    "aizu": 33,
+    "hackerearth": 31,
+    "atcoder": 24,
+    "codechef": 20
+   },
+   "post": {
+    "read": 800,
+    "kept": 800,
+    "dropped": {},
+    "license": "cc-by-4.0",
+    "think": "keep",
+    "max_think_chars": null
+   }
+  },
+  "openthoughts3-code": {
+   "bucket": "code",
+   "file": "data/post/openthoughts3-code.jsonl.gz",
+   "rows_read": 500,
+   "rows_available": 500,
+   "rows": 141,
+   "tokens": 144384,
+   "tokens_full": 2089287,
+   "assistant_tokens": 68147,
+   "cut": 141,
+   "unused": 323,
+   "dropped": {
+    "shares text with benchmark humaneval": 12,
+    "answer starts past --max_len": 24
+   },
+   "sources": {
+    "stackexchange_codegolf": 74,
+    "nvidia/OpenCodeReasoning": 67
+   },
+   "post": {
+    "read": 1450,
+    "kept": 500,
+    "dropped": {
+     "thinking never ends (cut off)": 915,
+     "more than one thinking section": 34,
+     "no answer after the thinking": 1
+    },
+    "license": "apache-2.0",
+    "think": "keep",
+    "max_think_chars": null
+   }
+  },
+  "openthoughts3-science": {
+   "bucket": "science",
+   "file": "data/post/openthoughts3-science.jsonl.gz",
+   "rows_read": 600,
+   "rows_available": 600,
+   "rows": 196,
+   "tokens": 200704,
+   "tokens_full": 1714009,
+   "assistant_tokens": 151175,
+   "cut": 196,
+   "unused": 389,
+   "dropped": {
+    "answer starts past --max_len": 14,
+    "shares text with benchmark mmlu": 1
+   },
+   "sources": {
+    "organic-chemistry-questions": 125,
+    "stackexchange-physics": 71
+   },
+   "post": {
+    "read": 687,
+    "kept": 600,
+    "dropped": {
+     "thinking never ends (cut off)": 86,
+     "more than one thinking section": 1
+    },
+    "license": "apache-2.0",
+    "think": "keep",
+    "max_think_chars": null
+   }
+  },
+  "tulu3-safety": {
+   "bucket": "safety",
+   "file": "data/post/tulu3-safety.jsonl.gz",
+   "rows_read": 400,
+   "rows_available": 400,
+   "rows": 400,
+   "tokens": 41159,
+   "tokens_full": 41159,
+   "assistant_tokens": 32301,
+   "cut": 0,
+   "unused": 0,
+   "dropped": {},
+   "sources": {
+    "ai2-adapt-dev/coconot_converted": 400
+   },
+   "post": {
+    "read": 87531,
+    "kept": 400,
+    "dropped": {
+     "source not selected": 87131
+    },
+    "license": "odc-by"
+   }
+  }
+ },
+ "not_in_mix": {
+  "IFM/SFT-Reasoning, IFM/Math-Reasoning, IFM/Code-Reasoning": "listed in DATA.md's Stage 1 table, but each row is one text with the turns run together, so they stay pretraining text (exealm/data/formatters.py)",
+  "dolly-ja": "formatted by post.py, but not in DATA.md's Stage 1 table"
+ },
+ "tokenizer": "hub (exea-labs/ExeaLM tokenizer/tokenizer.json)",
+ "tokenizer_sha256": "fd584748f23a1bd769703bb445390d9d55cb8716ce372ef42b18f5cb391789a4",
+ "file": "data/post/mix/mix.jsonl.gz",
+ "note": "The trial mix of 2026-11-24: python -m exealm.data.post_mix --tokens 2e6 --missing empty, with the seven exealm/data/benchmarks.py exports, on small post.py files (data/post/*.report.json). sft.encode on the written file gives the same tokens and assistant tokens. Not the real mix: the post.py files were small."
+}

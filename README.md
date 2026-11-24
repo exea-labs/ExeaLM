@@ -357,14 +357,16 @@ Starting points. Almost everything here runs on a laptop or a free Google Colab 
 ### Post-training (`exealm/train/`)
 - [x] SFT loop and data loader (`python -m exealm.train.sft --ckpt ... --data conversations.jsonl.gz`): one conversation per row, padded on the right and grouped by length, so conversations cannot see each other. Tested on `tiny`: it learns a toy question-answer task and answers through the chat demo
 - [x] SFT, preference and RL-task data formatters (`python -m exealm.data.post --list`): eight open sources turned into the files the three loops read, each with its license and the revision it was checked at. Checked on 100 live rows per source ([results/post_data](results/post_data/live_check.json)); IFM/SFT-Reasoning cannot be split into turns and stays pretraining text
-- [ ] Build the SFT mix at the DATA.md shares (the math and code reasoning sets and WildChat are not formatted yet) and count its tokens
+- [x] SFT mix builder at the DATA.md shares (`python -m exealm.data.post_mix --missing empty`): the math, code and science reasoning sets (OpenMathReasoning, OpenCodeReasoning, OpenThoughts3) and the Tulu 3 safety subsets are formatted, and tokens are counted exactly as `sft.py` trains on them. Buckets with no data are reported as missing, never filled from other buckets. A 2,705-row trial mix trains on `tiny` ([docs/data.md](docs/data.md#the-sft-mix))
+- [ ] Build the full 1 to 2B-token SFT mix and count its tokens. Before it: choose how to handle long reasoning traces (at `sft.py`'s 1,024 tokens, 99% of them are cut before their answer), decide whether to `--missing empty` or `redistribute` the WildChat and tool-use shares, and find more safety data (the Tulu 3 safety subsets are about 11M tokens, under 1% of 1.5B)
+- [ ] Format WildChat-1M for the real-user bucket, after the personal-data and toxicity filter
 - [x] DPO loop (`python -m exealm.train.dpo --ckpt ... --data prefs.jsonl.gz`): a frozen copy of the starting model is the reference; one row per answer, as in SFT. Tested on `tiny`: it learns to prefer the chosen answers
 - [x] DPO data: three English preference sets formatted (`tulu3-pref`, `dolci-pref`, `ultrafeedback` in `exealm/data/post.py`)
 - [ ] Japanese preference pairs: no open set found yet
 - [x] GRPO loop with math and code rewards (`python -m exealm.train.grpo --ckpt ... --data tasks.jsonl.gz`): samples a group of answers per task, scores them, and updates against a frozen reference. Rewards: `math` (boxed answer or last number), `exact`, and `code` (runs the answer with test code; refused without `--allow_code_exec`). Tested on `tiny`: it fixes a model whose most likely answer was wrong
 - [ ] Rewards for instruction-following constraints (RLVR) and for Japanese tasks; a real sandbox for the code reward
 - [x] Chat template (`exealm/chat.py`: `chat_prompt` and the same format as a Jinja template, tested to give the same tokens)
-- [ ] Do long reasoning traces help a model this small? Test on an existing small open model such as SmolLM2-135M (Colab)
+- [ ] Do long reasoning traces help a model this small? Test on an existing small open model such as SmolLM2-135M (Colab). `post.py --think strip` and `--max_think_chars` make the variants
 
 ### Evals (`exealm/eval/`)
 - [x] (starter) lm-evaluation-harness wrapper (`python -m exealm.eval.harness --ckpt ... --tasks hellaswag`; [docs/evaluation.md](docs/evaluation.md), [#12](https://github.com/exea-labs/ExeaLM/issues/12)). Solo, greedy, no chat template yet
