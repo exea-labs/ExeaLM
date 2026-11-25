@@ -1,27 +1,29 @@
 """The runs of the scaling study, in one place: what each trains on, for how many steps, what it costs, and the lines
 that submit it. docs/budget.md says why the plan looks like this.
 
-The study is the evidence for the next grant: ExeaLM against a Qwen3.5-style model (Gated DeltaNet and gated
-attention, 3 to 1) of the same size, on the same tokens, trained the same way (docs/decisions.md). Two parts:
-    3B        the headline: the pair at 3B on about 12B tokens each
-    curve     the same recipe (the same tokens per parameter) at 0.1B, 0.25B and 0.5B, three seeds where cheap: with
-              the 3B pair, one curve from 0.1B to 3B per model
-ExeaLM is the memory-free hybrid with value residual and XSA, read as a stream; the board, the library and
-weight-alter come after pretraining.
+The study is the evidence for the next grant: ExeaLM against a plain Llama of the same size, on the same tokens, at
+every size from 0.1B to 3B, with a base Qwen3.5-style model (Gated DeltaNet and gated attention, 3 to 1) beside them
+below 3B (docs/decisions.md, 25 November). Two parts:
+    3B        the headline: ExeaLM and the plain Llama at 3B on about 12B tokens each
+    curve     the same recipe (the same tokens per parameter) at 0.1B, 0.25B, 0.5B and 1B, all three models, three
+              seeds where cheap: with the 3B pair, one curve from 0.1B to 3B per model
+ExeaLM is the whole recipe: the memory-free hybrid with a TONN layer every fourth layer, value residual and XSA in its
+attention layers, trained as a stream for the last 20% of its steps. The baselines are as published: no value residual,
+no XSA, no streaming. The board, the library and weight-alter come after pretraining.
 
     python experiments/expanse/plan.py                                   # the table, at the rates measured on an MI300X
     python experiments/expanse/plan.py --rates results/expanse/throughput_h100.json --speedup 3.6
                                                                          # the same at the H100's measured rates, with
                                                                          # four GPUs 3.6 times as fast as one
     python experiments/expanse/plan.py --lr_check 500m                   # the short runs that pick a learning rate
-    python experiments/expanse/plan.py --run exealm_500m_20x_s0 --lr 6e-4    # the lines that submit one run
+    python experiments/expanse/plan.py --run exealm_500m_4.1x_s0 --lr 6e-4   # the lines that submit one run
 
 Every run takes steps of 262,144 tokens, on one GPU or four: --accum makes up the difference. A run on four GPUs that
 is S times as fast as on one is charged 4 / S times the GPU-hours of the same run on one GPU.
 
-This script's --batch is the windows one GPU holds in a forward pass, which is what has to fit in its memory. Every row
-is STREAM windows read in order with the state carried (--stream), so a GPU reads batch / STREAM rows. The --batch in
-the lines it prints is pretrain's: rows over all the run's GPUs, so 32 windows on each of four GPUs is --batch 32.
+This script's --batch is the windows one GPU holds in a forward pass, which is what has to fit in its memory. ExeaLM
+reads STREAM windows per row with the state carried (--stream), so a GPU reads batch / STREAM of its rows; the
+baselines read one window per row. The --batch in the lines it prints is pretrain's: rows over all the run's GPUs.
 
 --variant memory trains ExeaLM with its board and library slots in swarms instead. On the MI300X (results/finalize)
 swarms that read one text in four windows cost the 0.1B model about 0.1 bits per byte by step 1,000, so it is not the
@@ -33,9 +35,10 @@ import json
 import os
 
 SEQ = 512
-STREAM = 4                                     # windows per row in the stream phase (docs/brain.md), the baselines too
+STREAM = 4                                     # ExeaLM's windows per row in the stream phase (docs/brain.md)
 STREAM_FROM = 0.8                              # one window per row for the first 80% of steps, then streams of 4
-                                               # (results/finalize: best on long documents for both models)
+                                               # (results/finalize: best on long documents)
+STREAMED = ("exealm",)                         # streaming is part of ExeaLM; the baselines read every row alone
 STEP_TOKENS = 262_144
 ALLOCATION = 2000                              # GPU-hours
 TARGET = (9e9, 1e12)                           # what the study is evidence for: 9B parameters on 1T tokens
@@ -43,41 +46,44 @@ FIRST_JOB = 6                                  # first_contact.sb: one node for 
 NINE_B = 36                                    # the 9B preset's speed and memory, sharded: 3 hours on one node, then an
                                                # hour each on two and four nodes (needs FSDP, docs/budget.md)
 EVALUATION = 100                               # every run on held-out text, long documents and downstream benchmarks
-LR_STEPS = {"100m": 1000, "250m": 1000, "500m": 1000, "3b": 500}
-LR_RATES = {"100m": 3, "250m": 3, "500m": 3, "3b": 2}  # how many learning rates the budget counts at each size
+LR_STEPS = {"100m": 1000, "250m": 1000, "500m": 1000, "1b": 500, "3b": 500}
+LR_RATES = {"100m": 3, "250m": 3, "500m": 3, "1b": 2, "3b": 2}  # how many learning rates the budget counts at each size
 
 # Parameters in millions with the 32k tokenizer (tests/test_plan.py counts them from the code; "core" is ExeaLM as the
-# study trains it, experiments/expanse/exealm_core.json: a TONN layer every fourth layer), rows per forward pass
+# study trains it, experiments/expanse/exealm_core.json: a TONN layer every fourth layer; "llama" the plain Llama;
+# "qwen" the base Qwen3.5-style model, experiments/expanse/qwen_<size>.json), windows per forward pass
 # on one 80 GB GPU, and the GPUs a run uses. The 0.1B and 0.25B runs take one GPU each on the shared partition: four
 # of them run side by side and none pays for the others' gradients. The rows are sized from two A40 runs
 # (results/a40_check: 11.8 GB at 0.1B with 32 rows, 23.1 GB at 0.5B with 16), scaled by width x depth: about 40 GB at
 # 0.5B and 1B, and about 59 GB at 3B, where 8 rows would come to about 71 GB. Estimates: throughput.py measures them.
 SIZES = {
-    "100m": dict(exealm=94.28, core=93.84, gated=95.47, qwen=95.69, batch=64, gpus=1),
-    "250m": dict(exealm=246.24, core=247.38, gated=251.56, qwen=252.1, batch=32, gpus=1),
-    "500m": dict(exealm=498.08, core=500.34, gated=510.14, qwen=511.27, batch=32, gpus=4),
-    "1b": dict(exealm=966.06, core=970.48, gated=989.81, qwen=991.94, batch=16, gpus=4),
-    "3b": dict(exealm=2902.88, core=2921.17, gated=2980.06, qwen=2986.19, batch=4, gpus=4),
+    "100m": dict(exealm=94.28, core=93.84, llama=89.73, qwen=95.69, batch=64, gpus=1),
+    "250m": dict(exealm=246.24, core=247.38, llama=234.78, qwen=252.1, batch=32, gpus=1),
+    "500m": dict(exealm=498.08, core=500.34, llama=474.09, qwen=511.27, batch=32, gpus=4),
+    "1b": dict(exealm=966.06, core=970.48, llama=917.82, qwen=991.94, batch=16, gpus=4),
+    "3b": dict(exealm=2902.88, core=2921.17, llama=2757.24, qwen=2986.19, batch=4, gpus=4),
 }
 # The study: part, size, tokens per ExeaLM parameter, seeds, models. Every model of a line trains for the same number
 # of steps. 4.1 tokens per parameter is what the 3B pair can afford (about 12B tokens each); the curve uses the same
-# ratio so that all four sizes lie on one curve.
+# ratio so that all five sizes lie on one curve.
 TPP = 4.1
-PAIR = ("exealm", "qwen")
+PAIR = ("exealm", "llama")                     # the headline comparison, at every size
+ALL = ("exealm", "llama", "qwen")              # and the base Qwen3.5-style model below 3B
 STUDY = [
     ("3B", "3b", TPP, (0,), PAIR),
-    ("curve", "100m", TPP, (0, 1, 2), PAIR),
-    ("curve", "250m", TPP, (0, 1, 2), PAIR),
-    ("curve", "500m", TPP, (0, 1), PAIR),
+    ("curve", "100m", TPP, (0, 1, 2), ALL),
+    ("curve", "250m", TPP, (0, 1, 2), ALL),
+    ("curve", "500m", TPP, (0, 1), ALL),
+    ("curve", "1b", TPP, (0,), ALL),
 ]
 # Effective TFLOP/s (6 x parameters x tokens per second) of one MI300X in bf16: results/funding/README.md, section 6.
 # Measured for the memory-free hybrid and the plain Llama at 0.1B and 0.5B. Assumptions until the first job on
-# Expanse replaces them: ExeaLM with its memory slots runs at the hybrid's rate, the gated Llama at the plain Llama's,
-# 0.25B at the 0.1B rates (smaller shapes run slower, so this overstates its cost), 1B and 3B at the 0.5B rates, and
-# the Qwen3.5-style model at ExeaLM's rates (its Gated DeltaNet is plain PyTorch, not a fused kernel).
-MI300X = {"100m": dict(exealm=56.2, gated=85.1), "250m": dict(exealm=56.2, gated=85.1),
-          "500m": dict(exealm=81.0, gated=124.8), "1b": dict(exealm=81.0, gated=124.8),
-          "3b": dict(exealm=81.0, gated=124.8)}
+# Expanse replaces them: 0.25B at the 0.1B rates (smaller shapes run slower, so this overstates its cost), 1B and 3B at
+# the 0.5B rates, and the Qwen3.5-style model at ExeaLM's rates (its Gated DeltaNet is plain PyTorch, not a fused
+# kernel).
+MI300X = {"100m": dict(exealm=56.2, llama=85.1), "250m": dict(exealm=56.2, llama=85.1),
+          "500m": dict(exealm=81.0, llama=124.8), "1b": dict(exealm=81.0, llama=124.8),
+          "3b": dict(exealm=81.0, llama=124.8)}
 SIZE_NAME = {"0.1B": "100m", "0.25B": "250m", "0.5B": "500m", "1B": "1b", "3B": "3b"}   # throughput.py's names
 
 
@@ -86,18 +92,18 @@ def steps_of(preset, tpp, variant="core"):
 
 
 def runs(variant="core"):
-    """Every training run of the plan: name, part, preset, model ("exealm", "gated" or "qwen"), seed and steps."""
+    """Every training run of the plan: name, part, preset, model ("exealm", "llama" or "qwen"), seed and steps."""
     return [(f"{model}_{preset}_{tpp:g}x_s{seed}", part, preset, model, seed, steps_of(preset, tpp, variant))
             for part, preset, tpp, seeds, models in STUDY for seed in seeds for model in models]
 
 
 def measured(rows):
     """Rates from the rows of a throughput_<gpu>.json: the last bf16 row without torch.compile or TF32 for each size
-    and model: "hybrid" rows (the memory-free hybrid the plan trains) for ExeaLM, else "exealm"; "gated" rows for the
-    Llama, else "llama"; "qwen" rows for the Qwen3.5-style model, else ExeaLM's rate."""
+    and model: "hybrid" rows (the memory-free hybrid the plan trains) for ExeaLM, else "exealm"; "llama" rows for the
+    plain Llama; "qwen" rows for the Qwen3.5-style model, else ExeaLM's rate."""
     rates = {p: dict(r, qwen=r["exealm"]) for p, r in MI300X.items()}
-    source = {p: dict(exealm="MI300X", gated="MI300X", qwen="MI300X") for p in MI300X}
-    for want, kinds in (("exealm", ("exealm", "hybrid")), ("gated", ("llama", "gated")), ("qwen", ("qwen",))):
+    source = {p: dict(exealm="MI300X", llama="MI300X", qwen="MI300X") for p in MI300X}
+    for want, kinds in (("exealm", ("exealm", "hybrid")), ("llama", ("llama",)), ("qwen", ("qwen",))):
         for kind in kinds:                                                # the later kind is the closer match
             for r in rows:
                 preset = SIZE_NAME.get(r.get("size"))
@@ -127,8 +133,13 @@ def cost(preset, model, rates, a, tokens):
                      a.speedup)
 
 
+def models_at(preset):
+    """The models the study trains at this size, in order."""
+    return tuple(dict.fromkeys(m for _, p, _, _, models in STUDY if p == preset for m in models))
+
+
 def lr_check_hours(rates, a):
-    return sum(cost(p, m, rates, a, LR_STEPS[p] * STEP_TOKENS) * LR_RATES[p] for p in LR_STEPS for m in PAIR)
+    return sum(cost(p, m, rates, a, LR_STEPS[p] * STEP_TOKENS) * LR_RATES[p] for p in LR_STEPS for m in models_at(p))
 
 
 def table(rates, source, a):
@@ -153,7 +164,7 @@ def table(rates, source, a):
     print(f"| | **Reserve of the {ALLOCATION:,}** | | | | | | **{left:,.0f}** |")
     if left < 0:
         print(f"\nOver the allocation by {-left:,.0f} GPU-hours. Shorten the 3B pair. Do not drop a baseline.")
-    used = sorted({f"{p} {m}: {source[p][m]}" for p in SIZES for m in ("exealm", "gated", "qwen")
+    used = sorted({f"{p} {m}: {source[p][m]}" for p in SIZES for m in ("exealm", "llama", "qwen")
                    if source[p].get(m, "MI300X") != "MI300X"})
     print("\nRates: " + ("; ".join(used) + "; the rest as on the MI300X" if used else "as measured on one MI300X")
           + (f". Four GPUs taken as {a.speedup:g} times one." if a.speedup != 4 else
@@ -177,20 +188,21 @@ def pack_tokens(data):
 def command(run, preset, model, seed, a, steps, lr=None, check=False):
     s = SIZES[preset]
     gpus, windows = a.gpus or s["gpus"], a.batch or s["batch"]
-    batch = windows * gpus // STREAM                # pretrain's --batch: rows of STREAM windows, over all the GPUs
-    accum, rest = divmod(STEP_TOKENS, batch * SEQ * STREAM)
-    if rest or windows % STREAM:
+    k = STREAM if model in STREAMED else 1          # windows per row
+    batch = windows * gpus // k                     # pretrain's --batch: rows of k windows, over all the GPUs
+    accum, rest = divmod(STEP_TOKENS, batch * SEQ * k)
+    if rest or windows % k:
         raise SystemExit(f"--batch {windows} on {gpus} GPU(s) does not divide a step of {STEP_TOKENS:,} tokens into "
-                         f"whole rows of {STREAM} windows")
+                         f"whole rows of {k} windows")
     args = [f"--preset {preset}"]
-    if model == "gated":
-        args.append("--model llama --config experiments/expanse/gated_llama.json")
+    if model == "llama":                            # pretrain's --model llama is the plain Llama without a --config
+        args.append("--model llama")
     elif model == "qwen":
         args.append(f"--model llama --config experiments/expanse/qwen_{preset}.json")
     else:
         args.append("--search 0" + (" --config experiments/expanse/exealm_core.json" if a.variant == "core" else ""))
-    args.append(f"--data {a.data} --val {a.val} --seq {SEQ} --stream {STREAM} --stream_from {STREAM_FROM} "
-                f"--batch {batch} --accum {accum}")
+    args.append(f"--data {a.data} --val {a.val} --seq {SEQ} "
+                + (f"--stream {STREAM} --stream_from {STREAM_FROM} " if k > 1 else "") + f"--batch {batch} --accum {accum}")
     if not check and a.anneal:                      # the recipe's last stage: the last 10% of steps read the anneal mix
         args.append(f"--anneal_data {a.anneal} --anneal_from 0.9")
     if check:                                       # a learning-rate check: a tenth of it is warm-up
@@ -224,7 +236,7 @@ def parser():
     ap.add_argument("--lrs", default="3e-4,6e-4,1e-3", help="the learning rates --lr_check tries")
     ap.add_argument("--gpus", type=int, default=0, choices=[0, 1, 4],
                     help="GPUs per run (default: 1 at 0.1B and 0.25B, else 4)")
-    ap.add_argument("--batch", type=int, default=0, help="rows per forward pass on one GPU, if the default does not fit")
+    ap.add_argument("--batch", type=int, default=0, help="windows per forward pass on one GPU, if the default does not fit")
     ap.add_argument("--data", default="data/mix_pretrain.json", help="from experiments/data_mix/fetch.sh")
     ap.add_argument("--val", default="data/mix_pretrain_val.json")
     ap.add_argument("--eval_every", type=int, default=500)
@@ -245,12 +257,12 @@ def main(argv=None):
     if a.lr_check:
         if a.lr_check not in LR_STEPS:
             raise SystemExit(f"--lr_check takes one of {', '.join(LR_STEPS)}")
-        steps, lrs = LR_STEPS[a.lr_check], [float(x) for x in a.lrs.split(",")]
-        each = sum(cost(a.lr_check, m, rates, a, steps * STEP_TOKENS) for m in PAIR)
-        print(f"# {len(lrs)} learning rates x 2 models x {steps:,} steps at {a.lr_check}: "
+        steps, lrs, models = LR_STEPS[a.lr_check], [float(x) for x in a.lrs.split(",")], models_at(a.lr_check)
+        each = sum(cost(a.lr_check, m, rates, a, steps * STEP_TOKENS) for m in models)
+        print(f"# {len(lrs)} learning rates x {len(models)} models x {steps:,} steps at {a.lr_check}: "
               f"about {each * len(lrs):,.0f} GPU-hours. Each model keeps its own best rate.\n")
         for lr in lrs:
-            for model in PAIR:
+            for model in models:
                 print(command(f"lr_{model}_{a.lr_check}_{lr:g}", a.lr_check, model, 0, a, steps, lr, check=True) + "\n")
     elif a.run:
         if a.run not in by_name:

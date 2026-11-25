@@ -5,10 +5,10 @@
 #     bash experiments/expanse/go.sh setup      # Python environment (once)
 #     bash experiments/expanse/go.sh data       # the 30B slice from Hugging Face into data/ (~60 GB)
 #     bash experiments/expanse/go.sh first      # the first job: correctness, speeds, 4-GPU speed-up, lead check
-#     bash experiments/expanse/go.sh lr         # learning-rate checks at every size, both models
+#     bash experiments/expanse/go.sh lr         # learning-rate checks at every size, every model
 #     bash experiments/expanse/go.sh pick       # pick each model's rate from the checks -> lr_choice.json
-#     bash experiments/expanse/go.sh curve      # the 0.1B, 0.25B and 0.5B pairs
-#     bash experiments/expanse/go.sh 3b         # the 3B pair
+#     bash experiments/expanse/go.sh curve      # 0.1B to 1B: ExeaLM, the plain Llama and the base Qwen3.5-style model
+#     bash experiments/expanse/go.sh 3b         # the 3B pair: ExeaLM and the plain Llama
 #     bash experiments/expanse/go.sh eval       # score every finished run, upload results to Hugging Face
 #     bash experiments/expanse/go.sh status     # what is queued, running and finished
 #     bash experiments/expanse/go.sh all        # every phase after data, in order, waiting for each (run it in tmux)
@@ -51,7 +51,8 @@ phase() {
       if [ "$DRY" = 1 ]; then echo "sbatch experiments/expanse/first_contact.sb"; else sbatch experiments/expanse/first_contact.sb; fi ;;
     lr) need_account
       for size in 100m 250m 500m; do $PLAN --lr_check "$size" | grep -v "^#" | submit; done
-      $PLAN --lr_check 3b --lrs 3e-4,6e-4 | grep -v "^#" | submit ;;           # two rates at 3B, as budgeted
+      for size in 1b 3b; do $PLAN --lr_check "$size" --lrs 3e-4,6e-4 | grep -v "^#" | submit; done ;;  # two rates
+                                                                                 # at 1B and 3B, as budgeted
     pick) python experiments/expanse/pick_lr.py --keep "$(logs_to)" ;;
     curve|3b) need_account
       part=$([ "$1" = 3b ] && echo 3B || echo curve)

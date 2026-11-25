@@ -3,6 +3,32 @@
 What ExeaLM is trained as, decided by Avneh Bhatia, and why. Newest first. Change an entry only with a new dated
 entry that says what replaced it.
 
+## 25 November 2026 (morning): ExeaLM against a plain Llama, with a base Qwen3.5-style model beside them
+
+**ExeaLM is the whole recipe:** the memory-free hybrid with a TONN layer every fourth layer, value residual and XSA in
+its attention layers (with QK-norm and the output gate), and streaming in the last 20% of pretraining. None of these
+is added to the baselines.
+
+**The headline comparison is ExeaLM against a plain Llama** (no output gate, no QK-norm, no value residual, no XSA,
+one window per row throughout), at every size from 0.1B to 3B. **A base Qwen3.5-style model** (Gated DeltaNet in 3 of
+every 4 layers, gated attention with QK-norm, no value residual or XSA, no streaming) trains beside them from 0.1B to
+1B. The study's purpose is unchanged: show that ExeaLM's lead holds as it scales, for the 9B application.
+
+Because the plain Llama runs faster (125 TFLOP/s on the MI300X at 0.5B, against ExeaLM's 81), the 3B pair costs 1,161
+GPU-hours instead of 1,456. The hours saved add a 1B point to the curve with all three models, so the curve has five
+sizes. Plan and costs: [budget.md](budget.md).
+
+This replaces the Qwen3.5-style baseline with value residual and XSA of 24 November (evening) and "value residual and
+XSA in every model" and "the baselines stream the same way" of 24 and 25 November.
+
+What the application has to say with it. At 0.1B on the MI300X (`results/finalize/final_text.json`, 3,000 steps, 2
+seeds, mean of four held-out sets) ExeaLM reached 1.387 bits per byte, a gated Llama 1.446 and the base Qwen3.5-style
+model 1.460. A gated Llama with value residual and XSA added reached 1.369, ahead of ExeaLM by 0.018. The two
+attention changes are published work ([ResFormer](https://arxiv.org/abs/2410.17897),
+[XSA](https://arxiv.org/abs/2603.09078)) that any transformer can use. A reviewer will ask how much of ExeaLM's lead
+over the plain Llama they explain. The 0.1B result without them (`results/funding`, section 3, 3 seeds: the
+memory-free hybrid 1.413 against the plain Llama 1.509) is the answer to cite next to the headline.
+
 ## 25 November 2026: a TONN layer every fourth layer, value residual and XSA kept
 
 ExeaLM trains with a TONN layer every fourth layer and attention in the other three (`"tonn_every": 4` in

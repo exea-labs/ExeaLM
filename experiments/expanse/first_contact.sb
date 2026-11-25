@@ -44,15 +44,14 @@ for part in $PARTS; do
   case $part in
     check)        # the same model on the GPU as on the CPU; training, resume and two processes on two GPUs
       python experiments/gpu_check.py 2>&1 | tee "$OUT/gpu_check.txt" ;;
-    speed)        # one GPU, as measured on the MI300X; two switches at 0.5B; then the plan's own two models at every
+    speed)        # one GPU, as measured on the MI300X; two switches at 0.5B; then the plan's three models at every
                   # size, which ends with the compute plan at the rates of this GPU
       export CUDA_VISIBLE_DEVICES=0
       python experiments/throughput.py --out "$OUT" --tag h100
-      python experiments/throughput.py --out "$OUT" --tag h100 --sizes 0.5B --models hybrid,gated --precision bf16 \
+      python experiments/throughput.py --out "$OUT" --tag h100 --sizes 0.5B --models hybrid,llama --precision bf16 \
         --compile 1 --warmup 25
-      python experiments/throughput.py --out "$OUT" --tag h100 --sizes 0.5B --models hybrid,gated --precision bf16 --tf32 1
-      python experiments/throughput.py --out "$OUT" --tag h100 --sizes 0.1B,0.25B --models qwen --precision bf16
-      python experiments/throughput.py --out "$OUT" --tag h100 --sizes 0.1B,0.25B,0.5B,1B,3B --models hybrid,gated \
+      python experiments/throughput.py --out "$OUT" --tag h100 --sizes 0.5B --models hybrid,llama --precision bf16 --tf32 1
+      python experiments/throughput.py --out "$OUT" --tag h100 --sizes 0.1B,0.25B,0.5B,1B,3B --models hybrid,llama,qwen \
         --precision bf16 | tee "$OUT/plan_at_h100_rates.txt"
       unset CUDA_VISIBLE_DEVICES ;;
     circuits)     # which circuit types gain least from bf16 (an open to-do from the MI300X session)
@@ -80,24 +79,24 @@ json.dump(rows, open(sys.argv[2], "w"), indent=1)
 print(json.dumps(rows, indent=1))
 PY
       ;;
-    lead)         # At 0.1B the memory-free hybrid leads a gated Llama (1.413 against 1.446 bits per byte) and a
-                  # Qwen3.5-style model (1.457), 3 seeds, results/funding section 3, in 32-bit on an MI300X. Does the
-                  # lead hold on an H100 in bf16, trained as the plan trains (one window per row, then rows of 4 streamed
-                  # windows for the last 20%, the same 16,384 tokens per step)? 3 seeds x 3 models, one run per GPU
+    lead)         # Does ExeaLM lead the plain Llama and the base Qwen3.5-style model at 0.1B on an H100 in bf16, on
+                  # the study's data, trained as the plan trains them? ExeaLM: one window per row, then rows of 4
+                  # streamed windows for the last 20%; the baselines: one window per row throughout; the same 16,384
+                  # tokens per step. 3 seeds x 3 models, one run per GPU
       rsync -a data/ "$WORK/data/"
       localize data/mix_pretrain.json "$WORK/mix.json"; localize data/mix_pretrain_val.json "$WORK/mix_val.json"
-      args="--preset 100m --data $WORK/mix.json --val $WORK/mix_val.json --seq 512 --stream 4 --stream_from 0.8 --batch 8
+      args="--preset 100m --data $WORK/mix.json --val $WORK/mix_val.json --seq 512
             --steps 3000 --warmup 200 --lr 1e-3 --search 0 --eval_every 500"
       for seed in 0 1 2; do
-        CUDA_VISIBLE_DEVICES=0 python -m exealm.train.pretrain $args --seed $seed --model llama \
+        CUDA_VISIBLE_DEVICES=0 python -m exealm.train.pretrain $args --batch 32 --seed $seed --model llama \
+          --out "$WORK/runs/lead_llama_s$seed" > /dev/null &
+        CUDA_VISIBLE_DEVICES=1 python -m exealm.train.pretrain $args --stream 4 --stream_from 0.8 --batch 8 \
+          --seed $seed --config experiments/expanse/exealm_core.json --out "$WORK/runs/lead_exealm_s$seed" > /dev/null &
+        CUDA_VISIBLE_DEVICES=2 python -m exealm.train.pretrain $args --batch 32 --seed $seed --model llama \
           --config experiments/expanse/qwen_100m.json --out "$WORK/runs/lead_qwen_s$seed" > /dev/null &
-        CUDA_VISIBLE_DEVICES=1 python -m exealm.train.pretrain $args --seed $seed \
-          --config experiments/expanse/exealm_core.json --out "$WORK/runs/lead_core_s$seed" > /dev/null &
-        CUDA_VISIBLE_DEVICES=2 python -m exealm.train.pretrain $args --seed $seed --model llama \
-          --config experiments/expanse/gated_llama.json --out "$WORK/runs/lead_gated_s$seed" > /dev/null &
         wait
       done
-      CUDA_VISIBLE_DEVICES=0 python experiments/eval_text.py "$WORK"/runs/lead_gated_s? "$WORK"/runs/lead_core_s? \
+      CUDA_VISIBLE_DEVICES=0 python experiments/eval_text.py "$WORK"/runs/lead_llama_s? "$WORK"/runs/lead_exealm_s? \
         "$WORK"/runs/lead_qwen_s? --mix "$WORK/mix_val.json" --out "$OUT/lead_100m.json" ;;
     *) echo "unknown part: $part" ;;
   esac

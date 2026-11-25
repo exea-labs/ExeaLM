@@ -1,8 +1,10 @@
 # ExeaLM on Expanse: H100 nodes, four GPUs at a time
 
-How the scaling study runs on the SDSC Expanse AI Resource: ExeaLM and a gated Llama side by side at 0.1B, 0.5B, 1B
-and 3B, from our NAIRR Pilot allocation of 2,000 GPU-hours. The plan and its reasons are in
-[docs/budget.md](../../docs/budget.md).
+How the scaling study runs on the SDSC Expanse AI Resource: ExeaLM against a plain Llama at 0.1B, 0.25B, 0.5B, 1B
+and 3B, with a base Qwen3.5-style model beside them up to 1B, from our NAIRR Pilot allocation of 2,000 GPU-hours. The
+plan and its reasons are in [docs/budget.md](../../docs/budget.md); every command is in
+[docs/runbook.md](../../docs/runbook.md). Parts of this page below describe the first plan (a gated Llama, memory slots
+in swarms); where they differ, the runbook and `plan.py` are right.
 
 **Nothing here has run on Expanse yet.** What has been checked:
 

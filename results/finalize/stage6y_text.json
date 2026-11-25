@@ -1,0 +1,210 @@
+{
+ "runs": [
+  {
+   "run": "runs/finalize/core_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3472,
+    "ja_wiki": 1.4154,
+    "ja_web": 1.3114,
+    "code": 1.594
+   },
+   "mean": 1.417
+  },
+  {
+   "run": "runs/finalize/core_s1",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3458,
+    "ja_wiki": 1.411,
+    "ja_web": 1.3102,
+    "code": 1.5828
+   },
+   "mean": 1.4124
+  },
+  {
+   "run": "runs/finalize/gated_s0",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 3000,
+   "params_M": 95.47,
+   "bits_per_byte": {
+    "en": 1.3632,
+    "ja_wiki": 1.44,
+    "ja_web": 1.3334,
+    "code": 1.643
+   },
+   "mean": 1.4449
+  },
+  {
+   "run": "runs/finalize/gated_s1",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 3000,
+   "params_M": 95.47,
+   "bits_per_byte": {
+    "en": 1.3654,
+    "ja_wiki": 1.44,
+    "ja_web": 1.3331,
+    "code": 1.6471
+   },
+   "mean": 1.4464
+  },
+  {
+   "run": "runs/finalize/core+vr_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3367,
+    "ja_wiki": 1.4008,
+    "ja_web": 1.3025,
+    "code": 1.5547
+   },
+   "mean": 1.3987
+  },
+  {
+   "run": "runs/finalize/core+vr_s1",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3358,
+    "ja_wiki": 1.3947,
+    "ja_web": 1.297,
+    "code": 1.5485
+   },
+   "mean": 1.394
+  },
+  {
+   "run": "runs/finalize/core+xsa_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3416,
+    "ja_wiki": 1.4058,
+    "ja_web": 1.3032,
+    "code": 1.5726
+   },
+   "mean": 1.4058
+  },
+  {
+   "run": "runs/finalize/core+xsa_s1",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3397,
+    "ja_wiki": 1.4027,
+    "ja_web": 1.3007,
+    "code": 1.5696
+   },
+   "mean": 1.4032
+  },
+  {
+   "run": "runs/finalize/core+two_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3362,
+    "ja_wiki": 1.3984,
+    "ja_web": 1.2994,
+    "code": 1.5427
+   },
+   "mean": 1.3942
+  },
+  {
+   "run": "runs/finalize/core+two_s1",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3333,
+    "ja_wiki": 1.3936,
+    "ja_web": 1.2974,
+    "code": 1.543
+   },
+   "mean": 1.3918
+  },
+  {
+   "run": "runs/finalize/gated+two_s0",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 3000,
+   "params_M": 95.47,
+   "bits_per_byte": {
+    "en": 1.3206,
+    "ja_wiki": 1.3773,
+    "ja_web": 1.2838,
+    "code": 1.5032
+   },
+   "mean": 1.3712
+  },
+  {
+   "run": "runs/finalize/gated+two_s1",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 3000,
+   "params_M": 95.47,
+   "bits_per_byte": {
+    "en": 1.3184,
+    "ja_wiki": 1.3696,
+    "ja_web": 1.2802,
+    "code": 1.499
+   },
+   "mean": 1.3668
+  },
+  {
+   "run": "runs/finalize/core+peri_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.45,
+   "bits_per_byte": {
+    "en": 1.3519,
+    "ja_wiki": 1.426,
+    "ja_web": 1.3207,
+    "code": 1.6029
+   },
+   "mean": 1.4254
+  },
+  {
+   "run": "runs/finalize/gated+canon_s0",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 3000,
+   "params_M": 95.54,
+   "bits_per_byte": {
+    "en": 1.3602,
+    "ja_wiki": 1.4363,
+    "ja_web": 1.3305,
+    "code": 1.6383
+   },
+   "mean": 1.4413
+  }
+ ],
+ "means": {
+  "core": 1.4147,
+  "gated": 1.4457,
+  "core+vr": 1.3963,
+  "core+xsa": 1.4045,
+  "core+two": 1.393,
+  "gated+two": 1.369,
+  "core+peri": 1.4254,
+  "gated+canon": 1.4413
+ }
+}

@@ -4,7 +4,7 @@
 # On one GPU of the shared partition. Writes results/expanse/:
 #   text.json       bits per byte on every held-out bucket, every row read alone (eval_text.py)
 #   stream8.json    long documents, 8 windows of 512, streamed against alone (stream_eval.py)
-#   bench_<run>.json  downstream benchmarks for the 0.5B and 3B runs (lm-eval harness; BENCH=0 skips them)
+#   bench_<run>.json  downstream benchmarks for the 0.5B, 1B and 3B runs (lm-eval harness; BENCH=0 skips them)
 # and uploads results/expanse to the Hugging Face repo HF_REPO (default exea-labs/exealm-nairr-runs).
 #SBATCH --job-name=exealm-eval
 #SBATCH --partition=nairr-gpu-shared
@@ -35,7 +35,7 @@ python experiments/stream_eval.py $RUNS --mix data/mix_pretrain_val.json --windo
 if [ "$BENCH" = 1 ]; then
   TOK=$(ls -d data/*/*/tokenizer data/*/tokenizer 2>/dev/null | head -1)
   for r in $RUNS; do
-    case $(basename "$r") in *_500m_*|*_3b_*) ;; *) continue ;; esac
+    case $(basename "$r") in *_500m_*|*_1b_*|*_3b_*) ;; *) continue ;; esac
     python -m exealm.eval.harness --ckpt "$r/model.pt" --tokenizer "$TOK" --tasks "$TASKS" --device cuda \
       --out "$OUT/bench_$(basename "$r").json" || echo "benchmarks failed for $r"
   done

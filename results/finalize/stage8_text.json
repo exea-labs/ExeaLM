@@ -1,0 +1,238 @@
+{
+ "runs": [
+  {
+   "run": "runs/finalize/core_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3472,
+    "ja_wiki": 1.4154,
+    "ja_web": 1.3114,
+    "code": 1.594
+   },
+   "mean": 1.417
+  },
+  {
+   "run": "runs/finalize/brain_core_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.4166,
+    "ja_wiki": 1.4953,
+    "ja_web": 1.3886,
+    "code": 1.7757
+   },
+   "mean": 1.5191
+  },
+  {
+   "run": "runs/finalize/brain_gated_s0",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 3000,
+   "params_M": 95.47,
+   "bits_per_byte": {
+    "en": 1.4568,
+    "ja_wiki": 1.5632,
+    "ja_web": 1.4366,
+    "code": 1.9028
+   },
+   "mean": 1.5898
+  },
+  {
+   "run": "runs/finalize/brain_gd_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.4283,
+    "ja_wiki": 1.5147,
+    "ja_web": 1.4012,
+    "code": 1.8224
+   },
+   "mean": 1.5416
+  },
+  {
+   "run": "runs/finalize/core_gd_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3483,
+    "ja_wiki": 1.4173,
+    "ja_web": 1.3128,
+    "code": 1.5884
+   },
+   "mean": 1.4167
+  },
+  {
+   "run": "runs/finalize/brain_wa_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 94.08,
+   "bits_per_byte": {
+    "en": 1.4219,
+    "ja_wiki": 1.5071,
+    "ja_web": 1.3958,
+    "code": 1.7766
+   },
+   "mean": 1.5253
+  },
+  {
+   "run": "runs/finalize/core_wa_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 94.08,
+   "bits_per_byte": {
+    "en": 1.3468,
+    "ja_wiki": 1.4162,
+    "ja_web": 1.3127,
+    "code": 1.5941
+   },
+   "mean": 1.4175
+  },
+  {
+   "run": "runs/finalize/brain_core_s1",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.4165,
+    "ja_wiki": 1.4989,
+    "ja_web": 1.3931,
+    "code": 1.7346
+   },
+   "mean": 1.5108
+  },
+  {
+   "run": "runs/finalize/brain_gated_s1",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 3000,
+   "params_M": 95.47,
+   "bits_per_byte": {
+    "en": 1.4487,
+    "ja_wiki": 1.5523,
+    "ja_web": 1.4359,
+    "code": 1.8642
+   },
+   "mean": 1.5753
+  },
+  {
+   "run": "runs/finalize/brain_gd_s1",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.416,
+    "ja_wiki": 1.4982,
+    "ja_web": 1.3955,
+    "code": 1.7374
+   },
+   "mean": 1.5118
+  },
+  {
+   "run": "runs/finalize/core_gd_s1",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3448,
+    "ja_wiki": 1.4083,
+    "ja_web": 1.3098,
+    "code": 1.5882
+   },
+   "mean": 1.4128
+  },
+  {
+   "run": "runs/finalize/brain_wa_s1",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 94.08,
+   "bits_per_byte": {
+    "en": 1.4161,
+    "ja_wiki": 1.4948,
+    "ja_web": 1.3915,
+    "code": 1.7272
+   },
+   "mean": 1.5074
+  },
+  {
+   "run": "runs/finalize/core_wa_s1",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 94.08,
+   "bits_per_byte": {
+    "en": 1.3466,
+    "ja_wiki": 1.4098,
+    "ja_web": 1.3099,
+    "code": 1.5847
+   },
+   "mean": 1.4127
+  },
+  {
+   "run": "runs/finalize/core_s1",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3458,
+    "ja_wiki": 1.411,
+    "ja_web": 1.3102,
+    "code": 1.5828
+   },
+   "mean": 1.4124
+  },
+  {
+   "run": "runs/finalize/gated_s0",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 3000,
+   "params_M": 95.47,
+   "bits_per_byte": {
+    "en": 1.3632,
+    "ja_wiki": 1.44,
+    "ja_web": 1.3334,
+    "code": 1.643
+   },
+   "mean": 1.4449
+  },
+  {
+   "run": "runs/finalize/gated_s1",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 3000,
+   "params_M": 95.47,
+   "bits_per_byte": {
+    "en": 1.3654,
+    "ja_wiki": 1.44,
+    "ja_web": 1.3331,
+    "code": 1.6471
+   },
+   "mean": 1.4464
+  }
+ ],
+ "means": {
+  "core": 1.4147,
+  "brain_core": 1.5149,
+  "brain_gated": 1.5825,
+  "brain_gd": 1.5267,
+  "core_gd": 1.4148,
+  "brain_wa": 1.5164,
+  "core_wa": 1.4151,
+  "gated": 1.4457
+ }
+}

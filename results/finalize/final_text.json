@@ -1,0 +1,620 @@
+{
+ "runs": [
+  {
+   "run": "runs/finalize/board_random_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3529,
+    "ja_wiki": 1.4168,
+    "ja_web": 1.3135,
+    "code": 1.603
+   },
+   "mean": 1.4215
+  },
+  {
+   "run": "runs/finalize/brain_core_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.4166,
+    "ja_wiki": 1.4953,
+    "ja_web": 1.3886,
+    "code": 1.7757
+   },
+   "mean": 1.5191
+  },
+  {
+   "run": "runs/finalize/brain_core_s1",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.4165,
+    "ja_wiki": 1.4989,
+    "ja_web": 1.3931,
+    "code": 1.7346
+   },
+   "mean": 1.5108
+  },
+  {
+   "run": "runs/finalize/brain_gated_s0",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 3000,
+   "params_M": 95.47,
+   "bits_per_byte": {
+    "en": 1.4568,
+    "ja_wiki": 1.5632,
+    "ja_web": 1.4366,
+    "code": 1.9028
+   },
+   "mean": 1.5898
+  },
+  {
+   "run": "runs/finalize/brain_gated_s1",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 3000,
+   "params_M": 95.47,
+   "bits_per_byte": {
+    "en": 1.4487,
+    "ja_wiki": 1.5523,
+    "ja_web": 1.4359,
+    "code": 1.8642
+   },
+   "mean": 1.5753
+  },
+  {
+   "run": "runs/finalize/brain_gd_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.4283,
+    "ja_wiki": 1.5147,
+    "ja_web": 1.4012,
+    "code": 1.8224
+   },
+   "mean": 1.5416
+  },
+  {
+   "run": "runs/finalize/brain_gd_s1",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.416,
+    "ja_wiki": 1.4982,
+    "ja_web": 1.3955,
+    "code": 1.7374
+   },
+   "mean": 1.5118
+  },
+  {
+   "run": "runs/finalize/brain_wa_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 94.08,
+   "bits_per_byte": {
+    "en": 1.4219,
+    "ja_wiki": 1.5071,
+    "ja_web": 1.3958,
+    "code": 1.7766
+   },
+   "mean": 1.5253
+  },
+  {
+   "run": "runs/finalize/brain_wa_s1",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 94.08,
+   "bits_per_byte": {
+    "en": 1.4161,
+    "ja_wiki": 1.4948,
+    "ja_web": 1.3915,
+    "code": 1.7272
+   },
+   "mean": 1.5074
+  },
+  {
+   "run": "runs/finalize/core+peri_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.45,
+   "bits_per_byte": {
+    "en": 1.3519,
+    "ja_wiki": 1.426,
+    "ja_web": 1.3207,
+    "code": 1.6029
+   },
+   "mean": 1.4254
+  },
+  {
+   "run": "runs/finalize/core+two_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3362,
+    "ja_wiki": 1.3984,
+    "ja_web": 1.2994,
+    "code": 1.5427
+   },
+   "mean": 1.3942
+  },
+  {
+   "run": "runs/finalize/core+two_s1",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3333,
+    "ja_wiki": 1.3936,
+    "ja_web": 1.2974,
+    "code": 1.543
+   },
+   "mean": 1.3918
+  },
+  {
+   "run": "runs/finalize/core+vr_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3367,
+    "ja_wiki": 1.4008,
+    "ja_web": 1.3025,
+    "code": 1.5547
+   },
+   "mean": 1.3987
+  },
+  {
+   "run": "runs/finalize/core+vr_s1",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3358,
+    "ja_wiki": 1.3947,
+    "ja_web": 1.297,
+    "code": 1.5485
+   },
+   "mean": 1.394
+  },
+  {
+   "run": "runs/finalize/core+xsa_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3416,
+    "ja_wiki": 1.4058,
+    "ja_web": 1.3032,
+    "code": 1.5726
+   },
+   "mean": 1.4058
+  },
+  {
+   "run": "runs/finalize/core+xsa_s1",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3397,
+    "ja_wiki": 1.4027,
+    "ja_web": 1.3007,
+    "code": 1.5696
+   },
+   "mean": 1.4032
+  },
+  {
+   "run": "runs/finalize/core4+two_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.84,
+   "bits_per_byte": {
+    "en": 1.33,
+    "ja_wiki": 1.3918,
+    "ja_web": 1.2947,
+    "code": 1.5297
+   },
+   "mean": 1.3865
+  },
+  {
+   "run": "runs/finalize/core4+two_s1",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.84,
+   "bits_per_byte": {
+    "en": 1.3308,
+    "ja_wiki": 1.3892,
+    "ja_web": 1.2932,
+    "code": 1.5351
+   },
+   "mean": 1.3871
+  },
+  {
+   "run": "runs/finalize/core_gd_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3483,
+    "ja_wiki": 1.4173,
+    "ja_web": 1.3128,
+    "code": 1.5884
+   },
+   "mean": 1.4167
+  },
+  {
+   "run": "runs/finalize/core_gd_s1",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3448,
+    "ja_wiki": 1.4083,
+    "ja_web": 1.3098,
+    "code": 1.5882
+   },
+   "mean": 1.4128
+  },
+  {
+   "run": "runs/finalize/core_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3472,
+    "ja_wiki": 1.4154,
+    "ja_web": 1.3114,
+    "code": 1.594
+   },
+   "mean": 1.417
+  },
+  {
+   "run": "runs/finalize/core_s1",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3458,
+    "ja_wiki": 1.411,
+    "ja_web": 1.3102,
+    "code": 1.5828
+   },
+   "mean": 1.4124
+  },
+  {
+   "run": "runs/finalize/core_wa_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 94.08,
+   "bits_per_byte": {
+    "en": 1.3468,
+    "ja_wiki": 1.4162,
+    "ja_web": 1.3127,
+    "code": 1.5941
+   },
+   "mean": 1.4175
+  },
+  {
+   "run": "runs/finalize/core_wa_s1",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 94.08,
+   "bits_per_byte": {
+    "en": 1.3466,
+    "ja_wiki": 1.4098,
+    "ja_web": 1.3099,
+    "code": 1.5847
+   },
+   "mean": 1.4127
+  },
+  {
+   "run": "runs/finalize/gated+canon_s0",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 3000,
+   "params_M": 95.54,
+   "bits_per_byte": {
+    "en": 1.3602,
+    "ja_wiki": 1.4363,
+    "ja_web": 1.3305,
+    "code": 1.6383
+   },
+   "mean": 1.4413
+  },
+  {
+   "run": "runs/finalize/gated+two_s0",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 3000,
+   "params_M": 95.47,
+   "bits_per_byte": {
+    "en": 1.3206,
+    "ja_wiki": 1.3773,
+    "ja_web": 1.2838,
+    "code": 1.5032
+   },
+   "mean": 1.3712
+  },
+  {
+   "run": "runs/finalize/gated+two_s1",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 3000,
+   "params_M": 95.47,
+   "bits_per_byte": {
+    "en": 1.3184,
+    "ja_wiki": 1.3696,
+    "ja_web": 1.2802,
+    "code": 1.499
+   },
+   "mean": 1.3668
+  },
+  {
+   "run": "runs/finalize/gated_s0",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 3000,
+   "params_M": 95.47,
+   "bits_per_byte": {
+    "en": 1.3632,
+    "ja_wiki": 1.44,
+    "ja_web": 1.3334,
+    "code": 1.643
+   },
+   "mean": 1.4449
+  },
+  {
+   "run": "runs/finalize/gated_s1",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 3000,
+   "params_M": 95.47,
+   "bits_per_byte": {
+    "en": 1.3654,
+    "ja_wiki": 1.44,
+    "ja_web": 1.3331,
+    "code": 1.6471
+   },
+   "mean": 1.4464
+  },
+  {
+   "run": "runs/finalize/late_core+two_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3445,
+    "ja_wiki": 1.4072,
+    "ja_web": 1.3115,
+    "code": 1.5717
+   },
+   "mean": 1.4087
+  },
+  {
+   "run": "runs/finalize/late_core_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3569,
+    "ja_wiki": 1.4251,
+    "ja_web": 1.3237,
+    "code": 1.623
+   },
+   "mean": 1.4322
+  },
+  {
+   "run": "runs/finalize/late_core_s1",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.355,
+    "ja_wiki": 1.422,
+    "ja_web": 1.3151,
+    "code": 1.628
+   },
+   "mean": 1.43
+  },
+  {
+   "run": "runs/finalize/late_gated+two_s0",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 3000,
+   "params_M": 95.47,
+   "bits_per_byte": {
+    "en": 1.3289,
+    "ja_wiki": 1.3852,
+    "ja_web": 1.2943,
+    "code": 1.5255
+   },
+   "mean": 1.3835
+  },
+  {
+   "run": "runs/finalize/late_gated_s0",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 3000,
+   "params_M": 95.47,
+   "bits_per_byte": {
+    "en": 1.374,
+    "ja_wiki": 1.4516,
+    "ja_web": 1.3459,
+    "code": 1.6724
+   },
+   "mean": 1.461
+  },
+  {
+   "run": "runs/finalize/lib_en_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 94.34,
+   "bits_per_byte": {
+    "en": 1.2601,
+    "ja_wiki": 3.3116,
+    "ja_web": 2.7173,
+    "code": 2.7906
+   },
+   "mean": 2.5199
+  },
+  {
+   "run": "runs/finalize/lib_en_s1",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 94.34,
+   "bits_per_byte": {
+    "en": 1.2592,
+    "ja_wiki": 3.2694,
+    "ja_web": 2.7606,
+    "code": 2.7613
+   },
+   "mean": 2.5126
+  },
+  {
+   "run": "runs/finalize/nolib_en_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 94.34,
+   "bits_per_byte": {
+    "en": 1.2603,
+    "ja_wiki": 3.248,
+    "ja_web": 2.6984,
+    "code": 2.7983
+   },
+   "mean": 2.5012
+  },
+  {
+   "run": "runs/finalize/plan_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 94.28,
+   "bits_per_byte": {
+    "en": 1.3777,
+    "ja_wiki": 1.4521,
+    "ja_web": 1.3499,
+    "code": 1.6707
+   },
+   "mean": 1.4626
+  },
+  {
+   "run": "runs/finalize/qwen+two_s0",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 3000,
+   "params_M": 95.69,
+   "bits_per_byte": {
+    "en": 1.3549,
+    "ja_wiki": 1.4247,
+    "ja_web": 1.32,
+    "code": 1.6054
+   },
+   "mean": 1.4263
+  },
+  {
+   "run": "runs/finalize/qwen_s0",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 3000,
+   "params_M": 95.69,
+   "bits_per_byte": {
+    "en": 1.3695,
+    "ja_wiki": 1.4527,
+    "ja_web": 1.3398,
+    "code": 1.6795
+   },
+   "mean": 1.4604
+  },
+  {
+   "run": "runs/finalize/qwen_s1",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 3000,
+   "params_M": 95.69,
+   "bits_per_byte": {
+    "en": 1.3722,
+    "ja_wiki": 1.4461,
+    "ja_web": 1.3386,
+    "code": 1.6844
+   },
+   "mean": 1.4603
+  },
+  {
+   "run": "runs/finalize/time_mixed_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 3000,
+   "params_M": 93.43,
+   "bits_per_byte": {
+    "en": 1.3738,
+    "ja_wiki": 1.4492,
+    "ja_web": 1.3455,
+    "code": 1.6644
+   },
+   "mean": 1.4582
+  }
+ ],
+ "means": {
+  "board_random": 1.4215,
+  "brain_core": 1.5149,
+  "brain_gated": 1.5825,
+  "brain_gd": 1.5267,
+  "brain_wa": 1.5164,
+  "core+peri": 1.4254,
+  "core+two": 1.393,
+  "core+vr": 1.3963,
+  "core+xsa": 1.4045,
+  "core4+two": 1.3868,
+  "core_gd": 1.4148,
+  "core": 1.4147,
+  "core_wa": 1.4151,
+  "gated+canon": 1.4413,
+  "gated+two": 1.369,
+  "gated": 1.4457,
+  "late_core+two": 1.4087,
+  "late_core": 1.4311,
+  "late_gated+two": 1.3835,
+  "late_gated": 1.461,
+  "lib_en": 2.5162,
+  "nolib_en": 2.5012,
+  "plan": 1.4626,
+  "qwen+two": 1.4263,
+  "qwen": 1.4604,
+  "time_mixed": 1.4582
+ }
+}

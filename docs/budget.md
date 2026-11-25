@@ -22,135 +22,154 @@ not yet, so real throughput could be up to 2× lower. **A one-hour benchmark on 
 ## The scaling study: 2,000 GPU-hours on SDSC Expanse
 
 The NAIRR Pilot approved 2,000 GPU-hours for ExeaLM on the SDSC Expanse AI Resource (nodes of four NVIDIA H100s,
-80 GB each). The plan changed three times before any of it ran (18 November, and twice on 24 November). This is the
-plan of the evening of 24 November; the earlier ones are at the end of this section. The decisions behind it are in
-[decisions.md](decisions.md).
+80 GB each). The plan changed four times before any of it ran (18 November, twice on 24 November, and on the morning
+of 25 November). This is the plan of 25 November; the earlier ones are at the end of this section. The decisions
+behind it are in [decisions.md](decisions.md).
 
 ### What the runs are for
 
-Numbers for the next grant application, for a 9B ExeaLM: ExeaLM against the strongest same-size baseline we can
-build, a Qwen3.5-style model (Gated DeltaNet and gated attention, 3 to 1), at 3B and at three smaller sizes on one
-curve, trained the same way on the same tokens. Every hour goes to that. The board, the library and weight-alter are
+Numbers for the next grant application, for a 9B ExeaLM: ExeaLM against a plain Llama of the same size at five sizes
+from 0.1B to 3B, on one curve, trained on the same tokens, with a base Qwen3.5-style model (Gated DeltaNet and gated
+attention, 3 to 1) beside them from 0.1B to 1B. Every hour goes to that. The board, the library and weight-alter are
 post-training work and run elsewhere (the MI300X).
 
 What the application will cite: the gap at each size in bits per byte, every row read alone and on long documents read
-as a stream; the gap on downstream benchmarks at 0.5B and 3B; how many GPU-hours the baseline needs to match ExeaLM
-(the compute multiplier, read off the curve); and the 9B model's measured speed and memory on H100 nodes, which is
-the price in the application. ExeaLM already leads this baseline at 13M (by 0.011 bits per byte, 10 seeds) and at 0.1B
-(by 0.044, 3 seeds; [results/funding](../results/funding/README.md) sections 1 and 3).
+as a stream; the gap on downstream benchmarks at 0.5B, 1B and 3B; how many GPU-hours the plain Llama needs to match
+ExeaLM (the compute multiplier, read off the curve); and the 9B model's measured speed and memory on H100 nodes, which
+is the price in the application.
 
-### The two models
+What we have so far, all at 0.1B. On the MI300X with the study's recipe and tokenizer
+([results/finalize/final_text.json](../results/finalize/final_text.json), 3,000 steps, 2 seeds, mean of four held-out
+sets), ExeaLM reached 1.387 bits per byte against 1.446 for a gated Llama and 1.460 for the base Qwen3.5-style model.
+On older data without value residual or XSA ([results/funding](../results/funding/README.md), section 3, 3 seeds), the
+memory-free hybrid reached 1.413 against 1.509 for the plain Llama. A gated Llama with value residual and XSA added
+reached 1.369 on the MI300X, ahead of ExeaLM: the application has to show the gap with and without those two published
+changes (decisions.md, 25 November).
 
-Both: the 32k BPE tokenizer trained on the study's mix, tied embeddings, RMSNorm before every sublayer, a SwiGLU MLP
-8/3 of the width after every layer, and attention layers with 64-wide heads, RoPE, QK-norm, a sigmoid output gate,
-value residual ([ResFormer](https://arxiv.org/abs/2410.17897)) and exclusive self-attention
-([XSA](https://arxiv.org/abs/2603.09078)). At 3B: width 2,560, 34 layers, 40 heads, MLP 6,824.
+### The three models
 
-| | ExeaLM | Qwen3.5-style |
-|---|---|---|
-| Layers that are not attention | TONN, every fourth layer (9 of 34 at 3B) | Gated DeltaNet, 3 of every 4 (26 of 34) |
-| Inside them | d / 32 circuits of 32 channels (80 at 3B), drawn from the frozen starting mix: short convolutions (weight 4), delays and gated units (0.25), products, running sums, gated running sums, running sums of products, softmax pooling, the Mamba-like selective state space and oscillators (1 each); lags 0 to 128; no rotary-attention circuits | 64-wide heads, a short convolution of 4, the gated delta rule in chunks of 64, a gated, normalized output |
-| Read as a stream | TONN state and the attention keys and values of the window before | delta-rule state and convolution tail, and the attention keys and values of the window before |
-| Parameters at 0.1B, 0.25B, 0.5B, 3B | 93.8M, 247.4M, 500.3M, 2,921.2M | 95.7M, 252.1M, 511.3M, 2,986.2M |
+All three: the 32k BPE tokenizer trained on the study's mix, tied embeddings, RMSNorm before every sublayer, a SwiGLU
+MLP 8/3 of the width after every layer, attention with 64-wide heads and RoPE. At 3B: width 2,560, 34 layers, 40
+heads, MLP 6,824.
 
-Not in either: board, library or weight-alter slots, swarms, circuit search during training.
+| | ExeaLM | Plain Llama | Base Qwen3.5-style |
+|---|---|---|---|
+| Attention layers | 3 of every 4 (25 of 34 at 3B), with QK-norm, a sigmoid output gate, value residual ([ResFormer](https://arxiv.org/abs/2410.17897)) and exclusive self-attention ([XSA](https://arxiv.org/abs/2603.09078)) | every layer, without QK-norm, gate, value residual or XSA | 1 of every 4 (8 of 34), with QK-norm and the output gate |
+| The other layers | TONN, every fourth layer (9 of 34): d / 32 circuits of 32 channels (80 at 3B) from the frozen starting mix: short convolutions (weight 4), delays and gated units (0.25), products, running sums, gated running sums, running sums of products, softmax pooling, the Mamba-like selective state space and oscillators (1 each); lags 0 to 128; no rotary-attention circuits | none | Gated DeltaNet, 3 of every 4 (26 of 34): 64-wide heads, a short convolution of 4, the gated delta rule in chunks of 64, a gated, normalized output |
+| Rows in training | one 512-token window for the first 80% of steps, then 2,048 tokens read as four streamed windows (TONN state and the previous window's keys and values carried, the gradient through all four) | one 512-token window throughout | one 512-token window throughout |
+| Parameters at 0.1B, 0.25B, 0.5B, 1B, 3B | 93.8M, 247.4M, 500.3M, 970.5M, 2,921.2M | 89.7M, 234.8M, 474.1M, 917.8M, 2,757.2M | 95.7M, 252.1M, 511.3M, 991.9M (not trained at 3B) |
 
-Training, the same for both: one 512-token window per row for the first 80% of steps, then rows of 2,048 tokens read
-as four streamed windows with the gradient through all four for the last 20% (`--stream 4 --stream_from 0.8`); steps of 262,144 tokens; AdamW (weight decay 0.1, gradient clipping 1.0) unless Muon wins at
-0.1B first; bf16; a learning rate that warms up, holds and decays linearly over the last 20% to 10% of its peak, the
-peak from each model's own short checks.
+Not in any of them: board, library or weight-alter slots, swarms, circuit search during training.
+
+Training, the same for all three: steps of 262,144 tokens; AdamW (weight decay 0.1, gradient clipping 1.0); bf16; a
+learning rate that warms up, holds and decays linearly over the last 20% to 10% of its peak, the peak from each
+model's own short checks; the anneal mix for the last 10% of steps.
 
 ### The runs
 
 | Part | Run | Parameters | Tokens | Tokens per parameter | Steps | GPUs | GPU-hours |
 |---|---|---|---|---|---|---|---|
 | 3B | `exealm_3b_4.1x_s0` | 2,921.2M | 12.0B | 4.1 | 45,688 | 4 | 720 |
-| 3B | `qwen_3b_4.1x_s0` | 2,986.2M | 12.0B | 4.0 | 45,688 | 4 | 736 |
+| 3B | `llama_3b_4.1x_s0` | 2,757.2M | 12.0B | 4.3 | 45,688 | 4 | 441 |
 | curve | `exealm_100m_4.1x_s0` | 93.8M | 0.4B | 4.1 | 1,468 | 1 | 1 |
+| curve | `llama_100m_4.1x_s0` | 89.7M | 0.4B | 4.3 | 1,468 | 1 | 1 |
 | curve | `qwen_100m_4.1x_s0` | 95.7M | 0.4B | 4.0 | 1,468 | 1 | 1 |
 | curve | `exealm_100m_4.1x_s1` | 93.8M | 0.4B | 4.1 | 1,468 | 1 | 1 |
+| curve | `llama_100m_4.1x_s1` | 89.7M | 0.4B | 4.3 | 1,468 | 1 | 1 |
 | curve | `qwen_100m_4.1x_s1` | 95.7M | 0.4B | 4.0 | 1,468 | 1 | 1 |
 | curve | `exealm_100m_4.1x_s2` | 93.8M | 0.4B | 4.1 | 1,468 | 1 | 1 |
+| curve | `llama_100m_4.1x_s2` | 89.7M | 0.4B | 4.3 | 1,468 | 1 | 1 |
 | curve | `qwen_100m_4.1x_s2` | 95.7M | 0.4B | 4.0 | 1,468 | 1 | 1 |
 | curve | `exealm_250m_4.1x_s0` | 247.4M | 1.0B | 4.1 | 3,869 | 1 | 7 |
+| curve | `llama_250m_4.1x_s0` | 234.8M | 1.0B | 4.3 | 3,869 | 1 | 5 |
 | curve | `qwen_250m_4.1x_s0` | 252.1M | 1.0B | 4.0 | 3,869 | 1 | 8 |
 | curve | `exealm_250m_4.1x_s1` | 247.4M | 1.0B | 4.1 | 3,869 | 1 | 7 |
+| curve | `llama_250m_4.1x_s1` | 234.8M | 1.0B | 4.3 | 3,869 | 1 | 5 |
 | curve | `qwen_250m_4.1x_s1` | 252.1M | 1.0B | 4.0 | 3,869 | 1 | 8 |
 | curve | `exealm_250m_4.1x_s2` | 247.4M | 1.0B | 4.1 | 3,869 | 1 | 7 |
+| curve | `llama_250m_4.1x_s2` | 234.8M | 1.0B | 4.3 | 3,869 | 1 | 5 |
 | curve | `qwen_250m_4.1x_s2` | 252.1M | 1.0B | 4.0 | 3,869 | 1 | 8 |
 | curve | `exealm_500m_4.1x_s0` | 500.3M | 2.1B | 4.1 | 7,825 | 4 | 21 |
+| curve | `llama_500m_4.1x_s0` | 474.1M | 2.1B | 4.3 | 7,825 | 4 | 13 |
 | curve | `qwen_500m_4.1x_s0` | 511.3M | 2.1B | 4.0 | 7,825 | 4 | 22 |
 | curve | `exealm_500m_4.1x_s1` | 500.3M | 2.1B | 4.1 | 7,825 | 4 | 21 |
+| curve | `llama_500m_4.1x_s1` | 474.1M | 2.1B | 4.3 | 7,825 | 4 | 13 |
 | curve | `qwen_500m_4.1x_s1` | 511.3M | 2.1B | 4.0 | 7,825 | 4 | 22 |
-| | **The 18 runs** | | | | | | **1,593** |
+| curve | `exealm_1b_4.1x_s0` | 970.5M | 4.0B | 4.1 | 15,179 | 4 | 79 |
+| curve | `llama_1b_4.1x_s0` | 917.8M | 4.0B | 4.3 | 15,179 | 4 | 49 |
+| curve | `qwen_1b_4.1x_s0` | 991.9M | 4.0B | 4.0 | 15,179 | 4 | 81 |
+| | **The 29 runs** | | | | | | **1,549** |
 | | First job on Expanse | | | | | | 6 |
 | | The 9B model: speed and memory on 1, 2 and 4 nodes | | | | | | 36 |
-| | Learning-rate checks | | | | | | 64 |
+| | Learning-rate checks | | | | | | 82 |
 | | Evaluation: held-out text, long documents, benchmarks | | | | | | 100 |
-| | **Reserve of the 2,000** | | | | | | **201** |
+| | **Reserve of the 2,000** | | | | | | **227** |
 
 `python experiments/expanse/plan.py` prints this table and the lines that submit each run
 ([experiments/expanse](../experiments/expanse/README.md)).
 
-- **3B.** The headline: 12.0B tokens each, 4.1 tokens per parameter, what the allocation can afford for two 3B
-  models.
-- **The curve.** The same recipe at 0.1B, 0.25B and 0.5B, at the same 4.1 tokens per parameter, so all four sizes lie
-  on one curve and the gap can be read as a trend: three seeds at 0.1B and 0.25B, two at 0.5B. It costs 137 GPU-hours.
+- **3B.** The headline: ExeaLM and the plain Llama, 12.0B tokens each, 4.1 tokens per ExeaLM parameter, 1,161
+  GPU-hours. The Llama costs 441 of them: it runs at its measured rate, about 1.5 times ExeaLM's.
+- **The curve.** The same recipe at 0.1B, 0.25B, 0.5B and 1B with all three models, at the same 4.1 tokens per
+  parameter, so all five sizes lie on one curve and the gap can be read as a trend: three seeds at 0.1B and 0.25B, two
+  at 0.5B, one at 1B. It costs 388 GPU-hours.
 - **Rates.** One AMD MI300X in bf16 ([results/funding](../results/funding/README.md), section 6): 56 effective TFLOP/s
-  for ExeaLM at 0.1B, 81 at 0.5B. GPU-hours = 6 × parameters × tokens / (TFLOP/s × 3600 × 10¹²). The Qwen3.5-style
-  model is assumed to run at ExeaLM's rate. Its Gated DeltaNet is plain PyTorch here; if it is much slower on the H100,
-  it moves to the flash-linear-attention kernels, as a fair baseline should. The first job measures both.
+  for ExeaLM at 0.1B and 81 at 0.5B; 85 and 125 for the plain Llama. GPU-hours = 6 × parameters × tokens / (TFLOP/s
+  × 3600 × 10¹²). The Qwen3.5-style model is assumed to run at ExeaLM's rate. Its Gated DeltaNet is plain PyTorch
+  here; if it is much slower on the H100, it moves to the flash-linear-attention kernels, as a fair baseline should.
+  The first job measures all three.
 - **Four GPUs.** A node is charged 4 GPU-hours per hour. A run on four GPUs that is S times as fast as on one costs
-  4 / S times the hours above. The 3B pair is 1,456 of the 1,593: at S = 3.5 it costs about 208 more, slightly more than the
-  whole reserve.
+  4 / S times the hours above. The runs on four GPUs are 1,482 of the 1,549: at S = 3.5 they cost about 212 more,
+  nearly the whole reserve.
 - **The 9B model** (`9b`: 9.06B parameters, width 4,096, 42 layers): a few hundred steps on one, two and four nodes,
   for memory per GPU, tokens per second and scaling across nodes. It needs FSDP, which `exealm/train/pretrain.py`
   does not have yet.
 
 ### The data
 
-About 23B tokens, so each 3B model reads about half of it and nothing twice: English research and reference text from
-[LLM-jp Corpus v4](https://gitlab.llm-jp.nii.ac.jp/datasets/llm-jp-corpus-v4) (papers, arXiv, Wikipedia, books,
-StackExchange, math), code from LLM-jp v4 and [IFM Code-Reasoning](https://huggingface.co/datasets/IFM/Code-Reasoning),
-math from [IFM Math-Reasoning](https://huggingface.co/datasets/IFM/Math-Reasoning), web and QA text from
-[IFM TxT360-v2](https://huggingface.co/datasets/IFM/TxT360-v2), and Japanese from LLM-jp v4. It is published with its
-tokenizer as `exea-labs/exealm-pretrain-v1` on Hugging Face, the Stack-derived code in a gated companion repo, and
-the cluster pulls it with `experiments/data_mix/fetch.sh`. Post-training data and the library go to
-`exea-labs/exealm-post-v1` and `exea-labs/exealm-library-v1`.
+The 30B-token slice of data recipe v2.1 ([data_recipe.md](data_recipe.md)), research code first, then general code,
+then research papers, with math, web text, Japanese and QA: `slice-30b-r2` of the public Hugging Face dataset
+`exea-labs/exealm-pretrain` (the first build, `slice-30b`, is there too), with its 32k tokenizer and an anneal mix.
+Each 3B model reads 12B of its tokens and nothing twice. The cluster pulls it with `experiments/data_mix/fetch.sh`
+(`go.sh data`). Post-training data and the library are `exea-labs/exealm-post` and `exea-labs/exealm-library`.
 
 ### Before the long runs
 
-1. **The data** on Hugging Face, and the 32k tokenizer trained on it.
-2. **The first job** ([experiments/expanse](../experiments/expanse/README.md)): correctness on the H100, both models'
-   real speeds at every size, the speed-up of four GPUs, and the lead check at 0.1B.
-3. **The learning-rate checks**, size by size.
-4. **FSDP**, before the 9B measurement. No other run needs it.
+1. **The first job** ([experiments/expanse](../experiments/expanse/README.md)): correctness on the H100, the three
+   models' real speeds at every size, the speed-up of four GPUs, and the lead check at 0.1B.
+2. **The learning-rate checks**, size by size, every model.
+3. **FSDP**, before the 9B measurement. No other run needs it.
 
-Then the curve, smallest first, then the 3B pair.
+Then the curve, smallest first, then the 3B pair. [runbook.md](runbook.md) has every command.
 
 ### Reading the results
 
-- **Equal tokens, every row alone.** `python experiments/eval_text.py runs/qwen_3b_4.1x_s0 runs/exealm_3b_4.1x_s0`.
-- **Long documents, read as a stream.** `python experiments/stream_eval.py ... --windows 8`.
-- **The compute multiplier.** At each size, the GPU-hours the Qwen3.5-style model would need to reach ExeaLM's loss
-  (from a power law fitted to its four points), divided by ExeaLM's measured GPU-hours.
-- **Benchmarks** at 0.5B and 3B.
+- **Equal tokens, every row alone.** `python experiments/eval_text.py runs/llama_3b_4.1x_s0 runs/exealm_3b_4.1x_s0`.
+- **Long documents, read as a stream.** `python experiments/stream_eval.py ... --windows 8`. Only ExeaLM was trained
+  on streams, so the Llama's streamed numbers show what it gets from the keys and values of the window before without
+  that training.
+- **The compute multiplier.** At each size, the GPU-hours the plain Llama would need to reach ExeaLM's loss (from a
+  power law fitted to its five points), divided by ExeaLM's measured GPU-hours. The same against the Qwen3.5-style
+  model from its four points.
+- **Benchmarks** at 0.5B, 1B and 3B.
 
-What would count: ExeaLM ahead at every size, on every seed, at equal tokens; the gap not shrinking from 0.1B to 3B;
-the multiplier above 1. It is evidence for the 9B run, not proof: 9B is three times the largest model trained.
+What would count: ExeaLM ahead of the plain Llama at every size, on every seed, at equal tokens; the gap not shrinking
+from 0.1B to 3B; ExeaLM ahead of the Qwen3.5-style model from 0.1B to 1B; the multiplier above 1. It is evidence for
+the 9B run, not proof: 9B is three times the largest model trained.
 
 ### If fewer hours fit
 
-Shorten the 3B pair (each billion tokens fewer saves about 120 GPU-hours for the pair). Then drop the second seed at
-0.5B (about 42). Never drop the Qwen3.5-style run of a pair. The first use of the reserve, if it is not needed: the
-0.1B pair trained to 111 tokens per parameter, the 9B run's ratio (about 60 GPU-hours).
+Shorten the 3B pair (each billion tokens fewer saves about 97 GPU-hours for the pair). Then drop the second seed at
+0.5B (about 56). Never drop the plain Llama run of a pair. The first use of the reserve, if it is not needed: the 0.1B
+models trained to 111 tokens per parameter, the 9B run's ratio (about 77 GPU-hours for the three).
 
-### The plans of 24 November (morning) and 18 November
+### The plans of 24 November and 18 November
 
 For the record. Nothing of them ran.
 
 | Plan | Runs | GPU-hours |
 |---|---|---|
+| 24 Nov evening | ExeaLM against a Qwen3.5-style model with value residual and XSA, both streamed: a 3B pair at 4.1 tokens per parameter and a 0.1B to 0.5B curve, 18 runs | 1,593 |
 | 24 Nov morning | ExeaLM against a gated Llama at 0.1B, 0.25B, 0.5B and 1B at 20 tokens per parameter, the 0.1B pair at 50 and 111, a short 3B pair | 1,588 |
 | 18 Nov | ExeaLM against a gated Llama: 0.1B at 110, 0.5B at 60, 1B at 15.5, 3B at 1.4 tokens per parameter | 1,503 |
 

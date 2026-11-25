@@ -115,7 +115,20 @@ def main(argv=None):
             kw["num_workers"] = a.num_workers
         if cfg["release"]:
             kw["allow_patterns"] = [f"{cfg['release']}/**"]
-        api.upload_large_folder(r["repo_id"], folder, **kw)
+        if hasattr(api, "upload_large_folder"):
+            api.upload_large_folder(r["repo_id"], folder, **kw)
+        else:                                    # older huggingface_hub: one commit per top-level folder of the release
+            import os as _os
+            root = _os.path.join(folder, cfg["release"]) if cfg["release"] else folder
+            for sub in sorted(_os.listdir(root)):
+                local = _os.path.join(root, sub)
+                dest = f"{cfg['release']}/{sub}" if cfg["release"] else sub
+                if _os.path.isdir(local):
+                    api.upload_folder(repo_id=r["repo_id"], folder_path=local, path_in_repo=dest, repo_type="dataset",
+                                      commit_message=f"{dest}")
+                else:
+                    api.upload_file(path_or_fileobj=local, path_in_repo=dest, repo_id=r["repo_id"], repo_type="dataset")
+                log.info(f"{r['repo_id']}: uploaded {dest}")
         log.info(f"{r['repo_id']}: done: https://huggingface.co/datasets/{r['repo_id']}")
     return plan
 

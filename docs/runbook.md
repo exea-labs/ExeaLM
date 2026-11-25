@@ -29,10 +29,10 @@ Run them one at a time and look at the results between them, or `bash experiment
 | Phase | Command | Jobs | Wall time | GPU-hours (MI300X rates) | What comes out |
 |---|---|---|---|---|---|
 | 1. First job | `go.sh first` | 1 node | ~1.5 h | ~6 | `results/expanse/`: gpu_check.txt, throughput, `plan_at_h100_rates.txt`, scaling_500m.json (4-GPU speed-up), lead_100m.json |
-| 2. Learning-rate checks | `go.sh lr` | 22 | a few hours | ~64 | `$KEEP/lr_*` |
+| 2. Learning-rate checks | `go.sh lr` | 37 | a few hours | ~82 | `$KEEP/lr_*` |
 | 3. Pick rates | `go.sh pick` | none | seconds | 0 | `experiments/expanse/lr_choice.json` |
-| 4. The curve | `go.sh curve` | 16 | ~1 day | ~137 | `$KEEP/{exealm,qwen}_{100m,250m,500m}_4.1x_s*` |
-| 5. 3B pair | `go.sh 3b` | 2 (one node each) | ~7 days | ~1,456 | `$KEEP/{exealm,qwen}_3b_4.1x_s0` |
+| 4. The curve | `go.sh curve` | 27 | ~1-2 days | ~388 | `$KEEP/{exealm,llama,qwen}_{100m,250m,500m,1b}_4.1x_s*` |
+| 5. 3B pair | `go.sh 3b` | 2 (one node each) | ~7 days | ~1,161 | `$KEEP/{exealm,llama}_3b_4.1x_s0` |
 | 6. Score | `go.sh eval` | 1 GPU | a few hours | ~10 | `results/expanse/text.json`, `stream8.json`, `bench_*.json` |
 
 `go.sh status` shows the queue and every run's latest step, bits per byte and tokens per second.
@@ -42,8 +42,8 @@ Run them one at a time and look at the results between them, or `bash experiment
 - `plan_at_h100_rates.txt` is the plan's table at the H100's measured speed: if the total plus the reserve exceeds
   2,000, shorten the 3B pair (budget.md, "If fewer hours fit"). `python experiments/expanse/plan.py --rates
   results/expanse/throughput_h100.json --speedup <speedup_on_4_gpus from scaling_500m.json>` reprints it.
-- `lead_100m.json`: ExeaLM against the Qwen3.5-style model (and the gated Llama) at 0.1B, 3 seeds, on this data. If
-  ExeaLM is behind the Qwen3.5-style model, stop and decide before the curve.
+- `lead_100m.json`: ExeaLM against the plain Llama and the base Qwen3.5-style model at 0.1B, 3 seeds, on this data.
+  If ExeaLM is behind either, stop and decide before the curve.
 - If the Qwen3.5-style model runs much slower than ExeaLM (`throughput_h100.json`, model `qwen`), its Gated DeltaNet
   should move to the flash-linear-attention kernels before the long runs, so the baseline is not slowed by our code.
 
@@ -60,8 +60,9 @@ Every run is `experiments/expanse/train.sb` with `RUN` and `ARGS` set by `plan.p
 A job that crashes is not resubmitted: read `logs/expanse/<job>.out`, then submit the same run again
 (`python experiments/expanse/plan.py --run <name> --lr auto | bash`); it continues from the last checkpoint in `KEEP`.
 
-Every run trains with one 512-token window per row for the first 80% of its steps and rows of four streamed windows
-for the last 20% (`--stream 4 --stream_from 0.8`), and reads the anneal mix for the last 10% (`--anneal_data`).
+ExeaLM trains with one 512-token window per row for the first 80% of its steps and rows of four streamed windows for
+the last 20% (`--stream 4 --stream_from 0.8`); the plain Llama and the Qwen3.5-style model read one window per row
+throughout. Every run reads the anneal mix for the last 10% (`--anneal_data`).
 
 ## Where everything is saved
 
@@ -74,17 +75,19 @@ for the last 20% (`--stream 4 --stream_from 0.8`), and reads the anneal mix for 
 
 ## What to expect
 
-- **0.1B on the MI300X** (different data, 3,000 steps): ExeaLM ahead of the Qwen3.5-style model by about 0.03 bits per
-  byte; on long documents read as a stream its lead over a Llama grows through the document (0.030 to 0.041 by the
-  fourth window). The cluster's numbers are on the new data and tokenizer, so they will differ.
+- **0.1B on the MI300X** (different data, 3,000 steps, 2 seeds, `results/finalize/final_text.json`): ExeaLM 1.387
+  bits per byte, a gated Llama 1.446, the base Qwen3.5-style model 1.460. On older data, 3 seeds, the hybrid without
+  value residual or XSA was 0.095 ahead of the plain Llama (1.413 against 1.509). The cluster's numbers are on the new
+  data and tokenizer, so they will differ.
 - **Watch for:** loss spikes that do not recover (lower that model's learning rate and continue from the last
   checkpoint before the spike), `processes_in_sync: false` in a log (the run resynchronizes itself), runs much slower
   than `plan_at_h100_rates.txt` says.
 - **Not ready yet:** the 9B speed measurement needs FSDP, which `pretrain.py` does not have; its 36 GPU-hours stay in
   the reserve until it is built.
 
-## Architecture switches decided on the MI300X
+## The three models
 
-The configs in `experiments/expanse/` are what every phase trains: `exealm_core.json` (ExeaLM: no memory slots, value
-residual, XSA), `qwen_<size>.json` (the baseline, the same attention changes), `gated_llama.json`.  ExeaLM has a TONN
-layer every fourth layer (`"tonn_every": 4`), decided on the MI300X on 25 November ([decisions.md](decisions.md)).
+The configs in `experiments/expanse/` are what every phase trains ([decisions.md](decisions.md), 25 November):
+`exealm_core.json` is ExeaLM (no memory slots, a TONN layer every fourth layer, value residual, XSA; streamed in the last
+20%); the plain Llama is `--model llama` with no config; `qwen_<size>.json` is the base Qwen3.5-style model (Gated
+DeltaNet in 3 of every 4 layers, gated attention, QK-norm). `gated_llama.json` is kept for the MI300X record only.

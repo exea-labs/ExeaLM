@@ -6,16 +6,18 @@ be rescaled to the machine the hours are on.
     python experiments/throughput.py --sizes 0.5B --precision bf16 --compile 1 # what torch.compile buys
     python experiments/throughput.py --sizes 0.5B --precision bf16 --tf32 1    # what TF32 buys in the 32-bit parts
 
-    python experiments/throughput.py --models exealm,gated --precision bf16    # the two models the compute plan trains
+    python experiments/throughput.py --models hybrid,llama,qwen --precision bf16    # the three models the plan trains
 
 A row is one model at one size and precision: seconds per training step (forward, backward, gradient clip, optimizer)
 on random tokens, tokens per second, effective TFLOP/s (6 x parameters x tokens per second) and the peak GPU memory.
 If a batch does not fit the GPU, it is halved and the row says so. The models:
 
-    hybrid   the size's preset without the memory circuits (the MI300X rows: 93.4M and 497.1M parameters)
-    llama    the plain same-size Llama (the other MI300X rows)
-    exealm   the preset as the compute plan trains it: board and library slots, swarms of 4, no datastore
-    gated    the plan's baseline: a Llama with gated attention and QK-norm
+    hybrid   ExeaLM as the plan trains it (exealm_core.json): no memory circuits, a TONN layer every fourth layer,
+             value residual and XSA
+    llama    the plain same-size Llama, the plan's headline baseline (the other MI300X rows)
+    qwen     the base Qwen3.5-style model: gated attention and QK-norm, Gated DeltaNet in 3 of every 4 layers
+    exealm   the preset with its board and library slots, swarms of 4, no datastore
+    gated    a Llama with gated attention and QK-norm
 
 With bf16 rows the script also prints the compute plan (experiments/expanse/plan.py) at the measured rates. These are
 single-GPU rates. For a 4-GPU run, time the real loop (experiments/expanse/README.md).
@@ -60,9 +62,10 @@ def build(size, kind, vocab, dev):
     if kind == "hybrid":                         # ExeaLM's layout as the study trains it (exealm_core.json)
         import json, os
         core = os.path.join(os.path.dirname(os.path.abspath(__file__)), "expanse", "exealm_core.json")
-        k = json.load(open(core)).get("tonn_every", 0) if os.path.exists(core) else 0
-        if k:
-            cfg = get_config(PRESET[size], pinned={}, menu=cfg.menu, tonn_every=k, **over)
+        core = json.load(open(core)) if os.path.exists(core) else {}
+        keep = {k: core[k] for k in ("tonn_every", "value_residual", "xsa") if k in core}
+        if keep:
+            cfg = get_config(PRESET[size], pinned={}, menu=cfg.menu, **keep, **over)
     if kind in ("gated", "qwen"):
         cfg = replace(cfg, attn_gate=True, qk_norm=True)
     if kind == "qwen":                                              # Gated DeltaNet in 3 of every 4 layers
