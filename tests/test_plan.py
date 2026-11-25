@@ -67,7 +67,7 @@ def test_the_table_fits_the_allocation_and_is_the_one_in_the_budget_document():
     assert "llama_3b_4.1x_s0" not in hours and not [n for n in hours if n.startswith("gated_")]
     assert {n.split("_")[1] for n in hours} == {"100m", "250m", "500m", "3b"}       # four sizes on one curve
     assert {l.split("|")[5].strip() for l in rows if "exealm" in l and "_4.1x_" in l} == {"4.1"}  # one curve
-    assert "ExeaLM at 9B on 1T tokens" in text and "about 186,4" in text           # the price of the 9B run
+    assert "ExeaLM at 9B on 1T tokens" in text and "about 187,4" in text           # the price of the 9B run
     reserve = int(text.split("**Reserve of the 2,000** | | | | | | **")[1].split("**")[0].replace(",", ""))
     assert 50 < reserve < 400
     budget = open(os.path.join(ROOT, "docs", "budget.md")).read()
@@ -217,6 +217,9 @@ def test_the_runner_picks_learning_rates_and_submits_every_phase(tmp_path):
                                                                             # 2 rates and two models at 3B
     first = subprocess.run(["bash", go, "first"], capture_output=True, text=True, env=env, cwd=ROOT).stdout
     assert "first_contact.sb" in first
+    nine = subprocess.run(["bash", go, "nine_b"], capture_output=True, text=True, env=env, cwd=ROOT).stdout
+    assert nine.count("nine_b.sb") == 3 and nine.count("afterok") == 2          # the larger jobs wait for one node
+    assert os.path.isdir(os.path.join(ROOT, "logs", "expanse"))                  # Slurm writes job output there
 
 
 def test_the_anneal_mix_takes_over_for_the_last_steps(tmp_path, monkeypatch):
@@ -256,7 +259,8 @@ def test_the_report_finds_the_gaps_the_multiplier_and_the_price(tmp_path):
     assert len(qwen) == 4 and all(abs(r["flops_multiplier"] - 2.0) < 0.05 for r in qwen)
     assert all(r["gpu_hour_multiplier"] == r["flops_multiplier"] for r in qwen)    # the same assumed speed
     assert out["long"][0]["tpp"] == 111 and out["long"][0]["gap_qwen"] > 0
-    assert out["nine_b"]["gpu_hours"] == round(plan.gpu_hours(9060, 1e12, 81.0)) and out["nine_b"]["rate_from"] == "ExeaLM at 3B"
+    assert out["nine_b"]["gpu_hours"] == round(plan.gpu_hours(plan.NINE_B_PARAMS / 1e6, 1e12, 81.0))
+    assert out["nine_b"]["rate_from"] == "ExeaLM at 3B"
     text = (tmp_path / "report.md").read_text()
     assert "Compute multiplier" in text and "| 3b | ExeaLM |" in text
     (tmp_path / "nine_b.json").write_text(json.dumps([dict(nodes=1, effective_TFLOPs_per_gpu=50.0),

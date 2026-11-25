@@ -28,7 +28,7 @@ are in [decisions.md](decisions.md).
 
 ### What the runs are for
 
-Numbers for the next grant application, for a 9B ExeaLM: ExeaLM against a base Qwen3.5-style model (Gated DeltaNet
+Numbers that make funders (grant programs and investors) confident in a 9B ExeaLM on 1T tokens: ExeaLM against a base Qwen3.5-style model (Gated DeltaNet
 and gated attention, 3 to 1) of the same size at four sizes from 0.1B to 3B, on one curve, trained on the same tokens,
 with a plain Llama beside them from 0.1B to 0.5B as the reference everyone knows. Every hour goes to that. The board,
 the library and weight-alter are post-training work and run elsewhere (the MI300X).
@@ -39,9 +39,9 @@ match ExeaLM (the compute multiplier, read off the curve); whether the gap holds
 9B run's 111 tokens per parameter; and the 9B model's measured speed and memory on H100 nodes, which is the price in
 the application. `experiments/expanse/report.py` writes all of it from the scores.
 
-What we have so far, all at 0.1B. On the MI300X with the study's recipe and tokenizer
-([results/finalize/final_text.json](../results/finalize/final_text.json), 3,000 steps, 2 seeds, mean of four held-out
-sets), ExeaLM reached 1.387 bits per byte against 1.460 for the base Qwen3.5-style model and 1.446 for a gated Llama.
+What we have so far, all at 0.1B. On the MI300X with ExeaLM as the study trains it, on older data and an older 32k
+tokenizer ([results/finalize/final_text.json](../results/finalize/final_text.json), 3,000 steps, 2 seeds, mean of four
+held-out sets), ExeaLM reached 1.387 bits per byte against 1.460 for the base Qwen3.5-style model and 1.446 for a gated Llama.
 With value residual and XSA added to the baselines, the Qwen3.5-style model reached 1.426 (one seed), still behind
 ExeaLM, while the gated Llama reached 1.369, ahead of it. On older data without value residual or XSA
 ([results/funding](../results/funding/README.md), section 3, 3 seeds), the memory-free hybrid reached 1.413 against
@@ -53,7 +53,7 @@ Every run is in the plan because it answers one of these. A run that answers non
 
 | Question | What answers it | Where |
 |---|---|---|
-| Is ExeaLM better than a modern design, under the same conditions? | ExeaLM against the Qwen3.5-style model at every size: the same data, tokens, steps and training recipe | the 3B pair, the curve |
+| Is ExeaLM better than a modern design, under the same conditions? | ExeaLM against the Qwen3.5-style model at every size: the same data, tokens, steps, optimizer and schedule; only ExeaLM reads streams in its last 20% | the 3B pair, the curve |
 | Does the lead hold as the model grows? | The gap at 0.1B, 0.25B, 0.5B and 3B, and whether it shrinks | the curve, the 3B pair |
 | Could the lead be noise? | Three seeds at 0.1B and 0.25B, two at 0.5B; on how many seeds ExeaLM leads | the curve, `report.py` |
 | Does it hold when trained as long as the 9B would be? | The 0.1B pair at 111 tokens per parameter against the same pair at 4.1 | the long pair |
@@ -142,9 +142,11 @@ model's own short checks; the anneal mix for the last 10% of steps.
 - **Four GPUs.** A node is charged 4 GPU-hours per hour. A run on four GPUs that is S times as fast as on one costs
   4 / S times the hours above. The runs on four GPUs are 1,567 of the 1,693: at S = 3.5 they cost about 224 more, 134
   more than the reserve, so the 3B pair would lose about 1.1B of its 12B tokens.
-- **The 9B model** (`9b`: 9.06B parameters, width 4,096, 42 layers): a few hundred steps on one, two and four nodes,
-  for memory per GPU, tokens per second and scaling across nodes. It needs FSDP, which `exealm/train/pretrain.py`
-  does not have yet.
+- **The 9B model** (`9b` as the study trains it: 9.11B parameters, width 4,096, 42 layers): short runs on one, two
+  and four nodes, for memory per GPU, tokens per second and scaling across nodes (`experiments/expanse/nine_b.py`,
+  sharded with PyTorch's FSDP2; `go.sh nine_b`). At most 33 GPU-hours of the 36. Training the 9B for real will need
+  `pretrain.py` to shard the same way, and to average the TONN layers' running output sizes across GPUs, which DDP
+  copies from process 0 and FSDP does not.
 
 ### The data
 

@@ -46,7 +46,7 @@ STREAMED = ("exealm",)                         # streaming is part of ExeaLM; th
 STEP_TOKENS = 262_144
 ALLOCATION = 2000                              # GPU-hours
 TARGET = (9e9, 1e12)                           # what the study is evidence for: 9B parameters on 1T tokens
-NINE_B_PARAMS = 9.06e9                         # the 9b preset (exealm/config.py)
+NINE_B_PARAMS = 9.109e9                        # the 9b preset as the study trains it (exealm_core.json; nine_b.py)
 FIRST_JOB = 6                                  # first_contact.sb: one node for about an hour and a half
 NINE_B = 36                                    # the 9B preset's speed and memory, sharded: 3 hours on one node, then an
                                                # hour each on two and four nodes (needs FSDP, docs/budget.md)

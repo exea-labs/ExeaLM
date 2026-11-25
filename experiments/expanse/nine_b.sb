@@ -1,0 +1,73 @@
+#!/bin/bash
+# The 9B model's training speed and memory on 1, 2 and 4 nodes, sharded with FSDP2 (experiments/expanse/nine_b.py): the
+# price of the 9B run in the funding application. 36 GPU-hours at most: up to 3 hours on one node (12), then up to an
+# hour each on two (8) and four (16). From the repo root, in the environment setup.sh installed into:
+#
+#     export SBATCH_ACCOUNT=<your project>
+#     sbatch --nodes=1 experiments/expanse/nine_b.sb
+#     sbatch --nodes=2 experiments/expanse/nine_b.sb        # after the one-node job has written its rows
+#     sbatch --nodes=4 experiments/expanse/nine_b.sb
+#
+# (`go.sh nine_b` submits the three, the two larger with afterok on the first.) Each job runs nine_b.py once per batch in BATCHES (rows per GPU), with activation
+# checkpointing on; each run adds one row to results/expanse/nine_b.json, or an error row if the batch did not fit. On
+# more than one node each batch runs twice, sharded over all GPUs (FSDP) and within each node (HSDP), so the job shows
+# whether the network between nodes or the sharding is the limit. Settings (environment variables, `export` them or
+# sbatch --export=ALL,...): BATCHES (default "2 4 8"), MODES ("fsdp", or "fsdp hsdp" on more than one node), WARMUP and
+# STEPS (3 and 10), BUDGET_MIN (minutes the job may take: 170 on one node, 55 on more). The #SBATCH time limit is the
+# one-node job's; on more nodes the job ends itself by BUDGET_MIN, as each run gets an equal share of it and is stopped
+# when that is used up (a run that hangs cannot spend the job's hours). The job fails if no run wrote a row, so
+# `sbatch --dependency=afterok:<one-node job id> --nodes=2 ...` keeps a broken script from spending the larger jobs.
+#
+# One torchrun per node (--ntasks-per-node=1), started by srun on every node, each starting 4 processes; they meet on
+# the first node. --gpus-per-node, not --gpus: with --nodes=2, --gpus=h100:4 would be 4 GPUs in all. Only the
+# partition, the GPU type and the time limit below come from SDSC's user guide. Compare the other lines with SDSC's own
+# sample (/cm/shared/examples/sdsc/ExpanseAIR/pytorch) and change what differs. Not yet run on Expanse.
+#SBATCH --job-name=exealm-9b
+#SBATCH --partition=nairr-gpu
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=32
+#SBATCH --gpus-per-node=h100:4
+#SBATCH --time=03:00:00
+#SBATCH --output=logs/expanse/%x-%j.out
+set -uo pipefail
+cd "$SLURM_SUBMIT_DIR"
+NODES=${SLURM_NNODES:-1}
+BATCHES=${BATCHES:-"2 4 8"}
+MODES=${MODES:-$([ "$NODES" -gt 1 ] && echo "fsdp hsdp" || echo "fsdp")}
+WARMUP=${WARMUP:-3}
+STEPS=${STEPS:-10}
+BUDGET_MIN=${BUDGET_MIN:-$([ "$NODES" -gt 1 ] && echo 55 || echo 170)}
+OUT=results/expanse/nine_b.json
+MASTER_ADDR=$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -1)
+export OMP_NUM_THREADS=8
+mkdir -p results/expanse
+
+runs=$(( $(echo $MODES | wc -w) * $(echo $BATCHES | wc -w) ))
+each=$(( BUDGET_MIN / runs ))
+echo "== $(date '+%F %T') job $SLURM_JOB_ID: $NODES node(s), first $MASTER_ADDR; $runs runs of up to $each minutes"
+srun --ntasks-per-node=1 bash -c 'echo "$(hostname): $(nvidia-smi -L | wc -l) GPU(s)"'
+nvidia-smi --query-gpu=index,name,memory.total,driver_version --format=csv
+
+port=29500
+wrote=0
+for mode in $MODES; do
+  for b in $BATCHES; do
+    port=$((port + 1))                                 # a fresh rendezvous for every run
+    echo "== $(date '+%F %T') $mode, $b rows per GPU"
+    timeout --kill-after=60 "${each}m" \
+      srun --ntasks-per-node=1 --kill-on-bad-exit=1 \
+        torchrun --nnodes "$NODES" --nproc_per_node 4 --rdzv_backend c10d --rdzv_id "$SLURM_JOB_ID-$port" \
+          --rdzv_endpoint "$MASTER_ADDR:$port" \
+          experiments/expanse/nine_b.py --batch "$b" --checkpoint 1 --hsdp "$([ "$mode" = hsdp ] && echo 1 || echo 0)" \
+          --warmup "$WARMUP" --steps "$STEPS" --out "$OUT"
+    code=$?
+    if [ "$code" -eq 0 ]; then
+      wrote=$((wrote + 1))
+    else                                               # an out-of-memory row says so above; 124: the share ran out
+      echo "== $mode, $b rows per GPU: no row (exit $code)"
+    fi
+  done
+done
+echo "== $(date '+%F %T') done: $wrote of $runs runs wrote a row to $OUT"
+[ "$wrote" -gt 0 ]

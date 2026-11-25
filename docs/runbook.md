@@ -83,9 +83,13 @@ throughout. Every run reads the anneal mix for the last 10% (`--anneal_data`).
 - **Watch for:** loss spikes that do not recover (lower that model's learning rate and continue from the last
   checkpoint before the spike), `processes_in_sync: false` in a log (the run resynchronizes itself), runs much slower
   than `plan_at_h100_rates.txt` says.
-- **The 9B measurement** (`nine_b.py`, sharded with PyTorch's FSDP2) has only run on a CPU. Run `go.sh nine_b` after
-  phase 1, when the first job has shown the GPUs and NCCL work; if the one-node job fails, fix it before the two- and
-  four-node jobs spend their hours.
+- **The 9B measurement** (`nine_b.py`, sharded with PyTorch's FSDP2) has not run sharded anywhere: FSDP2 does not
+  train on a CPU in torch 2.6. On a CPU, one process trains the model, and the changes FSDP needs (value residual's
+  shared values, TONN's scalar parameters, checkpointing TONN's running sizes) give the same losses and gradients as
+  the unchanged model (`tests/test_nine_b.py`). Run `go.sh nine_b` after phase 1, when the first job has shown the GPUs
+  and NCCL work. It submits the one-node job and makes the two- and four-node jobs wait for it to write a row
+  (`afterok`). Compare `nine_b.sb`'s `#SBATCH` lines (`--gpus-per-node`, one torchrun per node) with SDSC's sample
+  first.
 
 ## The three models
 

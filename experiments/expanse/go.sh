@@ -24,6 +24,7 @@ cd "$(dirname "$0")/../.."
 RELEASE=${RELEASE:-slice-30b-r2}
 KEEP=${KEEP:-$PWD/runs}
 export KEEP
+mkdir -p logs/expanse results/expanse              # Slurm writes job output to logs/expanse (git ignores logs/)
 DRY=${DRY:-0}
 PLAN="python experiments/expanse/plan.py"
 log() { echo "$(date '+%F %T') $*"; }
@@ -65,11 +66,14 @@ phase() {
       if [ "$DRY" = 1 ]; then echo "sbatch experiments/expanse/eval.sb"; else sbatch experiments/expanse/eval.sb; fi ;;
     report) python experiments/expanse/report.py --results results/expanse \
               $([ -f results/expanse/throughput_h100.json ] && echo "--rates results/expanse/throughput_h100.json") ;;
-    nine_b) need_account
-      for n in 1 2 4; do
-        if [ "$DRY" = 1 ]; then echo "sbatch --nodes=$n experiments/expanse/nine_b.sb"
-        else sbatch --nodes=$n experiments/expanse/nine_b.sb; fi
-      done ;;
+    nine_b) need_account                           # one node first; two and four only if it wrote a row
+      if [ "$DRY" = 1 ]; then
+        echo "sbatch --parsable --nodes=1 experiments/expanse/nine_b.sb"
+        for n in 2 4; do echo "sbatch --dependency=afterok:<that job> --nodes=$n experiments/expanse/nine_b.sb"; done
+      else
+        jid=$(sbatch --parsable --nodes=1 experiments/expanse/nine_b.sb) || exit 1
+        for n in 2 4; do sbatch --dependency=afterok:"$jid" --nodes=$n experiments/expanse/nine_b.sb; done
+      fi ;;
     status)
       squeue -u "$USER" -o "%.10i %.20j %.8T %.10M %.6D %R" 2>/dev/null
       dir=$(logs_to)

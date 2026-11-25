@@ -13,7 +13,7 @@ additions follow from the questions a reviewer of that application will ask firs
   (10.4B tokens, 59 GPU-hours). The reserve falls from 149 to 90.
 - **What does the 9B run cost, and can we train it?** `experiments/expanse/nine_b.py` measures the 9B model's speed
   and memory on 1, 2 and 4 nodes, sharded with FSDP2 (`go.sh nine_b`, the 36 GPU-hours already in the plan). Until it
-  runs, the plan prices the 9B run at ExeaLM's 3B rate: about 186,000 GPU-hours for 1T tokens.
+  runs, the plan prices the 9B run at ExeaLM's 3B rate: about 187,000 GPU-hours for 1T tokens.
 - **What is the headline number?** `experiments/expanse/report.py` turns the scores into the curve with every seed,
   the compute multiplier against each baseline in FLOPs and in GPU-hours, the long pair, every held-out set, long
   documents, benchmarks and the 9B price, with a figure (`report.md`, `scaling.png`).
