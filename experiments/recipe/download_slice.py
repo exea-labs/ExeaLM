@@ -17,10 +17,12 @@ from concurrent.futures import ThreadPoolExecutor
 from huggingface_hub import HfApi, hf_hub_download
 
 BYTES_PER_TOKEN = 1.2                    # compressed bytes per token, roughly, for json.gz, jsonl.zst and parquet
-OVERSAMPLE = {"research_python": 8.0, "starcoder": 1.0}
+# Fetched at this many times their share: research_python is filtered (only Python files that import a scientific
+# library stay), and some sources' files hold more text per compressed byte than BYTES_PER_TOKEN assumes.
+OVERSAMPLE = {"research_python": 8.0, "starcoder": 1.4, "megamath": 4.0, "dclm": 2.2, "arxiv": 1.4, "stackexchange": 1.6}
 # Where each source's files live: repo, folder prefixes, file suffixes
 LAYOUT = {
-    "research_python": ("allenai/olmo-mix-1124", ["data/starcoder/"], (".json.gz", ".jsonl.gz", ".zst", ".parquet")),
+    "research_python": ("allenai/olmo-mix-1124", ["data/starcoder/"], ("python-",)),   # Python files only
     "starcoder": ("allenai/olmo-mix-1124", ["data/starcoder/"], (".json.gz", ".jsonl.gz", ".zst", ".parquet")),
     "code_reasoning": ("IFM/Code-Reasoning", ["code-no-thinking/", "code-no-thinking-hard/", "code-task-synthesis/", "codeio/"], (".parquet",)),
     "algebraic_stack": ("allenai/olmo-mix-1124", ["data/algebraic-stack/"], (".json.gz", ".jsonl.gz", ".zst", ".parquet")),
@@ -45,7 +47,8 @@ def files_of(api, repo, prefixes, suffixes):
     out = []
     for pre in prefixes:
         for f in api.list_repo_tree(repo, path_in_repo=pre.rstrip("/"), recursive=True, repo_type="dataset"):
-            if getattr(f, "size", None) and f.path.endswith(suffixes):
+            name = f.path.rsplit("/", 1)[-1]
+            if getattr(f, "size", None) and (name.startswith(suffixes) or f.path.endswith(suffixes)):
                 out.append((f.path, f.size))
     random.Random(0).shuffle(out)
     return out
@@ -57,6 +60,7 @@ def main(argv=None):
     ap.add_argument("--tokens", type=float, default=30e9)
     ap.add_argument("--out", default="/work/data_raw")
     ap.add_argument("--workers", type=int, default=8)
+    ap.add_argument("--manifest", default="manifest_slice.json", help="file name of the manifest under --out")
     a = ap.parse_args(argv)
     recipe = json.load(open(a.recipe))
     total = sum(s["tokens_b"] for s in recipe["pretrain"])
@@ -81,7 +85,7 @@ def main(argv=None):
         plan += [(repo, p) for p, _ in chosen]
         print(f"{name}: {len(chosen)} files, {got / 1e9:.1f} GB of {want / 1e9:.1f} GB wanted", flush=True)
     os.makedirs(a.out, exist_ok=True)
-    json.dump(dict(tokens=a.tokens, skipped=skipped, sources=manifest), open(os.path.join(a.out, "manifest_slice.json"), "w"), indent=1)
+    json.dump(dict(tokens=a.tokens, skipped=skipped, sources=manifest), open(os.path.join(a.out, a.manifest), "w"), indent=1)
     print("skipped:", skipped, flush=True)
 
     def get(item):

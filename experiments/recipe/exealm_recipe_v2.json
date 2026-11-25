@@ -1,5 +1,5 @@
 {
- "name": "exealm-recipe-v2",
+ "name": "exealm-recipe-v2.1",
  "date": "2026-11-25",
  "total_pretrain_tokens_b": 300.0,
  "priority": "research code > general code > research papers > math > everything else",
@@ -27,9 +27,9 @@
    "source": "allenai/olmo-mix-1124",
    "subset": "starcoder (Python files)",
    "license": "ODC-BY",
-   "tokens_b": 43,
+   "tokens_b": 15,
    "anneal_weight": 2.0,
-   "note": "Python files that import scientific or ML libraries",
+   "note": "Python files that import scientific or ML libraries; AI2's StarCoder release holds only about 6 GB of Python, so most of this comes from The Stack's Python at full scale",
    "filter": {
     "python_imports_any": [
      "numpy",
@@ -62,7 +62,7 @@
    "source": "IFM/Code-Reasoning",
    "subset": "code-no-thinking, code-no-thinking-hard, code-task-synthesis, codeio",
    "license": "Apache-2.0",
-   "tokens_b": 12,
+   "tokens_b": 35,
    "anneal_weight": 3.0,
    "note": "problems with worked solutions"
   },
@@ -82,7 +82,7 @@
    "source": "IFM/Pretrain-Behaviors",
    "subset": "data-science, planning, reasoning",
    "license": "Apache-2.0",
-   "tokens_b": 5,
+   "tokens_b": 10,
    "anneal_weight": 2.0,
    "note": "data-science and planning traces"
   },
