@@ -148,7 +148,9 @@ class TONNLayer(nn.Module):
             tail = prev["tail"].to(u.dtype) if prev is not None else u.new_zeros(B, P, K, 3, h)
             u = torch.cat([tail, u], 1)
         running, carry = {}, None
-        if pl["running"]:
+        if pl["running"] and stream is None:
+            running = Cc.run_running_sums(u, pl["lags"], lam, pl["running"])
+        elif pl["running"]:
             running, carry = Cc.run_running_sums(u, pl["lags"], lam, pl["running"], tail=P,
                                                  s0=None if prev is None else prev["run"], return_state=True)
         outs = []

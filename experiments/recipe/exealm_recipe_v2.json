@@ -165,11 +165,11 @@
    "name": "megamath",
    "bucket": "math",
    "source": "IFM/MegaMath",
-   "subset": "web, code and synthetic",
+   "subset": "megamath-web",
    "license": "ODC-BY",
    "tokens_b": 18,
    "anneal_weight": 1.5,
-   "note": ""
+   "note": "raw web math only: the web-pro, synthetic and QA parts are rewritten by Llama 3.3"
   },
   {
    "name": "open_web_math",

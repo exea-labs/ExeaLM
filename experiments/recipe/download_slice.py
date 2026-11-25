@@ -29,7 +29,7 @@ LAYOUT = {
     "pes2o": ("allenai/peS2o", ["data/v2/"], (".json.gz", ".jsonl.gz", ".zst", ".parquet")),
     "arxiv": ("allenai/olmo-mix-1124", ["data/arxiv/"], (".json.gz", ".jsonl.gz", ".zst", ".parquet")),
     "wikipedia_en": ("allenai/dolmino-mix-1124", ["data/wiki/"], (".json.gz", ".jsonl.gz", ".zst", ".parquet")),
-    "megamath": ("IFM/MegaMath", ["megamath-web-pro/", "megamath-code/", "megamath-text-code-block/"], (".parquet",)),
+    "megamath": ("IFM/MegaMath", ["megamath-web/"], (".parquet",)),   # web-pro, synthetic and QA parts: rewritten by Llama 3.3
     "open_web_math": ("allenai/olmo-mix-1124", ["data/open-web-math/"], (".json.gz", ".jsonl.gz", ".zst", ".parquet")),
     "math_reasoning": ("IFM/Math-Reasoning", ["math-rewrite/", "math-dialogue/"], (".parquet",)),
     "dclm": ("mlfoundations/dclm-baseline-1.0", ["global-shard_01_of_10/"], (".zst", ".jsonl", ".parquet")),
