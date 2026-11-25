@@ -257,6 +257,9 @@ def main(argv=None):
                     help="windows of --seq tokens per row, read in order with the state carried from each to the next "
                          "and the gradient through all of them (docs/brain.md). 1: every row one window, as before. A "
                          "step reads batch x seq x stream x accum tokens")
+    ap.add_argument("--anneal_data", default=None,
+                    help="a second mix (e.g. data/mix_pretrain_anneal.json) read from --anneal_from of the steps on")
+    ap.add_argument("--anneal_from", type=float, default=0.9)
     ap.add_argument("--stream_from", type=float, default=0.0,
                     help="with --stream k: read rows as streams only from this fraction of the steps on; before it, "
                          "batch x k rows of one window each (the same tokens per step), e.g. 0.8 for the last 20%%")
@@ -303,6 +306,7 @@ def main(argv=None):
     use_amp = a.amp == "bf16" or (a.amp == "auto" and dev.type == "cuda")
     amp = dict(device_type=dev.type, dtype=torch.bfloat16) if use_amp else None
     data = open_data(a.data)
+    anneal = open_data(a.anneal_data) if a.anneal_data else None             # the recipe's last stage
     val = data if a.val is None else open_data(a.val)
     ckpt_path = os.path.join(a.out, "ckpt.pt")
     resume = ckpt_path if a.resume == "auto" else a.resume
@@ -538,7 +542,8 @@ def main(argv=None):
                 k = a.stream if step >= int(a.stream_from * a.steps) else 1   # --stream_from: windows alone first
                 rows = a.batch if k == a.stream else a.batch * a.stream         # the same tokens per step either way
                 per = rows // world
-                x, y, d = data.batch(rows, a.seq * k, rng, swarm, a.swarm_policy, mask_seams=seams)   # same on all
+                src_now = anneal if (anneal is not None and step >= int(a.anneal_from * a.steps)) else data
+                x, y, d = src_now.batch(rows, a.seq * k, rng, swarm, a.swarm_policy, mask_seams=seams)   # same on all
                 total = max(1, int((y != -100).sum()))
                 if world > 1:                                           # this process's rows: whole swarms only
                     x, y, d = x[rank * per:(rank + 1) * per], y[rank * per:(rank + 1) * per], d[rank * per:(rank + 1) * per]

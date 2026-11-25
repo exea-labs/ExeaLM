@@ -25,6 +25,8 @@
 #   DATA        the packed data to copy in: a folder or s3://bucket/prefix                       (default: ./data)
 #   SAVE_MIN    minutes between checkpoints (default 30)       MARGIN_MIN  minutes kept for the last save and copy (45)
 #   JOBS_LEFT   how many more jobs may follow this one (default 20)
+#   HF_REPO     a finished run's model.pt and log.jsonl are also uploaded here (default exea-labs/exealm-nairr-runs,
+#               private; needs `huggingface-cli login`); HF_REPO="" turns it off
 # A different partition, GPU count or time limit: SBATCH_PARTITION, SBATCH_GPUS and SBATCH_TIMELIMIT. Options sbatch
 # has no variable for go on its command line and, so that the follow-on jobs get them too, in SBATCH_EXTRA. One GPU
 # on the shared partition:
@@ -109,6 +111,18 @@ copy "$OUT/" "$KEEP/$RUN/" || { echo "COULD NOT COPY THE RUN BACK: $OUT is lost 
 cd "$REPO"
 if [ -f "$OUT/model.pt" ]; then
   echo "== $(date '+%F %T') $RUN finished: $KEEP/$RUN/model.pt"
+  if [ -n "${HF_REPO-exea-labs/exealm-nairr-runs}" ]; then         # a copy off SDSC: the model and its log
+    python - "$OUT" "$RUN" "${HF_REPO:-exea-labs/exealm-nairr-runs}" <<'PY' || echo "upload to Hugging Face failed: $KEEP has the run"
+import sys
+from huggingface_hub import HfApi
+out, run, repo = sys.argv[1:4]
+api = HfApi()
+api.create_repo(repo, repo_type="model", private=True, exist_ok=True)
+api.upload_folder(folder_path=out, path_in_repo=f"runs/{run}", repo_id=repo, repo_type="model",
+                  allow_patterns=["model.pt", "log.jsonl"])
+print(f"uploaded {run} to {repo}")
+PY
+  fi
 elif [ $code -ne 0 ]; then
   echo "== $(date '+%F %T') training failed (exit $code). Not resubmitting. The last checkpoint is in $KEEP/$RUN"
   exit $code

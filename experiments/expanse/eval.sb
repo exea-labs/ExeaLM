@@ -1,0 +1,52 @@
+#!/bin/bash
+# Score every finished run of the study (not the learning-rate checks), from the repo root:
+#     sbatch experiments/expanse/eval.sb            # or: bash experiments/expanse/go.sh eval
+# On one GPU of the shared partition. Writes results/expanse/:
+#   text.json       bits per byte on every held-out bucket, every row read alone (eval_text.py)
+#   stream8.json    long documents, 8 windows of 512, streamed against alone (stream_eval.py)
+#   bench_<run>.json  downstream benchmarks for the 0.5B and 3B runs (lm-eval harness; BENCH=0 skips them)
+# and uploads results/expanse to the Hugging Face repo HF_REPO (default exea-labs/exealm-nairr-runs).
+#SBATCH --job-name=exealm-eval
+#SBATCH --partition=nairr-gpu-shared
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=16
+#SBATCH --gpus=h100:1
+#SBATCH --time=12:00:00
+#SBATCH --output=logs/expanse/%x-%j.out
+set -uo pipefail
+cd "$SLURM_SUBMIT_DIR"
+KEEP=${KEEP:-$PWD/runs}
+OUT=results/expanse
+BENCH=${BENCH:-1}
+TASKS=${TASKS:-hellaswag,arc_easy,arc_challenge,piqa,winogrande,sciq,lambada_openai}
+mkdir -p "$OUT"
+LOCAL=$KEEP
+if [[ $KEEP == s3://* ]]; then                                       # bring the finished models to the node
+  LOCAL=${LOCAL_DISK:-/scratch/$USER}/job_$SLURM_JOB_ID/runs
+  mkdir -p "$LOCAL"
+  s3cmd sync --no-progress --exclude '*' --include '*/model.pt' --include '*/log.jsonl' "$KEEP/" "$LOCAL/"
+fi
+RUNS=$(for d in "$LOCAL"/*/; do n=$(basename "$d"); [ -f "$d/model.pt" ] && [[ $n != lr_* ]] && echo "${d%/}"; done)
+[ -n "$RUNS" ] || { echo "no finished runs in $KEEP"; exit 1; }
+echo "== $(date '+%F %T') scoring: $(echo $RUNS | wc -w) runs"
+python experiments/eval_text.py $RUNS --mix data/mix_pretrain_val.json --out "$OUT/text.json"
+python experiments/stream_eval.py $RUNS --mix data/mix_pretrain_val.json --windows 8 --docs 64 --out "$OUT/stream8.json"
+if [ "$BENCH" = 1 ]; then
+  TOK=$(ls -d data/*/*/tokenizer data/*/tokenizer 2>/dev/null | head -1)
+  for r in $RUNS; do
+    case $(basename "$r") in *_500m_*|*_3b_*) ;; *) continue ;; esac
+    python -m exealm.eval.harness --ckpt "$r/model.pt" --tokenizer "$TOK" --tasks "$TASKS" --device cuda \
+      --out "$OUT/bench_$(basename "$r").json" || echo "benchmarks failed for $r"
+  done
+fi
+python - "$OUT" "${HF_REPO:-exea-labs/exealm-nairr-runs}" <<'PY' || echo "upload of results failed: they are in results/expanse"
+import sys
+from huggingface_hub import HfApi
+out, repo = sys.argv[1:3]
+api = HfApi()
+api.create_repo(repo, repo_type="model", private=True, exist_ok=True)
+api.upload_folder(folder_path=out, path_in_repo="results/expanse", repo_id=repo, repo_type="model")
+print("uploaded", out, "to", repo)
+PY
+echo "== $(date '+%F %T') done: $OUT"

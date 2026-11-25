@@ -176,3 +176,46 @@ def test_eval_text_scores_swarm_trained_and_plain_models_alike_and_groups_seeds(
     again, _ = eval_text.main(runs[:1] + ["--root", str(tmp_path / "data"), "--sets", "val_a,val_b", "--batch", "4",
                                           "--seq", "16", "--eval_batches", "2", "--device", "cpu"])
     assert again[0]["bits_per_byte"] == rows[0]["bits_per_byte"]          # the same windows every time
+
+
+def test_the_runner_picks_learning_rates_and_submits_every_phase(tmp_path):
+    import subprocess
+    import pick_lr
+    keep = tmp_path / "runs"
+    for name, scores, done in (("lr_exealm_100m_0.0003", [2.1, 1.9], True), ("lr_exealm_100m_0.001", [2.0, 1.7], True),
+                               ("lr_qwen_100m_0.001", [2.2, float("nan")], True), ("lr_qwen_100m_0.0003", [2.3, 1.95], True),
+                               ("lr_exealm_250m_0.001", [2.0], False)):
+        (keep / name).mkdir(parents=True)
+        lines = [json.dumps(dict(event="eval", step=i, val_bits_per_byte=v)) for i, v in enumerate(scores)]
+        lines += [json.dumps(dict(event="end"))] if done else []
+        (keep / name / "log.jsonl").write_text("\n".join(lines) + "\n")
+    out = tmp_path / "lr_choice.json"
+    chosen = pick_lr.main(["--keep", str(keep), "--out", str(out)])
+    assert chosen == {"exealm_100m": 0.001, "qwen_100m": 0.0003}          # nan loses; 250m is not finished
+    text = printed(["--run", "qwen_100m_4.1x_s1", "--lr", "auto", "--lr_file", str(out)])
+    assert "--lr 0.0003" in text and "--anneal_data data/mix_pretrain_anneal.json --anneal_from 0.9" in text
+    with pytest.raises(SystemExit, match="no learning rate"):
+        plan.main(["--run", "exealm_3b_4.1x_s0", "--lr", "auto", "--lr_file", str(out)])
+    assert printed(["--list", "3B"]).split() == ["exealm_3b_4.1x_s0", "qwen_3b_4.1x_s0"]
+    go = os.path.join(ROOT, "experiments", "expanse", "go.sh")
+    env = dict(os.environ, DRY="1")
+    lr = subprocess.run(["bash", go, "lr"], capture_output=True, text=True, env=env, cwd=ROOT).stdout
+    assert lr.count("sbatch ") == 3 * 3 * 2 + 2 * 2                         # 3 rates below 3B, 2 at 3B, two models
+    first = subprocess.run(["bash", go, "first"], capture_output=True, text=True, env=env, cwd=ROOT).stdout
+    assert "first_contact.sb" in first
+
+
+def test_the_anneal_mix_takes_over_for_the_last_steps(tmp_path, monkeypatch):
+    from exealm.data.loader import SyntheticShards
+    from exealm.train import pretrain as pt
+    calls = []
+    real = SyntheticShards.batch
+    monkeypatch.setattr(SyntheticShards, "batch", lambda self, *a, **k: (calls.append(id(self)), real(self, *a, **k))[1])
+    import exealm.train.pretrain as mod
+    made = []
+    orig = mod.open_data
+    monkeypatch.setattr(mod, "open_data", lambda spec: (made.append(spec), SyntheticShards() if spec == "synthetic" else orig(spec))[1])
+    pt.main(["--preset", "tiny", "--data", "synthetic", "--anneal_data", "synthetic", "--anneal_from", "0.5", "--seq", "16",
+             "--batch", "2", "--steps", "4", "--eval_every", "4", "--search", "0", "--device", "cpu", "--out", str(tmp_path / "a")])
+    assert made.count("synthetic") >= 2                                     # the anneal mix was opened
+    assert len(set(calls)) >= 2                                             # and batches came from both

@@ -190,6 +190,8 @@ def command(run, preset, model, seed, a, steps, lr=None, check=False):
         args.append("--search 0" + (" --config experiments/expanse/exealm_core.json" if a.variant == "core" else ""))
     args.append(f"--data {a.data} --val {a.val} --seq {SEQ} --stream {STREAM} --stream_from {STREAM_FROM} "
                 f"--batch {batch} --accum {accum}")
+    if not check and a.anneal:                      # the recipe's last stage: the last 10% of steps read the anneal mix
+        args.append(f"--anneal_data {a.anneal} --anneal_from 0.9")
     if check:                                       # a learning-rate check: a tenth of it is warm-up
         args.append(f"--steps {steps} --warmup {steps // 10} --lr {lr:g} --seed {seed} --eval_every 100")
     else:
@@ -213,7 +215,11 @@ def parser():
                     help="ExeaLM without memory slots, every row alone (core), or with board and library slots in swarms")
     ap.add_argument("--run", default=None, help="print the lines that submit this run (needs --lr)")
     ap.add_argument("--lr_check", default=None, help="print the learning-rate check of this size: " + ", ".join(LR_STEPS))
-    ap.add_argument("--lr", type=float, default=None, help="the learning rate the check picked for this model and size")
+    ap.add_argument("--lr", default=None, help="the learning rate the check picked for this model and size, or 'auto': "
+                    "read it from --lr_file (written by pick_lr.py)")
+    ap.add_argument("--lr_file", default="experiments/expanse/lr_choice.json")
+    ap.add_argument("--list", default=None, help="print the names of the runs of this part (3B or curve), one per line")
+    ap.add_argument("--anneal", default="data/mix_pretrain_anneal.json", help="the anneal mix ('' for none)")
     ap.add_argument("--lrs", default="3e-4,6e-4,1e-3", help="the learning rates --lr_check tries")
     ap.add_argument("--gpus", type=int, default=0, choices=[0, 1, 4],
                     help="GPUs per run (default: 1 at 0.1B and 0.25B, else 4)")
@@ -232,6 +238,9 @@ def main(argv=None):
     a = parser().parse_args(argv)
     rates, source = measured(json.load(open(a.rates)) if a.rates else [])
     by_name = {r[0]: r for r in runs(a.variant)}
+    if a.list:
+        print("\n".join(r[0] for r in runs(a.variant) if r[1] == a.list))
+        return
     if a.lr_check:
         if a.lr_check not in LR_STEPS:
             raise SystemExit(f"--lr_check takes one of {', '.join(LR_STEPS)}")
@@ -249,6 +258,12 @@ def main(argv=None):
         if a.lr is None:
             raise SystemExit("--run needs --lr: the rate the learning-rate check picked for this model at this size "
                              f"(python experiments/expanse/plan.py --lr_check {preset})")
+        if a.lr == "auto":
+            chosen = json.load(open(a.lr_file)) if os.path.exists(a.lr_file) else {}
+            if f"{model}_{preset}" not in chosen:
+                raise SystemExit(f"{a.lr_file} has no learning rate for {model} at {preset}: run pick_lr.py after the checks")
+            a.lr = chosen[f"{model}_{preset}"]
+        a.lr = float(a.lr)
         tokens, have = steps * STEP_TOKENS, pack_tokens(a.data)
         if have is None:
             print(f"# Could not read the size of the packs in {a.data} from here. {a.run} reads {tokens / 1e9:.1f}B "
