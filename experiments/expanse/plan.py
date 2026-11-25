@@ -33,8 +33,9 @@ import json
 import os
 
 SEQ = 512
-STREAM = 4                                     # windows per row: pretraining reads 2,048-token stretches as 4 windows
-                                               # with the state carried (docs/brain.md), the baselines too
+STREAM = 4                                     # windows per row in the stream phase (docs/brain.md), the baselines too
+STREAM_FROM = 0.8                              # one window per row for the first 80% of steps, then streams of 4
+                                               # (results/finalize: best on long documents for both models)
 STEP_TOKENS = 262_144
 ALLOCATION = 2000                              # GPU-hours
 TARGET = (9e9, 1e12)                           # what the study is evidence for: 9B parameters on 1T tokens
@@ -187,7 +188,8 @@ def command(run, preset, model, seed, a, steps, lr=None, check=False):
         args.append(f"--model llama --config experiments/expanse/qwen_{preset}.json")
     else:
         args.append("--search 0" + (" --config experiments/expanse/exealm_core.json" if a.variant == "core" else ""))
-    args.append(f"--data {a.data} --val {a.val} --seq {SEQ} --stream {STREAM} --batch {batch} --accum {accum}")
+    args.append(f"--data {a.data} --val {a.val} --seq {SEQ} --stream {STREAM} --stream_from {STREAM_FROM} "
+                f"--batch {batch} --accum {accum}")
     if check:                                       # a learning-rate check: a tenth of it is warm-up
         args.append(f"--steps {steps} --warmup {steps // 10} --lr {lr:g} --seed {seed} --eval_every 100")
     else:

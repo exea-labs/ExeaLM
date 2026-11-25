@@ -55,8 +55,8 @@ value residual ([ResFormer](https://arxiv.org/abs/2410.17897)) and exclusive sel
 
 Not in either: board, library or weight-alter slots, swarms, circuit search during training.
 
-Training, the same for both: rows of 2,048 tokens read as four streamed windows of 512 with the gradient through all
-four (`--stream 4`); steps of 262,144 tokens; AdamW (weight decay 0.1, gradient clipping 1.0) unless Muon wins at
+Training, the same for both: one 512-token window per row for the first 80% of steps, then rows of 2,048 tokens read
+as four streamed windows with the gradient through all four for the last 20% (`--stream 4 --stream_from 0.8`); steps of 262,144 tokens; AdamW (weight decay 0.1, gradient clipping 1.0) unless Muon wins at
 0.1B first; bf16; a learning rate that warms up, holds and decays linearly over the last 20% to 10% of its peak, the
 peak from each model's own short checks.
 

@@ -3,6 +3,16 @@
 What ExeaLM is trained as, decided by Avneh Bhatia, and why. Newest first. Change an entry only with a new dated
 entry that says what replaced it.
 
+## 25 November 2026: stream only in the last 20% of pretraining
+
+Pretraining reads one 512-token window per row for the first 80% of steps and rows of four streamed windows for the
+last 20% (`--stream 4 --stream_from 0.8`), for ExeaLM and the baselines. On long held-out documents at 0.1B
+(`results/finalize/decision_stream4.json`, 24 documents per set): streaming only at the end beat training without it on
+the fourth window by 0.023 bits per byte for both the hybrid (2 seeds) and the gated Llama, and cost 0.015 to 0.02 on
+the first window. Streaming the whole run was much worse for both (0.07 to 0.12 on the fourth window): at a step of
+16,384 tokens it leaves a quarter as many different texts per step. ExeaLM's lead over the Llama, both streamed at the
+end, grows from 0.030 on the first window to 0.041 on the fourth. This replaces "pretraining streams" of 24 November.
+
 ## 24 November 2026 (evening): the 2,000 GPU-hours and the data
 
 **The baseline is a Qwen3.5-style model**, not a Llama: Gated DeltaNet in 3 of every 4 layers and gated attention in
