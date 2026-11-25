@@ -28,6 +28,19 @@ from exealm.train.pretrain import load_model, pick_device  # noqa: E402
 SETS = "val_en,val_ja_wiki,val_ja_web,val_code"
 
 
+def mix_sets(path):
+    """{source: packed directory} from a mix .json (the val mix fetch.sh writes); a source given as a list or a pattern
+    uses its first directory."""
+    import glob as _glob
+    out = {}
+    for name, src in json.load(open(path))["sources"].items():
+        p = src["paths"] if isinstance(src["paths"], str) else src["paths"][0]
+        found = sorted(_glob.glob(p)) if any(c in p for c in "*?[") else [p]
+        if found:
+            out[name] = found[0]
+    return out
+
+
 def checkpoint(path):
     if os.path.isdir(path):
         for name in ("model.pt", "ckpt.pt"):
@@ -68,6 +81,8 @@ def main(argv=None):
     ap.add_argument("runs", nargs="+", help="run folders or checkpoint files")
     ap.add_argument("--root", default="data/tokpack/bpe32k")
     ap.add_argument("--sets", default=SETS)
+    ap.add_argument("--mix", default=None, help="a mix .json (e.g. data/mix_pretrain_val.json): score every source in it "
+                    "instead of --root/--sets; each source must be one packed directory")
     ap.add_argument("--windows", type=int, default=4)
     ap.add_argument("--seq", type=int, default=512)
     ap.add_argument("--docs", type=int, default=128, help="at most this many documents per set")
@@ -77,8 +92,9 @@ def main(argv=None):
     a = ap.parse_args(argv)
     dev = pick_device(a.device)
     sets = {}
-    for name in a.sets.split(","):
-        val = TokenShards(os.path.join(a.root, name))
+    where = mix_sets(a.mix) if a.mix else {n: os.path.join(a.root, n) for n in a.sets.split(",")}
+    for name, path in where.items():
+        val = TokenShards(path)
         rows = long_documents(val, a.windows * a.seq + 1, a.docs)
         if rows is not None:
             sets[name] = (rows, val.meta["bytes_per_token"])

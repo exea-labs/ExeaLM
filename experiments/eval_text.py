@@ -26,6 +26,19 @@ from exealm.train.pretrain import load_model, pick_device  # noqa: E402
 SETS = "val_en,val_ja_wiki,val_ja_web,val_code"
 
 
+def mix_sets(path):
+    """{source: packed directory} from a mix .json (the val mix fetch.sh writes); a source given as a list or a pattern
+    uses its first directory."""
+    import glob as _glob
+    out = {}
+    for name, src in json.load(open(path))["sources"].items():
+        p = src["paths"] if isinstance(src["paths"], str) else src["paths"][0]
+        found = sorted(_glob.glob(p)) if any(c in p for c in "*?[") else [p]
+        if found:
+            out[name] = found[0]
+    return out
+
+
 def checkpoint(path):
     if os.path.isdir(path):
         for name in ("model.pt", "ckpt.pt"):
@@ -51,6 +64,8 @@ def main(argv=None):
     ap.add_argument("runs", nargs="+", help="run folders or checkpoint files")
     ap.add_argument("--root", default="data/tokpack/bpe32k", help="the folder the held-out packs are in")
     ap.add_argument("--sets", default=SETS)
+    ap.add_argument("--mix", default=None, help="a mix .json (e.g. data/mix_pretrain_val.json): score every source in it "
+                    "instead of --root/--sets; each source must be one packed directory")
     ap.add_argument("--batch", type=int, default=32)
     ap.add_argument("--seq", type=int, default=512)
     ap.add_argument("--eval_batches", type=int, default=16)
@@ -58,7 +73,8 @@ def main(argv=None):
     ap.add_argument("--out", default=None, help="a .json file for the rows")
     a = ap.parse_args(argv)
     dev = pick_device(a.device)
-    vals = {s: TokenShards(os.path.join(a.root, s)) for s in a.sets.split(",")}
+    vals = ({n: TokenShards(d) for n, d in mix_sets(a.mix).items()} if a.mix
+            else {s: TokenShards(os.path.join(a.root, s)) for s in a.sets.split(",")})
     rows = []
     for run in a.runs:
         path = checkpoint(run)

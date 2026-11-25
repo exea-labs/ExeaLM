@@ -218,8 +218,8 @@ def parser():
     ap.add_argument("--gpus", type=int, default=0, choices=[0, 1, 4],
                     help="GPUs per run (default: 1 at 0.1B and 0.25B, else 4)")
     ap.add_argument("--batch", type=int, default=0, help="rows per forward pass on one GPU, if the default does not fit")
-    ap.add_argument("--data", default="experiments/expanse/mix_tokpack.json")
-    ap.add_argument("--val", default="data/tokpack/bpe32k/val_en")
+    ap.add_argument("--data", default="data/mix_pretrain.json", help="from experiments/data_mix/fetch.sh")
+    ap.add_argument("--val", default="data/mix_pretrain_val.json")
     ap.add_argument("--eval_every", type=int, default=500)
     return ap
 
