@@ -1,0 +1,327 @@
+{
+ "name": "exealm-recipe-v1",
+ "date": "2026-11-25",
+ "scale_note": "tokens are at the 200B scale; multiply every target by s in [0.5, 1.5] for 100B to 300B",
+ "excluded": [
+  "FineWeb-Edu, FineMath and LLM-jp's en_fineweb/en_finemath: scored with Llama 3 models, which LLM-jp judged would block an open model license"
+ ],
+ "pretrain": [
+  {
+   "name": "starcoder",
+   "bucket": "code",
+   "source": "allenai/olmo-mix-1124",
+   "subset": "starcoder",
+   "license": "ODC-BY",
+   "tokens_b": 44,
+   "anneal_weight": 1.0,
+   "note": "GitHub code in many languages, as in OLMo 2"
+  },
+  {
+   "name": "code_reasoning",
+   "bucket": "code",
+   "source": "IFM/Code-Reasoning",
+   "subset": "code-no-thinking, code-no-thinking-hard, code-task-synthesis, codeio",
+   "license": "Apache-2.0",
+   "tokens_b": 8,
+   "anneal_weight": 3.0,
+   "note": "problems with worked solutions"
+  },
+  {
+   "name": "the_stack_v1",
+   "bucket": "code",
+   "source": "bigcode/the-stack (via LLM-jp v4 code_stack)",
+   "subset": "permissive repositories",
+   "license": "per-file licenses; The Stack terms",
+   "tokens_b": 4,
+   "anneal_weight": 1.0,
+   "note": "gated companion repo exea-labs/exealm-pretrain-stack"
+  },
+  {
+   "name": "pretrain_behaviors",
+   "bucket": "code",
+   "source": "IFM/Pretrain-Behaviors",
+   "subset": "data-science, planning, reasoning",
+   "license": "Apache-2.0",
+   "tokens_b": 2.5,
+   "anneal_weight": 2.0,
+   "note": "data science and planning"
+  },
+  {
+   "name": "stackexchange",
+   "bucket": "code",
+   "source": "allenai/dolmino-mix-1124",
+   "subset": "stackexchange",
+   "license": "CC-BY-SA",
+   "tokens_b": 1.5,
+   "anneal_weight": 3.0,
+   "note": "programming and science Q&A; share-alike folder"
+  },
+  {
+   "name": "pes2o",
+   "bucket": "research",
+   "source": "allenai/peS2o",
+   "subset": "v2",
+   "license": "ODC-BY",
+   "tokens_b": 30,
+   "anneal_weight": 2.0,
+   "note": "open-access academic papers"
+  },
+  {
+   "name": "arxiv",
+   "bucket": "research",
+   "source": "allenai/olmo-mix-1124",
+   "subset": "arxiv",
+   "license": "ODC-BY",
+   "tokens_b": 15,
+   "anneal_weight": 2.0,
+   "note": "arXiv full text"
+  },
+  {
+   "name": "wikipedia_en",
+   "bucket": "research",
+   "source": "allenai/dolmino-mix-1124",
+   "subset": "wiki",
+   "license": "CC-BY-SA",
+   "tokens_b": 4,
+   "anneal_weight": 2.0,
+   "note": "share-alike folder"
+  },
+  {
+   "name": "books",
+   "bucket": "research",
+   "source": "allenai/dolma",
+   "subset": "books (Project Gutenberg)",
+   "license": "ODC-BY",
+   "tokens_b": 1,
+   "anneal_weight": 1.0,
+   "note": "public-domain books"
+  },
+  {
+   "name": "megamath",
+   "bucket": "math",
+   "source": "IFM/MegaMath",
+   "subset": "web, code and synthetic",
+   "license": "ODC-BY",
+   "tokens_b": 12,
+   "anneal_weight": 1.5,
+   "note": ""
+  },
+  {
+   "name": "open_web_math",
+   "bucket": "math",
+   "source": "allenai/olmo-mix-1124",
+   "subset": "open-web-math",
+   "license": "ODC-BY",
+   "tokens_b": 10,
+   "anneal_weight": 1.5,
+   "note": ""
+  },
+  {
+   "name": "algebraic_stack",
+   "bucket": "math",
+   "source": "allenai/olmo-mix-1124",
+   "subset": "algebraic-stack",
+   "license": "ODC-BY",
+   "tokens_b": 4,
+   "anneal_weight": 1.5,
+   "note": "math code"
+  },
+  {
+   "name": "math_reasoning",
+   "bucket": "math",
+   "source": "IFM/Math-Reasoning",
+   "subset": "math-rewrite, math-dialogue",
+   "license": "Apache-2.0",
+   "tokens_b": 4,
+   "anneal_weight": 3.0,
+   "note": ""
+  },
+  {
+   "name": "dclm",
+   "bucket": "web",
+   "source": "mlfoundations/dclm-baseline-1.0",
+   "subset": "",
+   "license": "CC-BY-4.0",
+   "tokens_b": 26,
+   "anneal_weight": 0.5,
+   "note": "web filtered by a fastText classifier (no Llama scores)"
+  },
+  {
+   "name": "txt360_web",
+   "bucket": "web",
+   "source": "IFM/TxT360-v2",
+   "subset": "web-high-medium",
+   "license": "CC-BY-4.0",
+   "tokens_b": 10,
+   "anneal_weight": 0.5,
+   "note": "its quality buckets use the FineWeb-Edu score as one input"
+  },
+  {
+   "name": "fineweb2_ja",
+   "bucket": "japanese",
+   "source": "HuggingFaceFW/fineweb-2",
+   "subset": "jpn_Jpan",
+   "license": "ODC-BY",
+   "tokens_b": 17.4,
+   "anneal_weight": 0.7,
+   "note": ""
+  },
+  {
+   "name": "wikipedia_ja",
+   "bucket": "japanese",
+   "source": "wikimedia/wikipedia",
+   "subset": "20231101.ja",
+   "license": "CC-BY-SA-3.0",
+   "tokens_b": 1.5,
+   "anneal_weight": 1.5,
+   "note": "share-alike folder"
+  },
+  {
+   "name": "kaken",
+   "bucket": "japanese",
+   "source": "LLM-jp Corpus v4 (GitLab)",
+   "subset": "ja_kaken",
+   "license": "CC-BY-4.0",
+   "tokens_b": 0.9,
+   "anneal_weight": 1.5,
+   "note": "Japanese research-grant summaries"
+  },
+  {
+   "name": "aozora",
+   "bucket": "japanese",
+   "source": "globis-university/aozorabunko-clean",
+   "subset": "",
+   "license": "CC-BY-4.0",
+   "tokens_b": 0.1,
+   "anneal_weight": 1.0,
+   "note": ""
+  },
+  {
+   "name": "e_gov",
+   "bucket": "japanese",
+   "source": "nlp-waseda/e_gov",
+   "subset": "",
+   "license": "CC-BY-4.0",
+   "tokens_b": 0.1,
+   "anneal_weight": 1.0,
+   "note": "Japanese law"
+  },
+  {
+   "name": "txt360_qa",
+   "bucket": "qa",
+   "source": "IFM/TxT360-v2",
+   "subset": "txt360-qa, web-high-nltk-qa",
+   "license": "CC-BY-4.0",
+   "tokens_b": 3,
+   "anneal_weight": 2.0,
+   "note": ""
+  },
+  {
+   "name": "sft_pretrain",
+   "bucket": "qa",
+   "source": "IFM/SFT-Reasoning",
+   "subset": "3efforts-pretrain",
+   "license": "Apache-2.0",
+   "tokens_b": 1,
+   "anneal_weight": 2.0,
+   "note": ""
+  }
+ ],
+ "anneal": {
+  "share_of_steps": 0.1,
+  "how": "the last 10% of steps reweight sources by anneal_weight (times their base share)"
+ },
+ "post": [
+  {
+   "name": "code_reasoning_sft",
+   "bucket": "code",
+   "source": "IFM/Code-Reasoning",
+   "subset": "code-thinking-v1, code-thinking-hard",
+   "license": "Apache-2.0",
+   "tokens_b": 1.2,
+   "note": ""
+  },
+  {
+   "name": "open_code_reasoning",
+   "bucket": "code",
+   "source": "nvidia/OpenCodeReasoning",
+   "subset": "split_0, split_1",
+   "license": "CC-BY-4.0",
+   "tokens_b": 0.8,
+   "note": ""
+  },
+  {
+   "name": "openthoughts3",
+   "bucket": "code+math+science",
+   "source": "open-thoughts/OpenThoughts3-1.2M",
+   "subset": "",
+   "license": "Apache-2.0",
+   "tokens_b": 1.2,
+   "note": ""
+  },
+  {
+   "name": "math_reasoning_sft",
+   "bucket": "math",
+   "source": "IFM/Math-Reasoning",
+   "subset": "math-thinking-qwen, socratic-math-dialogue",
+   "license": "Apache-2.0",
+   "tokens_b": 1.0,
+   "note": ""
+  },
+  {
+   "name": "open_math_reasoning",
+   "bucket": "math",
+   "source": "nvidia/OpenMathReasoning",
+   "subset": "",
+   "license": "CC-BY-4.0",
+   "tokens_b": 1.0,
+   "note": ""
+  },
+  {
+   "name": "sciriff",
+   "bucket": "research",
+   "source": "allenai/SciRIFF",
+   "subset": "4096",
+   "license": "ODC-BY",
+   "tokens_b": 0.3,
+   "note": "scientific literature tasks"
+  },
+  {
+   "name": "library_tasks",
+   "bucket": "research+code",
+   "source": "exea-labs/exealm-library",
+   "subset": "qa, morph",
+   "license": "Apache-2.0 (written by Qwen3)",
+   "tokens_b": 0.5,
+   "note": "find a library entry and adapt it"
+  },
+  {
+   "name": "instruction_following",
+   "bucket": "general",
+   "source": "IFM/SFT-Reasoning",
+   "subset": "instruction-following",
+   "license": "Apache-2.0",
+   "tokens_b": 1.0,
+   "note": ""
+  },
+  {
+   "name": "tulu3_sft",
+   "bucket": "general",
+   "source": "allenai/tulu-3-sft-mixture",
+   "subset": "",
+   "license": "ODC-BY (subsets keep their own terms)",
+   "tokens_b": 0.6,
+   "note": ""
+  },
+  {
+   "name": "japanese_sft",
+   "bucket": "japanese",
+   "source": "to be chosen",
+   "subset": "",
+   "license": "must allow redistribution",
+   "tokens_b": 0.4,
+   "note": "open slot"
+  }
+ ],
+ "study_sample": "the scaling study (docs/budget.md) reads a uniform sample: every source at its share, shards drawn in a fixed shuffled order, so the 3B runs' ~12B tokens are a slice of this recipe"
+}
