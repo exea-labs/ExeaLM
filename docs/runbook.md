@@ -17,8 +17,9 @@ bash experiments/expanse/go.sh data         # the 30B-token slice (slice-30b-r2)
 ```
 
 `go.sh data` writes `data/mix_pretrain.json`, `data/mix_pretrain_val.json` and `data/mix_pretrain_anneal.json` with
-local paths; every job reads them. If `slice-30b-r2` is not on Hugging Face yet, `RELEASE=slice-30b bash
-experiments/expanse/go.sh data` takes the first build.
+local paths; every job reads them. `slice-30b-r2` is on Hugging Face (28.5B tokens, published 25 November). Every run of
+the study must read the same build: each build has its own tokenizer, so never mix it with the first build,
+`slice-30b`.
 
 ## The phases
 

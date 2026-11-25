@@ -152,7 +152,9 @@ model's own short checks; the anneal mix for the last 10% of steps.
 
 The 30B-token slice of data recipe v2.1 ([data_recipe.md](data_recipe.md)), research code first, then general code,
 then research papers, with math, web text, Japanese and QA: `slice-30b-r2` of the public Hugging Face dataset
-`exea-labs/exealm-pretrain` (the first build, `slice-30b`, is there too), with its 32k tokenizer and an anneal mix.
+`exea-labs/exealm-pretrain`, 28.5B tokens after deduplication and decontamination, 7.3B of them research code, with its
+32k tokenizer and an anneal mix (published 25 November). The first build, `slice-30b` (23.5B tokens, 3.8B research
+code), is there too; the study does not read it.
 Each 3B model reads 12B of its tokens and nothing twice. The cluster pulls it with `experiments/data_mix/fetch.sh`
 (`go.sh data`). Every run of the study uses the same build: each build has its own tokenizer. Post-training data and
 the library are `exea-labs/exealm-post` and `exea-labs/exealm-library`.
