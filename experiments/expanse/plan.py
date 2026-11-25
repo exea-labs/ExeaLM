@@ -46,17 +46,18 @@ EVALUATION = 100                               # every run on held-out text, lon
 LR_STEPS = {"100m": 1000, "250m": 1000, "500m": 1000, "3b": 500}
 LR_RATES = {"100m": 3, "250m": 3, "500m": 3, "3b": 2}  # how many learning rates the budget counts at each size
 
-# Parameters in millions with the 32k tokenizer (tests/test_plan.py counts them from the code), rows per forward pass
+# Parameters in millions with the 32k tokenizer (tests/test_plan.py counts them from the code; "core" is ExeaLM as the
+# study trains it, experiments/expanse/exealm_core.json: a TONN layer every fourth layer), rows per forward pass
 # on one 80 GB GPU, and the GPUs a run uses. The 0.1B and 0.25B runs take one GPU each on the shared partition: four
 # of them run side by side and none pays for the others' gradients. The rows are sized from two A40 runs
 # (results/a40_check: 11.8 GB at 0.1B with 32 rows, 23.1 GB at 0.5B with 16), scaled by width x depth: about 40 GB at
 # 0.5B and 1B, and about 59 GB at 3B, where 8 rows would come to about 71 GB. Estimates: throughput.py measures them.
 SIZES = {
-    "100m": dict(exealm=94.28, core=93.43, gated=95.47, qwen=95.69, batch=64, gpus=1),
-    "250m": dict(exealm=246.24, core=245.3, gated=251.56, qwen=252.1, batch=32, gpus=1),
-    "500m": dict(exealm=498.08, core=497.07, gated=510.14, qwen=511.27, batch=32, gpus=4),
-    "1b": dict(exealm=966.06, core=964.95, gated=989.81, qwen=991.94, batch=16, gpus=4),
-    "3b": dict(exealm=2902.88, core=2901.54, gated=2980.06, qwen=2986.19, batch=4, gpus=4),
+    "100m": dict(exealm=94.28, core=93.84, gated=95.47, qwen=95.69, batch=64, gpus=1),
+    "250m": dict(exealm=246.24, core=247.38, gated=251.56, qwen=252.1, batch=32, gpus=1),
+    "500m": dict(exealm=498.08, core=500.34, gated=510.14, qwen=511.27, batch=32, gpus=4),
+    "1b": dict(exealm=966.06, core=970.48, gated=989.81, qwen=991.94, batch=16, gpus=4),
+    "3b": dict(exealm=2902.88, core=2921.17, gated=2980.06, qwen=2986.19, batch=4, gpus=4),
 }
 # The study: part, size, tokens per ExeaLM parameter, seeds, models. Every model of a line trains for the same number
 # of steps. 4.1 tokens per parameter is what the 3B pair can afford (about 12B tokens each); the curve uses the same

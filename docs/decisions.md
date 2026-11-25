@@ -3,6 +3,15 @@
 What ExeaLM is trained as, decided by Avneh Bhatia, and why. Newest first. Change an entry only with a new dated
 entry that says what replaced it.
 
+## 25 November 2026: a TONN layer every fourth layer, value residual and XSA kept
+
+ExeaLM trains with a TONN layer every fourth layer and attention in the other three (`"tonn_every": 4` in
+`experiments/expanse/exealm_core.json`; 9 TONN and 25 attention layers at 3B), not every third. At 0.1B on the MI300X,
+both with value residual and XSA, every fourth beat every third on both seeds (1.414 and 1.415 against 1.421 and 1.419
+bits per byte on English, 3,000 steps). The two attention changes help attention layers, so a hybrid with more of them
+gains more. Value residual and XSA stay in every model: with them ExeaLM leads the Qwen3.5-style baseline by about
+0.027 (1.414 against 1.441, seed 0), while a gated Llama with them is ahead of ExeaLM by about 0.011 (1.404, 2 seeds).
+
 ## 25 November 2026: stream only in the last 20% of pretraining
 
 Pretraining reads one 512-token window per row for the first 80% of steps and rows of four streamed windows for the

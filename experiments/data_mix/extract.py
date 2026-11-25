@@ -18,6 +18,7 @@ import gzip
 import hashlib
 import json
 import os
+import threading
 import re
 import time
 
@@ -211,7 +212,7 @@ def extract(src, dst, provenance, part, seed=0, part_id=None, position=0.0, rank
         rows = parquet_rows(src, filt, fmt, list(part.get("meta_columns") or []))
     else:
         rows = jsonl_rows(src, part.get("meta_field", "meta"), part.get("meta_keys") or ())
-    tmp = dst + ".tmp"
+    tmp = f"{dst}.{os.getpid()}.{threading.get_ident()}.tmp"          # one per writer: parts may extract the same file
     os.makedirs(os.path.dirname(dst), exist_ok=True)
     read = kept = kept_bytes = read_bytes = buffered = 0
     drops = {}
@@ -269,9 +270,10 @@ def extract(src, dst, provenance, part, seed=0, part_id=None, position=0.0, rank
                 text_bytes_kept=kept_bytes, dropped=drops, filter=part.get("filter") or {}, format=fmt,
                 position=position, rank=rank, seconds=round(time.time() - t0, 1), extract=os.path.basename(dst),
                 skipped=note)
-    with open(dst[: -len(".parquet")] + ".json.tmp", "w", encoding="utf-8") as f:
+    meta_tmp = dst[: -len(".parquet")] + f".json.{os.getpid()}.{threading.get_ident()}.tmp"
+    with open(meta_tmp, "w", encoding="utf-8") as f:
         json.dump(info, f, indent=1, ensure_ascii=False)
-    os.replace(dst[: -len(".parquet")] + ".json.tmp", dst[: -len(".parquet")] + ".json")
+    os.replace(meta_tmp, dst[: -len(".parquet")] + ".json")
     return info
 
 

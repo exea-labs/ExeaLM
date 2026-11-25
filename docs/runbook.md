@@ -31,8 +31,8 @@ Run them one at a time and look at the results between them, or `bash experiment
 | 1. First job | `go.sh first` | 1 node | ~1.5 h | ~6 | `results/expanse/`: gpu_check.txt, throughput, `plan_at_h100_rates.txt`, scaling_500m.json (4-GPU speed-up), lead_100m.json |
 | 2. Learning-rate checks | `go.sh lr` | 22 | a few hours | ~64 | `$KEEP/lr_*` |
 | 3. Pick rates | `go.sh pick` | none | seconds | 0 | `experiments/expanse/lr_choice.json` |
-| 4. The curve | `go.sh curve` | 16 | ~1 day | ~136 | `$KEEP/{exealm,qwen}_{100m,250m,500m}_4.1x_s*` |
-| 5. 3B pair | `go.sh 3b` | 2 (one node each) | ~7 days | ~1,441 | `$KEEP/{exealm,qwen}_3b_4.1x_s0` |
+| 4. The curve | `go.sh curve` | 16 | ~1 day | ~137 | `$KEEP/{exealm,qwen}_{100m,250m,500m}_4.1x_s*` |
+| 5. 3B pair | `go.sh 3b` | 2 (one node each) | ~7 days | ~1,456 | `$KEEP/{exealm,qwen}_3b_4.1x_s0` |
 | 6. Score | `go.sh eval` | 1 GPU | a few hours | ~10 | `results/expanse/text.json`, `stream8.json`, `bench_*.json` |
 
 `go.sh status` shows the queue and every run's latest step, bits per byte and tokens per second.
@@ -86,7 +86,5 @@ for the last 20% (`--stream 4 --stream_from 0.8`), and reads the anneal mix for 
 ## Architecture switches decided on the MI300X
 
 The configs in `experiments/expanse/` are what every phase trains: `exealm_core.json` (ExeaLM: no memory slots, value
-residual, XSA), `qwen_<size>.json` (the baseline, the same attention changes), `gated_llama.json`. The last open
-question from the MI300X (whether ExeaLM should have a TONN layer every fourth layer instead of every third) is
-answered in [decisions.md](decisions.md); if it changed, the commit that changed it updated these configs and plan.py's
-parameter counts.
+residual, XSA), `qwen_<size>.json` (the baseline, the same attention changes), `gated_llama.json`.  ExeaLM has a TONN
+layer every fourth layer (`"tonn_every": 4`), decided on the MI300X on 25 November ([decisions.md](decisions.md)).

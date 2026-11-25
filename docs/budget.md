@@ -48,10 +48,10 @@ value residual ([ResFormer](https://arxiv.org/abs/2410.17897)) and exclusive sel
 
 | | ExeaLM | Qwen3.5-style |
 |---|---|---|
-| Layers that are not attention | TONN, every third layer (12 of 34 at 3B) | Gated DeltaNet, 3 of every 4 (26 of 34) |
+| Layers that are not attention | TONN, every fourth layer (9 of 34 at 3B) | Gated DeltaNet, 3 of every 4 (26 of 34) |
 | Inside them | d / 32 circuits of 32 channels (80 at 3B), drawn from the frozen starting mix: short convolutions (weight 4), delays and gated units (0.25), products, running sums, gated running sums, running sums of products, softmax pooling, the Mamba-like selective state space and oscillators (1 each); lags 0 to 128; no rotary-attention circuits | 64-wide heads, a short convolution of 4, the gated delta rule in chunks of 64, a gated, normalized output |
 | Read as a stream | TONN state and the attention keys and values of the window before | delta-rule state and convolution tail, and the attention keys and values of the window before |
-| Parameters at 0.1B, 0.25B, 0.5B, 3B | 93.4M, 245.3M, 497.1M, 2,901.5M | 95.7M, 252.1M, 511.3M, 2,986.2M |
+| Parameters at 0.1B, 0.25B, 0.5B, 3B | 93.8M, 247.4M, 500.3M, 2,921.2M | 95.7M, 252.1M, 511.3M, 2,986.2M |
 
 Not in either: board, library or weight-alter slots, swarms, circuit search during training.
 
@@ -64,44 +64,44 @@ peak from each model's own short checks.
 
 | Part | Run | Parameters | Tokens | Tokens per parameter | Steps | GPUs | GPU-hours |
 |---|---|---|---|---|---|---|---|
-| 3B | `exealm_3b_4.1x_s0` | 2,901.5M | 11.9B | 4.1 | 45,381 | 4 | 710 |
-| 3B | `qwen_3b_4.1x_s0` | 2,986.2M | 11.9B | 4.0 | 45,381 | 4 | 731 |
-| curve | `exealm_100m_4.1x_s0` | 93.4M | 0.4B | 4.1 | 1,461 | 1 | 1 |
-| curve | `qwen_100m_4.1x_s0` | 95.7M | 0.4B | 4.0 | 1,461 | 1 | 1 |
-| curve | `exealm_100m_4.1x_s1` | 93.4M | 0.4B | 4.1 | 1,461 | 1 | 1 |
-| curve | `qwen_100m_4.1x_s1` | 95.7M | 0.4B | 4.0 | 1,461 | 1 | 1 |
-| curve | `exealm_100m_4.1x_s2` | 93.4M | 0.4B | 4.1 | 1,461 | 1 | 1 |
-| curve | `qwen_100m_4.1x_s2` | 95.7M | 0.4B | 4.0 | 1,461 | 1 | 1 |
-| curve | `exealm_250m_4.1x_s0` | 245.3M | 1.0B | 4.1 | 3,837 | 1 | 7 |
-| curve | `qwen_250m_4.1x_s0` | 252.1M | 1.0B | 4.0 | 3,837 | 1 | 8 |
-| curve | `exealm_250m_4.1x_s1` | 245.3M | 1.0B | 4.1 | 3,837 | 1 | 7 |
-| curve | `qwen_250m_4.1x_s1` | 252.1M | 1.0B | 4.0 | 3,837 | 1 | 8 |
-| curve | `exealm_250m_4.1x_s2` | 245.3M | 1.0B | 4.1 | 3,837 | 1 | 7 |
-| curve | `qwen_250m_4.1x_s2` | 252.1M | 1.0B | 4.0 | 3,837 | 1 | 8 |
-| curve | `exealm_500m_4.1x_s0` | 497.1M | 2.0B | 4.1 | 7,774 | 4 | 21 |
-| curve | `qwen_500m_4.1x_s0` | 511.3M | 2.0B | 4.0 | 7,774 | 4 | 21 |
-| curve | `exealm_500m_4.1x_s1` | 497.1M | 2.0B | 4.1 | 7,774 | 4 | 21 |
-| curve | `qwen_500m_4.1x_s1` | 511.3M | 2.0B | 4.0 | 7,774 | 4 | 21 |
-| | **The 18 runs** | | | | | | **1,577** |
+| 3B | `exealm_3b_4.1x_s0` | 2,921.2M | 12.0B | 4.1 | 45,688 | 4 | 720 |
+| 3B | `qwen_3b_4.1x_s0` | 2,986.2M | 12.0B | 4.0 | 45,688 | 4 | 736 |
+| curve | `exealm_100m_4.1x_s0` | 93.8M | 0.4B | 4.1 | 1,468 | 1 | 1 |
+| curve | `qwen_100m_4.1x_s0` | 95.7M | 0.4B | 4.0 | 1,468 | 1 | 1 |
+| curve | `exealm_100m_4.1x_s1` | 93.8M | 0.4B | 4.1 | 1,468 | 1 | 1 |
+| curve | `qwen_100m_4.1x_s1` | 95.7M | 0.4B | 4.0 | 1,468 | 1 | 1 |
+| curve | `exealm_100m_4.1x_s2` | 93.8M | 0.4B | 4.1 | 1,468 | 1 | 1 |
+| curve | `qwen_100m_4.1x_s2` | 95.7M | 0.4B | 4.0 | 1,468 | 1 | 1 |
+| curve | `exealm_250m_4.1x_s0` | 247.4M | 1.0B | 4.1 | 3,869 | 1 | 7 |
+| curve | `qwen_250m_4.1x_s0` | 252.1M | 1.0B | 4.0 | 3,869 | 1 | 8 |
+| curve | `exealm_250m_4.1x_s1` | 247.4M | 1.0B | 4.1 | 3,869 | 1 | 7 |
+| curve | `qwen_250m_4.1x_s1` | 252.1M | 1.0B | 4.0 | 3,869 | 1 | 8 |
+| curve | `exealm_250m_4.1x_s2` | 247.4M | 1.0B | 4.1 | 3,869 | 1 | 7 |
+| curve | `qwen_250m_4.1x_s2` | 252.1M | 1.0B | 4.0 | 3,869 | 1 | 8 |
+| curve | `exealm_500m_4.1x_s0` | 500.3M | 2.1B | 4.1 | 7,825 | 4 | 21 |
+| curve | `qwen_500m_4.1x_s0` | 511.3M | 2.1B | 4.0 | 7,825 | 4 | 22 |
+| curve | `exealm_500m_4.1x_s1` | 500.3M | 2.1B | 4.1 | 7,825 | 4 | 21 |
+| curve | `qwen_500m_4.1x_s1` | 511.3M | 2.1B | 4.0 | 7,825 | 4 | 22 |
+| | **The 18 runs** | | | | | | **1,593** |
 | | First job on Expanse | | | | | | 6 |
 | | The 9B model: speed and memory on 1, 2 and 4 nodes | | | | | | 36 |
 | | Learning-rate checks | | | | | | 64 |
 | | Evaluation: held-out text, long documents, benchmarks | | | | | | 100 |
-| | **Reserve of the 2,000** | | | | | | **217** |
+| | **Reserve of the 2,000** | | | | | | **201** |
 
 `python experiments/expanse/plan.py` prints this table and the lines that submit each run
 ([experiments/expanse](../experiments/expanse/README.md)).
 
-- **3B.** The headline: 11.9B tokens each, 4.1 tokens per parameter, what the allocation can afford for two 3B
+- **3B.** The headline: 12.0B tokens each, 4.1 tokens per parameter, what the allocation can afford for two 3B
   models.
 - **The curve.** The same recipe at 0.1B, 0.25B and 0.5B, at the same 4.1 tokens per parameter, so all four sizes lie
-  on one curve and the gap can be read as a trend: three seeds at 0.1B and 0.25B, two at 0.5B. It costs 136 GPU-hours.
+  on one curve and the gap can be read as a trend: three seeds at 0.1B and 0.25B, two at 0.5B. It costs 137 GPU-hours.
 - **Rates.** One AMD MI300X in bf16 ([results/funding](../results/funding/README.md), section 6): 56 effective TFLOP/s
   for ExeaLM at 0.1B, 81 at 0.5B. GPU-hours = 6 × parameters × tokens / (TFLOP/s × 3600 × 10¹²). The Qwen3.5-style
   model is assumed to run at ExeaLM's rate. Its Gated DeltaNet is plain PyTorch here; if it is much slower on the H100,
   it moves to the flash-linear-attention kernels, as a fair baseline should. The first job measures both.
 - **Four GPUs.** A node is charged 4 GPU-hours per hour. A run on four GPUs that is S times as fast as on one costs
-  4 / S times the hours above. The 3B pair is 1,441 of the 1,577: at S = 3.5 it costs about 206 more, nearly the
+  4 / S times the hours above. The 3B pair is 1,456 of the 1,593: at S = 3.5 it costs about 208 more, slightly more than the
   whole reserve.
 - **The 9B model** (`9b`: 9.06B parameters, width 4,096, 42 layers): a few hundred steps on one, two and four nodes,
   for memory per GPU, tokens per second and scaling across nodes. It needs FSDP, which `exealm/train/pretrain.py`

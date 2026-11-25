@@ -55,7 +55,7 @@ def test_the_table_fits_the_allocation_and_is_the_one_in_the_budget_document():
     text = printed([])
     rows = [l for l in text.splitlines() if "| `" in l]
     hours = {l.split("`")[1]: int(l.split("|")[-2].replace(",", "")) for l in rows}
-    assert hours["exealm_3b_4.1x_s0"] == 710 and hours["qwen_3b_4.1x_s0"] == 731    # about 12B tokens at 81 TFLOP/s
+    assert hours["exealm_3b_4.1x_s0"] == 720 and hours["qwen_3b_4.1x_s0"] == 736    # about 12B tokens at 81 TFLOP/s
     assert len(hours) == 18 and all(f"qwen_{n[7:]}" in hours for n in hours if n.startswith("exealm_"))
     assert not [n for n in hours if n.startswith("gated_")]                       # the baseline is the Qwen3.5-style model
     assert {l.split("|")[5].strip() for l in rows if "exealm" in l} == {"4.1"}    # one ratio: one curve, 0.1B to 3B
@@ -82,10 +82,10 @@ def test_measured_rates_and_the_four_gpu_speed_up_rescale_the_plan(tmp_path):
     assert rates["1b"] == dict(plan.MI300X["1b"], qwen=81.0)             # nothing measured: the MI300X figure stays
     text = printed(["--rates", str(path), "--speedup", "3.2"])
     row = next(l for l in text.splitlines() if "| `exealm_500m_4.1x_s0`" in l)
-    full = plan.gpu_hours(497.07, plan.steps_of("500m", plan.TPP) * plan.STEP_TOKENS, 81.0)
+    full = plan.gpu_hours(500.34, plan.steps_of("500m", plan.TPP) * plan.STEP_TOKENS, 81.0)
     assert int(row.split("|")[-2]) == round(full * 81 / 100 * 4 / 3.2)    # the measured rate, 4 / 3.2 the charge
     one = next(l for l in text.splitlines() if "| `exealm_250m_4.1x_s0`" in l)
-    assert int(one.split("|")[-2]) == round(plan.gpu_hours(245.3, plan.steps_of("250m", plan.TPP) * plan.STEP_TOKENS, 56.2))
+    assert int(one.split("|")[-2]) == round(plan.gpu_hours(247.38, plan.steps_of("250m", plan.TPP) * plan.STEP_TOKENS, 56.2))
 
 
 def test_every_run_is_a_whole_number_of_swarms_and_passes_per_step():

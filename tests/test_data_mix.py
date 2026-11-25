@@ -461,7 +461,10 @@ def test_recipe_v2_config():
     pre = [b for b in cfg["buckets"] if b["kind"] == "pretrain"]
     assert abs(sum(b["full_target"] for b in pre) - 300e9) < 1e6 and abs(cfg["build"]["fraction"] - 0.1) < 1e-9
     by = {b["name"]: b for b in cfg["buckets"]}
-    assert by["research_python"]["target"] == 4.3e9 and by["stackexchange"]["epochs"] == 2
+    recipe = {s["name"]: s for s in json.load(open(config.RECIPE if hasattr(config, "RECIPE") else
+                                                    "experiments/recipe/exealm_recipe_v2.json"))["pretrain"]}
+    assert by["research_python"]["target"] == recipe["research_python"]["tokens_b"] * 1e9 * 0.1   # 10% of the recipe
+    assert by["stackexchange"]["epochs"] == 2
     assert config.unique_target(by["stackexchange"]) == by["stackexchange"]["target"] // 2
     assert by["the_stack_v1"]["repo"] == "pretrain_stack" and by["kaken"]["optional"]
     assert "numpy" in by["research_python"]["parts"][0]["filter"]["python_imports_any"]

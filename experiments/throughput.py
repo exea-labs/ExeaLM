@@ -57,6 +57,12 @@ def build(size, kind, vocab, dev):
         cfg = get_config(PRESET[size], **over)
         return ExeaLM(cfg).to(dev), MemoryContext(swarm_size=cfg.swarm_size)
     cfg = get_config(PRESET[size], pinned={}, menu=tuple(t for t in MENU if t not in ("RG", "AG")), **over)
+    if kind == "hybrid":                         # ExeaLM's layout as the study trains it (exealm_core.json)
+        import json, os
+        core = os.path.join(os.path.dirname(os.path.abspath(__file__)), "expanse", "exealm_core.json")
+        k = json.load(open(core)).get("tonn_every", 0) if os.path.exists(core) else 0
+        if k:
+            cfg = get_config(PRESET[size], pinned={}, menu=cfg.menu, tonn_every=k, **over)
     if kind in ("gated", "qwen"):
         cfg = replace(cfg, attn_gate=True, qk_norm=True)
     if kind == "qwen":                                              # Gated DeltaNet in 3 of every 4 layers

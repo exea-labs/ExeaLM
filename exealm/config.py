@@ -74,6 +74,8 @@ class ModelConfig:
     wa_matrix: str = "out"           # which matrix of the target MLP a WA slot changes: its output ("out") or input ("in")
     wa_key: str = "learned"      # "hidden": the key is the target MLP's own activation in the writer's chunk
     wa_scope: str = "all"            # whose weights a WA slot changes: "self", "others" (of its swarm) or "all"
+    tonn_every: int = 0              # if > 0, get_config puts a TONN layer at every tonn_every-th layer (0, k, 2k, ...)
+                                     # and attention everywhere else, at any size (0: the preset's own layout)
     wa_persist: float = 0.0          # 0: weight changes last one forward pass. k in (0, 1]: when a text is read window by
                                      # window (MemoryContext(stream=...)), each window's changes are added to a weight
                                      # change carried to the next window, which keeps k of it (docs/brain.md); one row
@@ -133,7 +135,10 @@ PRESETS = {
 
 
 def get_config(name="100m", **overrides):
-    return replace(PRESETS[name], **overrides)
+    cfg = replace(PRESETS[name], **overrides)
+    if cfg.tonn_every > 0 and "attn_layers" not in overrides:
+        cfg = replace(cfg, attn_layers=tuple(i for i in range(cfg.n_layers) if i % cfg.tonn_every))
+    return cfg
 
 
 def llama_baseline(cfg):
