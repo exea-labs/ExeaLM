@@ -1,0 +1,400 @@
+{
+ "name": "exealm-recipe-v2",
+ "date": "2026-11-25",
+ "total_pretrain_tokens_b": 300.0,
+ "priority": "research code > general code > research papers > math > everything else",
+ "scale_note": "targets are at the full 300B; the first slice (about 30B) takes every source at its share, shards in a fixed shuffled order",
+ "slices": {
+  "first": 30,
+  "full": 300
+ },
+ "splits": {
+  "validation": "0.1% of every source's documents, plus long documents (>= 4,096 tokens) kept whole for the long-document test",
+  "pretrain": "everything else",
+  "anneal": "the last 10% of steps reweight by anneal_weight",
+  "post": "the post list below",
+  "fine_tune": "library tasks and our own generated tasks, held-out topics kept apart"
+ },
+ "decontamination": "every benchmark we report (HumanEval, MBPP test, APPS test, CodeContests test, LiveCodeBench, GSM8K test, MATH test, ARC test, MMLU, SciQ, PubMedQA): 13-gram overlap removed from all pretraining and post-training text",
+ "excluded": [
+  "FineWeb-Edu, FineMath and LLM-jp's en_fineweb/en_finemath: scored with Llama 3 models",
+  "benchmark test splits, anywhere"
+ ],
+ "pretrain": [
+  {
+   "name": "research_python",
+   "bucket": "research_code",
+   "source": "allenai/olmo-mix-1124",
+   "subset": "starcoder (Python files)",
+   "license": "ODC-BY",
+   "tokens_b": 43,
+   "anneal_weight": 2.0,
+   "note": "Python files that import scientific or ML libraries",
+   "filter": {
+    "python_imports_any": [
+     "numpy",
+     "scipy",
+     "torch",
+     "tensorflow",
+     "jax",
+     "sklearn",
+     "pandas",
+     "matplotlib",
+     "statsmodels",
+     "sympy",
+     "astropy",
+     "Bio",
+     "networkx",
+     "transformers",
+     "xarray",
+     "numba",
+     "cupy",
+     "skimage",
+     "seaborn",
+     "pymc",
+     "qiskit"
+    ]
+   }
+  },
+  {
+   "name": "code_reasoning",
+   "bucket": "research_code",
+   "source": "IFM/Code-Reasoning",
+   "subset": "code-no-thinking, code-no-thinking-hard, code-task-synthesis, codeio",
+   "license": "Apache-2.0",
+   "tokens_b": 12,
+   "anneal_weight": 3.0,
+   "note": "problems with worked solutions"
+  },
+  {
+   "name": "algebraic_stack",
+   "bucket": "research_code",
+   "source": "allenai/olmo-mix-1124",
+   "subset": "algebraic-stack",
+   "license": "ODC-BY",
+   "tokens_b": 13,
+   "anneal_weight": 1.5,
+   "note": "math and scientific code (Lean, Coq, Julia, Fortran, ...)"
+  },
+  {
+   "name": "pretrain_behaviors",
+   "bucket": "research_code",
+   "source": "IFM/Pretrain-Behaviors",
+   "subset": "data-science, planning, reasoning",
+   "license": "Apache-2.0",
+   "tokens_b": 5,
+   "anneal_weight": 2.0,
+   "note": "data-science and planning traces"
+  },
+  {
+   "name": "starcoder",
+   "bucket": "code",
+   "source": "allenai/olmo-mix-1124",
+   "subset": "starcoder (all other files)",
+   "license": "ODC-BY",
+   "tokens_b": 75,
+   "anneal_weight": 1.0,
+   "note": "GitHub code, all languages",
+   "filter": {
+    "exclude_source": "research_python"
+   }
+  },
+  {
+   "name": "the_stack_v1",
+   "bucket": "code",
+   "source": "bigcode/the-stack",
+   "subset": "permissive repositories",
+   "license": "per-file licenses; The Stack terms",
+   "tokens_b": 10,
+   "anneal_weight": 1.0,
+   "note": "gated companion repo exea-labs/exealm-pretrain-stack",
+   "gated": true
+  },
+  {
+   "name": "stackexchange",
+   "bucket": "code",
+   "source": "allenai/dolmino-mix-1124",
+   "subset": "stackexchange",
+   "license": "CC-BY-SA",
+   "tokens_b": 3,
+   "anneal_weight": 3.0,
+   "note": "programming and science Q&A, 2 epochs; share-alike folder",
+   "epochs": 2
+  },
+  {
+   "name": "pes2o",
+   "bucket": "research",
+   "source": "allenai/peS2o",
+   "subset": "v2",
+   "license": "ODC-BY",
+   "tokens_b": 42,
+   "anneal_weight": 2.0,
+   "note": "open-access papers, all of it"
+  },
+  {
+   "name": "arxiv",
+   "bucket": "research",
+   "source": "allenai/olmo-mix-1124",
+   "subset": "arxiv",
+   "license": "ODC-BY",
+   "tokens_b": 21,
+   "anneal_weight": 2.0,
+   "note": "arXiv full text, all of it"
+  },
+  {
+   "name": "wikipedia_en",
+   "bucket": "research",
+   "source": "allenai/dolmino-mix-1124",
+   "subset": "wiki",
+   "license": "CC-BY-SA",
+   "tokens_b": 4,
+   "anneal_weight": 2.0,
+   "note": "share-alike folder"
+  },
+  {
+   "name": "books",
+   "bucket": "research",
+   "source": "allenai/dolma",
+   "subset": "books (Project Gutenberg)",
+   "license": "ODC-BY",
+   "tokens_b": 3,
+   "anneal_weight": 1.0,
+   "note": "public-domain books"
+  },
+  {
+   "name": "megamath",
+   "bucket": "math",
+   "source": "IFM/MegaMath",
+   "subset": "web, code and synthetic",
+   "license": "ODC-BY",
+   "tokens_b": 18,
+   "anneal_weight": 1.5,
+   "note": ""
+  },
+  {
+   "name": "open_web_math",
+   "bucket": "math",
+   "source": "allenai/olmo-mix-1124",
+   "subset": "open-web-math",
+   "license": "ODC-BY",
+   "tokens_b": 13,
+   "anneal_weight": 1.5,
+   "note": "all of it"
+  },
+  {
+   "name": "math_reasoning",
+   "bucket": "math",
+   "source": "IFM/Math-Reasoning",
+   "subset": "math-rewrite, math-dialogue",
+   "license": "Apache-2.0",
+   "tokens_b": 6,
+   "anneal_weight": 3.0,
+   "note": ""
+  },
+  {
+   "name": "dclm",
+   "bucket": "web",
+   "source": "mlfoundations/dclm-baseline-1.0",
+   "subset": "top fastText scores",
+   "license": "CC-BY-4.0",
+   "tokens_b": 12,
+   "anneal_weight": 0.5,
+   "note": ""
+  },
+  {
+   "name": "txt360_web",
+   "bucket": "web",
+   "source": "IFM/TxT360-v2",
+   "subset": "web-high-medium",
+   "license": "CC-BY-4.0",
+   "tokens_b": 6,
+   "anneal_weight": 0.5,
+   "note": ""
+  },
+  {
+   "name": "fineweb2_ja",
+   "bucket": "japanese",
+   "source": "HuggingFaceFW/fineweb-2",
+   "subset": "jpn_Jpan",
+   "license": "ODC-BY",
+   "tokens_b": 8,
+   "anneal_weight": 0.7,
+   "note": ""
+  },
+  {
+   "name": "wikipedia_ja",
+   "bucket": "japanese",
+   "source": "wikimedia/wikipedia",
+   "subset": "20231101.ja",
+   "license": "CC-BY-SA-3.0",
+   "tokens_b": 1.5,
+   "anneal_weight": 1.5,
+   "note": "share-alike folder"
+  },
+  {
+   "name": "kaken",
+   "bucket": "japanese",
+   "source": "LLM-jp Corpus v4 (GitLab)",
+   "subset": "ja_kaken",
+   "license": "CC-BY-4.0",
+   "tokens_b": 0.5,
+   "anneal_weight": 1.5,
+   "note": "research-grant summaries; optional",
+   "optional": true
+  },
+  {
+   "name": "txt360_qa",
+   "bucket": "qa",
+   "source": "IFM/TxT360-v2",
+   "subset": "txt360-qa, web-high-nltk-qa",
+   "license": "CC-BY-4.0",
+   "tokens_b": 3,
+   "anneal_weight": 2.0,
+   "note": ""
+  },
+  {
+   "name": "sft_pretrain",
+   "bucket": "qa",
+   "source": "IFM/SFT-Reasoning",
+   "subset": "3efforts-pretrain",
+   "license": "Apache-2.0",
+   "tokens_b": 1,
+   "anneal_weight": 2.0,
+   "note": ""
+  }
+ ],
+ "benchmark_train": [
+  {
+   "name": "code_contests",
+   "source": "deepmind/code_contests",
+   "split": "train",
+   "license": "CC-BY-4.0"
+  },
+  {
+   "name": "apps",
+   "source": "codeparrot/apps",
+   "split": "train",
+   "license": "MIT"
+  },
+  {
+   "name": "mbpp",
+   "source": "google-research-datasets/mbpp",
+   "split": "train",
+   "license": "CC-BY-4.0"
+  },
+  {
+   "name": "taco",
+   "source": "BAAI/TACO",
+   "split": "train",
+   "license": "Apache-2.0"
+  },
+  {
+   "name": "gsm8k",
+   "source": "openai/gsm8k",
+   "split": "train",
+   "license": "MIT"
+  },
+  {
+   "name": "math",
+   "source": "EleutherAI/hendrycks_math",
+   "split": "train",
+   "license": "MIT"
+  },
+  {
+   "name": "arc",
+   "source": "allenai/ai2_arc",
+   "split": "train",
+   "license": "CC-BY-SA-4.0"
+  }
+ ],
+ "post": [
+  {
+   "name": "code_reasoning_sft",
+   "bucket": "research_code+code",
+   "source": "IFM/Code-Reasoning",
+   "subset": "code-thinking-v1, code-thinking-hard",
+   "license": "Apache-2.0",
+   "tokens_b": 3.0
+  },
+  {
+   "name": "open_code_reasoning",
+   "bucket": "code",
+   "source": "nvidia/OpenCodeReasoning",
+   "subset": "split_0, split_1",
+   "license": "CC-BY-4.0",
+   "tokens_b": 1.5
+  },
+  {
+   "name": "openthoughts3",
+   "bucket": "code+math+science",
+   "source": "open-thoughts/OpenThoughts3-1.2M",
+   "subset": "",
+   "license": "Apache-2.0",
+   "tokens_b": 2.0
+  },
+  {
+   "name": "math_reasoning_sft",
+   "bucket": "math",
+   "source": "IFM/Math-Reasoning",
+   "subset": "math-thinking-qwen, socratic-math-dialogue",
+   "license": "Apache-2.0",
+   "tokens_b": 1.5
+  },
+  {
+   "name": "open_math_reasoning",
+   "bucket": "math",
+   "source": "nvidia/OpenMathReasoning",
+   "subset": "",
+   "license": "CC-BY-4.0",
+   "tokens_b": 1.5
+  },
+  {
+   "name": "sciriff",
+   "bucket": "research",
+   "source": "allenai/SciRIFF",
+   "subset": "4096",
+   "license": "ODC-BY",
+   "tokens_b": 0.3
+  },
+  {
+   "name": "benchmark_train_splits",
+   "bucket": "research_code+code+math",
+   "source": "see benchmark_train",
+   "subset": "train splits only",
+   "license": "per benchmark",
+   "tokens_b": 0.5
+  },
+  {
+   "name": "library_tasks",
+   "bucket": "research+code",
+   "source": "exea-labs/exealm-library",
+   "subset": "qa, morph",
+   "license": "Apache-2.0 (Qwen3-written)",
+   "tokens_b": 1.0
+  },
+  {
+   "name": "exealm_generated",
+   "bucket": "research_code",
+   "source": "exea-labs/exealm-post",
+   "subset": "our own: paper-to-code, code explanation, experiment planning",
+   "license": "Apache-2.0 (Qwen3-written)",
+   "tokens_b": 1.0
+  },
+  {
+   "name": "instruction_following",
+   "bucket": "general",
+   "source": "IFM/SFT-Reasoning",
+   "subset": "instruction-following",
+   "license": "Apache-2.0",
+   "tokens_b": 1.0
+  },
+  {
+   "name": "tulu3_sft",
+   "bucket": "general",
+   "source": "allenai/tulu-3-sft-mixture",
+   "subset": "",
+   "license": "ODC-BY (subsets keep their own terms)",
+   "tokens_b": 0.7
+  }
+ ]
+}
