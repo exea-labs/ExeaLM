@@ -51,7 +51,7 @@ for part in $PARTS; do
       python experiments/throughput.py --out "$OUT" --tag h100 --sizes 0.5B --models hybrid,llama --precision bf16 \
         --compile 1 --warmup 25
       python experiments/throughput.py --out "$OUT" --tag h100 --sizes 0.5B --models hybrid,llama --precision bf16 --tf32 1
-      python experiments/throughput.py --out "$OUT" --tag h100 --sizes 0.1B,0.25B,0.5B,1B,3B --models hybrid,llama,qwen \
+      python experiments/throughput.py --out "$OUT" --tag h100 --sizes 0.1B,0.25B,0.5B,3B --models hybrid,llama,qwen \
         --precision bf16 | tee "$OUT/plan_at_h100_rates.txt"
       unset CUDA_VISIBLE_DEVICES ;;
     circuits)     # which circuit types gain least from bf16 (an open to-do from the MI300X session)

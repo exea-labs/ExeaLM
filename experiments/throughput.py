@@ -14,8 +14,9 @@ If a batch does not fit the GPU, it is halved and the row says so. The models:
 
     hybrid   ExeaLM as the plan trains it (exealm_core.json): no memory circuits, a TONN layer every fourth layer,
              value residual and XSA
-    llama    the plain same-size Llama, the plan's headline baseline (the other MI300X rows)
-    qwen     the base Qwen3.5-style model: gated attention and QK-norm, Gated DeltaNet in 3 of every 4 layers
+    llama    the plain same-size Llama, the plan's reference below 3B (the other MI300X rows)
+    qwen     the plan's baseline: the base Qwen3.5-style model, gated attention and QK-norm, Gated DeltaNet in 3 of
+             every 4 layers
     exealm   the preset with its board and library slots, swarms of 4, no datastore
     gated    a Llama with gated attention and QK-norm
 

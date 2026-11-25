@@ -1,12 +1,12 @@
 """The runs of the scaling study, in one place: what each trains on, for how many steps, what it costs, and the lines
 that submit it. docs/budget.md says why the plan looks like this.
 
-The study is the evidence for the next grant: ExeaLM against a plain Llama of the same size, on the same tokens, at
-every size from 0.1B to 3B, with a base Qwen3.5-style model (Gated DeltaNet and gated attention, 3 to 1) beside them
-below 3B (docs/decisions.md, 25 November). Two parts:
-    3B        the headline: ExeaLM and the plain Llama at 3B on about 12B tokens each
-    curve     the same recipe (the same tokens per parameter) at 0.1B, 0.25B, 0.5B and 1B, all three models, three
-              seeds where cheap: with the 3B pair, one curve from 0.1B to 3B per model
+The study is the evidence for the next grant: ExeaLM against a base Qwen3.5-style model (Gated DeltaNet and gated
+attention, 3 to 1) of the same size, on the same tokens, from 0.1B to 3B, with a plain Llama beside them below 3B as
+the reference everyone knows (docs/decisions.md, 25 November). Two parts:
+    3B        the headline: ExeaLM and the Qwen3.5-style model at 3B on about 12B tokens each
+    curve     the same recipe (the same tokens per parameter) at 0.1B, 0.25B and 0.5B, all three models, three seeds
+              where cheap: with the 3B pair, one curve from 0.1B to 3B per model
 ExeaLM is the whole recipe: the memory-free hybrid with a TONN layer every fourth layer, value residual and XSA in its
 attention layers, trained as a stream for the last 20% of its steps. The baselines are as published: no value residual,
 no XSA, no streaming. The board, the library and weight-alter come after pretraining.
@@ -46,8 +46,8 @@ FIRST_JOB = 6                                  # first_contact.sb: one node for 
 NINE_B = 36                                    # the 9B preset's speed and memory, sharded: 3 hours on one node, then an
                                                # hour each on two and four nodes (needs FSDP, docs/budget.md)
 EVALUATION = 100                               # every run on held-out text, long documents and downstream benchmarks
-LR_STEPS = {"100m": 1000, "250m": 1000, "500m": 1000, "1b": 500, "3b": 500}
-LR_RATES = {"100m": 3, "250m": 3, "500m": 3, "1b": 2, "3b": 2}  # how many learning rates the budget counts at each size
+LR_STEPS = {"100m": 1000, "250m": 1000, "500m": 1000, "3b": 500}
+LR_RATES = {"100m": 3, "250m": 3, "500m": 3, "3b": 2}  # how many learning rates the budget counts at each size
 
 # Parameters in millions with the 32k tokenizer (tests/test_plan.py counts them from the code; "core" is ExeaLM as the
 # study trains it, experiments/expanse/exealm_core.json: a TONN layer every fourth layer; "llama" the plain Llama;
@@ -65,16 +65,15 @@ SIZES = {
 }
 # The study: part, size, tokens per ExeaLM parameter, seeds, models. Every model of a line trains for the same number
 # of steps. 4.1 tokens per parameter is what the 3B pair can afford (about 12B tokens each); the curve uses the same
-# ratio so that all five sizes lie on one curve.
+# ratio so that all four sizes lie on one curve.
 TPP = 4.1
-PAIR = ("exealm", "llama")                     # the headline comparison, at every size
-ALL = ("exealm", "llama", "qwen")              # and the base Qwen3.5-style model below 3B
+PAIR = ("exealm", "qwen")                      # the headline comparison, at every size
+ALL = ("exealm", "llama", "qwen")              # and the plain Llama below 3B
 STUDY = [
     ("3B", "3b", TPP, (0,), PAIR),
     ("curve", "100m", TPP, (0, 1, 2), ALL),
     ("curve", "250m", TPP, (0, 1, 2), ALL),
     ("curve", "500m", TPP, (0, 1), ALL),
-    ("curve", "1b", TPP, (0,), ALL),
 ]
 # Effective TFLOP/s (6 x parameters x tokens per second) of one MI300X in bf16: results/funding/README.md, section 6.
 # Measured for the memory-free hybrid and the plain Llama at 0.1B and 0.5B. Assumptions until the first job on

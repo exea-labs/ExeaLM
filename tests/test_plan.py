@@ -60,14 +60,14 @@ def test_the_table_fits_the_allocation_and_is_the_one_in_the_budget_document():
     text = printed([])
     rows = [l for l in text.splitlines() if "| `" in l]
     hours = {l.split("`")[1]: int(l.split("|")[-2].replace(",", "")) for l in rows}
-    assert hours["exealm_3b_4.1x_s0"] == 720 and hours["llama_3b_4.1x_s0"] == 441    # about 12B tokens each
-    assert len(hours) == 29 and all(f"llama_{n[7:]}" in hours for n in hours if n.startswith("exealm_"))
-    assert all(f"qwen_{n[7:]}" in hours for n in hours if n.startswith("exealm_") and "_3b_" not in n)
-    assert "qwen_3b_4.1x_s0" not in hours and not [n for n in hours if n.startswith("gated_")]
-    assert {n.split("_")[1] for n in hours} == {"100m", "250m", "500m", "1b", "3b"}  # five sizes on one curve
+    assert hours["exealm_3b_4.1x_s0"] == 720 and hours["qwen_3b_4.1x_s0"] == 736    # about 12B tokens at 81 TFLOP/s
+    assert len(hours) == 26 and all(f"qwen_{n[7:]}" in hours for n in hours if n.startswith("exealm_"))
+    assert all(f"llama_{n[7:]}" in hours for n in hours if n.startswith("exealm_") and "_3b_" not in n)
+    assert "llama_3b_4.1x_s0" not in hours and not [n for n in hours if n.startswith("gated_")]
+    assert {n.split("_")[1] for n in hours} == {"100m", "250m", "500m", "3b"}       # four sizes on one curve
     assert {l.split("|")[5].strip() for l in rows if "exealm" in l} == {"4.1"}    # one ratio: one curve, 0.1B to 3B
     reserve = int(text.split("**Reserve of the 2,000** | | | | | | **")[1].split("**")[0].replace(",", ""))
-    assert 150 < reserve < 400
+    assert 100 < reserve < 400
     budget = open(os.path.join(ROOT, "docs", "budget.md")).read()
     for line in text.splitlines():
         if line.startswith("|"):
@@ -125,7 +125,7 @@ def test_every_run_is_a_whole_number_of_swarms_and_passes_per_step():
         plan.main(["--run", "exealm_3b_4.1x_s0", "--lr", "1e-3", "--batch", "6"])
     check = printed(["--lr_check", "500m", "--lrs", "3e-4,6e-4"])
     assert check.count("sbatch ") == 6 and "--steps 1000 --warmup 100" in check and "qwen_500m.json" in check
-    assert printed(["--lr_check", "3b", "--lrs", "3e-4,6e-4"]).count("sbatch ") == 4    # no Qwen3.5-style model at 3B
+    assert printed(["--lr_check", "3b", "--lrs", "3e-4,6e-4"]).count("sbatch ") == 4    # no plain Llama at 3B
 
 
 def test_a_run_too_long_for_its_data_is_flagged(tmp_path):
@@ -206,13 +206,13 @@ def test_the_runner_picks_learning_rates_and_submits_every_phase(tmp_path):
     assert "--lr 0.0003" in text and "--anneal_data data/mix_pretrain_anneal.json --anneal_from 0.9" in text
     with pytest.raises(SystemExit, match="no learning rate"):
         plan.main(["--run", "exealm_3b_4.1x_s0", "--lr", "auto", "--lr_file", str(out)])
-    assert printed(["--list", "3B"]).split() == ["exealm_3b_4.1x_s0", "llama_3b_4.1x_s0"]
-    assert len(printed(["--list", "curve"]).split()) == 27
+    assert printed(["--list", "3B"]).split() == ["exealm_3b_4.1x_s0", "qwen_3b_4.1x_s0"]
+    assert len(printed(["--list", "curve"]).split()) == 24
     go = os.path.join(ROOT, "experiments", "expanse", "go.sh")
     env = dict(os.environ, DRY="1")
     lr = subprocess.run(["bash", go, "lr"], capture_output=True, text=True, env=env, cwd=ROOT).stdout
-    assert lr.count("sbatch ") == 3 * 3 * 3 + 2 * 3 + 2 * 2                 # 3 rates below 1B and 2 at 1B, three
-                                                                            # models; 2 rates and two models at 3B
+    assert lr.count("sbatch ") == 3 * 3 * 3 + 2 * 2                         # 3 rates and three models below 3B;
+                                                                            # 2 rates and two models at 3B
     first = subprocess.run(["bash", go, "first"], capture_output=True, text=True, env=env, cwd=ROOT).stdout
     assert "first_contact.sb" in first
 

@@ -3,6 +3,23 @@
 What ExeaLM is trained as, decided by Avneh Bhatia, and why. Newest first. Change an entry only with a new dated
 entry that says what replaced it.
 
+## 25 November 2026 (later): the 3B baseline is the base Qwen3.5-style model
+
+The headline comparison is ExeaLM against the base Qwen3.5-style model, at 3B and on the curve. The plain Llama stays
+on the curve (0.1B to 0.5B) as the reference everyone knows. The 1B point is dropped to pay for it: 26 runs, 1,635
+GPU-hours, a reserve of 149 ([budget.md](budget.md)). What ExeaLM is and what the baselines leave out are unchanged
+from the morning entry below.
+
+Why: on paper the Qwen3.5-style model is the stronger claim. It is a modern hybrid like ExeaLM, so beating it says
+that TONN layers do better than Gated DeltaNet layers beside the same attention. It also survives the ablation a
+reviewer will ask for. With value residual and XSA added to the baselines at 0.1B on the MI300X, the Qwen3.5-style
+model reached 1.426 bits per byte (one seed), still behind ExeaLM's 1.387 (2 seeds), while a gated Llama reached 1.369,
+ahead of it. A plain Llama without QK-norm or the attention gate gives a bigger gap but is widely read as an easy
+baseline. The paper names the model "Qwen3.5-style": our implementation of the architecture, trained on our data, not
+Alibaba's model.
+
+This replaces the plain Llama at 3B and the 1B point of the morning entry.
+
 ## 25 November 2026 (morning): ExeaLM against a plain Llama, with a base Qwen3.5-style model beside them
 
 **ExeaLM is the whole recipe:** the memory-free hybrid with a TONN layer every fourth layer, value residual and XSA in
