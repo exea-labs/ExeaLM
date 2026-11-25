@@ -7,6 +7,10 @@ the reference everyone knows (docs/decisions.md, 25 November). Two parts:
     3B        the headline: ExeaLM and the Qwen3.5-style model at 3B on about 12B tokens each
     curve     the same recipe (the same tokens per parameter) at 0.1B, 0.25B and 0.5B, all three models, three seeds
               where cheap: with the 3B pair, one curve from 0.1B to 3B per model
+    long      the 0.1B pair trained to 111 tokens per parameter, the 9B run's ratio: does the lead hold when the
+              models are trained as long as the 9B would be, not only at the curve's 4.1?
+experiments/expanse/report.py turns the scores into what the application cites (docs/budget.md, "Reading the
+results").
 ExeaLM is the whole recipe: the memory-free hybrid with a TONN layer every fourth layer, value residual and XSA in its
 attention layers, trained as a stream for the last 20% of its steps. The baselines are as published: no value residual,
 no XSA, no streaming. The board, the library and weight-alter come after pretraining.
@@ -42,6 +46,7 @@ STREAMED = ("exealm",)                         # streaming is part of ExeaLM; th
 STEP_TOKENS = 262_144
 ALLOCATION = 2000                              # GPU-hours
 TARGET = (9e9, 1e12)                           # what the study is evidence for: 9B parameters on 1T tokens
+NINE_B_PARAMS = 9.06e9                         # the 9b preset (exealm/config.py)
 FIRST_JOB = 6                                  # first_contact.sb: one node for about an hour and a half
 NINE_B = 36                                    # the 9B preset's speed and memory, sharded: 3 hours on one node, then an
                                                # hour each on two and four nodes (needs FSDP, docs/budget.md)
@@ -74,6 +79,7 @@ STUDY = [
     ("curve", "100m", TPP, (0, 1, 2), ALL),
     ("curve", "250m", TPP, (0, 1, 2), ALL),
     ("curve", "500m", TPP, (0, 1), ALL),
+    ("long", "100m", round(TARGET[1] / TARGET[0]), (0,), PAIR),
 ]
 # Effective TFLOP/s (6 x parameters x tokens per second) of one MI300X in bf16: results/funding/README.md, section 6.
 # Measured for the memory-free hybrid and the plain Llama at 0.1B and 0.5B. Assumptions until the first job on
@@ -163,6 +169,10 @@ def table(rates, source, a):
     print(f"| | **Reserve of the {ALLOCATION:,}** | | | | | | **{left:,.0f}** |")
     if left < 0:
         print(f"\nOver the allocation by {-left:,.0f} GPU-hours. Shorten the 3B pair. Do not drop a baseline.")
+    nine = gpu_hours(NINE_B_PARAMS / 1e6, TARGET[1], rate_of(rates, "3b", "exealm"))
+    print(f"\nThe run this is evidence for, ExeaLM at 9B on 1T tokens, at ExeaLM's 3B rate here "
+          f"({rate_of(rates, '3b', 'exealm'):g} TFLOP/s per GPU): about {nine:,.0f} GPU-hours. The 9B measurement "
+          f"(experiments/expanse/nine_b.sb) replaces this rate with the 9B model's own.")
     used = sorted({f"{p} {m}: {source[p][m]}" for p in SIZES for m in ("exealm", "llama", "qwen")
                    if source[p].get(m, "MI300X") != "MI300X"})
     print("\nRates: " + ("; ".join(used) + "; the rest as on the MI300X" if used else "as measured on one MI300X")

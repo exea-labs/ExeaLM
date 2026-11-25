@@ -61,13 +61,15 @@ def test_the_table_fits_the_allocation_and_is_the_one_in_the_budget_document():
     rows = [l for l in text.splitlines() if "| `" in l]
     hours = {l.split("`")[1]: int(l.split("|")[-2].replace(",", "")) for l in rows}
     assert hours["exealm_3b_4.1x_s0"] == 720 and hours["qwen_3b_4.1x_s0"] == 736    # about 12B tokens at 81 TFLOP/s
-    assert len(hours) == 26 and all(f"qwen_{n[7:]}" in hours for n in hours if n.startswith("exealm_"))
-    assert all(f"llama_{n[7:]}" in hours for n in hours if n.startswith("exealm_") and "_3b_" not in n)
+    assert len(hours) == 28 and all(f"qwen_{n[7:]}" in hours for n in hours if n.startswith("exealm_"))
+    assert all(f"llama_{n[7:]}" in hours for n in hours if n.startswith("exealm_") and "_4.1x_" in n and "_3b_" not in n)
+    assert {"exealm_100m_111x_s0", "qwen_100m_111x_s0"} <= set(hours)              # the 9B run's tokens per parameter
     assert "llama_3b_4.1x_s0" not in hours and not [n for n in hours if n.startswith("gated_")]
     assert {n.split("_")[1] for n in hours} == {"100m", "250m", "500m", "3b"}       # four sizes on one curve
-    assert {l.split("|")[5].strip() for l in rows if "exealm" in l} == {"4.1"}    # one ratio: one curve, 0.1B to 3B
+    assert {l.split("|")[5].strip() for l in rows if "exealm" in l and "_4.1x_" in l} == {"4.1"}  # one curve
+    assert "ExeaLM at 9B on 1T tokens" in text and "about 186,4" in text           # the price of the 9B run
     reserve = int(text.split("**Reserve of the 2,000** | | | | | | **")[1].split("**")[0].replace(",", ""))
-    assert 100 < reserve < 400
+    assert 50 < reserve < 400
     budget = open(os.path.join(ROOT, "docs", "budget.md")).read()
     for line in text.splitlines():
         if line.startswith("|"):
@@ -231,3 +233,33 @@ def test_the_anneal_mix_takes_over_for_the_last_steps(tmp_path, monkeypatch):
              "--batch", "2", "--steps", "4", "--eval_every", "4", "--search", "0", "--device", "cpu", "--out", str(tmp_path / "a")])
     assert made.count("synthetic") >= 2                                     # the anneal mix was opened
     assert len(set(calls)) >= 2                                             # and batches came from both
+
+
+def test_the_report_finds_the_gaps_the_multiplier_and_the_price(tmp_path):
+    import report
+    rows, A, k = [], 40.0, 0.05                              # the Qwen3.5-style curve: bits per byte = A x C^-k
+    for name, part, preset, model, seed, steps in plan.runs():
+        params = plan.SIZES[preset]["core" if model == "exealm" else model]
+        c = 6 * params * 1e6 * steps * plan.STEP_TOKENS
+        if model == "exealm":
+            c *= 2                                           # ExeaLM scores what the baseline needs twice the compute for
+        score = A * c ** -k + (0.05 if model == "llama" else 0) + 0.001 * seed
+        rows.append(dict(run=f"/keep/{name}", params_M=params, mean=score, step=steps,
+                         bits_per_byte={"code": score + 0.1, "en": score - 0.1}))
+    rows.append(dict(run="/keep/lr_exealm_100m_0.001", params_M=1, mean=9.0, step=1, bits_per_byte={"en": 9.0}))
+    (tmp_path / "text.json").write_text(json.dumps(dict(runs=rows, means={})))
+    out = report.main(["--results", str(tmp_path)])
+    assert [r["size"] for r in out["curve"]] == ["100m", "250m", "500m", "3b"]
+    assert all(r["gap_qwen"] > 0 and r["ahead_qwen"] in ("3 of 3", "2 of 2", "1 of 1") for r in out["curve"])
+    assert out["curve"][-1]["llama"] is None                 # no plain Llama at 3B
+    qwen = [r for r in out["multiplier"] if r["baseline"] == "qwen"]
+    assert len(qwen) == 4 and all(abs(r["flops_multiplier"] - 2.0) < 0.05 for r in qwen)
+    assert all(r["gpu_hour_multiplier"] == r["flops_multiplier"] for r in qwen)    # the same assumed speed
+    assert out["long"][0]["tpp"] == 111 and out["long"][0]["gap_qwen"] > 0
+    assert out["nine_b"]["gpu_hours"] == round(plan.gpu_hours(9060, 1e12, 81.0)) and out["nine_b"]["rate_from"] == "ExeaLM at 3B"
+    text = (tmp_path / "report.md").read_text()
+    assert "Compute multiplier" in text and "| 3b | ExeaLM |" in text
+    (tmp_path / "nine_b.json").write_text(json.dumps([dict(nodes=1, effective_TFLOPs_per_gpu=50.0),
+                                                     dict(nodes=4, effective_TFLOPs_per_gpu=60.0),
+                                                     dict(nodes=4, error="out of memory at batch 4")]))
+    assert report.main(["--results", str(tmp_path)])["nine_b"]["rate_TFLOPs"] == 60.0     # the most nodes measured

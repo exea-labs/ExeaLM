@@ -35,8 +35,9 @@ the library and weight-alter are post-training work and run elsewhere (the MI300
 
 What the application will cite: the gap at each size in bits per byte, every row read alone and on long documents read
 as a stream; the gap on downstream benchmarks at 0.5B and 3B; how many GPU-hours the Qwen3.5-style model needs to
-match ExeaLM (the compute multiplier, read off the curve); and the 9B model's measured speed and memory on H100 nodes,
-which is the price in the application.
+match ExeaLM (the compute multiplier, read off the curve); whether the gap holds when the 0.1B pair is trained to the
+9B run's 111 tokens per parameter; and the 9B model's measured speed and memory on H100 nodes, which is the price in
+the application. `experiments/expanse/report.py` writes all of it from the scores.
 
 What we have so far, all at 0.1B. On the MI300X with the study's recipe and tokenizer
 ([results/finalize/final_text.json](../results/finalize/final_text.json), 3,000 steps, 2 seeds, mean of four held-out
@@ -45,6 +46,23 @@ With value residual and XSA added to the baselines, the Qwen3.5-style model reac
 ExeaLM, while the gated Llama reached 1.369, ahead of it. On older data without value residual or XSA
 ([results/funding](../results/funding/README.md), section 3, 3 seeds), the memory-free hybrid reached 1.413 against
 1.457 for the Qwen3.5-style model and 1.509 for the plain Llama.
+
+### What a funder will ask, and what answers it
+
+Every run is in the plan because it answers one of these. A run that answers none does not belong in the 2,000 hours.
+
+| Question | What answers it | Where |
+|---|---|---|
+| Is ExeaLM better than a modern design, under the same conditions? | ExeaLM against the Qwen3.5-style model at every size: the same data, tokens, steps and training recipe | the 3B pair, the curve |
+| Does the lead hold as the model grows? | The gap at 0.1B, 0.25B, 0.5B and 3B, and whether it shrinks | the curve, the 3B pair |
+| Could the lead be noise? | Three seeds at 0.1B and 0.25B, two at 0.5B; on how many seeds ExeaLM leads | the curve, `report.py` |
+| Does it hold when trained as long as the 9B would be? | The 0.1B pair at 111 tokens per parameter against the same pair at 4.1 | the long pair |
+| Does ExeaLM reach the same quality for less? | The compute multiplier, in FLOPs and in GPU-hours at each model's measured speed | the curve, `report.py` |
+| How does it compare with the model everyone knows? | The plain Llama beside them at 0.1B to 0.5B | the curve |
+| Is it good at what it is for, research and code? | Bits per byte on each held-out set (research code, code, papers, math, ...); benchmarks at 0.5B and 3B | `eval.sb`, `report.py` |
+| Does it use long documents? | Long documents read as a stream, 8 windows of 512 tokens | `eval.sb` |
+| Can the team train a 9B, and what will it cost? | The 9B model's speed and memory on 1, 2 and 4 nodes; the 9B run's price at that speed | `nine_b.sb`, `report.py` |
+| Can someone else check it? | Public data and tokenizer, the code on GitHub, every run's log and model on Hugging Face (`exea-labs/exealm-nairr-runs`, private until we publish it) | `train.sb`, `eval.sb` |
 
 ### The three models
 
@@ -95,12 +113,14 @@ model's own short checks; the anneal mix for the last 10% of steps.
 | curve | `exealm_500m_4.1x_s1` | 500.3M | 2.1B | 4.1 | 7,825 | 4 | 21 |
 | curve | `llama_500m_4.1x_s1` | 474.1M | 2.1B | 4.3 | 7,825 | 4 | 13 |
 | curve | `qwen_500m_4.1x_s1` | 511.3M | 2.1B | 4.0 | 7,825 | 4 | 22 |
-| | **The 26 runs** | | | | | | **1,635** |
+| long | `exealm_100m_111x_s0` | 93.8M | 10.4B | 111.0 | 39,735 | 1 | 29 |
+| long | `qwen_100m_111x_s0` | 95.7M | 10.4B | 108.9 | 39,735 | 1 | 30 |
+| | **The 28 runs** | | | | | | **1,693** |
 | | First job on Expanse | | | | | | 6 |
 | | The 9B model: speed and memory on 1, 2 and 4 nodes | | | | | | 36 |
 | | Learning-rate checks | | | | | | 74 |
 | | Evaluation: held-out text, long documents, benchmarks | | | | | | 100 |
-| | **Reserve of the 2,000** | | | | | | **149** |
+| | **Reserve of the 2,000** | | | | | | **90** |
 
 `python experiments/expanse/plan.py` prints this table and the lines that submit each run
 ([experiments/expanse](../experiments/expanse/README.md)).
@@ -110,14 +130,18 @@ model's own short checks; the anneal mix for the last 10% of steps.
 - **The curve.** The same recipe at 0.1B, 0.25B and 0.5B with all three models, at the same 4.1 tokens per parameter,
   so all four sizes lie on one curve and the gap can be read as a trend: three seeds at 0.1B and 0.25B, two at 0.5B.
   It costs 179 GPU-hours, the plain Llama 42 of them.
+- **The long pair.** ExeaLM and the Qwen3.5-style model at 0.1B trained on 10.4B tokens, 111 tokens per parameter, the
+  ratio of the 9B run (1T tokens). Every other run stops at 4.1, so this is the one place the study can show that the
+  lead does not close when the models train as long as the funded run would. 59 GPU-hours, about 30 hours on one GPU
+  each.
 - **Rates.** One AMD MI300X in bf16 ([results/funding](../results/funding/README.md), section 6): 56 effective TFLOP/s
   for ExeaLM at 0.1B and 81 at 0.5B; 85 and 125 for the plain Llama. GPU-hours = 6 × parameters × tokens / (TFLOP/s
   × 3600 × 10¹²). The Qwen3.5-style model is assumed to run at ExeaLM's rate. Its Gated DeltaNet is plain PyTorch
   here; if it is much slower on the H100, it moves to the flash-linear-attention kernels, as a fair baseline should.
   The first job measures all three.
 - **Four GPUs.** A node is charged 4 GPU-hours per hour. A run on four GPUs that is S times as fast as on one costs
-  4 / S times the hours above. The runs on four GPUs are 1,567 of the 1,635: at S = 3.5 they cost about 224 more, 75
-  more than the reserve, so the 3B pair would lose about 0.6B of its 12B tokens.
+  4 / S times the hours above. The runs on four GPUs are 1,567 of the 1,693: at S = 3.5 they cost about 224 more, 134
+  more than the reserve, so the 3B pair would lose about 1.1B of its 12B tokens.
 - **The 9B model** (`9b`: 9.06B parameters, width 4,096, 42 layers): a few hundred steps on one, two and four nodes,
   for memory per GPU, tokens per second and scaling across nodes. It needs FSDP, which `exealm/train/pretrain.py`
   does not have yet.
@@ -149,16 +173,21 @@ Then the curve, smallest first, then the 3B pair. [runbook.md](runbook.md) has e
 - **The compute multiplier.** At each size, the GPU-hours the Qwen3.5-style model would need to reach ExeaLM's loss
   (from a power law fitted to its four points), divided by ExeaLM's measured GPU-hours.
 - **Benchmarks** at 0.5B and 3B.
+- **All of it at once.** `python experiments/expanse/report.py` (`go.sh report`; `eval.sb` runs it) writes
+  `results/expanse/report.md`, `report.json` and `scaling.png`: the curve with every seed, the gap and on how many seeds
+  ExeaLM leads, the compute multiplier in FLOPs and in GPU-hours, the long pair, every held-out set, long documents,
+  benchmarks, and the 9B run's price at the measured speed.
 
 What would count: ExeaLM ahead of the Qwen3.5-style model at every size, on every seed, at equal tokens; the gap not
-shrinking from 0.1B to 3B; ExeaLM ahead of the plain Llama from 0.1B to 0.5B; the multiplier above 1. It is evidence
+shrinking from 0.1B to 3B; the gap of the long pair no smaller than at 4.1 tokens per parameter; ExeaLM ahead of the plain
+Llama from 0.1B to 0.5B; the multiplier above 1. It is evidence
 for the 9B run, not proof: 9B is three times the largest model trained.
 
 ### If fewer hours fit
 
 Shorten the 3B pair (each billion tokens fewer saves about 120 GPU-hours for the pair). Then drop the second seed at
-0.5B (about 56). Never drop the Qwen3.5-style run of a pair. The first use of the reserve, if it is not needed: the
-0.1B models trained to 111 tokens per parameter, the 9B run's ratio (about 77 GPU-hours for the three).
+0.5B (about 56). Never drop the Qwen3.5-style run of a pair or the long pair. The first use of the reserve, if it is
+not needed: the plain Llama at 0.1B to the same 111 tokens per parameter (about 18 GPU-hours).
 
 ### The plans of 24 November and 18 November
 

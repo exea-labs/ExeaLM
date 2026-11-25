@@ -31,9 +31,10 @@ Run them one at a time and look at the results between them, or `bash experiment
 | 1. First job | `go.sh first` | 1 node | ~1.5 h | ~6 | `results/expanse/`: gpu_check.txt, throughput, `plan_at_h100_rates.txt`, scaling_500m.json (4-GPU speed-up), lead_100m.json |
 | 2. Learning-rate checks | `go.sh lr` | 31 | a few hours | ~74 | `$KEEP/lr_*` |
 | 3. Pick rates | `go.sh pick` | none | seconds | 0 | `experiments/expanse/lr_choice.json` |
-| 4. The curve | `go.sh curve` | 24 | ~1 day | ~179 | `$KEEP/{exealm,llama,qwen}_{100m,250m,500m}_4.1x_s*` |
+| 4. The curve and the long pair | `go.sh curve` | 26 | ~1-2 days | ~238 | `$KEEP/{exealm,llama,qwen}_{100m,250m,500m}_4.1x_s*`, `$KEEP/{exealm,qwen}_100m_111x_s0` |
 | 5. 3B pair | `go.sh 3b` | 2 (one node each) | ~7 days | ~1,456 | `$KEEP/{exealm,qwen}_3b_4.1x_s0` |
-| 6. Score | `go.sh eval` | 1 GPU | a few hours | ~10 | `results/expanse/text.json`, `stream8.json`, `bench_*.json` |
+| 6. Score and report | `go.sh eval` | 1 GPU | a few hours | ~10 | `results/expanse/text.json`, `stream8.json`, `bench_*.json`, `report.md`, `scaling.png` |
+| 7. The 9B model | `go.sh nine_b` | 3 (1, 2 and 4 nodes) | ~3 h, ~1 h, ~1 h | ~36 | `results/expanse/nine_b.json`; then `go.sh report` prices the 9B run with it |
 
 `go.sh status` shows the queue and every run's latest step, bits per byte and tokens per second.
 
@@ -82,8 +83,9 @@ throughout. Every run reads the anneal mix for the last 10% (`--anneal_data`).
 - **Watch for:** loss spikes that do not recover (lower that model's learning rate and continue from the last
   checkpoint before the spike), `processes_in_sync: false` in a log (the run resynchronizes itself), runs much slower
   than `plan_at_h100_rates.txt` says.
-- **Not ready yet:** the 9B speed measurement needs FSDP, which `pretrain.py` does not have; its 36 GPU-hours stay in
-  the reserve until it is built.
+- **The 9B measurement** (`nine_b.py`, sharded with PyTorch's FSDP2) has only run on a CPU. Run `go.sh nine_b` after
+  phase 1, when the first job has shown the GPUs and NCCL work; if the one-node job fails, fix it before the two- and
+  four-node jobs spend their hours.
 
 ## The three models
 

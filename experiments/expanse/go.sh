@@ -7,9 +7,12 @@
 #     bash experiments/expanse/go.sh first      # the first job: correctness, speeds, 4-GPU speed-up, lead check
 #     bash experiments/expanse/go.sh lr         # learning-rate checks at every size, every model
 #     bash experiments/expanse/go.sh pick       # pick each model's rate from the checks -> lr_choice.json
-#     bash experiments/expanse/go.sh curve      # 0.1B to 0.5B: ExeaLM, the base Qwen3.5-style model and the plain Llama
+#     bash experiments/expanse/go.sh curve      # 0.1B to 0.5B: ExeaLM, the base Qwen3.5-style model and the plain Llama;
+#                                               # and the 0.1B pair at the 9B run's 111 tokens per parameter
 #     bash experiments/expanse/go.sh 3b         # the 3B pair: ExeaLM and the base Qwen3.5-style model
-#     bash experiments/expanse/go.sh eval       # score every finished run, upload results to Hugging Face
+#     bash experiments/expanse/go.sh eval       # score every finished run, write the report, upload to Hugging Face
+#     bash experiments/expanse/go.sh report     # the report again from results/expanse (report.md, scaling.png)
+#     bash experiments/expanse/go.sh nine_b     # the 9B model's speed and memory on 1, 2 and 4 nodes
 #     bash experiments/expanse/go.sh status     # what is queued, running and finished
 #     bash experiments/expanse/go.sh all        # every phase after data, in order, waiting for each (run it in tmux)
 #
@@ -54,10 +57,19 @@ phase() {
       $PLAN --lr_check 3b --lrs 3e-4,6e-4 | grep -v "^#" | submit ;;           # two rates at 3B, as budgeted
     pick) python experiments/expanse/pick_lr.py --keep "$(logs_to)" ;;
     curve|3b) need_account
-      part=$([ "$1" = 3b ] && echo 3B || echo curve)
-      for run in $($PLAN --list "$part"); do $PLAN --run "$run" --lr auto | grep -v "^#" | submit; done ;;
+      parts=$([ "$1" = 3b ] && echo 3B || echo "curve long")
+      for part in $parts; do
+        for run in $($PLAN --list "$part"); do $PLAN --run "$run" --lr auto | grep -v "^#" | submit; done
+      done ;;
     eval) need_account
       if [ "$DRY" = 1 ]; then echo "sbatch experiments/expanse/eval.sb"; else sbatch experiments/expanse/eval.sb; fi ;;
+    report) python experiments/expanse/report.py --results results/expanse \
+              $([ -f results/expanse/throughput_h100.json ] && echo "--rates results/expanse/throughput_h100.json") ;;
+    nine_b) need_account
+      for n in 1 2 4; do
+        if [ "$DRY" = 1 ]; then echo "sbatch --nodes=$n experiments/expanse/nine_b.sb"
+        else sbatch --nodes=$n experiments/expanse/nine_b.sb; fi
+      done ;;
     status)
       squeue -u "$USER" -o "%.10i %.20j %.8T %.10M %.6D %R" 2>/dev/null
       dir=$(logs_to)
@@ -70,7 +82,7 @@ phase() {
       for p in first lr; do phase $p; [ "$DRY" = 1 ] || wait_queue; done
       phase pick
       for p in curve 3b; do phase $p; [ "$DRY" = 1 ] || wait_queue; done
-      phase eval ;;
+      phase eval ;;                                # nine_b is separate: it needs FSDP checked on the cluster first
     *) sed -n '2,20p' "$0"; exit 1 ;;
   esac
 }

@@ -3,6 +3,21 @@
 What ExeaLM is trained as, decided by Avneh Bhatia, and why. Newest first. Change an entry only with a new dated
 entry that says what replaced it.
 
+## 25 November 2026 (evening): every run serves the funding case for the 9B
+
+Avneh's direction: the study exists to make funders (government grants or investors) confident in a 9B ExeaLM. Three
+additions follow from the questions a reviewer of that application will ask first:
+
+- **Does the lead hold at the 9B run's token budget?** Every curve run trains on 4.1 tokens per parameter; the 9B run
+  would train on 111. The 0.1B pair (ExeaLM and the Qwen3.5-style model) now also trains to 111 tokens per parameter
+  (10.4B tokens, 59 GPU-hours). The reserve falls from 149 to 90.
+- **What does the 9B run cost, and can we train it?** `experiments/expanse/nine_b.py` measures the 9B model's speed
+  and memory on 1, 2 and 4 nodes, sharded with FSDP2 (`go.sh nine_b`, the 36 GPU-hours already in the plan). Until it
+  runs, the plan prices the 9B run at ExeaLM's 3B rate: about 186,000 GPU-hours for 1T tokens.
+- **What is the headline number?** `experiments/expanse/report.py` turns the scores into the curve with every seed,
+  the compute multiplier against each baseline in FLOPs and in GPU-hours, the long pair, every held-out set, long
+  documents, benchmarks and the 9B price, with a figure (`report.md`, `scaling.png`).
+
 ## 25 November 2026 (later): the 3B baseline is the base Qwen3.5-style model
 
 The headline comparison is ExeaLM against the base Qwen3.5-style model, at 3B and on the curve. The plain Llama stays
