@@ -356,7 +356,25 @@ multiplier. Preliminary: one seed, runs still training.
 - Early in training the multiplier is larger for larger models. Read at the same fraction of each run, once the runs
   finish, before reading anything into the size trend.
 
-## 13. Next
+## 13. The curve at 0.25B (job 56083853, `text_250m.json`)
+
+The study's 0.25B runs: 3,869 steps (1.0B tokens, 4.0 per ExeaLM parameter), 3 seeds, the same recipe as 0.1B. Every
+row read alone, mean of the 18 held-out sets:
+
+| Model | Bits per byte | Per seed |
+|---|---|---|
+| **ExeaLM (one TONN layer in the middle, streams in the last 20%)** | **1.0141** | 1.0138, 1.0145, 1.0141 |
+| Qwen3.5-style | 1.0255 | 1.0257, 1.0256, 1.0252 |
+| Plain Llama | 1.0407 | 1.0398, 1.0417, 1.0406 |
+
+- ExeaLM is ahead of the Qwen3.5-style model on all 54 set-and-seed pairs, by 0.007 to 0.026 (0.011 on the mean), and
+  of the plain Llama on all 54, by 0.018 to 0.040. Its largest leads are on Japanese (0.024 on Wikipedia) and math
+  reasoning (0.016).
+- On windows read alone the lead over the Qwen3.5-style model shrinks with size: 0.034 at 0.1B, 0.011 at 0.25B. In
+  training, it was 0.020 at step 2,500 and fell to 0.011 over the stream phase and the anneal; the stream phase costs
+  ExeaLM on windows read alone (0.007 at 0.1B, section 9). The long-document scores at 0.25B come from the same job.
+
+## 14. Next
 
 The learning-rate checks (`go.sh lr`), the ablations at 0.1B (`ablate.sb`), and the compile check
 (`compile_check.sb`), then the curve.
