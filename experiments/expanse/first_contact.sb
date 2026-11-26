@@ -65,7 +65,7 @@ for part in $PARTS; do
       done ;;
     scaling)      # the real training loop at 0.5B on real tokens from the local disk: 1 GPU against 4
       echo "== $(date '+%F %T') copying data/ ($(du -sh data | cut -f1)) to the node's disk"
-      rsync -a data/ "$WORK/data/" && echo "== $(date '+%F %T') data copied"
+      { rsync -a --exclude "library*/" data/ "$WORK/data/"; rc=$?; [ $rc = 0 ] || [ $rc = 24 ]; } && echo "== $(date '+%F %T') data copied"
       localize data/mix_pretrain.json "$WORK/mix.json"; localize data/mix_pretrain_val.json "$WORK/mix_val.json"
       # 16 rows on each GPU: --batch is the total, so 64 on four. Both evaluate the same 32 rows.
       args="--preset 500m --data $WORK/mix.json --val $WORK/mix_val.json --config experiments/expanse/exealm_core.json
@@ -91,7 +91,7 @@ PY
                   # streamed windows for the last 20%; the baselines: one window per row throughout; the same 16,384
                   # tokens per step. 3 seeds x 3 models, one run per GPU
       echo "== $(date '+%F %T') copying data/ ($(du -sh data | cut -f1)) to the node's disk"
-      rsync -a data/ "$WORK/data/" && echo "== $(date '+%F %T') data copied"
+      { rsync -a --exclude "library*/" data/ "$WORK/data/"; rc=$?; [ $rc = 0 ] || [ $rc = 24 ]; } && echo "== $(date '+%F %T') data copied"
       localize data/mix_pretrain.json "$WORK/mix.json"; localize data/mix_pretrain_val.json "$WORK/mix_val.json"
       args="--preset 100m --data $WORK/mix.json --val $WORK/mix_val.json --seq 512
             --steps 3000 --warmup 200 --lr 1e-3 --search 0 --eval_every 500"

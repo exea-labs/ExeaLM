@@ -71,6 +71,13 @@ copy() {                                                               # copy <f
     *)       mkdir -p "$2" && rsync -a --exclude '*.tmp' "$1" "$2" ;;
   esac
 }
+copy_data() {     # the packed data onto the node: not data/library*, which training does not read and the library
+                  # job keeps writing (a deleted library file failed the 3B run's copy: job 56081231); a file that
+                  # vanished mid-copy (rsync's 24) is no error
+  if [[ $DATA == s3://* ]]; then copy "$DATA/" "$WORK/data/"; return; fi
+  mkdir -p "$WORK/data" && rsync -a --exclude 'library*/' --exclude '*.tmp' "$DATA/" "$WORK/data/"
+  local rc=$?; [ "$rc" = 0 ] || [ "$rc" = 24 ]
+}
 finished() {                                                           # finished <run folder>: model.pt, or the log's end
   [ -f "$1/model.pt" ] || grep -qs '"event": "end"' "$1/log.jsonl"
 }
@@ -91,7 +98,7 @@ fi
 finished "$OUT" && { echo "$RUN is already finished"; exit 0; }
 [ -f "$OUT/ckpt.pt" ] && echo "continuing from $OUT/ckpt.pt" || echo "starting $RUN from scratch"
 echo "== $(date '+%F %T') copying the data ($( [[ $DATA == s3://* ]] && echo "$DATA" || du -sh "$DATA" | cut -f1)) to the node's disk"
-copy "$DATA/" "$WORK/data/" || { echo "could not copy the data in"; exit 1; }
+copy_data || { echo "could not copy the data in"; exit 1; }
 echo "== $(date '+%F %T') data copied; training starts. Progress: a line a minute below (step, loss, tokens/s, time left)"
 
 limit=$(squeue -h -j "$SLURM_JOB_ID" -o %l)

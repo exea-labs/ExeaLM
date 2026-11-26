@@ -35,7 +35,7 @@ PY
 }
 echo "== $(date '+%F %T') job $SLURM_JOB_ID: each run writes its progress to $RUNLOGS/<run>.out"
 echo "== $(date '+%F %T') copying data/ ($(du -sh data | cut -f1)) to the node's disk"
-rsync -a data/ "$WORK/data/" && echo "== $(date '+%F %T') data copied"
+{ rsync -a --exclude "library*/" data/ "$WORK/data/"; rc=$?; [ $rc = 0 ] || [ $rc = 24 ]; } && echo "== $(date '+%F %T') data copied"
 localize data/mix_pretrain.json "$WORK/mix.json"; localize data/mix_pretrain_val.json "$WORK/mix_val.json"
 
 args="--preset 100m --data $WORK/mix.json --val $WORK/mix_val.json --seq 512 --steps 3000 --warmup 200 --search 0

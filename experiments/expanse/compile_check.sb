@@ -40,7 +40,7 @@ PY
 }
 echo "== $(date '+%F %T') job $SLURM_JOB_ID: each run writes its progress to $RUNLOGS/<run>.out"
 echo "== $(date '+%F %T') copying data/ ($(du -sh data | cut -f1)) to the node's disk"
-rsync -a data/ "$WORK/data/" && echo "== $(date '+%F %T') data copied"
+{ rsync -a --exclude "library*/" data/ "$WORK/data/"; rc=$?; [ $rc = 0 ] || [ $rc = 24 ]; } && echo "== $(date '+%F %T') data copied"
 localize data/mix_pretrain.json "$WORK/mix.json"; localize data/mix_pretrain_val.json "$WORK/mix_val.json"
 
 # 0.5B, 400 steps of 16 windows of 512 per GPU; ExeaLM reads rows of 4 streamed windows from step 200 on, so both
