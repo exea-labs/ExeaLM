@@ -419,7 +419,24 @@ The curve's 0.25B models (3 seeds each), scored as in section 10: 4,096 tokens o
 | Windows read alone (18 sets) | 0.034 | 0.011 |
 | Long documents read as a stream, windows 1-7 | 0.061 | 0.042 |
 
-## 16. Next
+## 16. The 9B model on one node (job 56084410, `nine_b.json`)
+
+`experiments/expanse/nine_b.sb`: ExeaLM at 9B as the study now defines it (`exealm_mid_9b.json`: 9,276.8M parameters,
+42 layers, one TONN layer at layer 21), sharded over 4 H100s with FSDP2, activation checkpointing on, 512-token rows,
+bf16. Speed of the full training step (forward, backward, AdamW), effective TFLOP/s = 6 x parameters x tokens/s:
+
+| Rows per GPU | Seconds a step | Tokens/s per GPU | Effective TFLOP/s per GPU | Peak memory |
+|---|---|---|---|---|
+| 2 | 0.50 | 2,053 | 114 | 36.8 GB |
+| 4 | 0.70 | 2,938 | 164 | 37.8 GB |
+| 8 | 1.11 | 3,705 | **206** | 39.8 GB |
+
+- At 206 effective TFLOP/s per GPU, a 9B ExeaLM on 1T tokens takes about 75,000 H100 GPU-hours on one node's worth of
+  scaling (6 x 9.28e9 x 1e12 / 206e12 / 3,600). The plan's estimate from ExeaLM's earlier 3B rate (150) was 103,000.
+- Memory is at 40 of 80 GB, and speed still rises with the batch: 16 and 32 rows per GPU, and 2 and 4 nodes, are queued
+  (jobs 56084546-8). Those rows replace this estimate.
+
+## 17. Next
 
 The learning-rate checks (`go.sh lr`), the ablations at 0.1B (`ablate.sb`), and the compile check
 (`compile_check.sb`), then the curve.
