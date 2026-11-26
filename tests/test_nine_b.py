@@ -133,7 +133,7 @@ def test_the_slurm_script():
         pytest.skip("no bash")
     subprocess.run([bash, "-n", SB], check=True)
     text = open(SB).read()
-    assert "#SBATCH --partition=nairr-gpu" in text and "#SBATCH --gpus-per-node=h100:4" in text
+    assert "#SBATCH --partition=nairr-gpu" in text and "#SBATCH --gpus=h100:4" in text
     assert "#SBATCH --time=03:00:00" in text and "OUT=results/expanse/nine_b.json" in text
     assert "--checkpoint 1" in text and "experiments/expanse/nine_b.py" in text
     assert 'scontrol show hostnames "$SLURM_JOB_NODELIST" | head -1' in text and "--nproc_per_node 4" in text

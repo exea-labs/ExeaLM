@@ -648,7 +648,10 @@ def main(argv=None):
                 g["lr"] = lr_at(step, a.steps, a.lr, warmup, a.decay_frac)
             opt.zero_grad(set_to_none=True)
             done = torch.zeros((), device=dev)                          # this process's part of the step's loss
-            for k in range(a.accum):
+            for micro in range(a.accum):
+                # k: windows per row now. It once reused the loop's name, so `micro < a.accum - 1` below read the
+                # stream factor and every pass of a multi-GPU run with --accum > 1 skipped DDP's gradient
+                # averaging (the 0.5B and 3B runs of 25-26 November; tests/test_ddp.py now checks this)
                 k = a.stream if step >= int(a.stream_from * a.steps) else 1   # --stream_from: windows alone first
                 rows = a.batch if k == a.stream else a.batch * a.stream         # the same tokens per step either way
                 per = rows // world
@@ -662,7 +665,7 @@ def main(argv=None):
                 # would take on the whole batch, even when masked seam targets make the shares unequal. Every process
                 # holds the whole batch, so each knows the total without asking the others.
                 share = int((y != -100).sum()) / total
-                with net.no_sync() if world > 1 and k < a.accum - 1 else contextlib.nullcontext():
+                with net.no_sync() if world > 1 and micro < a.accum - 1 else contextlib.nullcontext():
                     with torch.autocast(**amp) if amp else torch.enable_grad():
                         loss = train_loss(x, y, d, k)
                     (loss * (share * world / a.accum)).backward()

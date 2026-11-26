@@ -181,3 +181,27 @@ def test_a_zero_checkpoint_is_saved_in_parts_and_resumes_exactly(tmp_path):
     for k, v in full["model"].items():
         assert torch.equal(v, resumed["model"][k]), k
     assert resumed["opt"] is not None                                   # model.pt stays complete in one file
+
+
+@pytest.mark.parametrize("model,zero", [("tonn", "0"), ("llama", "0"), ("llama", "1")])
+def test_accumulation_averages_gradients_over_processes(tmp_path, model, zero):
+    # --accum > 1 on several processes: every optimizer step must average the processes' gradients (DDP syncs on the
+    # last pass), so two processes train exactly the model one process trains on the same batches. A shadowed loop
+    # variable once skipped the averaging on every pass: the processes drifted apart (or, with --zero, each updated
+    # its part of the weights from its own rows alone), the 0.5B and 3B runs of 25-26 November.
+    common = ["--preset", "tiny", "--model", model, "--data", "synthetic", "--device", "cpu", "--steps", "8",
+              "--eval_every", "4", "--batch", "8", "--search", "0", "--accum", "3", "--zero", zero]
+    one, two = tmp_path / "one", tmp_path / "two"
+    single = main(common + ["--out", str(one)])
+    ranks = run(common + ["--out", str(two)], two)
+    assert all(e["processes_in_sync"] for e in records(two, "eval"))         # the processes never drift apart
+    for name, p in single.named_parameters():
+        assert torch.equal(ranks[0][name], ranks[1][name]), name
+    # and they take one process's updates: AdamW turns the different order of float sums into small differences, but
+    # each process alone (half the rows, no averaging) would move every weight by a whole step's worth
+    # (ExeaLM's TONN layer also measures its running output size on each process's own rows, so its weights may differ
+    # from one process's by more; its held-out score below may not)
+    far = max(float((p.detach() - ranks[0][n]).abs().max()) for n, p in single.named_parameters())
+    assert far < (2e-3 if model == "llama" else 5e-2), far
+    v1, v2 = records(one, "eval"), records(two, "eval")
+    assert all(abs(a["val_bits_per_token"] - b["val_bits_per_token"]) < 0.01 for a, b in zip(v1, v2))
