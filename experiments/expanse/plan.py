@@ -232,10 +232,13 @@ def command(run, preset, model, seed, a, steps, lr=None, check=False):
     # The baselines train compiled: in the real training loop torch.compile made the Qwen3.5-style model 2.4 times as
     # fast and Llama 1.35 times, with the same scores (results/expanse/compile_check.json). ExeaLM trains eager: its
     # stream phase ran slower compiled. A faster baseline costs fewer hours and changes nothing it learns.
+    # On one GPU only: compiled on four GPUs, the Llama and Qwen3.5-style learning-rate checks drifted apart between
+    # processes at their first evaluation (Expanse jobs 56074847-51); eager four-GPU training stays in sync.
+    comp = " --compile 1" if gpus == 1 else ""
     if model == "llama":                            # pretrain's --model llama is the plain Llama without a --config
-        args.append("--model llama --compile 1")
+        args.append("--model llama" + comp)
     elif model == "qwen":
-        args.append(f"--model llama --config experiments/expanse/qwen_{preset}.json --compile 1")
+        args.append(f"--model llama --config experiments/expanse/qwen_{preset}.json" + comp)
     else:
         args.append("--search 0" + (" --config experiments/expanse/exealm_core.json" if a.variant == "core" else ""))
     args.append(f"--data {a.data} --val {a.val} --seq {SEQ} "

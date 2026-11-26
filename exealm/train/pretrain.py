@@ -131,12 +131,13 @@ def sync_from_rank0(model, opt, dev):
     state. A replaced slot gets fresh random weights and cleared Adam rows on process 0 only, so copying is what keeps
     all processes training one and the same model."""
     import torch.distributed as dist
-    box = [model.specs]
-    dist.broadcast_object_list(box, src=0)
-    for lay, row in zip(model.layers, box[0]):
-        for k, spec in enumerate(row):
-            if spec != lay.specs[k]:
-                lay.set_spec(k, spec)
+    if hasattr(model, "specs"):                                         # ExeaLM's circuits; a Llama has none
+        box = [model.specs]
+        dist.broadcast_object_list(box, src=0)
+        for lay, row in zip(model.layers, box[0]):
+            for k, spec in enumerate(row):
+                if spec != lay.specs[k]:
+                    lay.set_spec(k, spec)
     for t in list(model.parameters()) + list(model.buffers()):
         broadcast_(t.data, dev)
     params = list(model.parameters())
@@ -524,7 +525,7 @@ def main(argv=None):
         # gradient, as on one GPU. gradient_as_bucket_view: the gradients live in DDP's communication buffers instead
         # of beside them, which saves 4 bytes per parameter (12 GB at 3B).
         net = DistributedDataParallel(model, device_ids=[dev.index] if dev.type == "cuda" else None,
-                                      find_unused_parameters=True, gradient_as_bucket_view=True)
+                                      find_unused_parameters=a.model == "tonn", gradient_as_bucket_view=True)
     fwd = net
     clean = False                                                       # set just before a normal return
     t0 = time.time() - done_secs

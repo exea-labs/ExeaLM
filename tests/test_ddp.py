@@ -114,6 +114,16 @@ def test_processes_that_drift_apart_are_noticed_and_put_back(tmp_path):
         assert torch.equal(p, ranks[1][name]), name
 
 
+def test_a_llama_that_drifts_apart_is_put_back_too(tmp_path):
+    # Expanse jobs 56074847-51: the put-back read model.specs, which only ExeaLM has, and crashed every baseline run.
+    args = ["--preset", "tiny", "--model", "llama", "--data", "synthetic", "--steps", "10", "--eval_every", "5",
+            "--search", "0", "--device", "cpu", "--out", str(tmp_path / "run")]
+    ranks = run(args, tmp_path / "run", drift=True)
+    assert [e["processes_in_sync"] for e in records(tmp_path / "run", "eval")] == [False, False]
+    for name, p in ranks[0].items():
+        assert torch.equal(p, ranks[1][name]), name
+
+
 def test_a_time_limit_stops_both_processes_at_the_same_step(tmp_path):
     a, b = tmp_path / "a", tmp_path / "b"
     common = ARGS + ["--steps", "12", "--eval_every", "6"]
