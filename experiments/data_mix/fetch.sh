@@ -22,7 +22,7 @@
 #     <dest>/mix_pretrain.json, mix_pretrain_val.json, mix_pretrain_anneal.json   every pretraining bucket, The
 #                                                     Stack included (not with --no-stack); anneal = the last 10%
 #     <dest>/mix_post.json, <dest>/mix_post_val.json  with --post
-# and checks that each one opens with exealm.data.loader.open_data. Train with, for example:
+# and checks that every pack's tokens.bin is its full size. Train with, for example:
 #     python -m exealm.train.pretrain --data data/mix_pretrain.json --val data/mix_pretrain_val.json ...
 set -euo pipefail
 
@@ -97,7 +97,7 @@ get exealm-pretrain 'packed/*' 'tokenizer/*' 'mix*.json' 'sources.json' 'README.
 [ "$STACK" = 1 ] && get exealm-pretrain-stack 'packed/*' 'sources.json' 'README.md'
 [ "$POST" = 1 ] && get exealm-post 'packed/*' 'mix*.json' 'sources.json' 'README.md'
 [ "$DRY" = 1 ] && { echo "dry run: nothing downloaded"; exit 0; }
-echo "== $(date '+%F %T') downloaded: $(du -sh "$DEST" | cut -f1) in $DEST/. Writing the mix files and opening each one"
+echo "== $(date '+%F %T') downloaded: $(du -sh "$DEST" | cut -f1) in $DEST/. Writing the mix files and checking every pack"
 
 python - "$DEST" "$STACK" "$POST" "$REL" <<'PY'
 import json, os, sys
@@ -118,9 +118,18 @@ def localize(src, out):
     with open(out, "w", encoding="utf-8", newline="\n") as f:
         json.dump(spec, f, indent=1)
         f.write("\n")
-    from exealm.data.loader import open_data
-    mix = open_data(out)
-    print(f"wrote {out}: {len(mix.names)} sources, {mix.meta['n_tokens'] / 1e9:.2f}B tokens: {', '.join(mix.names)}")
+    # Sizes only: opening the mix maps every tokens.bin into memory (57 GB), which a login node refuses (ENOMEM). The
+    # jobs map them on the compute nodes. Each tokens.bin must hold exactly its meta.json's tokens.
+    total = 0
+    for name, s in spec["sources"].items():
+        meta = json.load(open(os.path.join(s["paths"], "meta.json")))
+        width = {"uint16": 2, "uint32": 4, "int32": 4}[meta["dtype"]]
+        have = os.path.getsize(os.path.join(s["paths"], "tokens.bin"))
+        if have != meta["n_tokens"] * width:
+            raise SystemExit(f"{out}: {name}: tokens.bin is {have:,} bytes, meta.json says {meta['n_tokens'] * width:,}"
+                             f": the download is incomplete; run this again")
+        total += meta["n_tokens"]
+    print(f"wrote {out}: {len(spec['sources'])} sources, {total / 1e9:.2f}B tokens, every file its full size")
 
 
 pre = os.path.join(dest, "exealm-pretrain", rel)
