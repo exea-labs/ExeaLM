@@ -468,7 +468,7 @@ ExeaLM's stream phase changed `k` to 4, which switched the averaging back on for
 | Llama 0.5B | 1.161 | **1.113** | 1.114 | 6e-4 (6e-4) |
 
   The 3B pair restarted from scratch at these rates (jobs 56085824-5, 26 November 09:48), the 0.5B curve at 11:31
-  (jobs 56086585-90). The 3B pair's checkpoints now take about a minute (section 6 of the code change: each process
+  (jobs 56086585-90). The 3B pair's checkpoints now take about a minute (each process
   writes its own part of AdamW's state), against 14.5 before.
 
 ## 18. Next
