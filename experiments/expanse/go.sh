@@ -14,6 +14,7 @@
 #     bash experiments/expanse/go.sh report     # the report again from results/expanse (report.md, scaling.png)
 #     bash experiments/expanse/go.sh nine_b     # the 9B model's speed and memory on 1, 2 and 4 nodes
 #     bash experiments/expanse/go.sh status     # what is queued, running and finished
+#     bash experiments/expanse/go.sh runs <run> ...   # only the named runs of the plan
 #     bash experiments/expanse/go.sh all        # every phase after data, in order, waiting for each (run it in tmux)
 #
 # DRY=1 prints the sbatch lines instead of submitting them. RELEASE picks the data build (default slice-30b-r2).
@@ -102,6 +103,9 @@ phase() {
           $PLAN --run "$run" --lr auto | grep -v "^#" | submit
         done
       done ;;
+    runs) need_account                             # go.sh runs <run> ...: just these runs (queued or finished ones skipped)
+      shift
+      for run in "$@"; do $PLAN --run "$run" --lr auto | grep -v "^#"; echo; done | submit ;;
     eval) need_account
       if [ "$DRY" = 1 ]; then echo "sbatch experiments/expanse/eval.sb"; else sbatch experiments/expanse/eval.sb; fi ;;
     report) python experiments/expanse/report.py --results results/expanse \
@@ -136,4 +140,4 @@ phase() {
     *) sed -n '2,20p' "$0"; exit 1 ;;
   esac
 }
-phase "${1:-help}"
+phase "${@:-help}"
