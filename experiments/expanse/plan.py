@@ -47,7 +47,7 @@ STREAMED = ("exealm",)                         # streaming is part of ExeaLM; th
 STEP_TOKENS = 262_144
 ALLOCATION = 2000                              # GPU-hours
 TARGET = (9e9, 1e12)                           # what the study is evidence for: 9B parameters on 1T tokens
-NINE_B_PARAMS = 9.109e9                        # the 9b preset as the study trains it (exealm_core.json; nine_b.py)
+NINE_B_PARAMS = 9.277e9                        # the 9b preset as the study trains it (exealm_mid_9b.json; nine_b.py)
 FIRST_JOB = 6                                  # first_contact.sb: one node for about an hour and a half
 NINE_B = 36                                    # the 9B preset's speed and memory, sharded: 3 hours on one node, then an
                                                # hour each on two and four nodes (needs FSDP, docs/budget.md)
@@ -224,7 +224,7 @@ def time_limit(preset, model, a, steps):
 def command(run, preset, model, seed, a, steps, lr=None, check=False):
     s = SIZES[preset]
     gpus, windows = a.gpus or s["gpus"], a.batch or s["batch"]
-    k = STREAM if model in STREAMED and a.variant != "mid" else 1   # windows per row
+    k = STREAM if model in STREAMED else 1          # windows per row
     batch = windows * gpus // k                     # pretrain's --batch: rows of k windows, over all the GPUs
     accum, rest = divmod(STEP_TOKENS, batch * SEQ * k)
     if rest or windows % k:
@@ -274,10 +274,10 @@ def parser():
     ap.add_argument("--rates", default=None, help="a throughput_<gpu>.json from experiments/throughput.py")
     ap.add_argument("--speedup", type=float, default=4.0, help="how many times as fast four GPUs are as one "
                     "(speedup_on_4_gpus in results/expanse/scaling_500m.json)")
-    ap.add_argument("--variant", default="core", choices=["core", "mid", "memory"],
-                    help="ExeaLM without memory slots, a TONN layer every fourth layer and streams in the last 20% "
-                         "(core); one TONN layer at the middle layer, every row alone (mid); or with board and library "
-                         "slots in swarms (memory)")
+    ap.add_argument("--variant", default="mid", choices=["mid", "core", "memory"],
+                    help="ExeaLM without memory slots and with streams in the last 20%%: one TONN layer at the middle "
+                         "layer (mid, the study's ExeaLM since 26 November, docs/decisions.md) or one every fourth "
+                         "layer (core, the plan before it); or with board and library slots in swarms (memory)")
     ap.add_argument("--run", default=None, help="print the lines that submit this run (needs --lr)")
     ap.add_argument("--lr_check", default=None, help="print the learning-rate check of this size: " + ", ".join(LR_STEPS))
     ap.add_argument("--lr", default=None, help="the learning rate the check picked for this model and size, or 'auto': "

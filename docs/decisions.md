@@ -3,6 +3,26 @@
 What ExeaLM is trained as, decided by Avneh Bhatia, and why. Newest first. Change an entry only with a new dated
 entry that says what replaced it.
 
+## 26 November 2026: one TONN layer at the middle layer; ExeaLM keeps its streams, the baselines do not
+
+ExeaLM is now one TONN layer at the middle layer (layer n/2 of n: 7 of 14 at 0.1B, 8 of 16 at 0.25B, 11 of 22 at
+0.5B, 17 of 34 at 3B, 21 of 42 at 9B) and attention with gate, QK-norm, value residual and XSA everywhere else, with
+streams of four windows in the last 20% of pretraining (`plan.py --variant mid`, `exealm_mid_<size>.json`). It replaces
+a TONN layer every fourth layer. Every run keeps the steps the baselines were trained for. Decided with these results
+in hand (`results/expanse/README.md`, sections 4 and 5; 0.1B, 3,000 steps, all 18 held-out sets, windows read alone):
+
+- The planned ExeaLM lost to a Llama with all four attention changes (1.376 against 1.349). The cause was where the
+  TONN layers sat: a TONN layer at layer 0 cost about 0.035, and every TONN layer beyond one cost more.
+- One TONN layer at the middle layer: 1.3484 against 1.3493 for that Llama (3 seeds each, ahead on every seed and on
+  14 of 18 sets), 0.072 ahead of the Qwen3.5-style model and 0.128 ahead of the plain Llama.
+- Streams cost 0.015 on windows read alone (1.3639, one seed). Avneh kept them: ExeaLM reads 512-token windows, and
+  streams are how it reads papers and code longer than that (on the MI300X, streams in the last 20% gained 0.023 on
+  the fourth window of long documents and 0.076 on code, `results/finalize/decision_stream4.json`). Jobs 56082022-28
+  measure it again with this layout: three seeds with streams, three without.
+- The Qwen3.5-style model and the Llama keep reading every row alone, also at 3B (Avneh's decision, asked whether the
+  3B Qwen3.5-style run should stream too). Any long-document comparison against them therefore includes ExeaLM's
+  stream phase, a training recipe any model can use, and the report says so where it shows one.
+
 ## 25 November 2026 (night): the plan stays as it is after the 0.1B ablations on Expanse
 
 The study keeps its design: ExeaLM (a TONN layer every fourth layer, value residual and XSA, streams in the last 20%)

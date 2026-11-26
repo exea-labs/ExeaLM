@@ -60,14 +60,14 @@ def test_the_table_fits_the_allocation_and_is_the_one_in_the_budget_document():
     text = printed([])
     rows = [l for l in text.splitlines() if "| `" in l]
     hours = {l.split("`")[1]: int(l.split("|")[-2].replace(",", "")) for l in rows}
-    assert hours["exealm_3b_4.1x_s0"] == 720 and hours["qwen_3b_4.1x_s0"] == 736    # about 12B tokens at 81 TFLOP/s
+    assert hours["exealm_3b_4.1x_s0"] == 733 and hours["qwen_3b_4.1x_s0"] == 736    # about 12B tokens at 81 TFLOP/s
     assert len(hours) == 28 and all(f"qwen_{n[7:]}" in hours for n in hours if n.startswith("exealm_"))
     assert all(f"llama_{n[7:]}" in hours for n in hours if n.startswith("exealm_") and "_4.1x_" in n and "_3b_" not in n)
     assert {"exealm_100m_111x_s0", "qwen_100m_111x_s0"} <= set(hours)              # the 9B run's tokens per parameter
     assert "llama_3b_4.1x_s0" not in hours and not [n for n in hours if n.startswith("gated_")]
     assert {n.split("_")[1] for n in hours} == {"100m", "250m", "500m", "3b"}       # four sizes on one curve
-    assert {l.split("|")[5].strip() for l in rows if "exealm" in l and "_4.1x_" in l} == {"4.1"}  # one curve
-    assert "ExeaLM at 9B on 1T tokens" in text and "about 187,4" in text           # the price of the 9B run
+    assert {l.split("|")[5].strip() for l in rows if "exealm" in l and "_4.1x_" in l} == {"4.0"}  # one curve (core's steps)
+    assert "ExeaLM at 9B on 1T tokens" in text and "about 190,8" in text           # the price of the 9B run
     reserve = int(text.split("**Reserve of the 2,000** | | | | | | **")[1].split("**")[0].replace(",", ""))
     assert 50 < reserve < 400
     budget = open(os.path.join(ROOT, "docs", "budget.md")).read()
@@ -92,14 +92,14 @@ def test_measured_rates_and_the_four_gpu_speed_up_rescale_the_plan(tmp_path):
     assert rates["1b"] == dict(plan.MI300X["1b"], qwen=81.0)             # nothing measured: the MI300X figure stays
     text = printed(["--rates", str(path), "--speedup", "3.2"])
     row = next(l for l in text.splitlines() if "| `exealm_500m_4.1x_s0`" in l)
-    full = plan.gpu_hours(500.34, plan.steps_of("500m", plan.TPP) * plan.STEP_TOKENS, 81.0)
+    full = plan.gpu_hours(plan.SIZES["500m"]["mid"], plan.steps_of("500m", plan.TPP) * plan.STEP_TOKENS, 81.0)
     assert int(row.split("|")[-2]) == round(full * 81 / 100 * 4 / 3.2)    # the measured rate, 4 / 3.2 the charge
     one = next(l for l in text.splitlines() if "| `exealm_250m_4.1x_s0`" in l)
-    assert int(one.split("|")[-2]) == round(plan.gpu_hours(247.38, plan.steps_of("250m", plan.TPP) * plan.STEP_TOKENS, 56.2))
+    assert int(one.split("|")[-2]) == round(plan.gpu_hours(plan.SIZES["250m"]["mid"], plan.steps_of("250m", plan.TPP) * plan.STEP_TOKENS, 56.2))
 
 
 def test_every_run_is_a_whole_number_of_swarms_and_passes_per_step():
-    for name, part, preset, model, seed, steps in plan.runs("core"):
+    for name, part, preset, model, seed, steps in plan.runs("mid"):
         text = printed(["--run", name, "--lr", "1e-3"])
         args = text.split('ARGS="')[1].split('"')[0].split()
         get = lambda k: args[args.index(k) + 1]                           # noqa: E731
@@ -119,7 +119,7 @@ def test_every_run_is_a_whole_number_of_swarms_and_passes_per_step():
         elif model == "qwen":
             assert get("--model") == "llama" and os.path.exists(os.path.join(ROOT, get("--config")))
         else:
-            assert get("--search") == "0" and get("--config") == "experiments/expanse/exealm_core.json"
+            assert get("--search") == "0" and get("--config") == f"experiments/expanse/exealm_mid_{preset}.json"
         assert ("--ntasks-per-node=1" in text) == (gpus == 1)
         assert f"SBATCH_JOB_NAME=exealm-{name} " in text                  # the job is named after its run
         hh = int(text.split("SBATCH_TIMELIMIT=")[1].split(":")[0])        # a limit sized to the run, not always 48 h

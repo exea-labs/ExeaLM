@@ -10,8 +10,9 @@ or TONN layer and its MLP) is one unit, then the root: the embedding, tied to th
     torchrun --nproc_per_node 4 experiments/expanse/nine_b.py --batch 4                 # one node, 4 rows per GPU
     sbatch --nodes=2 experiments/expanse/nine_b.sb                                       # what the study runs
 
-The model is ExeaLM as the study trains it: the 9b preset with exealm_core.json (no memory slots, a TONN layer every
-fourth layer, value residual and XSA) and the 32k tokenizer: 9.11B parameters. --checkpoint 1 (the default) recomputes
+The model is ExeaLM as the study trains it since 26 November (docs/decisions.md): the 9b preset with
+exealm_mid_9b.json (no memory slots, one TONN layer at the middle layer, 21 of 42, value residual and XSA) and the 32k
+tokenizer: 9.28B parameters. --checkpoint 1 (the default) recomputes
 each layer's activations in the backward pass instead of keeping them. AdamW takes its fused step when this torch can
 take it on sharded parameters (tried once at the start), else the default one.
 
@@ -65,9 +66,12 @@ MEMORY = ("RG", "AG", "WA")                                             # the ci
 
 
 def build(preset="9b", vocab=32768, **extra):
-    """ExeaLM as the study trains it: the preset with exealm_core.json's fields, as pretrain's --config applies them.
-    extra: more fields (the test uses more layers of the tiny preset)."""
-    core = {k: tuple(v) if isinstance(v, list) else v for k, v in json.load(open(CORE)).items()}
+    """ExeaLM as the study trains it: exealm_core.json's fields with one TONN layer at the middle layer instead of one
+    every fourth layer, as pretrain's --config applies exealm_mid_<preset>.json. extra: more fields (the test uses more
+    layers of the tiny preset)."""
+    core = {k: tuple(v) if isinstance(v, list) else v for k, v in json.load(open(CORE)).items() if k != "tonn_every"}
+    n = get_config(preset, **extra).n_layers
+    core.update(tonn_every=0, attn_layers=tuple(i for i in range(n) if i != n // 2))
     return ExeaLM(get_config(preset, **dict(core, vocab_size=vocab, **extra)))
 
 

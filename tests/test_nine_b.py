@@ -38,14 +38,14 @@ def tiny(**extra):
 def test_the_model_is_the_studys_exealm_at_9b():
     with torch.device("meta"):
         model = nine_b.build()
-        core = json.load(open(nine_b.CORE))
-        want = count_params(ExeaLM(get_config("9b", vocab_size=32768, **core)))
+        mid = json.load(open(os.path.join(os.path.dirname(nine_b.CORE), "exealm_mid_9b.json")))
+        want = count_params(ExeaLM(get_config("9b", vocab_size=32768, **mid)))
     cfg = model.cfg
     assert (cfg.d, cfg.n_layers, cfg.vocab_size) == (4096, 42, 32768)
-    assert cfg.value_residual and cfg.xsa and cfg.tonn_every == 4 and cfg.swarm_size == 1 and not cfg.pinned
-    assert cfg.attn_layers == tuple(i for i in range(42) if i % 4)                # TONN at 0, 4, ..., 40
+    assert cfg.value_residual and cfg.xsa and cfg.swarm_size == 1 and not cfg.pinned
+    assert cfg.attn_layers == tuple(i for i in range(42) if i != 21)                # one TONN layer, at 21
     assert not {s["tmpl"] for row in model.specs for s in row} & set(nine_b.MEMORY)
-    assert count_params(model) == want and 9.0e9 < want < 9.2e9
+    assert count_params(model) == want and 9.2e9 < want < 9.3e9
 
 
 def grads(model):
@@ -74,7 +74,7 @@ def test_what_fsdp_needs_changes_nothing_the_model_computes(ckpt):
         for n, g in gb.items():
             assert torch.allclose(ga[n], g, atol=1e-5, rtol=1e-4), n
         vr = [g for n, g in gb.items() if n.endswith(".vr")]
-        assert len(vr) == 5 and all(g.abs().sum() > 0 for g in vr)              # value residual is alive
+        assert len(vr) == len(plain.cfg.attn_layers) - 1 and all(g.abs().sum() > 0 for g in vr)   # value residual is alive
         for p, r in zip(plain.layers, ready.layers):
             assert torch.equal(p.scale, r.unit.inner.scale) and (p.scale > 0).any()   # updated once per pass
 

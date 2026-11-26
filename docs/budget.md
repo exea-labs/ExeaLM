@@ -87,40 +87,40 @@ model's own short checks; the anneal mix for the last 10% of steps.
 
 | Part | Run | Parameters | Tokens | Tokens per parameter | Steps | GPUs | GPU-hours |
 |---|---|---|---|---|---|---|---|
-| 3B | `exealm_3b_4.1x_s0` | 2,921.2M | 12.0B | 4.1 | 45,688 | 4 | 720 |
+| 3B | `exealm_3b_4.1x_s0` | 2,973.5M | 12.0B | 4.0 | 45,688 | 4 | 733 |
 | 3B | `qwen_3b_4.1x_s0` | 2,986.2M | 12.0B | 4.0 | 45,688 | 4 | 736 |
-| curve | `exealm_100m_4.1x_s0` | 93.8M | 0.4B | 4.1 | 1,468 | 1 | 1 |
+| curve | `exealm_100m_4.1x_s0` | 95.1M | 0.4B | 4.0 | 1,468 | 1 | 1 |
 | curve | `llama_100m_4.1x_s0` | 89.7M | 0.4B | 4.3 | 1,468 | 1 | 1 |
 | curve | `qwen_100m_4.1x_s0` | 95.7M | 0.4B | 4.0 | 1,468 | 1 | 1 |
-| curve | `exealm_100m_4.1x_s1` | 93.8M | 0.4B | 4.1 | 1,468 | 1 | 1 |
+| curve | `exealm_100m_4.1x_s1` | 95.1M | 0.4B | 4.0 | 1,468 | 1 | 1 |
 | curve | `llama_100m_4.1x_s1` | 89.7M | 0.4B | 4.3 | 1,468 | 1 | 1 |
 | curve | `qwen_100m_4.1x_s1` | 95.7M | 0.4B | 4.0 | 1,468 | 1 | 1 |
-| curve | `exealm_100m_4.1x_s2` | 93.8M | 0.4B | 4.1 | 1,468 | 1 | 1 |
+| curve | `exealm_100m_4.1x_s2` | 95.1M | 0.4B | 4.0 | 1,468 | 1 | 1 |
 | curve | `llama_100m_4.1x_s2` | 89.7M | 0.4B | 4.3 | 1,468 | 1 | 1 |
 | curve | `qwen_100m_4.1x_s2` | 95.7M | 0.4B | 4.0 | 1,468 | 1 | 1 |
-| curve | `exealm_250m_4.1x_s0` | 247.4M | 1.0B | 4.1 | 3,869 | 1 | 7 |
+| curve | `exealm_250m_4.1x_s0` | 250.5M | 1.0B | 4.0 | 3,869 | 1 | 8 |
 | curve | `llama_250m_4.1x_s0` | 234.8M | 1.0B | 4.3 | 3,869 | 1 | 5 |
 | curve | `qwen_250m_4.1x_s0` | 252.1M | 1.0B | 4.0 | 3,869 | 1 | 8 |
-| curve | `exealm_250m_4.1x_s1` | 247.4M | 1.0B | 4.1 | 3,869 | 1 | 7 |
+| curve | `exealm_250m_4.1x_s1` | 250.5M | 1.0B | 4.0 | 3,869 | 1 | 8 |
 | curve | `llama_250m_4.1x_s1` | 234.8M | 1.0B | 4.3 | 3,869 | 1 | 5 |
 | curve | `qwen_250m_4.1x_s1` | 252.1M | 1.0B | 4.0 | 3,869 | 1 | 8 |
-| curve | `exealm_250m_4.1x_s2` | 247.4M | 1.0B | 4.1 | 3,869 | 1 | 7 |
+| curve | `exealm_250m_4.1x_s2` | 250.5M | 1.0B | 4.0 | 3,869 | 1 | 8 |
 | curve | `llama_250m_4.1x_s2` | 234.8M | 1.0B | 4.3 | 3,869 | 1 | 5 |
 | curve | `qwen_250m_4.1x_s2` | 252.1M | 1.0B | 4.0 | 3,869 | 1 | 8 |
-| curve | `exealm_500m_4.1x_s0` | 500.3M | 2.1B | 4.1 | 7,825 | 4 | 21 |
+| curve | `exealm_500m_4.1x_s0` | 508.5M | 2.1B | 4.0 | 7,825 | 4 | 21 |
 | curve | `llama_500m_4.1x_s0` | 474.1M | 2.1B | 4.3 | 7,825 | 4 | 13 |
 | curve | `qwen_500m_4.1x_s0` | 511.3M | 2.1B | 4.0 | 7,825 | 4 | 22 |
-| curve | `exealm_500m_4.1x_s1` | 500.3M | 2.1B | 4.1 | 7,825 | 4 | 21 |
+| curve | `exealm_500m_4.1x_s1` | 508.5M | 2.1B | 4.0 | 7,825 | 4 | 21 |
 | curve | `llama_500m_4.1x_s1` | 474.1M | 2.1B | 4.3 | 7,825 | 4 | 13 |
 | curve | `qwen_500m_4.1x_s1` | 511.3M | 2.1B | 4.0 | 7,825 | 4 | 22 |
-| long | `exealm_100m_111x_s0` | 93.8M | 10.4B | 111.0 | 39,735 | 1 | 29 |
+| long | `exealm_100m_111x_s0` | 95.1M | 10.4B | 109.6 | 39,735 | 1 | 29 |
 | long | `qwen_100m_111x_s0` | 95.7M | 10.4B | 108.9 | 39,735 | 1 | 30 |
-| | **The 28 runs** | | | | | | **1,693** |
+| | **The 28 runs** | | | | | | **1,708** |
 | | First job on Expanse | | | | | | 6 |
 | | The 9B model: speed and memory on 1, 2 and 4 nodes | | | | | | 36 |
-| | Learning-rate checks | | | | | | 74 |
+| | Learning-rate checks | | | | | | 75 |
 | | Evaluation: held-out text, long documents, benchmarks | | | | | | 100 |
-| | **Reserve of the 2,000** | | | | | | **90** |
+| | **Reserve of the 2,000** | | | | | | **76** |
 
 `python experiments/expanse/plan.py` prints this table and the lines that submit each run
 ([experiments/expanse](../experiments/expanse/README.md)).
@@ -142,7 +142,7 @@ model's own short checks; the anneal mix for the last 10% of steps.
 - **Four GPUs.** A node is charged 4 GPU-hours per hour. A run on four GPUs that is S times as fast as on one costs
   4 / S times the hours above. The runs on four GPUs are 1,567 of the 1,693: at S = 3.5 they cost about 224 more, 134
   more than the reserve, so the 3B pair would lose about 1.1B of its 12B tokens.
-- **The 9B model** (`9b` as the study trains it: 9.11B parameters, width 4,096, 42 layers): short runs on one, two
+- **The 9B model** (`9b` as the study trains it: 9.28B parameters, width 4,096, 42 layers, one TONN layer at layer 21): short runs on one, two
   and four nodes, for memory per GPU, tokens per second and scaling across nodes (`experiments/expanse/nine_b.py`,
   sharded with PyTorch's FSDP2; `go.sh nine_b`). At most 33 GPU-hours of the 36. Training the 9B for real will need
   `pretrain.py` to shard the same way, and to average the TONN layers' running output sizes across GPUs, which DDP
