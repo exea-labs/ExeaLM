@@ -112,11 +112,11 @@ phase() {
               $([ -f results/expanse/throughput_h100.json ] && echo "--rates results/expanse/throughput_h100.json") ;;
     nine_b) need_account                           # one node first; two and four only if it wrote a row
       if [ "$DRY" = 1 ]; then
-        echo "sbatch --parsable --nodes=1 experiments/expanse/nine_b.sb"
-        for n in 2 4; do echo "sbatch --dependency=afterok:<that job> --nodes=$n experiments/expanse/nine_b.sb"; done
-      else
-        jid=$(sbatch --parsable --nodes=1 experiments/expanse/nine_b.sb) || exit 1
-        for n in 2 4; do sbatch --dependency=afterok:"$jid" --nodes=$n experiments/expanse/nine_b.sb; done
+        echo "sbatch --parsable --nodes=1 --gpus=h100:4 experiments/expanse/nine_b.sb"
+        for n in 2 4; do echo "sbatch --dependency=afterok:<that job> --nodes=$n --gpus=h100:$((4 * n)) experiments/expanse/nine_b.sb"; done
+      else                                         # Expanse takes --gpus, the job's total, not --gpus-per-node
+        jid=$(sbatch --parsable --nodes=1 --gpus=h100:4 experiments/expanse/nine_b.sb) || exit 1
+        for n in 2 4; do sbatch --dependency=afterok:"$jid" --nodes=$n --gpus=h100:$((4 * n)) experiments/expanse/nine_b.sb; done
       fi ;;
     status)
       squeue -u "$USER" -o "%.10i %.44j %.8T %.10M %.6D %R" 2>/dev/null

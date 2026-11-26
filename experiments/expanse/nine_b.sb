@@ -8,7 +8,8 @@
 #     sbatch --nodes=2 experiments/expanse/nine_b.sb        # after the one-node job has written its rows
 #     sbatch --nodes=4 experiments/expanse/nine_b.sb
 #
-# (`go.sh nine_b` submits the three, the two larger with afterok on the first.) Each job runs nine_b.py once per batch in BATCHES (rows per GPU), with activation
+# (`go.sh nine_b` submits the three, the two larger with afterok on the first, each with --gpus=h100:<4 x nodes>:
+# Expanse takes only --gpus, the total over the job's nodes, not --gpus-per-node.) Each job runs nine_b.py once per batch in BATCHES (rows per GPU), with activation
 # checkpointing on; each run adds one row to results/expanse/nine_b.json, or an error row if the batch did not fit. On
 # more than one node each batch runs twice, sharded over all GPUs (FSDP) and within each node (HSDP), so the job shows
 # whether the network between nodes or the sharding is the limit. Settings (environment variables, `export` them or
@@ -27,7 +28,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=32
-#SBATCH --gpus-per-node=h100:4
+#SBATCH --gpus=h100:4
 #SBATCH --time=03:00:00
 #SBATCH --output=logs/expanse/%x-%j.out
 set -uo pipefail
