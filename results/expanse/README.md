@@ -273,7 +273,29 @@ first 5) and 72.9% of tasks (79.8%). Bits per byte on the held-out targets:
   the search often finds an entry closer to the code in the task's context.
 - Neither model was trained with entries in its context. One seed, 0.1B.
 
-## 9. Next
+## 9. The curve at 0.1B (job 56082581, `text_100m.json`)
+
+The study's 0.1B runs: 1,468 steps of 262,144 tokens (0.38B tokens, 4.0 per ExeaLM parameter), each model at the rate
+its learning-rate check chose, the last 10% on the anneal mix, 3 seeds. Every row read alone, mean of the 18 held-out
+sets:
+
+| Model | Bits per byte | Per seed |
+|---|---|---|
+| ExeaLM, one TONN layer in the middle, no streams | 1.1496 | 1.1485, 1.1501, 1.1502 |
+| **ExeaLM, one TONN layer in the middle, streams in the last 20% (the study's)** | **1.1566** | 1.1549, 1.1574, 1.1575 |
+| ExeaLM, a TONN layer every fourth layer, streams (the plan before 26 November) | 1.1685 | 1.1685, 1.1689, 1.1681 |
+| Qwen3.5-style | 1.1904 | 1.1917, 1.1906, 1.1890 |
+| Plain Llama | 1.1995 | 1.2010, 1.1981, 1.1994 |
+
+- The study's ExeaLM is ahead of the Qwen3.5-style model on all 54 set-and-seed pairs, by 0.024 to 0.061 (0.034 on
+  the mean), and of the plain Llama on all 54, by 0.033 to 0.065.
+- The lead is half what it was after 49M tokens (0.072 between the same layouts, sections 4-5). The 0.25B runs show the
+  same in training: 0.072 at step 500, 0.039 at step 1,000. The long pair (111 tokens per parameter) tests whether the
+  lead keeps shrinking with training.
+- The new layout beats the old on all 54 pairs (by 0.006 to 0.024). Streams cost 0.007 on windows read alone here,
+  against 0.015 in the shorter test.
+
+## 10. Next
 
 The learning-rate checks (`go.sh lr`), the ablations at 0.1B (`ablate.sb`), and the compile check
 (`compile_check.sb`), then the curve.
