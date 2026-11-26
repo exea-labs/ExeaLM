@@ -198,15 +198,16 @@ def pack_tokens(data):
 
 
 def save_minutes(preset, model, a, steps, check):
-    """Minutes between checkpoints (train.sb's SAVE_MIN). Checkpoints with their optimizer state are large (12 bytes
-    a parameter: 35 GB at 3B) and KEEP is a 100 GB home by default, so only runs long enough to lose much to a crash
-    write them on a timer: none for learning-rate checks and runs under 8 hours, every 2 hours at 3B, else every hour.
-    A job that reaches its time limit writes one either way, so every run can continue."""
+    """Minutes between checkpoints (train.sb's SAVE_MIN): every 30 minutes for runs of an hour or more, every hour at
+    3B (35 GB a checkpoint), none for learning-rate checks and shorter runs. KEEP (runs/) is a link to the project's
+    Lustre space: on 26 November the 100 GB home filled up with checkpoints and models, every job's next log write
+    failed, and nine runs died within two minutes; the 0.5B runs, which checkpointed only at the end, lost 3.3 hours
+    each. A job that reaches its time limit writes one either way, so every run can continue."""
     if check:
         return 0
     gpus = a.gpus or SIZES[preset]["gpus"]
     hours = cost(preset, model, measured([])[0], a, steps * STEP_TOKENS) / gpus     # wall-clock, at the MI300X rates
-    return 120 if preset == "3b" else 60 if hours > 8 else 0
+    return 60 if preset == "3b" else 30 if hours >= 1 else 0
 
 
 def time_limit(preset, model, a, steps):

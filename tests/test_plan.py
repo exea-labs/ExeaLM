@@ -124,8 +124,13 @@ def test_every_run_is_a_whole_number_of_swarms_and_passes_per_step():
         assert f"SBATCH_JOB_NAME=exealm-{name} " in text                  # the job is named after its run
         hh = int(text.split("SBATCH_TIMELIMIT=")[1].split(":")[0])        # a limit sized to the run, not always 48 h
         assert 1 <= hh <= 48 and (hh == 48) == (preset == "3b")
-        save = int(text.split("SAVE_MIN=")[1].split()[0])                # checkpoints on a timer only where they pay
-        assert save == (120 if preset == "3b" else 60 if "_111x_" in name else 0), (name, save)
+        save = int(text.split("SAVE_MIN=")[1].split()[0])                # every run of an hour or more checkpoints
+        if preset == "3b":
+            assert save == 60, (name, save)
+        elif preset != "100m" or "_111x_" in name:                        # an hour or more: every 30 minutes
+            assert save == 30, (name, save)
+        else:                                                             # 0.1B on the curve: under an hour or about
+            assert save in (0, 30), (name, save)
     memory = printed(["--run", "exealm_3b_4.1x_s0", "--lr", "1e-3", "--variant", "memory"])
     assert "--config" not in memory.split('ARGS="')[1].split('"')[0]
     with pytest.raises(SystemExit, match="needs --lr"):
