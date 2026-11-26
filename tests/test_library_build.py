@@ -96,6 +96,22 @@ def test_topics_come_from_packs_records_and_text_files_without_duplicates(tmp_pa
     assert lb.main(["topics", wiki_pack, "--tokenizer", tokenizer, "--shuffle", "--limit", "3", "--out", out]) == picked
 
 
+def test_grounded_topics_keep_their_source_and_entries_are_written_from_it(tmp_path, tokenizer, wiki_pack):
+    # Written from a title alone, a 30B model invented a baseball record, a hurricane's dates and a lab for niche
+    # topics; with --source_tokens each entry is written from the start of the topic's own document.
+    out = str(tmp_path / "topics.jsonl")
+    got = lb.main(["topics", wiki_pack, "--tokenizer", tokenizer, "--source_tokens", "64", "--out", out])
+    assert got == WIKI_TOPICS
+    sources = lb.read_sources(out)
+    assert list(sources) == WIKI_TOPICS and lb.read_topics(out) == WIKI_TOPICS
+    assert all(len(v) > len(k) and k in v for k, v in sources.items())  # the document's text, which names the topic
+    chat = lb.messages_for(WIKI_TOPICS[0], "en", 80, 200, sources[WIKI_TOPICS[0]])
+    assert sources[WIKI_TOPICS[0]] in chat[1]["content"] and "only facts stated in the source" in chat[1]["content"]
+    assert "source" in chat[0]["content"]
+    plain = lb.messages_for(WIKI_TOPICS[0], "en", 80, 200)
+    assert "<<<" not in plain[1]["content"]                              # without a source: the prompt as before
+
+
 def test_end_to_end_the_pack_is_a_library_the_datastore_reads(tmp_path, tokenizer, wiki_pack):
     (tmp_path / "more.txt").write_text("\n".join(f"Mock subject {i}" for i in range(30)) + "\n", encoding="utf-8")
     topics = str(tmp_path / "topics.txt")

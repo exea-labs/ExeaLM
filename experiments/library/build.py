@@ -62,6 +62,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 
 # Change a version whenever its prompt changes, so a pack can tell entries and tasks apart
 PROMPT_VERSION = "v1"                   # text entries
+GROUNDED_PROMPT_VERSION = "v2-grounded" # text entries written from an excerpt of the topic's own document
 CODE_PROMPT_VERSION = "code-v1"         # code entries
 MORPH_PROMPT_VERSION = "morph-v1"       # morph tasks
 DEFAULT_TOKENIZER = "results/tokenizer/bpe32k"
@@ -363,23 +364,34 @@ def cmd_topics(a):
         found += code_topics((text for s in a.sources if is_data(s)
                               for _, text in documents(s, tok, peek, a.min_doc_tokens, a.max_docs, a.seed)), a.min_docs)
     else:
+        if a.source_tokens:                       # keep the start of each document, to write its entry from
+            peek = max(peek, a.source_tokens)
         for s in a.sources:
             if not is_data(s):
                 found += read_lines(s)                                # the user's own topics, taken as they are
                 continue
             for title, text in documents(s, tok, peek, a.min_doc_tokens, a.max_docs, a.seed):
-                found.append(title.strip() if title and title.strip() else topic_from_text(text, a.max_words))
-    seen, topics = set(), []
-    for t in found:
+                t = title.strip() if title and title.strip() else topic_from_text(text, a.max_words)
+                found.append((t, text) if a.source_tokens else t)
+    seen, topics, source = set(), [], {}
+    for item in found:
+        t, text = item if isinstance(item, tuple) else (item, None)
         t = " ".join((t or "").split())
         if t and topic_key(t) not in seen:
             seen.add(topic_key(t))
             topics.append(t)
+            source[t] = text
     if a.shuffle:
         random.Random(a.seed).shuffle(topics)
     if a.limit:
         topics = topics[:a.limit]
-    write_lines(a.out, topics)
+    if a.source_tokens:
+        os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
+        with open(a.out, "w", encoding="utf-8", newline="\n") as f:
+            for t in topics:
+                f.write(json.dumps(dict(topic=t, source=source.get(t) or ""), ensure_ascii=False) + "\n")
+    else:
+        write_lines(a.out, topics)
     print(f"{len(topics)} topics -> {a.out}")
     return topics
 
@@ -429,6 +441,20 @@ PROMPT = "\n".join([
     "",
     "If you know nothing reliable about the topic, write only: UNKNOWN",
 ])
+
+GROUNDED_SYSTEM = ("You write entries for a reference library that a small language model searches while it reads. "
+                   "You write only from the source text you are given: every fact in the entry is stated in it.")
+GROUNDED_PROMPT = PROMPT.replace(
+    "Topic: {topic}\n",
+    "Topic: {topic}\n\nSource, the start of the document this topic comes from:\n<<<\n{source}\n>>>\n").replace(
+    "Write an encyclopedia entry about this topic in {language}, {length}.",
+    "Write an encyclopedia entry about this topic in {language}, {length}, using only facts stated in the source. "
+    "Leave out anything the source does not say, even if you believe it: no outside numbers, dates, names or places.").replace(
+    "- Give the key facts, with numbers, dates, places and names.",
+    "- Give the key facts the source states, with its numbers, dates, places and names.").replace(
+    "If you know nothing reliable about the topic, write only: UNKNOWN",
+    "If the source says too little to write the entry, write only: UNKNOWN")
+assert GROUNDED_PROMPT.count("{source}") == 1
 
 CODE_SYSTEM = ("You write entries for a code reference library that a small language model searches while it writes "
                "code. Be exact and brief, and show only code you are sure is correct.")
@@ -521,10 +547,16 @@ def language_name(lang):
     return {"ja": "Japanese", "en": "English"}.get(lang) or LANG_NAMES.get(lang) or lang.capitalize()
 
 
-def messages_for(topic, lang, min_words, max_words):
-    """The chat for one text topic. Japanese length is in characters, about two per English word."""
+def messages_for(topic, lang, min_words, max_words, source=None):
+    """The chat for one text topic. Japanese length is in characters, about two per English word. source: an excerpt
+    of the topic's own document; the entry is then written from it alone (written from the title alone, a 30B model
+    invented records, dates and lab names for niche topics)."""
     length = (f"{2 * min_words} to {2 * max_words} characters long" if lang == "ja"
               else f"{min_words} to {max_words} words long")
+    if source:
+        return [{"role": "system", "content": GROUNDED_SYSTEM},
+                {"role": "user", "content": GROUNDED_PROMPT.format(topic=topic, source=source,
+                                                                   language=language_name(lang), length=length)}]
     return [{"role": "system", "content": SYSTEM},
             {"role": "user", "content": PROMPT.format(topic=topic, language=language_name(lang), length=length)}]
 
@@ -914,8 +946,23 @@ def make_backend(a):
 
 # Writing entries and tasks
 
+def read_sources(path):
+    """{topic: source excerpt} of a topics .jsonl written by `topics --source_tokens N`, else {}."""
+    if not path.endswith(".jsonl"):
+        return {}
+    out = {}
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            if line.strip():
+                r = json.loads(line)
+                out.setdefault(r["topic"], r.get("source") or "")
+    return out
+
+
 def read_topics(path):
-    """The topics of a topics file, first of each duplicate kept."""
+    """The topics of a topics file (one per line, or a .jsonl of {"topic", "source"}), first of each duplicate kept."""
+    if path.endswith(".jsonl"):
+        return list(read_sources(path))
     seen, out = set(), []
     for t in read_lines(path):
         if topic_key(t) not in seen:
@@ -1002,14 +1049,17 @@ def cmd_write(a):
             return [dict(topic=t, entry=entry, qa=[], model=model, prompt_version=CODE_PROMPT_VERSION, lang=tag,
                          kind="code", code=code)], []
     else:
+        sources = read_sources(a.topics)
+        version = GROUNDED_PROMPT_VERSION if sources else PROMPT_VERSION
+
         def make_chat(t):
-            return messages_for(t, lang_of(t, a.lang), a.min_words, a.max_words)
+            return messages_for(t, lang_of(t, a.lang), a.min_words, a.max_words, sources.get(t))
 
         def judge(t, reply, model):
             entry, qa, why = parse_output(reply, a.min_qa, a.max_qa, a.min_entry_words)
             if why:
-                return [], [dict(topic=t, reason=why, reply=reply, model=model, prompt_version=PROMPT_VERSION)]
-            return [dict(topic=t, entry=entry, qa=qa, model=model, prompt_version=PROMPT_VERSION,
+                return [], [dict(topic=t, reason=why, reply=reply, model=model, prompt_version=version)]
+            return [dict(topic=t, entry=entry, qa=qa, model=model, prompt_version=version,
                          lang=lang_of(t, a.lang), kind="text")], []
     return run_batches(a, todo, make_chat, judge, "topics")
 
@@ -1315,6 +1365,9 @@ def main(argv=None):
     t.add_argument("--peek_tokens", type=int, default=0,
                    help="tokens decoded from the start of each packed document (0: 64 for text, 4096 for code)")
     t.add_argument("--min_doc_tokens", type=int, default=0, help="skip packed documents shorter than this (stubs)")
+    t.add_argument("--source_tokens", type=int, default=0,
+                   help="text: also keep the first N tokens of each topic's document, written as a .jsonl that `write` "
+                        "grounds each entry in (use a .jsonl --out)")
     t.add_argument("--max_docs", type=int, default=0,
                    help="read a seeded random sample of this many documents per packed source (0: all of them)")
     t.add_argument("--max_words", type=int, default=8, help="text: longest topic taken from a first line")
