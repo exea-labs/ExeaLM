@@ -239,6 +239,9 @@ def command(run, preset, model, seed, a, steps, lr=None, check=False):
         args.append("--model llama" + comp)
     elif model == "qwen":
         args.append(f"--model llama --config experiments/expanse/qwen_{preset}.json" + comp)
+        if preset == "3b":                          # the flash-linear-attention kernel for its DeltaNet layers: the
+            args.append("--fla 1")                  # plain-PyTorch form took 13.1 s a step (job 56081618); the curve
+                                                    # runs had started without it (results/expanse/fla_check.json)
     else:
         args.append("--search 0" + (" --config experiments/expanse/exealm_core.json" if a.variant == "core" else ""))
     if preset == "3b" and gpus > 1:                 # AdamW's state split over the GPUs: without it a 3B run ran out

@@ -1,0 +1,19 @@
+#!/bin/bash
+# The flash-linear-attention kernel against our chunk_gated_delta for the Qwen3.5-style model: same loss and gradients,
+# and the speed-up (experiments/expanse/fla_check.py). One H100 on the shared partition, a few minutes:
+#
+#     sbatch experiments/expanse/fla_check.sb
+#SBATCH --job-name=exealm-fla
+#SBATCH --partition=nairr-gpu-shared
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=8
+#SBATCH --gpus=h100:1
+#SBATCH --time=00:30:00
+#SBATCH --output=logs/expanse/%x-%j.out
+set -uo pipefail
+source "$SLURM_SUBMIT_DIR/experiments/expanse/env.sh"                 # the exealm environment
+export PYTHONUNBUFFERED=1
+cd "$SLURM_SUBMIT_DIR"
+nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
+python experiments/expanse/fla_check.py

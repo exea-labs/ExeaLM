@@ -23,6 +23,16 @@ import torch.nn.functional as F
 
 from .common import RMSNorm
 
+# pretrain --fla 1: windows read alone on an NVIDIA GPU go through the flash-linear-attention Triton kernel
+# (fla.ops.gated_delta_rule.chunk_gated_delta_rule, the one Qwen3-Next uses) instead of chunk_gated_delta. Same
+# recurrence; on an H100 it is several times as fast (results/expanse/fla_check.json). Streams keep chunk_gated_delta.
+USE_FLA = False
+
+
+def fla_kernel():
+    from fla.ops.gated_delta_rule import chunk_gated_delta_rule
+    return chunk_gated_delta_rule
+
 
 def gated_delta_reference(q, k, v, g, beta):
     """The recurrence, one token at a time. q, k (B, H, T, Dk); v (B, H, T, Dv); g (B, H, T) log alpha <= 0;
@@ -130,6 +140,10 @@ class GatedDeltaNet(nn.Module):
                                          state=None if prev is None else prev["state"], return_state=True)
             stream[key] = dict(tail=z[:, -P:], state=state)
             o = o.transpose(1, 2)
+        elif USE_FLA and x.is_cuda:                                         # (B, T, H, D) layout, model dtype, q already scaled
+            t = lambda u: u.transpose(1, 2).contiguous()
+            o, _ = fla_kernel()(t(q).to(z.dtype), t(k).to(z.dtype), t(v).to(z.dtype), t(g), t(beta).to(z.dtype),
+                                scale=1.0)
         else:
             o = chunk_gated_delta(q, k, v.float(), g, beta, self.chunk).transpose(1, 2)   # (B, T, H, D)
         o = self.onorm(o.to(x.dtype)) * F.silu(self.gate(h)).view(Bn, T, self.H, self.D)

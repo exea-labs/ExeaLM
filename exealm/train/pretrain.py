@@ -305,6 +305,9 @@ def main(argv=None):
     ap.add_argument("--out", default="runs/pretrain")
     ap.add_argument("--save_every", type=int, default=0, help="write <out>/ckpt.pt every this many steps (0: never)")
     ap.add_argument("--save_minutes", type=float, default=0, help="also write it every this many minutes (0: never)")
+    ap.add_argument("--fla", type=int, default=0,
+                    help="1: the Qwen3.5-style DeltaNet layers use the flash-linear-attention kernel on NVIDIA GPUs "
+                         "(pip install flash-linear-attention); same recurrence, several times as fast")
     ap.add_argument("--zero", type=int, default=0,
                     help="1: split AdamW's state between the processes (ZeRO stage 1), for models whose optimizer "
                          "state does not fit beside them on each GPU (3B on 80 GB); no effect on one process")
@@ -333,6 +336,10 @@ def main(argv=None):
     rank, world, dev = dist_setup(pick_device(a.device))
     if a.tf32 and dev.type == "cuda":
         torch.backends.cuda.matmul.allow_tf32 = True
+    if a.fla:
+        from ..model import delta
+        delta.fla_kernel()                          # fails here, before any training, without flash-linear-attention
+        delta.USE_FLA = True
     use_amp = a.amp == "bf16" or (a.amp == "auto" and dev.type == "cuda")
     amp = dict(device_type=dev.type, dtype=torch.bfloat16) if use_amp else None
     data = open_data(a.data)
