@@ -3,22 +3,22 @@
 At the end of the NAIRR hours, one report makes the case that a 9B ExeaLM, specialized for research and code, is worth
 funding: for investors and for grant programs. Every number in it comes from a run in `results/expanse/`, with its
 seeds and setting stated. This page tracks which runs feed which claim, so nothing the report needs is left unrun.
-Status as of 25 November 2026, night.
+Status as of 26 November 2026, 2 a.m.
 
 | # | Claim | What measures it | Runs | Status |
 |---|---|---|---|---|
 | 1 | The code is correct and trains at scale on H100s | correctness against the CPU, exact resume, 1 and 4 GPUs, 4-GPU speed-up 3.68 | first job | **done** (results §1) |
 | 2 | ExeaLM beats the strongest hybrid design (Qwen3.5-style) under the same conditions | bits per byte on 18 held-out sets, 3 seeds | lead check 0.1B | **done**: 1.393 against 1.420, all 54 set-seed pairs |
-| 3 | TONN layers are the reason, not borrowed tricks | ExeaLM and the Qwen3.5-style model with and without value residual and XSA | ablations 0.1B | **done**: ExeaLM ahead both ways, all 18 sets |
-| 4 | The lead holds as the model grows | the gap at 0.1B, 0.25B, 0.5B and 3B | the curve, the 3B pair | running (0.1B); 0.25B, 0.5B queued; 3B after its rate checks |
-| 5 | The lead holds when trained as long as the 9B would be | the gap at 111 tokens per parameter against 4.1 | the long pair (0.1B) | queued |
+| 3 | TONN layers beat Gated DeltaNet layers as a hybrid's non-attention layer | ExeaLM and the Qwen3.5-style model with and without value residual and XSA | ablations 0.1B | **done** for the every-fourth layout: ExeaLM ahead both ways, all 18 sets. With one TONN layer in the middle, most of the lead over the Qwen3.5-style model comes from the attention layers (13 of 14); a Llama with all four attention changes is 0.0009 behind it (results §5). The report must not say the TONN layer is the reason for the lead |
+| 4 | The lead holds as the model grows | the gap at 0.1B, 0.25B, 0.5B and 3B | the curve, the 3B pair | baselines done or running; ExeaLM (one TONN layer in the middle, streams) 0.1B running, 0.25B running and queued, 0.5B queued, 3B running (about 80 hours) |
+| 5 | The lead holds when trained as long as the 9B would be | the gap at 111 tokens per parameter against 4.1 | the long pair (0.1B) | Qwen3.5-style running; ExeaLM queued |
 | 6 | Specialized for research and code | bits per byte on research code, code, papers, math at every size; benchmarks at 0.5B and 3B | curve, 3B pair, `eval.sb` | after training |
 | 7 | ExeaLM reaches the same quality for less compute | compute multiplier against the Qwen3.5-style model (FLOPs). Quote it in FLOPs only: the curve's Qwen3.5-style runs used our plain-PyTorch DeltaNet kernel, 2.8 to 3.8 times slower than the fla kernel (`results/expanse/README.md` section 6), so a GPU-hours multiplier from their measured speed would flatter ExeaLM | curve, `report.py` | after training |
 | 8 | Long documents: ExeaLM uses what came before | bits per byte by window, 8 windows read as a stream | `eval.sb` (stream_eval) | after training |
 | 9 | A 9B can be trained, and what it costs | 9B speed and memory on 1, 2 and 4 nodes; price for 1T tokens | `nine_b.sb`, `report.py` | to run (about 33 GPU-hours); estimate now about 101,000 GPU-hours |
-| 10 | A library distilled from a strong model makes ExeaLM better at research and code | bits per byte on held-out library tasks with the library attached, removed, or the right entry pasted | library build (Qwen3-30B-A3B), `graft.py`, post-training, `experiments/library/score.py` | library to build (about 6-10 GPU-hours); post-training after the curve |
+| 10 | A library distilled from a strong model makes ExeaLM better at research and code | bits per byte on held-out library tasks with the library attached, removed, or the right entry pasted | library build (Qwen3-30B-A3B), `graft.py`, post-training, `experiments/library/score.py` | library **built** (18,545 entries, 7.9M tokens, 67,119 tasks; `exea-labs/exealm-library`); post-training at 0.1B next |
 | 11 | Agents on a board beat a single bigger model | 3 agents at 0.1B sharing a board against one 0.25B model (2.6 times each agent), on tasks spread over more context than one window holds: long papers, multi-file code | `graft.py` with AG slots, post-training in swarms, a multi-window task set | to design and run after the curve |
-| 12 | The layout is the best ExeaLM | fewer TONN layers against the strong attention baseline | layout test 0.1B | running |
+| 12 | The layout is the best ExeaLM | 12 TONN layouts at 0.1B | layout tests 0.1B | **done**: one TONN layer at the middle layer, 1.348 (3 seeds) against 1.376 for every fourth layer; now the study's ExeaLM |
 
 ## What the report will not claim
 
