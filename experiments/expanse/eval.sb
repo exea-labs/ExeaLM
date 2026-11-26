@@ -17,6 +17,7 @@
 #SBATCH --time=12:00:00
 #SBATCH --output=logs/expanse/%x-%j.out
 set -uo pipefail
+source "$SLURM_SUBMIT_DIR/experiments/expanse/env.sh"                 # the exealm environment
 export PYTHONUNBUFFERED=1                                              # every print reaches the job log at once
 cd "$SLURM_SUBMIT_DIR"
 KEEP=${KEEP:-$PWD/runs}

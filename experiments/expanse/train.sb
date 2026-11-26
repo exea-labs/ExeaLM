@@ -50,6 +50,7 @@
 #SBATCH --time=48:00:00
 #SBATCH --output=logs/expanse/%x-%j.out
 set -uo pipefail
+source "$SLURM_SUBMIT_DIR/experiments/expanse/env.sh"                 # the exealm environment
 export PYTHONUNBUFFERED=1                                              # every print reaches the job log at once
 : "${RUN:?set RUN to the name of the run}" "${ARGS:?set ARGS to the arguments of exealm.train.pretrain}"
 REPO=$SLURM_SUBMIT_DIR
