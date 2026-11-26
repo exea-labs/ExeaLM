@@ -1,8 +1,29 @@
 # The scaling study on SDSC Expanse: results
 
-Results of the NAIRR Pilot allocation (2,000 GPU-hours on NVIDIA H100s, project `fli100`), in the order they came in.
-The plan is [docs/budget.md](../../docs/budget.md); how every run is submitted, [docs/runbook.md](../../docs/runbook.md).
-Raw files are in this folder and on Hugging Face (`exea-labs/exealm-nairr-runs`, `results/expanse/`).
+Results of the NAIRR Pilot allocation (2,000 GPU-hours on NVIDIA H100s, project `fli100`). The summary first; the
+sections after it are the record, in the order results came in, with what each does not show. The plan is
+[docs/budget.md](../../docs/budget.md); every command, [docs/runbook.md](../../docs/runbook.md); the decisions,
+[docs/decisions.md](../../docs/decisions.md). The finished models are public on Hugging Face:
+[exea-labs/exealm-nairr](https://huggingface.co/exea-labs/exealm-nairr).
+
+## Summary (26 November 2026, 14:30; the 0.5B and 3B pairs are training)
+
+ExeaLM: attention layers with a gate, QK-norm, value residual and XSA, one TONN layer (searched signal-processing
+circuits) at the middle layer, and streams of four windows in the last 20% of training. Every comparison below is at
+the same size, data, tokens and recipe; bits per byte on held-out text, lower is better.
+
+| What | Result | Basis | Section |
+|---|---|---|---|
+| Ahead of the Qwen3.5 design | 0.1B: 1.157 against 1.190; 0.25B: 1.014 against 1.026 (plain Llama 1.200, 1.041) | 3 seeds, 18 held-out sets, all 54 set-and-seed pairs at each size | 9, 13 |
+| Long documents | 4,096 tokens read as a stream: 0.1B 1.096 against 1.157; 0.25B 0.955 against 0.997 | 3 seeds, all 54 pairs at each size | 10, 15 |
+| Learns more per token | the Qwen3.5-style model needs 1.33 to 1.41 times ExeaLM's steps to match it at 111 tokens per parameter (the 9B's) | in training, 1 seed; a second seed is running | 12 |
+| A library distilled from a larger model | held-out research questions 1.645 to 0.590 with the library and a BM25 search; 0.110 to 0.116 ahead of the Qwen3.5-style model with the same library | 3 seeds, 0.1B | 7, 8, 11 |
+| Against the released Qwen3.5-9B | 0.1B ExeaLM with its library 0.590 against Qwen3.5-9B without one 1.031 on held-out research questions (a system against a model; with the same library Qwen3.5-9B scores 0.313). On text alone Qwen3.5-9B is far ahead (0.674 against 1.011 for ExeaLM 0.25B) | 1 seed | 18 |
+| Where the TONN layer goes | one TONN layer at the middle layer beats one in every fourth layer (1.348 against 1.376, 54 of 54 pairs); one at layer 0 costs 0.038 | 12 layouts, 0.1B | 4, 5 |
+| What the TONN layer itself adds | small: against the same model with attention in its place, 1.3484 against 1.3493 at 0.1B (3 seeds) and 1.0761 against 1.0785 in the curve run (1 seed); 3 seeds at 0.1B and 0.25B and the long run are being scored | | 5 |
+| The 9B, priced | 206 effective TFLOP/s per H100 on one node; about 75,000 GPU-hours for 1T tokens | 1 node; 2 and 4 nodes measured, being written up | 16 |
+| Did not work | ExeaLM's own retrieval circuit (0.1% of questions find their entry); three 0.1B agents sharing a board lose to one model reading as a stream | | 7, 14 |
+| Void | the first 0.5B runs and the 3B pair's first 1,100 steps: a multi-GPU bug skipped gradient averaging; rerun with the fix | | 17 |
 
 ## 1. The first job (job 56074172, 25 November 2026, 56 minutes on one node)
 
@@ -318,10 +339,10 @@ Bits per byte, mean of windows 1 to 7 (window 0 has nothing before it):
   1.238 alone). The Qwen3.5-style model gains 0.073 from streaming untrained, ExeaLM without stream training 0.055,
   ExeaLM with it 0.099.
 
-## 11. The library as trained RAG at 0.1B, 3 seeds (`library_rag_100m*.jsonl`)
+## 11. The library as trained RAG at 0.1B, 3 seeds (`library_rag_100m_s0.jsonl`, `_s1`, `_s2`)
 
 `experiments/post/rag_post.sh`, once from each of the three seeds of the curve's 0.1B models (`TAG=100m_s0`,
-`100m_s1`, and seed 2 as `100m`): the same post-training as section 7, except that half of the library share is the
+`100m_s1` and `100m_s2`; runs `ragpost_<model>_100m_s<seed>`): the same post-training as section 7, except that half of the library share is the
 training items with the entry a BM25 search picks placed before them (`experiments/library/rag_pack.py`), as at test
 time. Bits per byte on the held-out topics, mean of 3 seeds:
 
@@ -436,7 +457,7 @@ bf16. Speed of the full training step (forward, backward, AdamW), effective TFLO
 - Memory is at 40 of 80 GB, and speed still rises with the batch: 16 and 32 rows per GPU, and 2 and 4 nodes, are queued
   (jobs 56084546-8). Those rows replace this estimate.
 
-## 17. A bug in multi-GPU training: the 0.5B and 3B runs are void (fixed 26 November, 08:30)
+## 17. A bug in multi-GPU training: the first 0.5B and 3B runs are void (fixed 26 November, 08:30)
 
 In `exealm/train/pretrain.py` the gradient-accumulation loop's variable (`for k in range(a.accum)`) was overwritten on
 its first line by the stream factor (`k = a.stream if ... else 1`), and `no_sync()` tested that overwritten `k`. On more
