@@ -30,18 +30,21 @@ export SBATCH_ACCOUNT=${SBATCH_ACCOUNT:-fli100}
 mkdir -p runs/_graft logs/expanse results/expanse
 
 GRAFT=$PWD/runs/_graft/exealm_${TAG}_ag.pt
-python -m exealm.train.graft --ckpt "$SMALL/model.pt" --add "AG:$AG" \
-  --set '{"swarm_size": 3, "board_order": "doc"}' --out "$GRAFT"
+# The graft runs on a compute node: the login node caps a process's memory (it could not hold a 0.1B model)
+jg=$(sbatch --parsable -p nairr-gpu-shared --gpus=h100:1 --ntasks-per-node=1 --cpus-per-task=4 -t 00:20:00 \
+  -J "exealm-graft-$TAG" -o "logs/expanse/%x-%j.out" --wrap "source experiments/expanse/env.sh; \
+  python -m exealm.train.graft --ckpt $SMALL/model.pt --add AG:$AG --set '{\"swarm_size\": 3, \"board_order\": \"doc\"}' --out $GRAFT")
+echo "graft: $jg -> $GRAFT"
 
 COMMON="--data data/mix_pretrain.json --val data/mix_pretrain_val.json --seq 512 --accum 2 --steps $STEPS \
 --warmup $((STEPS / 10)) --lr $LR --seed 0 --eval_every 200 --eval_batches 8"
 submit() {          # submit <run> <args>: one GPU of the shared partition, through train.sb
   RUN=$1 ARGS="$2 $COMMON" SAVE_MIN=0 SBATCH_JOB_NAME=exealm-$1 SBATCH_TIMELIMIT=02:00:00 \
     SBATCH_PARTITION=nairr-gpu-shared SBATCH_GPUS=h100:1 SBATCH_EXTRA="--ntasks-per-node=1" \
-    sbatch --parsable --ntasks-per-node=1 experiments/expanse/train.sb
+    sbatch --parsable ${DEP:+--dependency=$DEP} --ntasks-per-node=1 experiments/expanse/train.sb
 }
 # --batch 63: a multiple of the swarm size, or the loader and the board fall back to swarms of 1 without a word
-j1=$(submit "boardpost_ag_$TAG" "--search 0 --init $GRAFT --swarm_policy split --batch 63")
+j1=$(DEP=afterok:$jg submit "boardpost_ag_$TAG" "--search 0 --init $GRAFT --swarm_policy split --batch 63")
 j2=$(submit "boardpost_solo_$TAG" "--search 0 --init $PWD/$SMALL/model.pt --batch 64")
 j3=$(submit "boardpost_exealm_big" "--search 0 --init $PWD/$BIG/model.pt --batch 64")
 j4=$(submit "boardpost_qwen_big" "--model llama --init $PWD/$QWEN/model.pt --batch 64")

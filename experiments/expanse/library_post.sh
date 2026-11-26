@@ -47,17 +47,20 @@ print("data/mix_library_post.json:", {k: v["weight"] for k, v in mix["sources"].
 PY
 
 GRAFT=$PWD/runs/_graft/exealm_${TAG}_rg.pt
-python -m exealm.train.graft --ckpt "$EXEALM/model.pt" --add RG:1 --set '{"rag_key_dim": 128, "rag_lexical": 128}' \
-  --out "$GRAFT"
+# The graft runs on a compute node: the login node caps a process's memory (it could not hold a 0.1B model)
+jg=$(sbatch --parsable -p nairr-gpu-shared --gpus=h100:1 --ntasks-per-node=1 --cpus-per-task=4 -t 00:20:00 \
+  -J "exealm-graft-$TAG" -o "logs/expanse/%x-%j.out" --wrap "source experiments/expanse/env.sh; \
+  python -m exealm.train.graft --ckpt $EXEALM/model.pt --add RG:1 --set '{\"rag_key_dim\": 128, \"rag_lexical\": 128}' --out $GRAFT")
+echo "graft: $jg -> $GRAFT"
 
 COMMON="--data data/mix_library_post.json --val data/mix_pretrain_val.json --seq 512 --batch 64 --accum 2 \
 --steps $STEPS --warmup $((STEPS / 10)) --lr $LR --seed 0 --eval_every 200 --eval_batches 8"
 submit() {          # submit <run> <args>: one GPU of the shared partition, through train.sb
   RUN=$1 ARGS="$2 $COMMON" SAVE_MIN=0 SBATCH_JOB_NAME=exealm-$1 SBATCH_TIMELIMIT=02:00:00 \
     SBATCH_PARTITION=nairr-gpu-shared SBATCH_GPUS=h100:1 SBATCH_EXTRA="--ntasks-per-node=1" \
-    sbatch --parsable --ntasks-per-node=1 experiments/expanse/train.sb
+    sbatch --parsable ${DEP:+--dependency=$DEP} --ntasks-per-node=1 experiments/expanse/train.sb
 }
-j1=$(submit "libpost_rg_$TAG" "--search 0 --init $GRAFT --datastore_data $LIB --datastore_chunks 130000")
+j1=$(DEP=afterok:$jg submit "libpost_rg_$TAG" "--search 0 --init $GRAFT --datastore_data $LIB --datastore_chunks 130000")
 j2=$(submit "libpost_exealm_$TAG" "--search 0 --init $PWD/$EXEALM/model.pt")
 j3=$(submit "libpost_qwen_$TAG" "--model llama --init $PWD/$QWEN/model.pt")
 echo "post-training: libpost_rg_$TAG $j1, libpost_exealm_$TAG $j2, libpost_qwen_$TAG $j3"
