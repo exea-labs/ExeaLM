@@ -1,0 +1,55 @@
+#!/bin/bash
+# Teacher text for distillation into the weights (experiments/distill/teacher_text.py), on 3 GPUs of the shared
+# partition: openings from the training mix, the teacher's continuations (one vLLM process a GPU), a pack, and
+# data/mix_distill_<NAME>.json, the pretraining mix with the teacher text as SHARE of it (default 0.3).
+#
+#     TEACHER=/expanse/lustre/projects/fli100/abhatia7/hf/Qwen3.5-9B-Base NAME=qwen35_9b \
+#         sbatch -A fli100 --export=ALL experiments/distill/distill.sb
+#SBATCH --job-name=exealm-distill
+#SBATCH --partition=nairr-gpu-shared
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=24
+#SBATCH --gpus=h100:3
+#SBATCH --time=08:00:00
+#SBATCH --output=logs/expanse/%x-%j.out
+set -uo pipefail
+cd "$SLURM_SUBMIT_DIR"
+export PYTHONUNBUFFERED=1
+: "${TEACHER:?set TEACHER to the folder of the teacher model}" "${NAME:?set NAME, e.g. qwen35_9b}"
+N=${N:-200000}
+SHARE=${SHARE:-0.3}
+W=/expanse/lustre/projects/fli100/abhatia7/distill/$NAME
+mkdir -p "$W"
+if [ ! -s "$W/prompts.jsonl" ]; then
+  echo "== $(date '+%F %T') $N openings from the training mix"
+  ( source experiments/expanse/env.sh && python experiments/distill/teacher_text.py prompts --n "$N" \
+      --out "$W/prompts.jsonl" ) || exit 1
+fi
+split -n l/3 -d "$W/prompts.jsonl" "$W/part"
+echo "== $(date '+%F %T') continuing them with $TEACHER on 3 GPUs"
+(
+  set +u; module load anaconda3/2021.05/q4munrg > /dev/null 2>&1
+  eval "$(conda shell.bash hook)" && conda activate vllm; set -u
+  for g in 0 1 2; do
+    CUDA_VISIBLE_DEVICES=$g python experiments/distill/teacher_text.py generate --prompts "$W/part0$g" \
+      --model "$TEACHER" --out "$W/teacher$g.jsonl" --seed "$g" > "$W/generate$g.log" 2>&1 &
+  done
+  wait
+)
+tail -n 2 "$W"/generate*.log
+cat "$W"/teacher0.jsonl "$W"/teacher1.jsonl "$W"/teacher2.jsonl > "$W/teacher.jsonl"
+echo "== $(date '+%F %T') $(wc -l < "$W/teacher.jsonl") continuations; packing"
+source experiments/expanse/env.sh
+python experiments/distill/teacher_text.py pack --texts "$W/teacher.jsonl" --out "data/distill/$NAME/train" || exit 1
+python - "$NAME" "$SHARE" <<'PY'
+import json, sys
+name, share = sys.argv[1], float(sys.argv[2])
+mix = json.load(open("data/mix_pretrain.json"))
+total = sum(s["weight"] for s in mix["sources"].values())
+mix["sources"][f"teacher_{name}"] = {"paths": f"data/distill/{name}/train", "weight": round(total * share / (1 - share), 3)}
+mix["note"] = f"the pretraining mix with {name}'s continuations of training openings as {share:.0%} of it (experiments/distill)"
+json.dump(mix, open(f"data/mix_distill_{name}.json", "w"), indent=1)
+print(f"data/mix_distill_{name}.json: teacher weight {mix['sources'][f'teacher_{name}']['weight']} of {total + mix['sources'][f'teacher_{name}']['weight']:.2f}")
+PY
+echo "== $(date '+%F %T') done"
