@@ -147,7 +147,7 @@ dog=$!
 wait "$trainer"
 code=$?
 kill "$dog" "$copier" 2>/dev/null
-case $RUN in lr_*) finished "$OUT" && rm -f "$OUT/model.pt" "$OUT/ckpt.pt" ;; esac   # a learning-rate check: its log
+case $RUN in lr_*) finished "$OUT" && rm -f "$OUT/model.pt" "$OUT/ckpt.pt" "$OUT"/ckpt.pt.zero* ;; esac   # a learning-rate check: its log
 copy "$OUT/" "$KEEP/$RUN/" || { echo "COULD NOT COPY THE RUN BACK: $OUT is lost when this job ends"; exit 1; }
 
 cd "$REPO"
@@ -172,7 +172,7 @@ PY
   fi
   if [ "${KEEP_CKPT:-0}" != 1 ]; then              # a finished run needs no optimizer state: free KEEP for the others
     if [[ $KEEP == s3://* ]]; then s3cmd del --quiet "$KEEP/$RUN/ckpt.pt" > /dev/null 2>&1 || true
-    else rm -f "$KEEP/$RUN/ckpt.pt"; fi
+    else rm -f "$KEEP/$RUN/ckpt.pt" "$KEEP/$RUN"/ckpt.pt.zero*; fi                 # with --zero, its parts too
     echo "removed $KEEP/$RUN/ckpt.pt (KEEP_CKPT=1 keeps it)"
   fi
 elif [ $code -ne 0 ]; then

@@ -163,3 +163,21 @@ def test_a_time_limit_stops_both_processes_at_the_same_step(tmp_path):
     full, resumed = torch.load(a / "model.pt", weights_only=False), torch.load(b / "model.pt", weights_only=False)
     for k, v in full["model"].items():
         assert torch.equal(v, resumed["model"][k]), k
+
+
+def test_a_zero_checkpoint_is_saved_in_parts_and_resumes_exactly(tmp_path):
+    # The timed ckpt.pt under --zero: every process writes its own part of AdamW's state (ckpt.pt.zero<rank>), not
+    # gathered on process 0, and a resume reads each part back on its process.
+    a, b = tmp_path / "a", tmp_path / "b"
+    common = ZERO + ["--model", "tonn", "--zero", "1"]
+    run(common + ["--out", str(a)], tmp_path / "wa")
+    run(common + ["--out", str(b), "--stop_at", "3"], tmp_path / "wb1")
+    ck = torch.load(b / "ckpt.pt", weights_only=False)
+    assert ck["opt"] is None and ck["state"]["zero_shards"] == 2
+    parts = [torch.load(b / f"ckpt.pt.zero{r}", weights_only=False) for r in (0, 1)]
+    assert [p["step"] for p in parts] == [3, 3] and all(p["opt"]["state"] for p in parts)
+    run(common + ["--out", str(b), "--resume", "auto"], tmp_path / "wb2")
+    full, resumed = torch.load(a / "model.pt", weights_only=False), torch.load(b / "model.pt", weights_only=False)
+    for k, v in full["model"].items():
+        assert torch.equal(v, resumed["model"][k]), k
+    assert resumed["opt"] is not None                                   # model.pt stays complete in one file

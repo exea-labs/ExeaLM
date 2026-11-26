@@ -234,12 +234,26 @@ def make_optimizer(model, lr, wd, kind="adamw", fused=False):
 
 def save(path, model, opt, step, cfg, kind, state=None):
     """state: what else an exact resume needs (random generators, search, datastore keys, see main()). Written to a
-    temporary file first, so a run killed mid-save never leaves a broken checkpoint behind."""
+    temporary file first, so a run killed mid-save never leaves a broken checkpoint behind. opt None: the optimizer
+    state is saved apart (save_zero_shard)."""
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     tmp = path + ".tmp"
-    torch.save(dict(model=model.state_dict(), opt=opt.state_dict(), step=step, cfg=asdict(cfg), kind=kind,
-                    specs=getattr(model, "specs", None), state=state), tmp)
+    torch.save(dict(model=model.state_dict(), opt=None if opt is None else opt.state_dict(), step=step, cfg=asdict(cfg),
+                    kind=kind, specs=getattr(model, "specs", None), state=state), tmp)
     os.replace(tmp, path)
+
+
+def zero_shard_path(path, rank):
+    return f"{path}.zero{rank}"
+
+
+def save_zero_shard(path, opt, rank, step):
+    """With --zero, each process's own part of AdamW's state, next to the checkpoint. Gathering every part on process 0
+    (consolidate_state_dict) took 14.5 minutes a checkpoint at 3B on four H100s (Expanse jobs 56082571-2), a fifth of
+    the training time at one checkpoint an hour; each process writing its own part takes seconds."""
+    tmp = zero_shard_path(path, rank) + ".tmp"
+    torch.save(dict(opt=opt.optim.state_dict(), step=step, rank=rank), tmp)
+    os.replace(tmp, zero_shard_path(path, rank))
 
 
 def load_model(path, device="cpu"):
@@ -380,7 +394,16 @@ def main(argv=None):
         opt = zero_optimizer(model, a.lr, a.wd, fused=dev.type == "cuda")
     else:
         opt = make_optimizer(model, a.lr, a.wd, a.optimizer, fused=dev.type == "cuda")
-    if ck is not None:
+    if ck is not None and ck["opt"] is None:                            # --zero's parts, one per process
+        n = (ck.get("state") or {}).get("zero_shards", 0)
+        if not is_zero(opt) or n != world:
+            raise ValueError(f"{resume} keeps its optimizer state in {n} parts (--zero 1 on {n} processes): resume it "
+                             f"with --zero 1 on {n} processes, not {world}")
+        part = torch.load(zero_shard_path(resume, rank), map_location="cpu", weights_only=False)
+        if part["step"] != ck["step"] or part["rank"] != rank:
+            raise ValueError(f"{zero_shard_path(resume, rank)} is from step {part['step']}, {resume} from {ck['step']}")
+        opt.optim.load_state_dict(part["opt"])
+    elif ck is not None:
         opt.load_state_dict(ck["opt"])
     warmup = a.warmup if a.warmup is not None else max(1, min(2000, a.steps // 20))
     swarm = cfg.swarm_size if a.model == "tonn" else 1
@@ -506,11 +529,18 @@ def main(argv=None):
         if run is not None and "step" in rec:
             run.log(wandb_record(rec), step=rec["step"])
 
-    def checkpoint(path, step, losses):
+    def checkpoint(path, step, losses, sharded=False):
         """Process 0 writes the full training state: the weights, the optimizer, and everything else the next step
         depends on. Every process draws the same batches, so the one batch sampler's state is everyone's. With --zero
-        every process first sends its part of the optimizer state to process 0 (all call this at the same step)."""
-        if is_zero(opt):
+        (all processes call this at the same step) every process either writes its own part of the optimizer state
+        beside the checkpoint (sharded: the timed ckpt.pt, resumed with the same number of processes) or first sends
+        it to process 0 (model.pt, complete in one file)."""
+        shards = sharded and is_zero(opt)
+        if shards:
+            import torch.distributed as dist
+            save_zero_shard(path, opt, rank, step)
+            dist.barrier()                                  # every part is on disk before ckpt.pt names this step
+        elif is_zero(opt):
             opt.consolidate_state_dict(to=0)
         if rank:
             return
@@ -519,8 +549,9 @@ def main(argv=None):
                      searcher=None if searcher is None else dict(round=searcher.round, born=dict(searcher.born),
                                                                  rng=searcher.rng.getstate()),
                      datastore=None if ds is None else dict(keys=ds.keys.cpu(), refreshed_at=ds.refreshed_at),
-                     losses=[float(l) for l in losses], secs=time.time() - t0, total_steps=a.steps, processes=world)
-        save(path, model, opt, step, cfg, a.model, state)
+                     losses=[float(l) for l in losses], secs=time.time() - t0, total_steps=a.steps, processes=world,
+                     zero_shards=world if shards else 0)
+        save(path, model, None if shards else opt, step, cfg, a.model, state)
 
     start, losses, done_secs = 0, [], 0.0
     if ck is not None:
@@ -655,7 +686,7 @@ def main(argv=None):
                 tick, tick_step = time.time(), n
             stop = not last and (n == a.stop_at or by_signal or by_clock)
             if not last and (stop or want_save or (a.save_every and n % a.save_every == 0)):
-                checkpoint(ckpt_path, n, losses)
+                checkpoint(ckpt_path, n, losses, sharded=True)
                 last_save = time.time()
             if stop:
                 bar.close()
