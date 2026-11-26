@@ -471,7 +471,51 @@ ExeaLM's stream phase changed `k` to 4, which switched the averaging back on for
   (jobs 56086585-90). The 3B pair's checkpoints now take about a minute (each process
   writes its own part of AdamW's state), against 14.5 before.
 
-## 18. Next
+## 18. The bar: the released Qwen3.5-9B-Base on the same text (job 56087492, `external_qwen35_9b_base.json`)
+
+`experiments/external/`: the 512 windows of each held-out set and the library's held-out items, as text, scored by
+`Qwen/Qwen3.5-9B-Base` (Apache-2.0; 32 layers in Qwen3.5's 3:1 Gated DeltaNet / gated attention pattern; trained by
+Alibaba on far more tokens than any model here) through vLLM, and by our seed-0 curve models on the same text. Every
+number is bits over the bytes a model predicts (the window's text but its first token), so tokenizers do not matter.
+Our models' means here (exact bytes, seed 0) differ from sections 9 and 13 (pack-average bytes, 3 seeds) by under 0.004.
+
+| Held-out set | Qwen3.5-9B-Base | ExeaLM 0.25B | Qwen3.5-style 0.25B | ExeaLM 0.1B | ExeaLM 0.25B / Qwen3.5-9B |
+|---|---|---|---|---|---|
+| research_python | 0.467 | 0.659 | 0.672 | 0.761 | 1.41 |
+| code_reasoning | 0.465 | 0.550 | 0.560 | 0.686 | 1.18 |
+| algebraic_stack | 0.685 | 0.897 | 0.905 | 1.015 | 1.31 |
+| pretrain_behaviors | 0.585 | 0.949 | 0.959 | 1.143 | 1.62 |
+| starcoder | 0.565 | 0.871 | 0.882 | 1.014 | 1.54 |
+| stackexchange | 0.608 | 0.952 | 0.965 | 1.082 | 1.57 |
+| pes2o | 0.682 | 0.965 | 0.974 | 1.083 | 1.42 |
+| arxiv | 0.738 | 1.077 | 1.085 | 1.210 | 1.46 |
+| wikipedia_en | 0.727 | 1.199 | 1.208 | 1.356 | 1.65 |
+| megamath | 0.725 | 1.043 | 1.053 | 1.174 | 1.44 |
+| open_web_math | 0.787 | 1.131 | 1.139 | 1.268 | 1.44 |
+| math_reasoning | 0.484 | 0.784 | 0.799 | 0.938 | 1.62 |
+| dclm | 0.891 | 1.322 | 1.331 | 1.456 | 1.48 |
+| txt360_web | 0.841 | 1.265 | 1.275 | 1.404 | 1.50 |
+| fineweb2_ja | 0.845 | 1.204 | 1.223 | 1.343 | 1.43 |
+| wikipedia_ja | 0.815 | 1.294 | 1.319 | 1.454 | 1.59 |
+| txt360_qa | 0.702 | 1.091 | 1.100 | 1.223 | 1.56 |
+| sft_pretrain | 0.517 | 0.939 | 0.955 | 1.115 | 1.82 |
+| **Mean of the 18 sets** | **0.674** | 1.011 | 1.022 | 1.151 | 1.50 |
+
+The library's held-out items (bits per byte on the targets; ExeaLM 0.1B from section 11, 3 seeds, RAG post-training):
+
+| Items | Qwen3.5-9B: nothing, BM25, pasted | ExeaLM 0.1B: nothing, BM25, pasted |
+|---|---|---|
+| Questions | 1.031, 0.313, 0.169 | 1.645, 0.590, 0.405 |
+| Text tasks | 0.498, 0.321, 0.290 | 0.936, 0.739, 0.715 |
+| Code tasks | 0.157, 0.121, 0.131 | 0.448, 0.364, 0.401 |
+
+- This is the bar a 9B ExeaLM is measured against. Our largest finished model (0.25B, 1B tokens) is 1.5 times Qwen3.5-9B's
+  bits per byte on the mean; its nearest set is worked code solutions (0.550 against 0.465, 1.18 times).
+- With the library and a keyword search, the 0.1B ExeaLM is ahead of Qwen3.5-9B without the library on the held-out
+  research questions (0.590 against 1.031). That is a system against a model: given the same library, Qwen3.5-9B
+  scores 0.313.
+
+## 19. Next
 
 The learning-rate checks (`go.sh lr`), the ablations at 0.1B (`ablate.sb`), and the compile check
 (`compile_check.sb`), then the curve.
