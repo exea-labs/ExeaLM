@@ -230,7 +230,8 @@ def command(run, preset, model, seed, a, steps, lr=None, check=False):
         args.append(f"--steps {steps} --warmup {steps // 10} --lr {lr:g} --seed {seed} --eval_every 100")
     else:
         args.append(f"--steps {steps} --lr {a.lr:g} --seed {seed} --eval_every {a.eval_every}")
-    args.append(f"--eval_batches {max(1, 512 // batch)}")   # about 512 windows per evaluation, each read alone
+    args.append(f"--eval_batches {max(1, 512 // (batch * k))}")   # 512 windows per evaluation, each read alone, the
+                                                                    # same windows for every model
     lines = [f"RUN={run} \\", 'ARGS="' + " ".join(args) + '" \\', f"SAVE_MIN={save_minutes(preset, model, a, steps, check)} \\",
              f"SBATCH_JOB_NAME=exealm-{run} \\"]           # squeue shows the run; its log is logs/expanse/exealm-<run>-<job>.out
     flags = ""

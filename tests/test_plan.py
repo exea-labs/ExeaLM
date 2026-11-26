@@ -109,7 +109,7 @@ def test_every_run_is_a_whole_number_of_swarms_and_passes_per_step():
         assert stream == (plan.STREAM if model == "exealm" else 1)             # streaming is part of ExeaLM only
         assert rows * int(get("--accum")) * int(get("--seq")) * stream == plan.STEP_TOKENS
         assert rows * stream == plan.SIZES[preset]["batch"] * gpus                # windows per GPU x GPUs
-        assert rows % gpus == 0 and rows * int(get("--eval_batches")) >= 512
+        assert rows % gpus == 0 and rows * stream * int(get("--eval_batches")) == 512   # the same 512 windows
         assert int(get("--steps")) == steps and name.startswith(f"{model}_{preset}_")
         assert get("--seed") == str(seed) and get("--preset") == preset
         if model == "llama":                                              # the plain Llama: no --config

@@ -386,11 +386,11 @@ def main(argv=None):
             parts.append(fwd(x[:, s].to(dev), replace(mem_for(d[:, s]), stream=state), y[:, s].to(dev))[1])
         return torch.stack(parts).mean()
 
-    def fixed_batches(src, n, seed):
+    def fixed_batches(src, n, seed, rows=None):
         r = np.random.default_rng(seed)
         out = []
         for _ in range(n):
-            x, y, d = src.batch(a.batch, a.seq, r, swarm, a.swarm_policy, mask_seams=seams)
+            x, y, d = src.batch(rows or a.batch, a.seq, r, swarm, a.swarm_policy, mask_seams=seams)
             out.append((x.to(dev), y.to(dev), mem_for(d)))
         return out
 
@@ -400,7 +400,10 @@ def main(argv=None):
         return [[(x[i:i + per], y[i:i + per], replace(m, doc_ids=m.doc_ids[i:i + per]), int((y[i:i + per] != -100).sum()))
                  for i in range(0, len(x), per)] for x, y, m in batches]
 
-    val_batches = in_pieces(fixed_batches(val, a.eval_batches, 10_000)) if rank == 0 else []
+    # Validation reads a step's worth of windows, each alone: with --stream k a row of --batch is k windows, so a
+    # streamed run draws batch x k windows, the same windows as a run of batch x k rows that does not stream. (It drew
+    # --batch: a quarter of the windows, a different sample, and 0.1 bits per byte off at 0.1B on an 18-source mix.)
+    val_batches = in_pieces(fixed_batches(val, a.eval_batches, 10_000, rows=a.batch * a.stream)) if rank == 0 else []
     sel_batches = fixed_batches(data, a.eval_batches, 20_000) if rank == 0 else []   # the search's held-out windows
     searcher = Searcher(every=a.search_every, until=a.search_until, seed=a.seed) if (a.search and a.model == "tonn") \
         else None
