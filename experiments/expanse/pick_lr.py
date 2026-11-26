@@ -38,7 +38,11 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--keep", default="runs", help="the folder the runs are kept in (train.sb's KEEP)")
     ap.add_argument("--out", default="experiments/expanse/lr_choice.json")
+    ap.add_argument("--rates", default="100m:3,250m:3,500m:3,3b:2",
+                    help="how many rates each size's checks try (plan.py's LR_RATES): a pick waits for all of them, "
+                         "not only for the checks whose folders exist (a queued check has none yet)")
     a = ap.parse_args(argv)
+    want = {k: int(v) for k, v in (x.split(":") for x in a.rates.split(",") if x)}
     groups = {}
     for folder in sorted(glob.glob(os.path.join(a.keep, "lr_*"))):
         m = re.match(r"lr_(.+)_([0-9a-z]+)_([0-9.e+-]+)$", os.path.basename(folder))
@@ -49,8 +53,10 @@ def main(argv=None):
     for key, rows in sorted(groups.items()):
         for lr, s, done in sorted(rows):
             print(f"| {key} | {lr:g} | {s:.4f} | {'yes' if done else 'no'} |")
-        if not all(done for _, _, done in rows):
-            print(f"| {key} | (not all checks finished: no pick yet) | | |")
+        size = key.rsplit("_", 1)[1]
+        if not all(done for _, _, done in rows) or len(rows) < want.get(size, 0):
+            print(f"| {key} | (not all {want.get(size, len(rows))} checks finished: no pick yet) | | |")
+            chosen.pop(key, None)
             continue
         lr, s, _ = min(rows, key=lambda r: r[1])
         if not math.isfinite(s):
