@@ -251,7 +251,29 @@ the held-out topics' items:
 - One seed, 0.1B, 600 steps of post-training that never showed an entry in context. `score.py --conditions bm25`
   measures the same with a keyword search choosing the entry (next section).
 
-## 8. Next
+## 8. The library with a keyword search: ordinary RAG (job 56082719)
+
+`library_bm25_100m.jsonl`. `score.py --conditions bm25`: for each held-out item, BM25 over the token ids of all 18,545
+entries ranks them against the item's prefix (its question, or its instruction and context), and the first is pasted
+before the prefix, as in "pasted". The search put the item's own entry first for 86.2% of questions (93.2% in the
+first 5) and 72.9% of tasks (79.8%). Bits per byte on the held-out targets:
+
+| Model | Questions: nothing, BM25, pasted | Text tasks: nothing, BM25 | Code tasks: nothing, BM25 |
+|---|---|---|---|
+| ExeaLM, post-trained | 1.674, **0.689**, 0.511 | 0.933, **0.754** | 0.438, **0.366** |
+| Qwen3.5-style, post-trained | 1.646, 0.796, 0.631 | 0.947, 0.803 | 0.462, 0.406 |
+| ExeaLM, before post-training | 1.977, 0.923, 0.738 | 1.221, 0.964 | 0.588, 0.479 |
+| Qwen3.5-style, before post-training | 1.945, 1.065, 0.897 | 1.219, 1.050 | 0.613, 0.526 |
+
+- With a keyword search choosing the entry, the library cuts ExeaLM's bits per byte on held-out questions by 59%
+  (1.674 to 0.689), on text tasks by 19% and on code tasks by 16%.
+- ExeaLM gains more from it than the Qwen3.5-style model, on every set, before and after post-training: 0.107 ahead
+  on questions with BM25 (0.689 against 0.796), 0.049 on text tasks and 0.040 on code tasks.
+- On code tasks the searched entry scores better than the item's own source entry (0.366 against 0.399 for ExeaLM):
+  the search often finds an entry closer to the code in the task's context.
+- Neither model was trained with entries in its context. One seed, 0.1B.
+
+## 9. Next
 
 The learning-rate checks (`go.sh lr`), the ablations at 0.1B (`ablate.sb`), and the compile check
 (`compile_check.sb`), then the curve.
