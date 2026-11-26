@@ -1,0 +1,20 @@
+{
+ "device": "cuda",
+ "amp": "none",
+ "ms_per_layer_fwd_bwd": {
+  "attention block": 2.1,
+  "D": 1.4,
+  "I": 2.2,
+  "GI": 4.0,
+  "M": 1.5,
+  "MI": 2.5,
+  "MIM": 2.5,
+  "EP": 3.5,
+  "G": 1.4,
+  "C": 1.7,
+  "RP": 3.1,
+  "SM": 4.2,
+  "OS": 2.2,
+  "GD": 12.4
+ }
+}

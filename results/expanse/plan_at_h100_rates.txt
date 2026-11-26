@@ -1,0 +1,58 @@
+{"size": "0.1B", "model": "hybrid", "precision": "bf16", "seq": 512, "params_M": 93.8, "batch": 32, "s_per_step": 0.1232, "tokens_per_s": 132937, "effective_TFLOPs": 74.8, "peak_mem_gb": 20.0, "gpu": "NVIDIA H100 80GB HBM3", "torch": "2.15.0+cu132", "compile": 0, "tf32": 0}
+{"size": "0.1B", "model": "llama", "precision": "bf16", "seq": 512, "params_M": 89.7, "batch": 32, "s_per_step": 0.0652, "tokens_per_s": 251424, "effective_TFLOPs": 135.4, "peak_mem_gb": 14.6, "gpu": "NVIDIA H100 80GB HBM3", "torch": "2.15.0+cu132", "compile": 0, "tf32": 0}
+{"size": "0.1B", "model": "qwen", "precision": "bf16", "seq": 512, "params_M": 95.7, "batch": 32, "s_per_step": 0.225, "tokens_per_s": 72808, "effective_TFLOPs": 41.8, "peak_mem_gb": 26.2, "gpu": "NVIDIA H100 80GB HBM3", "torch": "2.15.0+cu132", "compile": 0, "tf32": 0}
+{"size": "0.25B", "model": "hybrid", "precision": "bf16", "seq": 512, "params_M": 247.4, "batch": 32, "s_per_step": 0.2215, "tokens_per_s": 73963, "effective_TFLOPs": 109.8, "peak_mem_gb": 33.6, "gpu": "NVIDIA H100 80GB HBM3", "torch": "2.15.0+cu132", "compile": 0, "tf32": 0}
+{"size": "0.25B", "model": "llama", "precision": "bf16", "seq": 512, "params_M": 234.8, "batch": 32, "s_per_step": 0.1147, "tokens_per_s": 142836, "effective_TFLOPs": 201.2, "peak_mem_gb": 22.6, "gpu": "NVIDIA H100 80GB HBM3", "torch": "2.15.0+cu132", "compile": 0, "tf32": 0}
+{"size": "0.25B", "model": "qwen", "precision": "bf16", "seq": 512, "params_M": 252.1, "batch": 32, "s_per_step": 0.3631, "tokens_per_s": 45125, "effective_TFLOPs": 68.3, "peak_mem_gb": 43.1, "gpu": "NVIDIA H100 80GB HBM3", "torch": "2.15.0+cu132", "compile": 0, "tf32": 0}
+{"size": "0.5B", "model": "hybrid", "precision": "bf16", "seq": 512, "params_M": 500.3, "batch": 16, "s_per_step": 0.2064, "tokens_per_s": 39696, "effective_TFLOPs": 119.2, "peak_mem_gb": 31.7, "gpu": "NVIDIA H100 80GB HBM3", "torch": "2.15.0+cu132", "compile": 0, "tf32": 0}
+{"size": "0.5B", "model": "llama", "precision": "bf16", "seq": 512, "params_M": 474.1, "batch": 16, "s_per_step": 0.1074, "tokens_per_s": 76311, "effective_TFLOPs": 217.1, "peak_mem_gb": 22.1, "gpu": "NVIDIA H100 80GB HBM3", "torch": "2.15.0+cu132", "compile": 0, "tf32": 0}
+{"size": "0.5B", "model": "qwen", "precision": "bf16", "seq": 512, "params_M": 511.3, "batch": 16, "s_per_step": 0.3601, "tokens_per_s": 22746, "effective_TFLOPs": 69.8, "peak_mem_gb": 40.6, "gpu": "NVIDIA H100 80GB HBM3", "torch": "2.15.0+cu132", "compile": 0, "tf32": 0}
+{"size": "3B", "model": "hybrid", "precision": "bf16", "seq": 512, "did_not_fit_batch": 8, "params_M": 2921.2, "batch": 4, "s_per_step": 0.2391, "tokens_per_s": 8564, "effective_TFLOPs": 150.1, "peak_mem_gb": 65.7, "gpu": "NVIDIA H100 80GB HBM3", "torch": "2.15.0+cu132", "compile": 0, "tf32": 0}
+{"size": "3B", "model": "llama", "precision": "bf16", "seq": 512, "params_M": 2757.2, "batch": 8, "s_per_step": 0.2361, "tokens_per_s": 17348, "effective_TFLOPs": 287.0, "peak_mem_gb": 65.6, "gpu": "NVIDIA H100 80GB HBM3", "torch": "2.15.0+cu132", "compile": 0, "tf32": 0}
+{"size": "3B", "model": "qwen", "precision": "bf16", "seq": 512, "did_not_fit_batch": 8, "params_M": 2986.2, "batch": 4, "s_per_step": 0.4439, "tokens_per_s": 4614, "effective_TFLOPs": 82.7, "peak_mem_gb": 73.9, "gpu": "NVIDIA H100 80GB HBM3", "torch": "2.15.0+cu132", "compile": 0, "tf32": 0}
+
+The compute plan at these single-GPU rates:
+
+Target: 9B parameters on 1T tokens, 111 tokens per parameter.
+
+| Part | Run | Parameters | Tokens | Tokens per parameter | Steps | GPUs | GPU-hours |
+|---|---|---|---|---|---|---|---|
+| 3B | `exealm_3b_4.1x_s0` | 2,921.2M | 12.0B | 4.1 | 45,688 | 4 | 388 |
+| 3B | `qwen_3b_4.1x_s0` | 2,986.2M | 12.0B | 4.0 | 45,688 | 4 | 721 |
+| curve | `exealm_100m_4.1x_s0` | 93.8M | 0.4B | 4.1 | 1,468 | 1 | 1 |
+| curve | `llama_100m_4.1x_s0` | 89.7M | 0.4B | 4.3 | 1,468 | 1 | 0 |
+| curve | `qwen_100m_4.1x_s0` | 95.7M | 0.4B | 4.0 | 1,468 | 1 | 1 |
+| curve | `exealm_100m_4.1x_s1` | 93.8M | 0.4B | 4.1 | 1,468 | 1 | 1 |
+| curve | `llama_100m_4.1x_s1` | 89.7M | 0.4B | 4.3 | 1,468 | 1 | 0 |
+| curve | `qwen_100m_4.1x_s1` | 95.7M | 0.4B | 4.0 | 1,468 | 1 | 1 |
+| curve | `exealm_100m_4.1x_s2` | 93.8M | 0.4B | 4.1 | 1,468 | 1 | 1 |
+| curve | `llama_100m_4.1x_s2` | 89.7M | 0.4B | 4.3 | 1,468 | 1 | 0 |
+| curve | `qwen_100m_4.1x_s2` | 95.7M | 0.4B | 4.0 | 1,468 | 1 | 1 |
+| curve | `exealm_250m_4.1x_s0` | 247.4M | 1.0B | 4.1 | 3,869 | 1 | 4 |
+| curve | `llama_250m_4.1x_s0` | 234.8M | 1.0B | 4.3 | 3,869 | 1 | 2 |
+| curve | `qwen_250m_4.1x_s0` | 252.1M | 1.0B | 4.0 | 3,869 | 1 | 6 |
+| curve | `exealm_250m_4.1x_s1` | 247.4M | 1.0B | 4.1 | 3,869 | 1 | 4 |
+| curve | `llama_250m_4.1x_s1` | 234.8M | 1.0B | 4.3 | 3,869 | 1 | 2 |
+| curve | `qwen_250m_4.1x_s1` | 252.1M | 1.0B | 4.0 | 3,869 | 1 | 6 |
+| curve | `exealm_250m_4.1x_s2` | 247.4M | 1.0B | 4.1 | 3,869 | 1 | 4 |
+| curve | `llama_250m_4.1x_s2` | 234.8M | 1.0B | 4.3 | 3,869 | 1 | 2 |
+| curve | `qwen_250m_4.1x_s2` | 252.1M | 1.0B | 4.0 | 3,869 | 1 | 6 |
+| curve | `exealm_500m_4.1x_s0` | 500.3M | 2.1B | 4.1 | 7,825 | 4 | 14 |
+| curve | `llama_500m_4.1x_s0` | 474.1M | 2.1B | 4.3 | 7,825 | 4 | 7 |
+| curve | `qwen_500m_4.1x_s0` | 511.3M | 2.1B | 4.0 | 7,825 | 4 | 25 |
+| curve | `exealm_500m_4.1x_s1` | 500.3M | 2.1B | 4.1 | 7,825 | 4 | 14 |
+| curve | `llama_500m_4.1x_s1` | 474.1M | 2.1B | 4.3 | 7,825 | 4 | 7 |
+| curve | `qwen_500m_4.1x_s1` | 511.3M | 2.1B | 4.0 | 7,825 | 4 | 25 |
+| long | `exealm_100m_111x_s0` | 93.8M | 10.4B | 111.0 | 39,735 | 1 | 22 |
+| long | `qwen_100m_111x_s0` | 95.7M | 10.4B | 108.9 | 39,735 | 1 | 40 |
+| | **The 28 runs** | | | | | | **1,309** |
+| | First job on Expanse | | | | | | 6 |
+| | The 9B model: speed and memory on 1, 2 and 4 nodes | | | | | | 36 |
+| | Learning-rate checks | | | | | | 57 |
+| | Evaluation: held-out text, long documents, benchmarks | | | | | | 100 |
+| | **Reserve of the 2,000** | | | | | | **492** |
+
+The run this is evidence for, ExeaLM at 9B on 1T tokens, at ExeaLM's 3B rate here (150.1 TFLOP/s per GPU): about 101,144 GPU-hours. The 9B measurement (experiments/expanse/nine_b.sb) replaces this rate with the 9B model's own.
+
+Rates: 100m exealm: hybrid; 100m llama: llama; 100m qwen: qwen; 250m exealm: hybrid; 250m llama: llama; 250m qwen: qwen; 3b exealm: hybrid; 3b llama: llama; 3b qwen: qwen; 500m exealm: hybrid; 500m llama: llama; 500m qwen: qwen; the rest as on the MI300X. Four GPUs taken as 4 times one: pass --speedup with the measured figure.
+wrote results/expanse/throughput_h100.json

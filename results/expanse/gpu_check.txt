@@ -1,0 +1,32 @@
+device: NVIDIA H100 80GB HBM3, torch 2.15.0+cu132, CUDA 13.2
+ok     circuit D: 32-bit against the CPU 1.5e-07, bf16 against 32-bit 1.9e-03
+ok     circuit I: 32-bit against the CPU 2.5e-07, bf16 against 32-bit 2.2e-03
+ok     circuit GI: 32-bit against the CPU 5.2e-07, bf16 against 32-bit 6.0e-03
+ok     circuit M: 32-bit against the CPU 1.9e-07, bf16 against 32-bit 1.6e-03
+ok     circuit MI: 32-bit against the CPU 2.4e-07, bf16 against 32-bit 2.0e-03
+ok     circuit MIM: 32-bit against the CPU 1.8e-07, bf16 against 32-bit 1.6e-03
+ok     circuit EP: 32-bit against the CPU 2.4e-07, bf16 against 32-bit 1.3e-03
+ok     circuit G: 32-bit against the CPU 1.2e-07, bf16 against 32-bit 9.1e-04
+ok     circuit C: 32-bit against the CPU 2.2e-07, bf16 against 32-bit 2.3e-03
+ok     circuit RP: 32-bit against the CPU 1.9e-07, bf16 against 32-bit 1.6e-03
+ok     circuit SM: 32-bit against the CPU 9.6e-08, bf16 against 32-bit 2.6e-04
+ok     circuit OS: 32-bit against the CPU 1.4e-07, bf16 against 32-bit 1.3e-03
+ok     circuit GD: 32-bit against the CPU 9.6e-08, bf16 against 32-bit 1.6e-04
+ok     attention block: 32-bit against the CPU 1.9e-07, bf16 against 32-bit 1.5e-03
+ok     Gated DeltaNet block: 32-bit against the CPU 4.0e-07, bf16 against 32-bit 4.9e-03
+ok     model ExeaLM, swarms of 4: loss 8.3654; 32-bit against the CPU 9.3e-06, bf16 against 32-bit 3.1e-05
+ok     model Llama: loss 8.3787; 32-bit against the CPU 1.0e-05, bf16 against 32-bit 1.1e-04
+ok     model Qwen3.5-style: loss 8.3734; 32-bit against the CPU 3.8e-06, bf16 against 32-bit 2.5e-04
+17:26:46 a:   0%|                                                                            | 0/150 [00:00<?, ?step/s]
+17:26:54 a: 100%|████████████████████████████| 150/150 [00:08<00:00, 18.71step/s, loss=1.858, lr=2.60e-04, tok_s=19.2k]
+17:26:54 a: 100%|████████████████████████████| 150/150 [00:08<00:00, 18.37step/s, loss=1.858, lr=2.60e-04, tok_s=19.2k]
+17:26:55 b:   0%|                                                                            | 0/150 [00:00<?, ?step/s]
+17:26:59 b:  47%|█████████████▌               | 70/150 [00:03<00:04, 17.88step/s, loss=3.135, lr=2.00e-03, tok_s=18.3k]
+17:26:59 b:  47%|████████████████████████████▍                                | 70/150 [00:00<00:00, 41943040.00step/s]
+17:27:01 b: 100%|████████████████████████████| 150/150 [00:02<00:00, 33.12step/s, loss=1.858, lr=2.60e-04, tok_s=33.9k]
+17:27:01 b: 100%|████████████████████████████| 150/150 [00:02<00:00, 31.23step/s, loss=1.858, lr=2.60e-04, tok_s=33.9k]
+ok     training: validation bits per token 5.6063 -> 2.6785 in 150 steps
+ok     resume: identical to the last bit
+ok     two processes: on 2 GPU(s); in sync at every evaluation: [True, True, True]; bits 7.1402 -> 5.1356
+ok     two processes, resume: identical to the last bit
+ALL REQUIRED CHECKS PASSED
