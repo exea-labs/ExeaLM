@@ -19,6 +19,8 @@ If a batch does not fit the GPU, it is halved and the row says so. The models:
              every 4 layers
     exealm   the preset with its board and library slots, swarms of 4, no datastore
     gated    a Llama with gated attention and QK-norm
+    mid      ExeaLM as the study trains it since 26 November: one TONN layer at the middle layer, value residual, XSA
+    strong   a Llama with gated attention, QK-norm, value residual and XSA: mid without its TONN layer
 
 With bf16 rows the script also prints the compute plan (experiments/expanse/plan.py) at the measured rates. These are
 single-GPU rates. For a 4-GPU run, time the real loop (experiments/expanse/README.md).
@@ -41,7 +43,7 @@ from exealm.train.pretrain import make_optimizer, pick_device  # noqa: E402
 
 PRESET = {"0.1B": "100m", "0.25B": "250m", "0.5B": "500m", "1B": "1b", "3B": "3b", "tiny": "tiny"}
 BATCH = {"0.1B": 32, "0.25B": 32, "0.5B": 16, "1B": 16, "3B": 8, "tiny": 8}            # 0.1B and 0.5B: as measured on the MI300X
-KINDS = ("hybrid", "llama", "exealm", "gated", "qwen")
+KINDS = ("hybrid", "llama", "exealm", "gated", "qwen", "mid", "strong")
 
 
 def sync(dev):
@@ -67,11 +69,18 @@ def build(size, kind, vocab, dev):
         keep = {k: core[k] for k in ("tonn_every", "value_residual", "xsa") if k in core}
         if keep:
             cfg = get_config(PRESET[size], pinned={}, menu=cfg.menu, **keep, **over)
-    if kind in ("gated", "qwen"):
+    if kind == "mid":                            # ExeaLM as the study trains it since 26 November (exealm_mid_<size>.json):
+        n = cfg.n_layers                         # one TONN layer at the middle layer, attention everywhere else
+        cfg = get_config(PRESET[size], pinned={}, menu=cfg.menu, value_residual=True, xsa=True, tonn_every=0,
+                         attn_layers=tuple(i for i in range(n) if i != n // 2), **over)
+    if kind in ("gated", "qwen", "strong"):
         cfg = replace(cfg, attn_gate=True, qk_norm=True)
+    if kind == "strong":                                            # ExeaLM's attention everywhere, no TONN layer
+        cfg = replace(cfg, value_residual=True, xsa=True)
     if kind == "qwen":                                              # Gated DeltaNet in 3 of every 4 layers
         cfg = replace(cfg, delta_layers=tuple(i for i in range(cfg.n_layers) if i % 4 != 3))
-    model = ExeaLM(cfg) if kind == "hybrid" else Llama(cfg if kind in ("gated", "qwen") else llama_baseline(cfg))
+    model = ExeaLM(cfg) if kind in ("hybrid", "mid") else Llama(cfg if kind in ("gated", "qwen", "strong")
+                                                                    else llama_baseline(cfg))
     return model.to(dev), MemoryContext()
 
 
@@ -135,6 +144,8 @@ def main():
     ap.add_argument("--warmup", type=int, default=5, help="untimed steps first (use 20 or more with --compile 1)")
     ap.add_argument("--compile", type=int, default=0)
     ap.add_argument("--tf32", type=int, default=0)
+    ap.add_argument("--fla", type=int, default=0, help="1: the qwen model's DeltaNet layers on the flash-linear-attention "
+                                                       "kernel, as the study's 3B Qwen3.5-style run trains")
     ap.add_argument("--device", default="auto")
     ap.add_argument("--out", default=None, help="folder for throughput_<tag>.json")
     ap.add_argument("--tag", default=None, help="name of the output file (default: from the GPU's name)")
@@ -143,12 +154,16 @@ def main():
     if a.tf32 and dev.type == "cuda":
         torch.backends.cuda.matmul.allow_tf32 = True
     gpu = torch.cuda.get_device_name(dev) if dev.type == "cuda" else str(dev)
+    if a.fla:
+        from exealm.model import delta
+        delta.fla_kernel()
+        delta.USE_FLA = True
     rows = []
     for size in a.sizes.split(","):
         for kind in a.models.split(","):
             for precision in a.precision.split(","):
                 rows.append(dict(row(size, kind, precision, a, dev), gpu=gpu, torch=torch.__version__,
-                                 compile=a.compile, tf32=a.tf32))
+                                 compile=a.compile, tf32=a.tf32, fla=a.fla))
                 print(json.dumps(rows[-1]), flush=True)
     if any(r["precision"] == "bf16" and r["size"] in plan.SIZE_NAME and r.get("effective_TFLOPs", 0) > 0
            for r in rows) and not (a.compile or a.tf32):
