@@ -124,6 +124,35 @@ def test_a_llama_that_drifts_apart_is_put_back_too(tmp_path):
         assert torch.equal(p, ranks[1][name]), name
 
 
+ZERO = ["--preset", "tiny", "--data", "synthetic", "--device", "cpu", "--steps", "8", "--eval_every", "4",
+        "--batch", "8", "--search", "0"]
+
+
+@pytest.mark.parametrize("model", ["tonn", "llama"])
+def test_zero_splits_adam_state_and_trains_exactly_like_adamw(tmp_path, model):
+    # --zero 1 (ZeRO stage 1) is how a 3B model fits four 80 GB GPUs: each process keeps a part of AdamW's state.
+    common = ZERO + ["--model", model]
+    plain = run(common + ["--out", str(tmp_path / "plain")], tmp_path / "plain")
+    zero = run(common + ["--zero", "1", "--out", str(tmp_path / "zero")], tmp_path / "zero")
+    for name, p in plain[0].items():
+        assert torch.equal(zero[0][name], zero[1][name]), name           # the processes stay one model
+        assert torch.allclose(p, zero[0][name], atol=1e-6), name         # and it is AdamW's model
+    assert all(e["processes_in_sync"] for e in records(tmp_path / "zero", "eval"))
+    ck = torch.load(tmp_path / "zero" / "model.pt", weights_only=False)  # process 0 saved every part of the state
+    assert len(ck["opt"]["state"]) == len(torch.load(tmp_path / "plain" / "model.pt", weights_only=False)["opt"]["state"])
+
+
+def test_a_zero_run_stopped_by_its_time_limit_resumes_exactly(tmp_path):
+    a, b = tmp_path / "a", tmp_path / "b"
+    common = ZERO + ["--model", "llama", "--zero", "1"]
+    run(common + ["--out", str(a)], tmp_path / "wa")
+    run(common + ["--out", str(b), "--stop_at", "3"], tmp_path / "wb1")
+    run(common + ["--out", str(b), "--resume", "auto"], tmp_path / "wb2")
+    full, resumed = torch.load(a / "model.pt", weights_only=False), torch.load(b / "model.pt", weights_only=False)
+    for k, v in full["model"].items():
+        assert torch.equal(v, resumed["model"][k]), k
+
+
 def test_a_time_limit_stops_both_processes_at_the_same_step(tmp_path):
     a, b = tmp_path / "a", tmp_path / "b"
     common = ARGS + ["--steps", "12", "--eval_every", "6"]

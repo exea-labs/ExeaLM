@@ -241,6 +241,8 @@ def command(run, preset, model, seed, a, steps, lr=None, check=False):
         args.append(f"--model llama --config experiments/expanse/qwen_{preset}.json" + comp)
     else:
         args.append("--search 0" + (" --config experiments/expanse/exealm_core.json" if a.variant == "core" else ""))
+    if preset == "3b" and gpus > 1:                 # AdamW's state split over the GPUs: without it a 3B run ran out
+        args.append("--zero 1")                     # of memory on 80 GB H100s (Expanse jobs 56075772, 56075989)
     args.append(f"--data {a.data} --val {a.val} --seq {SEQ} "
                 + (f"--stream {STREAM} --stream_from {STREAM_FROM} " if k > 1 else "") + f"--batch {batch} --accum {accum}")
     if not check and a.anneal:                      # the recipe's last stage: the last 10% of steps read the anneal mix

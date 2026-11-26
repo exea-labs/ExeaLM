@@ -140,6 +140,8 @@ def sync_from_rank0(model, opt, dev):
                     lay.set_spec(k, spec)
     for t in list(model.parameters()) + list(model.buffers()):
         broadcast_(t.data, dev)
+    if is_zero(opt):                                                    # each process owns a different part of the
+        return                                                          # optimizer state: the weights are enough
     params = list(model.parameters())
     shape = [[(n, tuple(v.shape)) for n, v in opt.state[p].items() if torch.is_tensor(v)] if p in opt.state else []
              for p in params]
@@ -191,6 +193,23 @@ def wandb_record(rec, prefix=""):
         elif isinstance(v, (list, tuple)):
             out.update(wandb_record({str(i): x for i, x in enumerate(v)}, prefix + k + "/"))
     return out
+
+
+def is_zero(opt):
+    from torch.distributed.optim import ZeroRedundancyOptimizer
+    return isinstance(opt, ZeroRedundancyOptimizer)
+
+
+def zero_optimizer(model, lr, wd, fused=False):
+    """AdamW with its state split between the processes (ZeRO stage 1, torch's ZeroRedundancyOptimizer): each GPU
+    keeps the two Adam statistics of a quarter of the parameters, so a 3B model's 23 GB of them become 6 GB per GPU on
+    four. Every process steps its part and sends the new weights to the others: the same update as AdamW."""
+    from torch.distributed.optim import ZeroRedundancyOptimizer
+    decay = [p for n, p in model.named_parameters() if p.dim() >= 2 and "emb" not in n]
+    rest = [p for n, p in model.named_parameters() if not (p.dim() >= 2 and "emb" not in n)]
+    return ZeroRedundancyOptimizer([dict(params=decay, weight_decay=wd), dict(params=rest, weight_decay=0.0)],
+                                   optimizer_class=torch.optim.AdamW, lr=lr, betas=(0.9, 0.95), eps=1e-8,
+                                   **(dict(fused=True) if fused else {}))
 
 
 def make_optimizer(model, lr, wd, kind="adamw", fused=False):
@@ -286,6 +305,9 @@ def main(argv=None):
     ap.add_argument("--out", default="runs/pretrain")
     ap.add_argument("--save_every", type=int, default=0, help="write <out>/ckpt.pt every this many steps (0: never)")
     ap.add_argument("--save_minutes", type=float, default=0, help="also write it every this many minutes (0: never)")
+    ap.add_argument("--zero", type=int, default=0,
+                    help="1: split AdamW's state between the processes (ZeRO stage 1), for models whose optimizer "
+                         "state does not fit beside them on each GPU (3B on 80 GB); no effect on one process")
     ap.add_argument("--heartbeat", default=None,
                     help="a file process 0 rewrites with the step every 30 s while training moves; train.sb's "
                          "watchdog ends a job whose heartbeat stops (a hung run)")
@@ -345,7 +367,12 @@ def main(argv=None):
             over.setdefault("qk_norm", False)
         cfg = get_config(a.preset, **over)
         model = (ExeaLM(cfg) if a.model == "tonn" else Llama(cfg)).to(dev)
-    opt = make_optimizer(model, a.lr, a.wd, a.optimizer, fused=dev.type == "cuda")
+    if a.zero and world > 1:
+        if a.optimizer != "adamw":
+            raise ValueError("--zero 1 splits AdamW's state: use it with --optimizer adamw")
+        opt = zero_optimizer(model, a.lr, a.wd, fused=dev.type == "cuda")
+    else:
+        opt = make_optimizer(model, a.lr, a.wd, a.optimizer, fused=dev.type == "cuda")
     if ck is not None:
         opt.load_state_dict(ck["opt"])
     warmup = a.warmup if a.warmup is not None else max(1, min(2000, a.steps // 20))
@@ -474,7 +501,10 @@ def main(argv=None):
 
     def checkpoint(path, step, losses):
         """Process 0 writes the full training state: the weights, the optimizer, and everything else the next step
-        depends on. Every process draws the same batches, so the one batch sampler's state is everyone's."""
+        depends on. Every process draws the same batches, so the one batch sampler's state is everyone's. With --zero
+        every process first sends its part of the optimizer state to process 0 (all call this at the same step)."""
+        if is_zero(opt):
+            opt.consolidate_state_dict(to=0)
         if rank:
             return
         state = dict(numpy_rng=rng.bit_generator.state, torch_rng=torch.get_rng_state(),

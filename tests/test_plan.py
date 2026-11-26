@@ -113,6 +113,7 @@ def test_every_run_is_a_whole_number_of_swarms_and_passes_per_step():
         assert int(get("--steps")) == steps and name.startswith(f"{model}_{preset}_")
         assert get("--seed") == str(seed) and get("--preset") == preset
         assert get("--compile") == "1" if model in ("llama", "qwen") and gpus == 1 else "--compile" not in args
+        assert (get("--zero") == "1") if preset == "3b" else "--zero" not in args
         if model == "llama":                                              # the plain Llama: no --config
             assert get("--model") == "llama" and "--config" not in args
         elif model == "qwen":
