@@ -285,6 +285,9 @@ def main(argv=None):
     ap.add_argument("--out", default="runs/pretrain")
     ap.add_argument("--save_every", type=int, default=0, help="write <out>/ckpt.pt every this many steps (0: never)")
     ap.add_argument("--save_minutes", type=float, default=0, help="also write it every this many minutes (0: never)")
+    ap.add_argument("--heartbeat", default=None,
+                    help="a file process 0 rewrites with the step every 30 s while training moves; train.sb's "
+                         "watchdog ends a job whose heartbeat stops (a hung run)")
     ap.add_argument("--progress_secs", type=float, default=60,
                     help="a progress line (step, loss, tokens/s, time left) on stderr this often; a tqdm bar on a "
                          "terminal; 0: none")
@@ -526,6 +529,16 @@ def main(argv=None):
     tick_step = start
     bar = Progress(total=a.steps, initial=start, desc=os.path.basename(os.path.normpath(a.out)), unit="step",
                    every=a.progress_secs, enabled=rank == 0 and a.progress_secs > 0)
+    beat_at = 0.0
+
+    def heartbeat(step):
+        nonlocal beat_at
+        if a.heartbeat and rank == 0 and time.time() - beat_at >= 30:
+            with open(a.heartbeat, "w") as f:
+                f.write(f"{step} {time.time():.0f}\n")
+            beat_at = time.time()
+
+    heartbeat(start)
     try:
         for step in range(start, a.steps):
             if searcher is not None and searcher.due(step, a.steps):
@@ -576,6 +589,7 @@ def main(argv=None):
             opt.step()
             losses.append(done)
             n, last = step + 1, step + 1 == a.steps
+            heartbeat(n)
             if bar.enabled:
                 bar.update(1, loss=f"{float(done):.3f}", lr=f"{opt.param_groups[0]['lr']:.2e}",
                            tok_s=human((n - start) * tokens_per_step / max(time.time() - began, 1e-9)))

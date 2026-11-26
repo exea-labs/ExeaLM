@@ -26,6 +26,7 @@
 #   SAVE_MIN    minutes between checkpoints (default 30; 0: none on a timer, but a job that reaches its time limit
 #               still writes one to continue from; plan.py sets it per run)
 #   MARGIN_MIN  minutes kept for the last save and copy (45)
+#   HANG_MIN    a run that has not finished a step in this many minutes is hung: the job stops it and ends (30)
 #   KEEP_CKPT   1 keeps a finished run's ckpt.pt (its optimizer state) in KEEP. By default it is removed and model.pt
 #               and log.jsonl stay; a learning-rate check (RUN=lr_*) keeps only its log. Home is 100 GB, the data 60
 #   JOBS_LEFT   how many more jobs may follow this one (default 20)
@@ -57,6 +58,7 @@ DATA=${DATA:-$REPO/data}
 SAVE_MIN=${SAVE_MIN:-30}
 MARGIN_MIN=${MARGIN_MIN:-45}
 JOBS_LEFT=${JOBS_LEFT:-20}
+HANG_MIN=${HANG_MIN:-30}
 WORK=${LOCAL_DISK:-/scratch/$USER}/job_$SLURM_JOB_ID                   # the node's own NVMe, emptied when the job ends
 OUT=$WORK/runs/$RUN
 GPUS=${SLURM_GPUS_ON_NODE:-$(nvidia-smi -L | wc -l | tr -d ' ')}
@@ -113,13 +115,39 @@ for f in "$REPO"/*; do                                                 # the rep
 done
 cd "$WORK"                                                             # so data/... in ARGS is the copy on the NVMe
 if [ "$GPUS" -gt 1 ]; then launch="torchrun --nproc_per_node $GPUS -m"; else launch="python -m"; fi
-$launch exealm.train.pretrain $ARGS --out "$OUT" --resume auto --save_minutes "$SAVE_MIN" --max_minutes "$max_min"
+$launch exealm.train.pretrain $ARGS --out "$OUT" --resume auto --save_minutes "$SAVE_MIN" --max_minutes "$max_min" \
+  --heartbeat "$WORK/heartbeat" &
+trainer=$!
+watchdog() {           # a run whose heartbeat stops for HANG_MIN minutes is hung (a GPU stuck in a collective, say):
+  local since beat limit   # end it, rather than hold the node until the time limit (48 h on a node: 192 GPU-hours)
+  since=$(date +%s); limit=${HANG_SECS:-$(( HANG_MIN * 60 ))}
+  while sleep "${WATCH_SECS:-30}"; do
+    kill -0 "$trainer" 2>/dev/null || return
+    beat=$(stat -c %Y "$WORK/heartbeat" 2>/dev/null || stat -f %m "$WORK/heartbeat" 2>/dev/null || echo "$since")
+    if [ $(( $(date +%s) - beat )) -gt "$limit" ]; then
+      echo "== $(date '+%F %T') HUNG: no training step for $HANG_MIN minutes (last heartbeat: step and time" \
+           "$(cat "$WORK/heartbeat" 2>/dev/null)). Stopping the run"
+      touch "$WORK/hung"
+      kill -TERM "$trainer" 2>/dev/null; sleep 60
+      pkill -KILL -P "$trainer" 2>/dev/null; kill -KILL "$trainer" 2>/dev/null
+      return
+    fi
+  done
+}
+watchdog &
+dog=$!
+wait "$trainer"
 code=$?
-kill $copier 2>/dev/null
+kill "$dog" "$copier" 2>/dev/null
 case $RUN in lr_*) finished "$OUT" && rm -f "$OUT/model.pt" "$OUT/ckpt.pt" ;; esac   # a learning-rate check: its log
 copy "$OUT/" "$KEEP/$RUN/" || { echo "COULD NOT COPY THE RUN BACK: $OUT is lost when this job ends"; exit 1; }
 
 cd "$REPO"
+if [ -f "$WORK/hung" ]; then                                           # not resubmitted: a hang needs a look first
+  echo "== $(date '+%F %T') $RUN hung and was stopped; its last checkpoint is in $KEEP/$RUN. Read the log above, then"
+  echo "   resubmit: python experiments/expanse/plan.py --run $RUN --lr auto | grep -v '^#' | bash"
+  exit 1
+fi
 if finished "$OUT"; then
   echo "== $(date '+%F %T') $RUN finished: $KEEP/$RUN"
   if [ -n "${HF_REPO-exea-labs/exealm-nairr-runs}" ]; then         # a copy off SDSC: the model and its log
