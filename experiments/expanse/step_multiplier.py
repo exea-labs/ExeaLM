@@ -12,6 +12,7 @@ faster, so a multiplier read against a finished baseline's anneal is an underest
 """
 import glob
 import json
+import sys
 
 import numpy as np
 
@@ -30,19 +31,21 @@ def evals(run):
     return dict(sorted(out.items()))
 
 
+LAST = "--last" in sys.argv                         # only the latest evaluation of each pair (the 15-minute status)
 for size, tpp in (("100m", "111x"), ("250m", "4.1x"), ("500m", "4.1x"), ("3b", "4.1x")):
     e, q = evals(f"exealm_{size}_{tpp}_s0"), evals(f"qwen_{size}_{tpp}_s0")
     if not e or not q:
         continue
     qs, qv = np.array(list(q)), np.array(list(q.values()))
-    print(f"== {size} {tpp}: Qwen evaluated to step {qs.max()}")
-    for s, v in e.items():
+    if not LAST:
+        print(f"== {size} {tpp}: Qwen evaluated to step {qs.max()}")
+    for s, v in (list(e.items())[-1:] if LAST else e.items()):
         if s < 1000:
             continue
         hit = np.where(qv <= v)[0]
         if len(hit) == 0:
-            print(f"  ExeaLM step {s}: {v:.3f}; Qwen not there by step {qs.max()} ({qv.min():.3f}): over {qs.max() / s:.2f}x")
+            print(f"  {size} {tpp}: ExeaLM step {s}: {v:.3f}; Qwen not there by step {qs.max()} ({qv.min():.3f}): over {qs.max() / s:.2f}x")
             continue
         i = hit[0]
         qstep = qs[0] if i == 0 else qs[i - 1] + (qs[i] - qs[i - 1]) * (qv[i - 1] - v) / (qv[i - 1] - qv[i])
-        print(f"  ExeaLM step {s}: {v:.3f}; Qwen reaches it at step {qstep:.0f}: {qstep / s:.2f}x the steps")
+        print(f"  {size} {tpp}: ExeaLM step {s}: {v:.3f}; Qwen reaches it at step {qstep:.0f}: {qstep / s:.2f}x the steps")
