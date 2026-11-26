@@ -158,7 +158,29 @@ What it shows:
 What it does not show: one size, 49M training tokens (far below the plan's 4.1 tokens per parameter at 0.1B, 0.38B
 tokens, and the long pair's 111), one learning rate for the baselines, single seeds for four rows.
 
-## 4. Next
+## 4. Layouts with more attention (job 56077551, 35 minutes)
+
+`layout_100m.json`. Same setting as §3, no streams, one seed unless stated. Bits per byte, mean of the 18 sets:
+
+| ExeaLM layout (TONN layers of 14) | Seeds | Bits per byte | Against the Llama with the four attention changes (1.3493, 3 seeds) |
+|---|---|---|---|
+| only layer 7 (the middle) | 1 | **1.3488** | -0.0005; ahead on 13 of 18 sets |
+| only layer 13 (the last) | 1 | 1.3512 | +0.0019 |
+| every sixth: 0, 6, 12 | 1 | 1.3728 | +0.0235 |
+| every fourth: 0, 4, 8, 12 (§3) | 3 | 1.3758 | +0.0264 |
+| every seventh: 0, 7 | 1 | 1.3777 | +0.0284 |
+| every eighth: 0, 8 | 2 | 1.3805 | +0.0312 |
+| only layer 0 (the first) | 1 | 1.3867 | +0.0374 |
+
+The Llama with the four changes at learning rate 2e-3 scored 1.3553, worse than at 1e-3.
+
+- A TONN layer at layer 0 costs about 0.035, and every "every Nth" layout has one there. That, more than the share of
+  attention, is why those layouts trail.
+- One TONN layer in the middle ties the Llama with the four attention changes (one seed, inside its seeds' spread of
+  1.3477 to 1.3509) and is ahead of it on 13 of 18 sets. It is 0.072 ahead of the Qwen3.5-style model.
+- `layout2.sb` follows up: more seeds of the middle layer, and more TONN layers with none at layer 0.
+
+## 5. Next
 
 The learning-rate checks (`go.sh lr`), the ablations at 0.1B (`ablate.sb`), and the compile check
 (`compile_check.sb`), then the curve.
