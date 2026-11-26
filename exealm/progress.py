@@ -34,6 +34,7 @@ class Progress:
         self.tty = bool(getattr(self.file, "isatty", lambda: False)()) and tqdm is not None
         self.t0 = self.last = time.time()
         self.postfix = {}
+        self.printed = None                                             # the step of the last line printed
         self.bar = None
         if enabled and self.tty:
             self.bar = tqdm(total=total, initial=initial, desc=desc, unit=unit, dynamic_ncols=True, file=self.file,
@@ -68,21 +69,21 @@ class Progress:
         done = self.n - self.start
         rate = done / elapsed if elapsed > 0 and done > 0 else None
         post = ", ".join(f"{k}={v}" for k, v in self.postfix.items())
-        if tqdm is not None:
-            text = tqdm.format_meter(self.n, self.total, elapsed, prefix=self.desc, unit=self.unit, rate=rate,
-                                     postfix=post or None, ncols=110)
+        if tqdm is not None:                                            # elapsed 0 until a step is timed: '?' rate,
+            text = tqdm.format_meter(self.n, self.total, elapsed if rate else 0, prefix=self.desc, unit=self.unit,
+                                     rate=rate, postfix=post or None, ncols=110)   # not the resumed steps over 0 s
         else:
             pct = f"{100 * self.n / self.total:.1f}%" if self.total else ""
             left = (self.total - self.n) / rate if rate and self.total else None
             eta = f", about {left / 3600:.1f} h left" if left is not None else ""
             text = f"{self.desc}: {self.n}/{self.total or '?'} {self.unit} {pct}{eta} {post}"
         print(f"{time.strftime('%H:%M:%S')} {text}", file=self.file, flush=True)
-        self.last = now
+        self.last, self.printed = now, self.n
 
     def close(self):
         if not self.enabled:
             return
         if self.bar is not None:
             self.bar.close()
-        else:
+        elif self.printed != self.n:                                    # the last line already shows this step
             self.line()
