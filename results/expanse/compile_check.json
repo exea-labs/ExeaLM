@@ -1,0 +1,42 @@
+{
+ "exealm": {
+  "eager_tokens_per_sec": 20079,
+  "compiled_tokens_per_sec": 7820,
+  "speedup": 0.39,
+  "eager_bits_per_byte": 2.3422,
+  "compiled_bits_per_byte": 2.5021,
+  "difference": 0.1599,
+  "eager_gpu_mem_gb": 30.5,
+  "compiled_gpu_mem_gb": 22.2
+ },
+ "qwen": {
+  "eager_tokens_per_sec": 22760,
+  "compiled_tokens_per_sec": 54883,
+  "speedup": 2.41,
+  "eager_bits_per_byte": 2.3483,
+  "compiled_bits_per_byte": 2.3243,
+  "difference": -0.024,
+  "eager_gpu_mem_gb": 39.1,
+  "compiled_gpu_mem_gb": 25.7
+ },
+ "llama": {
+  "eager_tokens_per_sec": 75931,
+  "compiled_tokens_per_sec": 102202,
+  "speedup": 1.35,
+  "eager_bits_per_byte": 2.3386,
+  "compiled_bits_per_byte": 2.342,
+  "difference": 0.0034,
+  "eager_gpu_mem_gb": 20.8,
+  "compiled_gpu_mem_gb": 16.4
+ },
+ "exealm_4gpu": {
+  "eager_tokens_per_sec": 70891,
+  "compiled_tokens_per_sec": 50691,
+  "speedup": 0.72,
+  "eager_bits_per_byte": 1.6583,
+  "compiled_bits_per_byte": 1.658,
+  "difference": -0.0003,
+  "eager_gpu_mem_gb": 32.3,
+  "compiled_gpu_mem_gb": 31.0
+ }
+}

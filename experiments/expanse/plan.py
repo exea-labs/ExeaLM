@@ -229,10 +229,13 @@ def command(run, preset, model, seed, a, steps, lr=None, check=False):
         raise SystemExit(f"--batch {windows} on {gpus} GPU(s) does not divide a step of {STEP_TOKENS:,} tokens into "
                          f"whole rows of {k} windows")
     args = [f"--preset {preset}"]
+    # The baselines train compiled: in the real training loop torch.compile made the Qwen3.5-style model 2.4 times as
+    # fast and Llama 1.35 times, with the same scores (results/expanse/compile_check.json). ExeaLM trains eager: its
+    # stream phase ran slower compiled. A faster baseline costs fewer hours and changes nothing it learns.
     if model == "llama":                            # pretrain's --model llama is the plain Llama without a --config
-        args.append("--model llama")
+        args.append("--model llama --compile 1")
     elif model == "qwen":
-        args.append(f"--model llama --config experiments/expanse/qwen_{preset}.json")
+        args.append(f"--model llama --config experiments/expanse/qwen_{preset}.json --compile 1")
     else:
         args.append("--search 0" + (" --config experiments/expanse/exealm_core.json" if a.variant == "core" else ""))
     args.append(f"--data {a.data} --val {a.val} --seq {SEQ} "

@@ -1,0 +1,33 @@
+{"event": "start", "model": "tonn", "params": 500335334, "device": "cuda", "processes": 1, "tokens_per_step": 8192, "cfg": {"vocab_size": 32768, "d": 1280, "n_layers": 22, "slots": 40, "h": 32, "ffn": -1, "menu": ["D", "I", "GI", "M", "MI", "MIM", "EP", "G", "C", "RP", "SM", "OS"], "lags": [0, 1, 2, 3, 4, 6, 8, 12, 16, 32, 64, 128], "tie_embeddings": true, "pinned": {}, "init_weights": {"C": 4.0, "G": 0.25, "D": 0.25, "RP": 0.0}, "attn_layers": [1, 2, 3, 5, 6, 7, 9, 10, 11, 13, 14, 15, 17, 18, 19, 21], "delta_layers": [], "attn_gate": true, "qk_norm": true, "value_residual": true, "xsa": true, "peri_ln": false, "canon": false, "seed": 0, "chunk": 64, "rag_topk": 4, "rag_chunk_len": 64, "enc_dim": 256, "rag_query": "last", "rag_null": false, "rag_key_dim": 0, "rag_lexical": 0, "swarm_size": 1, "board_read_self": true, "board_chunk": 0, "board_identity_size": 0, "board_order": "time", "wa_target": -1, "wa_matrix": "out", "wa_key": "learned", "wa_scope": "all", "tonn_every": 4, "wa_persist": 0.0, "chunk_pool": "mean"}, "architecture": [{"SM": 7, "M": 4, "MIM": 3, "MI": 3, "OS": 3, "EP": 5, "C": 11, "I": 3, "GI": 1}, {"EP": 3, "C": 17, "I": 4, "MIM": 4, "OS": 2, "M": 1, "G": 1, "MI": 1, "D": 1, "SM": 2, "GI": 4}, {"SM": 6, "MI": 6, "C": 8, "MIM": 4, "M": 3, "GI": 2, "I": 3, "OS": 3, "D": 2, "EP": 3}, {"EP": 4, "OS": 4, "I": 2, "SM": 6, "GI": 5, "M": 1, "C": 12, "MIM": 2, "MI": 4}, {"C": 13, "MIM": 4, "EP": 4, "I": 3, "M": 5, "SM": 3, "OS": 3, "G": 2, "GI": 2, "MI": 1}, {"MIM": 5, "C": 12, "M": 4, "SM": 1, "GI": 3, "MI": 5, "OS": 2, "I": 2, "EP": 3, "D": 2, "G": 1}]}
+18:19:44 exealm_compiled:   0%|                                                              | 0/400 [00:00<?, ?step/s]
+/home/abhatia7/.conda/envs/exealm/lib/python3.11/site-packages/torch/_inductor/lowering.py:2827: UserWarning: Torchinductor does not support code generation for complex operators. Performance may be worse than eager.
+  warnings.warn(
+/home/abhatia7/.conda/envs/exealm/lib/python3.11/site-packages/triton/knobs.py:504: UserWarning: TRITON_DEFAULT_FP_FUSION is unset: defaulting to FP fusion ENABLED for backward compatibility in Triton 3.9. The default will change to DISABLED in Triton 3.10; set TRITON_DEFAULT_FP_FUSION=1 to keep fusion enabled or =0 to adopt the new default early and silence this warning.
+  warn_once(FP_FUSION_DEFAULT_WARNING)
+18:21:23 exealm_compiled:   0%|             | 1/400 [01:38<10:54:34, 98.43s/step, loss=10.653, lr=1.50e-05, tok_s=83.2]
+18:22:57 exealm_compiled:   0%|             | 2/400 [03:12<10:39:42, 96.44s/step, loss=10.598, lr=3.00e-05, tok_s=84.9]
+{"event": "eval", "step": 200, "train_loss": 6.9735, "lr": 0.0006, "secs": 209.5, "tokens": 1638400, "tokens_per_sec": 7820, "gpu_mem_gb": 22.2, "val_bits_per_token": 9.2399, "val_bits_per_byte": 2.5021}
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/abhatia7/ExeaLM/exealm/train/pretrain.py", line 644, in <module>
+    dist.destroy_process_group()
+^^
+  File "/home/abhatia7/ExeaLM/exealm/train/pretrain.py", line 577, in main
+    with net.no_sync() if world > 1 and k < a.accum - 1 else contextlib.nullcontext():
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/abhatia7/.conda/envs/exealm/lib/python3.11/site-packages/torch/_tensor.py", line 623, in backward
+    torch.autograd.backward(
+  File "/home/abhatia7/.conda/envs/exealm/lib/python3.11/site-packages/torch/autograd/__init__.py", line 395, in backward
+    _engine_run_backward(
+  File "/home/abhatia7/.conda/envs/exealm/lib/python3.11/site-packages/torch/autograd/graph.py", line 1113, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/abhatia7/.conda/envs/exealm/lib/python3.11/site-packages/torch/autograd/function.py", line 460, in apply_boxed
+    return self._get_user_fn()(self, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/abhatia7/.conda/envs/exealm/lib/python3.11/site-packages/torch/_functorch/_aot_autograd/runtime_wrappers.py", line 3552, in backward
+    return CompiledFunction._bwd_fn(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/abhatia7/.conda/envs/exealm/lib/python3.11/site-packages/torch/_functorch/_aot_autograd/codegen.py:codegen(compiled_function_backward)", line 6, in _compiled_backward
+RuntimeError: one of the variables needed for gradient computation has been modified by an inplace operation: [torch.cuda.FloatTensor [40]] is at version 204; expected version 203 instead. Hint: enable anomaly detection to find the operation that failed to compute its gradient, with torch.autograd.set_detect_anomaly(True, check_nan=False).

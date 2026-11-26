@@ -1,0 +1,13 @@
+== 2026-11-25 18:16:09 job 56074612: each run writes its progress to logs/expanse/compile-56074612/<run>.out
+== 2026-11-25 18:16:09 copying data/ (40G) to the node's disk
+== 2026-11-25 18:19:34 data copied
+== 2026-11-25 18:19:34 round 1 of 3: ExeaLM and Qwen3.5-style, eager and compiled, one GPU each
+== 2026-11-25 18:27:44 round 2 of 3: Llama, eager and compiled
+== 2026-11-25 18:29:01 round 3 of 3: ExeaLM on four GPUs (DDP), eager then compiled
+model         eager tok/s   compiled  speed-up  eager bpb  compiled     diff
+exealm             20,079      7,820     0.39x     2.3422    2.5021  +0.1599
+qwen               22,760     54,883     2.41x     2.3483    2.3243   -0.024
+llama              75,931    102,202     1.35x     2.3386     2.342  +0.0034
+exealm_4gpu        70,891     50,691     0.72x     1.6583     1.658  -0.0003
+wrote results/expanse/compile_check.json
+== 2026-11-25 18:37:10 done

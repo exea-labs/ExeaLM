@@ -96,7 +96,31 @@ In this check it read ExeaLM 0.10 bits per byte worse than eval_text did (1.385 
 windows. The learning-rate checks compare a model only with itself, so they were not affected; the study's results come
 from eval_text.py in any case.
 
-## 2. Next
+## 2. torch.compile in the real training loop (job 56074612, 21 minutes)
+
+`compile_check.json`. 0.5B, 400 steps of 16 windows of 512 per GPU, real data, eager against compiled; tokens per
+second over steps 200 to 400, after compiling; held-out bits per byte at step 400 (in-run).
+
+| Model | Eager tokens/s | Compiled | Speed-up | Bits per byte, compiled minus eager |
+|---|---|---|---|---|
+| Qwen3.5-style, 1 GPU | 22,760 | 54,883 | 2.41x | -0.024 |
+| Llama, 1 GPU | 75,931 | 102,202 | 1.35x | +0.003 |
+| ExeaLM, 4 GPUs, streams from step 200 | 70,891 | 50,691 | 0.72x | -0.000 |
+
+- Compiled training learns the same model: the scores agree within the noise of 400 steps.
+- The baselines are much faster compiled, so the plan trains them compiled (commit after 5e0a6e9). The Qwen3.5-style
+  model's 3B run should cost about 300 GPU-hours instead of 721.
+- ExeaLM is slower compiled in its stream phase, and its first 200 steps (one window per row) gained nothing either
+  (46,103 tokens/s compiled including about 90 s of compiling, 141,809 eager). The bare step compiled 2.5 times as fast
+  in the first job, before TONN's running-size update was moved outside the compiled graph (commit fdef3ec) to fix a
+  crash in compiled streaming; that move breaks the graph at every TONN layer. ExeaLM trains eager; making it compile
+  well is left for later.
+- The 1-GPU ExeaLM pair of this job ran code from before that fix: its compiled run stopped at step 200 with the crash
+  the fix addresses, so that row is not a measurement.
+- ExeaLM reads streams at half its speed (70,891 against 141,809 tokens/s on 4 GPUs): each window's forward pass sees
+  a quarter of the rows. Its last 20% costs about 1.2 times what the throughput test suggests.
+
+## 3. Next
 
 The learning-rate checks (`go.sh lr`), the ablations at 0.1B (`ablate.sb`), and the compile check
 (`compile_check.sb`), then the curve.
