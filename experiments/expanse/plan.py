@@ -231,7 +231,8 @@ def command(run, preset, model, seed, a, steps, lr=None, check=False):
     else:
         args.append(f"--steps {steps} --lr {a.lr:g} --seed {seed} --eval_every {a.eval_every}")
     args.append(f"--eval_batches {max(1, 512 // batch)}")   # about 512 windows per evaluation, each read alone
-    lines = [f"RUN={run} \\", 'ARGS="' + " ".join(args) + '" \\', f"SAVE_MIN={save_minutes(preset, model, a, steps, check)} \\"]
+    lines = [f"RUN={run} \\", 'ARGS="' + " ".join(args) + '" \\', f"SAVE_MIN={save_minutes(preset, model, a, steps, check)} \\",
+             f"SBATCH_JOB_NAME=exealm-{run} \\"]           # squeue shows the run; its log is logs/expanse/exealm-<run>-<job>.out
     flags = ""
     if gpus == 1:                                   # one GPU: the shared partition, and one task's worth of cores
         flags = "--ntasks-per-node=1 "

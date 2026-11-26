@@ -61,10 +61,11 @@ if command -v hf >/dev/null 2>&1; then
 elif command -v huggingface-cli >/dev/null 2>&1; then
   CLI=huggingface-cli
 else
-  python -m pip install -q huggingface_hub
+  python -m pip install --no-cache-dir huggingface_hub
   CLI=$(command -v hf >/dev/null 2>&1 && echo hf || echo huggingface-cli)
 fi
 
+export HF_HUB_DISABLE_PROGRESS_BARS=0                 # a bar for every file, even if the environment turned them off
 PRE=""
 [ -n "$REL" ] && PRE="$REL/"
 get() {   # get <repo name> <pattern>...  (patterns inside the release folder)
@@ -85,10 +86,14 @@ get() {   # get <repo name> <pattern>...  (patterns inside the release folder)
 }
 
 mkdir -p "$DEST"
+echo "== $(date '+%F %T') downloading ${REL:-the latest build} of $ORG/exealm-pretrain into $DEST/ (the 30B slice is ~60 GB;"
+echo "   10-30 minutes; rerunning skips finished files). Space here now:"
+df -h "$DEST" | tail -1 | awk '{print "   " $4 " free of " $2 " (" $6 "); home quota: run  quota -s  or ask SDSC"}'
 get exealm-pretrain 'packed/*' 'tokenizer/*' 'mix*.json' 'sources.json' 'README.md'
 [ "$STACK" = 1 ] && get exealm-pretrain-stack 'packed/*' 'sources.json' 'README.md'
 [ "$POST" = 1 ] && get exealm-post 'packed/*' 'mix*.json' 'sources.json' 'README.md'
 [ "$DRY" = 1 ] && { echo "dry run: nothing downloaded"; exit 0; }
+echo "== $(date '+%F %T') downloaded: $(du -sh "$DEST" | cut -f1) in $DEST/. Writing the mix files and opening each one"
 
 python - "$DEST" "$STACK" "$POST" "$REL" <<'PY'
 import json, os, sys

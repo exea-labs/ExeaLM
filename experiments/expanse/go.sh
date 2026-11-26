@@ -54,13 +54,20 @@ phase() {
     first) need_account
       if [ "$DRY" = 1 ]; then echo "sbatch experiments/expanse/first_contact.sb"; else sbatch experiments/expanse/first_contact.sb; fi ;;
     lr) need_account
-      for size in 100m 250m 500m; do $PLAN --lr_check "$size" | grep -v "^#" | submit; done
+      for size in 100m 250m 500m; do
+        log "learning-rate checks at $size: $($PLAN --lr_check "$size" | grep -c '^sbatch') jobs"
+        $PLAN --lr_check "$size" | grep -v "^#" | submit
+      done
+      log "learning-rate checks at 3b: $($PLAN --lr_check 3b --lrs 3e-4,6e-4 | grep -c '^sbatch') jobs"
       $PLAN --lr_check 3b --lrs 3e-4,6e-4 | grep -v "^#" | submit ;;           # two rates at 3B, as budgeted
     pick) python experiments/expanse/pick_lr.py --keep "$(logs_to)" ;;
     curve|3b) need_account
       parts=$([ "$1" = 3b ] && echo 3B || echo "curve long")
       for part in $parts; do
-        for run in $($PLAN --list "$part"); do $PLAN --run "$run" --lr auto | grep -v "^#" | submit; done
+        for run in $($PLAN --list "$part"); do
+          log "submitting $run ($($PLAN --run "$run" --lr auto 2>&1 | grep -m1 'GPU-hours' | sed 's/# //'))"
+          $PLAN --run "$run" --lr auto | grep -v "^#" | submit
+        done
       done ;;
     eval) need_account
       if [ "$DRY" = 1 ]; then echo "sbatch experiments/expanse/eval.sb"; else sbatch experiments/expanse/eval.sb; fi ;;
@@ -75,7 +82,13 @@ phase() {
         for n in 2 4; do sbatch --dependency=afterok:"$jid" --nodes=$n experiments/expanse/nine_b.sb; done
       fi ;;
     status)
-      squeue -u "$USER" -o "%.10i %.20j %.8T %.10M %.6D %R" 2>/dev/null
+      squeue -u "$USER" -o "%.10i %.44j %.8T %.10M %.6D %R" 2>/dev/null
+      echo; echo "== running jobs: the latest progress line of each (tail -f logs/expanse/<job>-<id>.out to follow one)"
+      for id in $(squeue -h -u "$USER" -t R -o "%i" 2>/dev/null); do
+        f=$(ls logs/expanse/*-"$id".out 2>/dev/null | head -1)
+        [ -n "$f" ] && echo "$(basename "$f" .out): $(grep -a '%|' "$f" | tail -1 | cut -c1-150)"
+      done
+      echo; echo "== every run in KEEP: its latest evaluation (KEEP is updated at each checkpoint and at the end)"
       dir=$(logs_to)
       for f in "$dir"/*/log.jsonl; do
         [ -f "$f" ] || continue

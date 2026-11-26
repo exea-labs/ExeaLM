@@ -119,6 +119,7 @@ def test_every_run_is_a_whole_number_of_swarms_and_passes_per_step():
         else:
             assert get("--search") == "0" and get("--config") == "experiments/expanse/exealm_core.json"
         assert ("--ntasks-per-node=1" in text) == (gpus == 1)
+        assert f"SBATCH_JOB_NAME=exealm-{name} " in text                  # the job is named after its run
         save = int(text.split("SAVE_MIN=")[1].split()[0])                # checkpoints on a timer only where they pay
         assert save == (120 if preset == "3b" else 60 if "_111x_" in name else 0), (name, save)
     memory = printed(["--run", "exealm_3b_4.1x_s0", "--lr", "1e-3", "--variant", "memory"])

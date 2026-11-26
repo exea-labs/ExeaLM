@@ -21,6 +21,7 @@ import torch
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 from exealm import MemoryContext, count_params  # noqa: E402
 from exealm.data.loader import TokenShards  # noqa: E402
+from exealm.progress import Progress  # noqa: E402
 from exealm.train.pretrain import load_model, pick_device  # noqa: E402
 
 SETS = "val_en,val_ja_wiki,val_ja_web,val_code"
@@ -76,7 +77,9 @@ def main(argv=None):
     vals = ({n: TokenShards(d) for n, d in mix_sets(a.mix).items()} if a.mix
             else {s: TokenShards(os.path.join(a.root, s)) for s in a.sets.split(",")})
     rows = []
+    bar = Progress(total=len(a.runs), desc="held-out text", unit="run", every=0)
     for run in a.runs:
+        bar.write(f"scoring {run} on {len(vals)} held-out sets")
         path = checkpoint(run)
         model, ck = load_model(path, dev)
         model.eval()
@@ -86,6 +89,7 @@ def main(argv=None):
                          params_M=round(count_params(model) / 1e6, 2), bits_per_byte=bits,
                          mean=round(sum(bits.values()) / len(bits), 4)))
         print(json.dumps(rows[-1]), flush=True)
+        bar.update(1, last=f"{rows[-1]['mean']:.4f}")
         del model, ck
         if dev.type == "cuda":
             torch.cuda.empty_cache()

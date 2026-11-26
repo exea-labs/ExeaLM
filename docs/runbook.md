@@ -37,7 +37,18 @@ Run them one at a time and look at the results between them, or `bash experiment
 | 6. Score and report | `go.sh eval` | 1 GPU | a few hours | ~10 | `results/expanse/text.json`, `stream8.json`, `bench_*.json`, `report.md`, `scaling.png` |
 | 7. The 9B model | `go.sh nine_b` | 3 (1, 2 and 4 nodes) | ~3 h, ~1 h, ~1 h | ~36 | `results/expanse/nine_b.json`; then `go.sh report` prices the 9B run with it |
 
-`go.sh status` shows the queue and every run's latest step, bits per byte and tokens per second.
+**Watching progress.** Everything prints as it goes. `setup` shows pip's download bars and `data` shows Hugging Face's.
+Every training job writes a progress line a minute to its log (in a terminal, a tqdm bar): step, loss, learning rate,
+tokens per second, time elapsed and left. Jobs are named after their run, so a run's log is
+`logs/expanse/exealm-<run>-<job id>.out`:
+
+```bash
+tail -f logs/expanse/exealm-exealm_100m_4.1x_s0-*.out          # one run
+bash experiments/expanse/go.sh status                           # the queue, every running job's latest line, every run's last score
+```
+
+The first job writes each of its training runs to `logs/expanse/first-<job id>/<run>.out`. Scoring shows a bar over
+the runs.
 
 **Check after phase 1, before spending more:**
 - `gpu_check.txt` passes.

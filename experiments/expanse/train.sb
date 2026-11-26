@@ -49,6 +49,7 @@
 #SBATCH --time=48:00:00
 #SBATCH --output=logs/expanse/%x-%j.out
 set -uo pipefail
+export PYTHONUNBUFFERED=1                                              # every print reaches the job log at once
 : "${RUN:?set RUN to the name of the run}" "${ARGS:?set ARGS to the arguments of exealm.train.pretrain}"
 REPO=$SLURM_SUBMIT_DIR
 KEEP=${KEEP:-$REPO/runs}
@@ -81,12 +82,14 @@ print(int(d or 0) * 1440 + p[0] * 60 + p[1])" "$1"
 
 echo "== $(date '+%F %T') job $SLURM_JOB_ID on $(hostname): run $RUN, $GPUS GPU(s), kept in $KEEP"
 mkdir -p "$WORK/data" "$OUT"
-copy "$DATA/" "$WORK/data/" || { echo "could not copy the data in"; exit 1; }
-if [[ $KEEP == s3://* ]] || [ -d "$KEEP/$RUN" ]; then
+if [[ $KEEP == s3://* ]] || [ -d "$KEEP/$RUN" ]; then                   # first what is kept, so a finished run stops here
   copy "$KEEP/$RUN/" "$OUT/" || echo "nothing to continue from in $KEEP/$RUN"
 fi
 finished "$OUT" && { echo "$RUN is already finished"; exit 0; }
 [ -f "$OUT/ckpt.pt" ] && echo "continuing from $OUT/ckpt.pt" || echo "starting $RUN from scratch"
+echo "== $(date '+%F %T') copying the data ($( [[ $DATA == s3://* ]] && echo "$DATA" || du -sh "$DATA" | cut -f1)) to the node's disk"
+copy "$DATA/" "$WORK/data/" || { echo "could not copy the data in"; exit 1; }
+echo "== $(date '+%F %T') data copied; training starts. Progress: a line a minute below (step, loss, tokens/s, time left)"
 
 limit=$(squeue -h -j "$SLURM_JOB_ID" -o %l)
 max_min=$(( $(minutes "$limit") - MARGIN_MIN ))

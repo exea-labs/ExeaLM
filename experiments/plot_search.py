@@ -69,7 +69,7 @@ def read_log(path):
         elif ev in ("eval", "stop"):
             end_step = max(end_step, r["step"])
         elif ev == "end":
-            end_arch = r["architecture"]
+            end_arch = r.get("architecture", end_arch)                # a Llama's end has none
     steps = sorted(rounds)
     points = [(0, start["architecture"])] + [(s, rounds[s][0]) for s in steps]
     last = end_arch if end_arch is not None else points[-1][1]

@@ -66,6 +66,7 @@ from ..data.loader import TokenShards, open_data
 from ..memory import Datastore, MemoryContext
 from ..model import ExeaLM, Llama, count_params
 from ..model.search import Searcher
+from ..progress import Progress, human
 from .muon import Muon
 
 
@@ -284,6 +285,9 @@ def main(argv=None):
     ap.add_argument("--out", default="runs/pretrain")
     ap.add_argument("--save_every", type=int, default=0, help="write <out>/ckpt.pt every this many steps (0: never)")
     ap.add_argument("--save_minutes", type=float, default=0, help="also write it every this many minutes (0: never)")
+    ap.add_argument("--progress_secs", type=float, default=60,
+                    help="a progress line (step, loss, tokens/s, time left) on stderr this often; a tqdm bar on a "
+                         "terminal; 0: none")
     ap.add_argument("--max_minutes", type=float, default=0,
                     help="save <out>/ckpt.pt and stop this many minutes into the session, keeping the --steps "
                          "schedule (for job time limits; 0: no limit)")
@@ -520,6 +524,8 @@ def main(argv=None):
     t0 = time.time() - done_secs
     began = last_save = tick = time.time()
     tick_step = start
+    bar = Progress(total=a.steps, initial=start, desc=os.path.basename(os.path.normpath(a.out)), unit="step",
+                   every=a.progress_secs, enabled=rank == 0 and a.progress_secs > 0)
     try:
         for step in range(start, a.steps):
             if searcher is not None and searcher.due(step, a.steps):
@@ -570,6 +576,9 @@ def main(argv=None):
             opt.step()
             losses.append(done)
             n, last = step + 1, step + 1 == a.steps
+            if bar.enabled:
+                bar.update(1, loss=f"{float(done):.3f}", lr=f"{opt.param_groups[0]['lr']:.2e}",
+                           tok_s=human((n - start) * tokens_per_step / max(time.time() - began, 1e-9)))
             if n % a.eval_every == 0 or last:
                 same = True
                 if world > 1:
@@ -594,13 +603,15 @@ def main(argv=None):
                 checkpoint(ckpt_path, n, losses)
                 last_save = time.time()
             if stop:
+                bar.close()
                 emit(dict(event="stop", step=n, ckpt=ckpt_path,
                           why="stop_at" if n == a.stop_at else "signal" if by_signal else "max_minutes"))
                 clean = True
                 return model
-        if a.model == "tonn":
-            emit(dict(event="end", architecture=model.architecture()))
+        bar.close()
         checkpoint(os.path.join(a.out, "model.pt"), a.steps, losses)
+        # "end" comes after model.pt is written, for every model: pick_lr.py and train.sb read it as "finished"
+        emit(dict(event="end", step=a.steps, **({"architecture": model.architecture()} if a.model == "tonn" else {})))
         clean = True
         return model
     finally:

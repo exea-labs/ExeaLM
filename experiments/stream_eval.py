@@ -23,6 +23,7 @@ import torch.nn.functional as F
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 from exealm import MemoryContext  # noqa: E402
 from exealm.data.loader import TokenShards  # noqa: E402
+from exealm.progress import Progress  # noqa: E402
 from exealm.train.pretrain import load_model, pick_device  # noqa: E402
 
 SETS = "val_en,val_ja_wiki,val_ja_web,val_code"
@@ -100,12 +101,14 @@ def main(argv=None):
             sets[name] = (rows, val.meta["bytes_per_token"])
     print("documents: " + ", ".join(f"{k} {len(v[0])}" for k, v in sets.items()))
     results = []
+    bar = Progress(total=len(a.runs) * len(sets), desc="long documents", unit="set", every=0)
     for run in a.runs:
         model, ck = load_model(checkpoint(run), dev)
         model.eval()
         rec = dict(run=os.path.basename(run.rstrip("/")), model=ck["kind"], step=ck["step"], sets={})
         for name, (rows, bpt) in sets.items():
             bits = window_bits(model, rows, a.windows, a.seq, a.batch, dev)
+            bar.update(1, run=rec["run"], set=name)
             rec["sets"][name] = {m: [round(float(b / bpt), 4) for b in v] for m, v in bits.items()}
         for m in ("streamed", "alone"):
             rec[m] = [round(float(np.mean([s[m][w] for s in rec["sets"].values()])), 4) for w in range(a.windows)]

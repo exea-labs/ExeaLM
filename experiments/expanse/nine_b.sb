@@ -31,6 +31,7 @@
 #SBATCH --time=03:00:00
 #SBATCH --output=logs/expanse/%x-%j.out
 set -uo pipefail
+export PYTHONUNBUFFERED=1                                              # every print reaches the job log at once
 cd "$SLURM_SUBMIT_DIR"
 NODES=${SLURM_NNODES:-1}
 BATCHES=${BATCHES:-"2 4 8"}
