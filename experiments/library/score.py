@@ -93,7 +93,7 @@ def load_items(lib_dir, sets, split, limit=0):
             ids = [int(t) for t in shards.tokens[a:a + r["target_end"]]]
             items.append(dict(set=s, kind=r["kind"], type=r.get("type"), source_doc=r["source_doc"],
                               prefix=ids[:r["target_start"]], target=ids[r["target_start"]:],
-                              target_bytes=r["target_bytes"]))
+                              target_bytes=r["target_bytes"], topic=r.get("topic"), q=r.get("q"), a=r.get("a")))
     if not items:
         raise SystemExit(f"nothing to score in {lib_dir} ({', '.join(sets)}, split {split})")
     return items, eot, sep
@@ -127,10 +127,8 @@ def library_store(lib, chunk_len, n_chunks=0, seed=1):
     return Datastore(toks[idx].astype(np.int64), np.array(docs))
 
 
-def bm25_pick(lib, items, eot, sep, k1=1.2, b=0.75, batch=512, dev="cpu"):
-    """Ordinary RAG with a keyword search: for each item, the library entry that BM25 ranks first for the item's
-    prefix (its question, or its instruction and context), over the entries' token ids. Returns (picked entry ids,
-    whether the first is the item's source entry, whether the source is among the first 5)."""
+def bm25_index(lib, k1=1.2, b=0.75, dev="cpu"):
+    """BM25 weights of every library entry over token ids: a sparse (entries, vocabulary) matrix."""
     n = len(lib.offsets)
     V = int(np.max(lib.tokens)) + 1
     rows, cols, tfs, lens = [], [], [], np.zeros(n)
@@ -141,7 +139,16 @@ def bm25_pick(lib, items, eot, sep, k1=1.2, b=0.75, batch=512, dev="cpu"):
     df = np.bincount(cols, minlength=V)
     idf = np.log1p((n - df + 0.5) / (df + 0.5))
     w = idf[cols] * tfs * (k1 + 1) / (tfs + k1 * (1 - b + b * lens[rows] / lens.mean()))
-    W = torch.sparse_coo_tensor(np.stack([rows, cols]), w.astype(np.float32), (n, V)).coalesce().to(dev)
+    return torch.sparse_coo_tensor(np.stack([rows, cols]), w.astype(np.float32), (n, V)).coalesce().to(dev)
+
+
+def bm25_pick(lib, items, eot, sep, k1=1.2, b=0.75, batch=512, dev="cpu", index=None):
+    """Ordinary RAG with a keyword search: for each item, the library entry that BM25 ranks first for the item's
+    prefix (its question, or its instruction and context), over the entries' token ids. Returns (picked entry ids,
+    whether the first is the item's source entry, whether the source is among the first 5). index: bm25_index(lib),
+    to reuse one across calls."""
+    W = index if index is not None else bm25_index(lib, k1, b, dev)
+    V = W.shape[1]
     picked, top1, top5 = np.zeros(len(items), np.int64), np.zeros(len(items), bool), np.zeros(len(items), bool)
     skip = {eot, *sep}
     for b0 in range(0, len(items), batch):

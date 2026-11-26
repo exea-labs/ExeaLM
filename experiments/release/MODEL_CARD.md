@@ -50,6 +50,27 @@ and a keyword search, the 0.1B ExeaLM's bits per byte on held-out research quest
 GitHub results page has the controls, the failures and what these numbers do not show (among them: the strong-attention
 baseline, which matches ExeaLM closely on windows read alone).
 
+## Try the 0.1B model with its library
+
+`ragpost_exealm_100m_s0` is the 0.1B ExeaLM trained to read a library entry before a question. A keyword search (BM25)
+picks the entry; the model reads it and answers. With the GitHub code:
+
+```bash
+git clone -b nairr https://github.com/exea-labs/ExeaLM && cd ExeaLM
+pip install torch numpy safetensors tokenizers huggingface_hub
+python experiments/library/ask.py                 # random held-out questions, answered with and without the library
+python experiments/library/ask.py --question "Who proposed the theory of general relativity?"
+python experiments/library/ask.py --interactive
+python experiments/library/ask.py --score 0       # all 6,253 held-out questions, in bits per byte
+```
+
+It downloads this model (about 400 MB) and the library,
+[exea-labs/exealm-library](https://huggingface.co/datasets/exea-labs/exealm-library) (18,545 entries on research, math
+and code topics written by Qwen3-30B-A3B, about 100 MB). The held-out questions are on topics the model never trained
+on; their entries are in the library. On all of them it scores 0.588 bits per byte with the library and 1.635 without.
+The search picks the question's own entry for 86% of them. It is a 95M-parameter base model: answers are short, often
+close rather than exact, and it can only use what the library holds. Every answer shows which entry it read.
+
 ## Loading
 
 ```python
