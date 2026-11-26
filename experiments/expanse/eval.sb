@@ -23,6 +23,9 @@ cd "$SLURM_SUBMIT_DIR"
 KEEP=${KEEP:-$PWD/runs}
 OUT=results/expanse
 BENCH=${BENCH:-1}
+PICK=${PICK:-*}       # which finished runs: a pattern on the run's name, e.g. PICK='*_100m_4.1x_*'
+EXTRA=${EXTRA:-}      # more run folders to score beside them (e.g. runs/_core_layout/exealm_100m_4.1x_s0)
+TAG=${TAG:-}          # appended to text.json and stream8.json (text$TAG.json); with a TAG the report is not rewritten
 TASKS=${TASKS:-hellaswag,arc_easy,arc_challenge,piqa,winogrande,sciq,lambada_openai}
 mkdir -p "$OUT"
 LOCAL=$KEEP
@@ -31,11 +34,12 @@ if [[ $KEEP == s3://* ]]; then                                       # bring the
   mkdir -p "$LOCAL"
   s3cmd sync --no-progress --exclude '*' --include '*/model.pt' --include '*/log.jsonl' "$KEEP/" "$LOCAL/"
 fi
-RUNS=$(for d in "$LOCAL"/*/; do n=$(basename "$d"); [ -f "$d/model.pt" ] && [[ $n != lr_* ]] && echo "${d%/}"; done)
+RUNS=$(for d in "$LOCAL"/*/; do n=$(basename "$d"); [ -f "$d/model.pt" ] && [[ $n != lr_* ]] && [[ $n == $PICK ]] && echo "${d%/}"; done)
+RUNS="$RUNS $EXTRA"
 [ -n "$RUNS" ] || { echo "no finished runs in $KEEP"; exit 1; }
 echo "== $(date '+%F %T') scoring: $(echo $RUNS | wc -w) runs"
-python experiments/eval_text.py $RUNS --mix data/mix_pretrain_val.json --out "$OUT/text.json"
-python experiments/stream_eval.py $RUNS --mix data/mix_pretrain_val.json --windows 8 --docs 64 --out "$OUT/stream8.json"
+python experiments/eval_text.py $RUNS --mix data/mix_pretrain_val.json --out "$OUT/text$TAG.json"
+python experiments/stream_eval.py $RUNS --mix data/mix_pretrain_val.json --windows 8 --docs 64 --out "$OUT/stream8$TAG.json"
 if [ "$BENCH" = 1 ]; then
   TOK=$(ls -d data/*/*/tokenizer data/*/tokenizer 2>/dev/null | head -1)
   for r in $RUNS; do
@@ -45,7 +49,7 @@ if [ "$BENCH" = 1 ]; then
   done
 fi
 RATES=$([ -f "$OUT/throughput_h100.json" ] && echo "--rates $OUT/throughput_h100.json")
-python experiments/expanse/report.py --results "$OUT" $RATES || echo "the report failed: the scores are in $OUT"
+[ -n "$TAG" ] || python experiments/expanse/report.py --results "$OUT" $RATES || echo "the report failed: the scores are in $OUT"
 python - "$OUT" "${HF_REPO:-exea-labs/exealm-nairr-runs}" <<'PY' || echo "upload of results failed: they are in results/expanse"
 import sys
 from huggingface_hub import HfApi
