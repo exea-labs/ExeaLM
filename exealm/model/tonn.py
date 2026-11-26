@@ -184,24 +184,21 @@ class TONNLayer(nn.Module):
 
     def _unit_scale(self, y, o):
         """Divide each slot by the size its output had on PAST batches (a running average), so a prediction never
-        depends on other rows of the same batch and no slot drowns out the others. y is in type order o."""
-        used = self._measure(y.detach(), o)
-        return y / (used.view(1, 1, -1, 1).to(y.dtype) + 1e-3)
+        depends on other rows of the same batch and no slot drowns out the others. y is in type order o.
 
-    @torch.compiler.disable
-    def _measure(self, y, o):
-        """The sizes to divide by, and the running update of self.scale. Outside torch.compile: compiled, the backward
-        pass saved the buffer itself, and a stream's next window updates it in place before that backward runs (the
-        error "modified by an inplace operation"). Here `used` is a fresh tensor, so nothing saved is ever changed."""
+        The running update replaces self.scale with a new tensor instead of writing into it. Under torch.compile the
+        backward pass may save the buffer itself, or recompute this forward's read of it (pytorch/pytorch#201089). A
+        write in place would change that tensor before the backward runs: a stream's next window raised "modified by
+        an inplace operation", and a single window got gradients divided by the updated sizes, silently."""
         with torch.no_grad():
-            rms = y.float().pow(2).mean(dim=(0, 1, 3)).sqrt()
+            rms = y.detach().float().pow(2).mean(dim=(0, 1, 3)).sqrt()
             sc = self.scale.index_select(0, o)
             # A new/replaced slot has no past measurement. Using this batch's
             # RMS would leak future tokens and unrelated rows into its outputs.
-            used = torch.where(sc > 0, sc, torch.ones_like(sc)).clone()
+            used = torch.where(sc > 0, sc, torch.ones_like(sc))
             if self.training:
-                self.scale.index_copy_(0, o, torch.where(sc > 0, 0.99 * sc + 0.01 * rms, rms))
-        return used
+                self.scale = self.scale.index_copy(0, o, torch.where(sc > 0, 0.99 * sc + 0.01 * rms, rms))
+        return y / (used.view(1, 1, -1, 1).to(y.dtype) + 1e-3)
 
 
 # --------------------------------------------------------------------------------------------- the model

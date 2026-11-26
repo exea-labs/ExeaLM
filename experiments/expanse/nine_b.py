@@ -34,7 +34,7 @@ Three things the model needs under FSDP, done by prepare(); none changes what it
     and value residual would be silently off. Each layer is called with its input alone and gets the rest beside it.
   - Every TONN layer builds retrieval and board circuits whether a slot uses them or not, and their scalar parameters
     are refused by fully_shard (torch 2.6). This model has no memory slots, so they go.
-  - A TONN layer updates its running output sizes (a buffer) in its forward pass. Recomputed under checkpointing, it
+  - A TONN layer replaces its running output sizes (a buffer) in its forward pass. Recomputed under checkpointing, it
     would update them twice and run from different sizes than the forward pass did, giving a different gradient. The
     recomputation starts from the sizes the forward pass saw and leaves the ones it left.
 
@@ -87,7 +87,7 @@ class Unit(nn.Module):
         inner, rest = self.inner, self.rest
         if not self.checkpoint:
             return inner(x, *rest)
-        sizes = getattr(inner, "scale", None)              # a TONN layer's running output sizes, updated in place
+        sizes = getattr(inner, "scale", None)              # a TONN layer's running output sizes, replaced each pass
         seen = None if sizes is None else sizes.clone()
         calls = []
 
@@ -95,12 +95,12 @@ class Unit(nn.Module):
             calls.append(1)
             if sizes is None or len(calls) == 1:           # the forward pass
                 return inner(y, *rest)
-            left = sizes.clone()                           # the recomputation in the backward pass: from the sizes
-            sizes.copy_(seen)                              # the forward pass saw, then back to those it left
+            left = inner.scale                             # the recomputation in the backward pass: from the sizes
+            inner.scale = seen.clone()                     # the forward pass saw, then back to those it left
             try:
                 return inner(y, *rest)
             finally:
-                sizes.copy_(left)
+                inner.scale = left
 
         return recompute(run, x, use_reentrant=False)
 
