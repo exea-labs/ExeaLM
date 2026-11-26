@@ -209,14 +209,16 @@ def test_the_runner_picks_learning_rates_and_submits_every_phase(tmp_path):
     keep = tmp_path / "runs"
     for name, scores, done in (("lr_exealm_100m_0.0003", [2.1, 1.9], True), ("lr_exealm_100m_0.001", [2.0, 1.7], True),
                                ("lr_qwen_100m_0.001", [2.2, float("nan")], True), ("lr_qwen_100m_0.0003", [2.3, 1.95], True),
-                               ("lr_exealm_250m_0.001", [2.0], False)):
+                               ("lr_exealm_100m_0.0006", [2.1, 1.8], True), ("lr_qwen_100m_0.0006", [2.4, 2.0], True),
+                               ("lr_exealm_250m_0.001", [2.0], False), ("lr_qwen_250m_0.001", [2.0, 1.6], True)):
         (keep / name).mkdir(parents=True)
         lines = [json.dumps(dict(event="eval", step=i, val_bits_per_byte=v)) for i, v in enumerate(scores)]
         lines += [json.dumps(dict(event="end"))] if done else []
         (keep / name / "log.jsonl").write_text("\n".join(lines) + "\n")
     out = tmp_path / "lr_choice.json"
     chosen = pick_lr.main(["--keep", str(keep), "--out", str(out)])
-    assert chosen == {"exealm_100m": 0.001, "qwen_100m": 0.0003}          # nan loses; 250m is not finished
+    assert chosen == {"exealm_100m": 0.001, "qwen_100m": 0.0003}          # nan loses; 250m is not finished, and the
+                                                                            # Qwen3.5-style 250m has 1 of its 3 rates
     text = printed(["--run", "qwen_100m_4.1x_s1", "--lr", "auto", "--lr_file", str(out)])
     assert "--lr 0.0003" in text and "--anneal_data data/mix_pretrain_anneal.json --anneal_from 0.9" in text
     with pytest.raises(SystemExit, match="no learning rate"):
