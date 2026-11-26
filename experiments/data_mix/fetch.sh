@@ -66,11 +66,15 @@ else
 fi
 
 export HF_HUB_DISABLE_PROGRESS_BARS=0                 # a bar for every file, even if the environment turned them off
+# The Xet downloader (hf_xet) opens many streams with large buffers and was killed for memory on an Expanse login node
+# (memory allocation failed at 9 GB in); plain HTTP with a few workers is slower to start but stays small.
+export HF_HUB_DISABLE_XET=${HF_HUB_DISABLE_XET:-1}
+WORKERS=${HF_WORKERS:-4}
 PRE=""
 [ -n "$REL" ] && PRE="$REL/"
 get() {   # get <repo name> <pattern>...  (patterns inside the release folder)
   local name="$1"; shift
-  local args=(download "$ORG/$name" --repo-type dataset --revision "$REV" --local-dir "$DEST/$name")
+  local args=(download "$ORG/$name" --repo-type dataset --revision "$REV" --local-dir "$DEST/$name" --max-workers "$WORKERS")
   local pats=()
   for p in "$@"; do pats+=("$PRE$p"); done
   set -- "${pats[@]}"
