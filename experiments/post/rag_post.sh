@@ -3,7 +3,7 @@
 # placed before it (experiments/library/rag_pack.py), then scoring with the same search (score.py's bm25). From the
 # repo root on the login node:
 #
-#     bash experiments/expanse/rag_post.sh runs/exealm_midstream_100m_4.1x_s2 runs/qwen_100m_4.1x_s2
+#     bash experiments/post/rag_post.sh runs/exealm_midstream_100m_4.1x_s2 runs/qwen_100m_4.1x_s2
 #
 # Two runs read the same mix as library_post.sh's (the pretraining mix, half; the library's training items, half),
 # except that half of the library share is the items with their searched entry in front:
@@ -40,7 +40,7 @@ tok = {k: json.load(open(f"{lib}/{k}/train/meta.json"))["n_tokens"] for k in ("q
 for k, n in tok.items():
     mix["sources"][f"library_{k}"] = {"paths": f"{lib}/{k}/train", "weight": round(total / 2 * n / sum(tok.values()), 3)}
 mix["sources"]["library_rag"] = {"paths": f"{lib}/rag/train", "weight": round(total / 2, 3)}
-mix["note"] = ("post-training for the RAG test (experiments/expanse/rag_post.sh): the pretraining mix, half; the "
+mix["note"] = ("post-training for the RAG test (experiments/post/rag_post.sh): the pretraining mix, half; the "
                "library's training items, a quarter; the same items with a BM25-picked entry before them, a quarter")
 json.dump(mix, open("data/mix_library_rag.json", "w"), indent=1)
 print("data/mix_library_rag.json:", {k: v["weight"] for k, v in mix["sources"].items() if k.startswith("library")})

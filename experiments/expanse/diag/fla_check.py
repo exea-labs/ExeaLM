@@ -5,7 +5,7 @@ study trains), and the fla kernel in fp32. Each is compared with the reference: 
 and relative size. Then forward plus backward is timed under bf16 (median of 5 after 2 warm-up). Writes
 results/expanse/fla_check.json. One H100, a few minutes:
 
-    sbatch -A fli100 experiments/expanse/fla_check.sb
+    sbatch -A fli100 experiments/expanse/diag/fla_check.sb
 
 The fla kernel in fp32 should match the reference to rounding (same recurrence). Under bf16 the fla kernel should be
 about as far from the reference as our own kernel is.

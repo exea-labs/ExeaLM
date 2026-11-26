@@ -4,7 +4,7 @@ For every item of the library's training split (question/answer pairs and tasks)
 the item's prefix (score.bm25_pick) goes first, then a blank line, the prefix and the target: the layout score.py's
 "bm25" condition gives a held-out item. The search is the one used at test time, so the model learns to use the entry
 it will be shown, wrong ones included (the search picks another entry for some items). Writes a pack TokenShards reads
-(tokens.bin, offsets.npy, meta.json) for a post-training mix (experiments/expanse/library_post.sh with RAG=1).
+(tokens.bin, offsets.npy, meta.json) for a post-training mix (experiments/post/rag_post.sh).
 
     python experiments/library/rag_pack.py --library data/library/v1 --out data/library/v1/rag/train
 """

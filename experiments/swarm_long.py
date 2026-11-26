@@ -2,7 +2,7 @@
 better than one bigger model? Every model reads the same first windows x seq + 1 tokens of the same long held-out
 documents, and is scored in bits per byte for each window position.
 
-- A swarm model (an ExeaLM with board slots, post-trained in swarms; experiments/expanse/board_post.sh) gives one
+- A swarm model (an ExeaLM with board slots, post-trained in swarms; experiments/post/board_post.sh) gives one
   window to each agent: agent j reads window j, and with board_order "doc" it sees the posts of the agents before it,
   which read the earlier text, and nothing from the agents after it. "board" shares the board; "cut" scores every
   agent alone (swarm size 1), the same weights with the board removed.

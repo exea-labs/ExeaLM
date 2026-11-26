@@ -4,7 +4,7 @@
 # flash-linear-attention kernel (qwen --fla 1). Each row is experiments/throughput.py: forward, backward and AdamW on
 # random tokens, the same tokens a step at every sequence length of a size. Writes results/expanse/speed_*.json.
 #
-#     sbatch -A fli100 experiments/expanse/speed.sb
+#     sbatch -A fli100 experiments/expanse/diag/speed.sb
 #SBATCH --job-name=exealm-speed
 #SBATCH --partition=nairr-gpu-shared
 #SBATCH --nodes=1

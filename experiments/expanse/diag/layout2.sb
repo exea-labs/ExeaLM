@@ -1,13 +1,11 @@
 #!/bin/bash
-# Can ExeaLM with more attention beat the strong Llama (gated attention, QK-norm, value residual and XSA: 1.349 bits
-# per byte at 0.1B, against 1.376 for ExeaLM with a TONN layer every fourth layer, ablation_100m.json)? Fewer TONN
-# layers at different places, no streams, the same setting and windows as lead_100m.json and ablation_100m.json:
-#   every6_s0 (TONN at 0, 6, 12), every7_s0 (0, 7), every8_s0 and _s1 (0, 8), only0_s0, only7_s0, only13_s0 (one TONN
-#   layer, first, middle or last), and the strong Llama at learning rate 2e-3 (llama_two_lr2e-3_s0), the check ExeaLM got.
+# Follow-up to layout.sb: one TONN layer in the middle (layer 7 of 14) tied the strong Llama at 0.1B (1.3488 against
+# 1.3493, one seed), and every layout with a TONN layer at layer 0 lost about 0.03. More seeds of the middle layer, and
+# more TONN layers with none at layer 0: 4, 7, 10; 3, 7, 11; 5, 9; 6 alone; and the middle layer with streams.
 # One node, about 35 minutes (about 2.5 GPU-hours):
 #
-#     sbatch experiments/expanse/layout.sb
-#SBATCH --job-name=exealm-layout
+#     sbatch experiments/expanse/diag/layout.sb
+#SBATCH --job-name=exealm-layout2
 #SBATCH --partition=nairr-gpu
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=4
@@ -20,7 +18,7 @@ source "$SLURM_SUBMIT_DIR/experiments/expanse/env.sh"                 # the exea
 export PYTHONUNBUFFERED=1
 cd "$SLURM_SUBMIT_DIR"
 OUT=results/expanse
-RUNLOGS=logs/expanse/layout-$SLURM_JOB_ID
+RUNLOGS=logs/expanse/layout2-$SLURM_JOB_ID
 WORK=${LOCAL_DISK:-/scratch/$USER}/job_$SLURM_JOB_ID
 mkdir -p "$OUT" "$RUNLOGS" "$WORK/runs"
 localize() {        # localize <mix.json> <out.json>: the mix with its paths on this node's disk ($WORK/data/...)
@@ -53,24 +51,24 @@ gpu() {             # gpu <gpu> <name> <args...> [-- <name> <args...>]...: runs 
         > "$RUNLOGS/$name.out" 2>&1
     done ) &
 }
-echo "== $(date '+%F %T') round 1 of 2: TONN every sixth and eighth layer, only first, only last"
-gpu 0 every6_s0 --config $D/every6.json --lr 1e-3 --seed 0
-gpu 1 every8_s0 --config $D/every8.json --lr 1e-3 --seed 0
-gpu 2 only0_s0 --config $D/only0.json --lr 1e-3 --seed 0
-gpu 3 only13_s0 --config $D/only13.json --lr 1e-3 --seed 0
+echo "== $(date '+%F %T') round 1 of 2: one TONN layer in the middle (seeds 1, 2); TONN at 4, 7, 10; at 3, 7, 11"
+gpu 0 only7_s1 --config $D/only7.json --lr 1e-3 --seed 1
+gpu 1 only7_s2 --config $D/only7.json --lr 1e-3 --seed 2
+gpu 2 mid3_s0 --config $D/mid3.json --lr 1e-3 --seed 0
+gpu 3 shift4_s0 --config $D/shift4.json --lr 1e-3 --seed 0
 wait
-echo "== $(date '+%F %T') round 2 of 2: only the middle, every seventh, every eighth seed 1, the strong Llama at 2e-3"
-gpu 0 only7_s0 --config $D/only7.json --lr 1e-3 --seed 0
-gpu 1 every7_s0 --config $D/every7.json --lr 1e-3 --seed 0
-gpu 2 every8_s1 --config $D/every8.json --lr 1e-3 --seed 1
-gpu 3 llama_two_lr2e-3_s0 --model llama --config $D/llama_two.json --lr 2e-3 --seed 0
+echo "== $(date '+%F %T') round 2 of 2: TONN at 5, 9; only at 6; at 4, 7, 10 seed 1; the middle layer with streams"
+gpu 0 mid2_s0 --config $D/mid2.json --lr 1e-3 --seed 0
+gpu 1 only6_s0 --config $D/only6.json --lr 1e-3 --seed 0
+gpu 2 mid3_s1 --config $D/mid3.json --lr 1e-3 --seed 1
+gpu 3 only7_stream_s0 --config $D/only7.json --lr 1e-3 --seed 0 --stream 4 --stream_from 0.8 --batch 8
 wait
 for f in "$RUNLOGS"/*.out; do                                          # each run's last in-run evaluation
   echo "   $(basename "$f" .out): $(grep '"event": "eval"' "$f" | tail -1 | python -c 'import sys,json; l=sys.stdin.read().strip(); print(json.loads(l).get("val_bits_per_byte") if l else "no evaluation: read the log")')"
 done
 echo "== $(date '+%F %T') scoring every run on the same windows as lead_100m.json"
 CUDA_VISIBLE_DEVICES=0 python experiments/eval_text.py "$WORK"/runs/* --mix "$WORK/mix_val.json" \
-  --out "$OUT/layout_100m.json"
+  --out "$OUT/layout2_100m.json"
 python - "$OUT" "${HF_REPO:-exea-labs/exealm-nairr-runs}" <<'PY' || echo "upload failed: the results are in results/expanse"
 import sys
 from huggingface_hub import HfApi
@@ -80,4 +78,4 @@ api.create_repo(repo, repo_type="model", private=True, exist_ok=True)
 api.upload_folder(folder_path=out, path_in_repo="results/expanse", repo_id=repo, repo_type="model")
 print("uploaded", out, "to", repo)
 PY
-echo "== $(date '+%F %T') done: $OUT/layout_100m.json"
+echo "== $(date '+%F %T') done: $OUT/layout2_100m.json"

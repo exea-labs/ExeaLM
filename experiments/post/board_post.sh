@@ -2,7 +2,7 @@
 # Claim 11 of docs/report_plan.md, at small scale: three 0.1B ExeaLM agents sharing a board against one 0.25B model,
 # on long held-out documents. From the repo root on the login node, once the curve's runs below are finished:
 #
-#     bash experiments/expanse/board_post.sh runs/exealm_100m_4.1x_s0 runs/exealm_250m_4.1x_s0 runs/qwen_250m_4.1x_s0
+#     bash experiments/post/board_post.sh runs/exealm_100m_4.1x_s0 runs/exealm_250m_4.1x_s0 runs/qwen_250m_4.1x_s0
 #
 # Four post-training runs read the same pretraining mix for the same steps, so no model gets more training than
 # another after pretraining:

@@ -1,21 +1,34 @@
-# ExeaLM on Expanse: H100 nodes, four GPUs at a time
+# ExeaLM on Expanse: the NAIRR scaling study
 
-How the scaling study runs on the SDSC Expanse AI Resource: ExeaLM against a base Qwen3.5-style model at 0.1B, 0.25B,
-0.5B and 3B, with a plain Llama beside them up to 0.5B, from our NAIRR Pilot allocation of 2,000 GPU-hours. The
-plan and its reasons are in [docs/budget.md](../../docs/budget.md); every command is in
-[docs/runbook.md](../../docs/runbook.md). Parts of this page below describe the first plan (a gated Llama, memory slots
-in swarms); where they differ, the runbook and `plan.py` are right.
+The study that runs on SDSC Expanse from the NAIRR Pilot allocation (2,000 H100 GPU-hours): ExeaLM against a base
+Qwen3.5-style model at 0.1B, 0.25B, 0.5B and 3B, a plain Llama up to 0.5B, and the same model with attention in place of
+its TONN layer, all on the same data, tokens and recipe. **Results:** [results/expanse/README.md](../../results/expanse/README.md)
+(the summary at its top). **Decisions and why:** [docs/decisions.md](../../docs/decisions.md). **Every command:**
+[docs/runbook.md](../../docs/runbook.md). **What the funding report claims and the run behind each claim:**
+[docs/report_plan.md](../../docs/report_plan.md).
 
-**Nothing here has run on Expanse yet.** What has been checked:
+## What is in this folder
 
-- On two rented NVIDIA A40s ([results/a40_check](../../results/a40_check/README.md)): `gpu_check.py` passes in full,
-  two GPUs stay in sync and train 1.86 times as fast as one at the 0.1B shape, and a resumed run is identical to the
-  last bit. That was this branch's first multi-GPU trainer. Training on several GPUs now goes through DDP (the one on
-  `main`, with this branch's gradient accumulation and time limits added), which has not run on a GPU yet:
-  `gpu_check.py` on any two NVIDIA GPUs checks it before the allocation is spent.
-- On a laptop CPU: training with two processes (`tests/test_ddp.py`), the plan's arithmetic and commands
-  (`tests/test_plan.py`), the first job's lead check with tiny models, and `train.sb` end to end with Slurm's commands
-  faked (a run stopped by its time limit, copied off the "node", resubmitted and finished by the next job).
+| File | What it does |
+|---|---|
+| `plan.py` | Every run of the study: its arguments, steps, time limit and cost (`--run <name> --lr auto` prints the job) |
+| `go.sh` | Submits a phase: `runs <names>`, `lr`, `pick`, `curve`, `3b`, `eval`, `report`, `nine_b`, `status` |
+| `train.sb` | One training run on a node or one GPU: copies the data to the node, checkpoints, resumes, watches for hangs |
+| `eval.sb` | Scores finished runs: held-out text, long documents, benchmarks (`PICK`, `EXTRA`, `TAG` choose runs) |
+| `report.py`, `step_multiplier.py` | The curve, the compute multiplier and the 9B price; the steps a baseline needs to match ExeaLM |
+| `pick_lr.py`, `lr_choice.json` | The learning-rate checks' picks |
+| `nine_b.py`, `nine_b.sb` | The 9B model's speed and memory on 1, 2 and 4 nodes (FSDP2) |
+| `library.sb`, `library_v2.sb` | The distilled library: v1 written by Qwen3-30B-A3B, v2 by DeepSeek-V4-Flash on a whole node |
+| `first_contact.sb`, `setup.sh`, `env.sh` | The first job (correctness and speed on the H100), the environment, its activation |
+| `exealm_mid_<size>.json`, `qwen_<size>.json` | The configs: ExeaLM with one TONN layer at the middle layer; the Qwen3.5-style baseline |
+| `exealm_core.json` | The first plan's ExeaLM (a TONN layer every fourth layer), kept for the runs that used it |
+| `diag/` | One-off checks and their configs: the layout search, ablations, the compile and kernel checks, the speed benchmark |
+
+Post-training tests are in [experiments/post](../post) (the library with retrieval, RAG training, agents on a board);
+a released model's score on our data in [experiments/external](../external); distillation into the weights in
+[experiments/distill](../distill); the public release in [experiments/release](../release).
+
+The sections below are the setup notes from before the first job, kept as they were; the runbook is current.
 
 ## The machine
 

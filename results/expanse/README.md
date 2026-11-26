@@ -230,7 +230,7 @@ random tokens, the same weights, forward and backward, each kernel against our k
 code), written by Qwen3-30B-A3B-Instruct-2507 from source excerpts, 7.9M tokens, with 55,940 question/answer pairs and
 60,515 tasks that need an entry adapted on training topics and 6,253 and 6,604 on held-out topics. Three post-training
 runs of 600 steps (65,536 tokens a step, half the library's training items and half the pretraining mix,
-`experiments/expanse/library_post.sh`) from the seed-2 curve models: ExeaLM with a library slot (RG) grafted into its
+`experiments/post/library_post.sh`) from the seed-2 curve models: ExeaLM with a library slot (RG) grafted into its
 TONN layer and searching the library, ExeaLM without it, and the Qwen3.5-style model. Bits per byte on the targets of
 the held-out topics' items:
 
@@ -320,7 +320,7 @@ Bits per byte, mean of windows 1 to 7 (window 0 has nothing before it):
 
 ## 11. The library as trained RAG at 0.1B, 3 seeds (`library_rag_100m*.jsonl`)
 
-`experiments/expanse/rag_post.sh`, once from each of the three seeds of the curve's 0.1B models (`TAG=100m_s0`,
+`experiments/post/rag_post.sh`, once from each of the three seeds of the curve's 0.1B models (`TAG=100m_s0`,
 `100m_s1`, and seed 2 as `100m`): the same post-training as section 7, except that half of the library share is the
 training items with the entry a BM25 search picks placed before them (`experiments/library/rag_pack.py`), as at test
 time. Bits per byte on the held-out topics, mean of 3 seeds:
@@ -376,7 +376,7 @@ row read alone, mean of the 18 held-out sets:
 
 ## 14. Agents on a board against one bigger model, at 0.1B (jobs 56083871-6, 56084006-7, `board_100m.json`)
 
-`experiments/expanse/board_post.sh`: board slots (AG:2) grafted into the 0.1B ExeaLM's TONN layer, post-trained for 600
+`experiments/post/board_post.sh`: board slots (AG:2) grafted into the 0.1B ExeaLM's TONN layer, post-trained for 600
 steps in swarms of 3 (agent j reads window j of 3 consecutive windows; `board_order` "doc", so an agent sees only the
 agents before it); the same 0.1B ExeaLM, the 0.25B ExeaLM and the 0.25B Qwen3.5-style model post-trained the same steps
 on the same mix, every row alone. `experiments/swarm_long.py` scores them on the first 1,536 tokens of the held-out

@@ -3,7 +3,7 @@
 # experiments/expanse/library.sb) make ExeaLM better on research and code it was never trained on? From the repo root
 # on the login node:
 #
-#     bash experiments/expanse/library_post.sh runs/exealm_100m_4.1x_s0 runs/qwen_100m_4.1x_s0
+#     bash experiments/post/library_post.sh runs/exealm_100m_4.1x_s0 runs/qwen_100m_4.1x_s0
 #
 # Three post-training runs read the same data: the library's training questions and tasks (half of every step's
 # tokens) and the pretraining mix (the other half, so nothing is forgotten). Their topics are disjoint from the
@@ -39,7 +39,7 @@ total = sum(s["weight"] for s in mix["sources"].values())
 tok = {k: json.load(open(f"{lib}/{k}/train/meta.json"))["n_tokens"] for k in ("qa", "tasks")}
 for k, n in tok.items():
     mix["sources"][f"library_{k}"] = {"paths": f"{lib}/{k}/train", "weight": round(total * n / sum(tok.values()), 3)}
-mix["note"] = ("post-training for the library test (experiments/expanse/library_post.sh): the pretraining mix and "
+mix["note"] = ("post-training for the library test (experiments/post/library_post.sh): the pretraining mix and "
                "the library's training questions and tasks, half and half")
 json.dump(mix, open("data/mix_library_post.json", "w"), indent=1)
 print("data/mix_library_post.json:", {k: v["weight"] for k, v in mix["sources"].items() if k.startswith("library")},

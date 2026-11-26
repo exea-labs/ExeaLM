@@ -5,7 +5,7 @@
 # models, and writes results/expanse/compile_check.json: tokens per second and held-out bits per byte of each pair.
 # One node, about 35 minutes (about 2.5 GPU-hours):
 #
-#     sbatch experiments/expanse/compile_check.sb
+#     sbatch experiments/expanse/diag/compile_check.sb
 #     tail -f logs/expanse/exealm-compile-<job id>.out
 #
 # Compiled training is the same model: its bits per byte should be within about 0.01 of eager after 400 steps (bf16
