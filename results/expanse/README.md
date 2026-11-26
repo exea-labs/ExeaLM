@@ -318,22 +318,24 @@ Bits per byte, mean of windows 1 to 7 (window 0 has nothing before it):
   1.238 alone). The Qwen3.5-style model gains 0.073 from streaming untrained, ExeaLM without stream training 0.055,
   ExeaLM with it 0.099.
 
-## 11. The library as trained RAG at 0.1B (jobs 56082787-90, `library_rag_100m.jsonl`)
+## 11. The library as trained RAG at 0.1B, 3 seeds (`library_rag_100m*.jsonl`)
 
-`experiments/expanse/rag_post.sh`: the same post-training as section 7, except that half of the library share is the
+`experiments/expanse/rag_post.sh`, once from each of the three seeds of the curve's 0.1B models (`TAG=100m_s0`,
+`100m_s1`, and seed 2 as `100m`): the same post-training as section 7, except that half of the library share is the
 training items with the entry a BM25 search picks placed before them (`experiments/library/rag_pack.py`), as at test
-time. Bits per byte on the held-out topics:
+time. Bits per byte on the held-out topics, mean of 3 seeds:
 
 | Model | Questions: nothing, BM25, pasted | Text tasks: nothing, BM25 | Code tasks: nothing, BM25 |
 |---|---|---|---|
-| ExeaLM, RAG post-training | 1.649, **0.592**, 0.407 | 0.932, **0.739** | 0.447, **0.363** |
-| Qwen3.5-style, RAG post-training | 1.624, 0.707, 0.534 | 0.948, 0.789 | 0.472, 0.402 |
-| ExeaLM, post-training without entries (section 8) | 1.674, 0.689, 0.511 | 0.933, 0.754 | 0.438, 0.366 |
+| ExeaLM, RAG post-training | 1.645, **0.590**, 0.405 | 0.936, **0.739** | 0.448, **0.364** |
+| Qwen3.5-style, RAG post-training | 1.633, 0.704, 0.529 | 0.953, 0.791 | 0.473, 0.403 |
+| ExeaLM, post-training without entries (section 8, seed 2) | 1.674, 0.689, 0.511 | 0.933, 0.754 | 0.438, 0.366 |
 
-- Trained to read a searched entry, ExeaLM with the library and a BM25 search cuts its bits per byte on held-out
-  questions by 64% (1.649 to 0.592), 0.097 better than without that training.
-- ExeaLM stays ahead of the Qwen3.5-style model with the library on every set: by 0.115 on questions, 0.050 on text
-  tasks and 0.039 on code tasks.
+- With the library and a BM25 search, ExeaLM's bits per byte on held-out questions fall by 64% (1.645 to 0.590; seeds
+  0.588, 0.589, 0.592), and 21% on text tasks and 19% on code tasks.
+- ExeaLM is ahead of the Qwen3.5-style model with the library on every seed: by 0.110 to 0.116 on questions and 0.047
+  to 0.050 on tasks. Without the library the two are within 0.02 of each other.
+- Training with searched entries in context gained ExeaLM 0.097 on questions over post-training without them (seed 2).
 
 ## 12. How many times the steps the Qwen3.5-style model needs (in training, 26 November 04:20)
 
