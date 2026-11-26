@@ -7,14 +7,29 @@ Every command, in order, and what to expect. The plan and its reasons are in [bu
 ## Once
 
 ```bash
+ssh abhatia7@login.expanse.sdsc.edu         # password and a TOTP code (Expanse 2FA, enrolled through Globus/ACCESS CI)
 git clone -b nairr https://github.com/exea-labs/ExeaLM.git && cd ExeaLM
-conda create -n exealm python=3.11 -y && conda activate exealm
-huggingface-cli login                       # a token of an account in exea-labs: reads the data, writes the runs
-export SBATCH_ACCOUNT=<your NAIRR project>
-export KEEP=<where runs are kept>           # see "Where everything is saved"; default ./runs
+module load anaconda3/2021.05/q4munrg       # conda is a module on Expanse; make the environment from conda-forge
+conda create -n exealm -c conda-forge python=3.11 -y
+eval "$(conda shell.bash hook)" && conda activate exealm
+hf auth login                               # a token of an account in exea-labs: reads the data, writes the runs
+echo 'export SBATCH_ACCOUNT=fli100' >> ~/.bashrc && export SBATCH_ACCOUNT=fli100    # the NAIRR project's Slurm account
 bash experiments/expanse/go.sh setup        # the Python environment, checks that torch sees CUDA
-bash experiments/expanse/go.sh data         # the 30B-token slice (slice-30b-r2): ~60 GB into data/, ~10-30 min
+bash experiments/expanse/go.sh data         # the 30B-token slice (slice-30b-r2): 57 GB into data/, ~5-10 min
 ```
+
+Every new login: `module load anaconda3/2021.05/q4munrg && eval "$(conda shell.bash hook)" && conda activate exealm`.
+Jobs take the Python of the shell that submits them. Login nodes refuse large memory: the Xet downloader and mapping
+the whole dataset both failed there with out-of-memory errors, so `fetch.sh` downloads over plain HTTP and checks file
+sizes instead of opening the data. To let a tool (or a second terminal) run commands without logging in again, open one
+shared connection from your own machine: `ssh -o ControlMaster=yes -o ControlPath=~/.ssh/cm-expanse -o
+ControlPersist=12h -fN abhatia7@login.expanse.sdsc.edu`.
+
+**The balance check.** Expanse refuses a submission ("Project balance is not enough to run the job") when the jobs
+already queued and running, counted at the time limits they asked for, would exceed the allocation's balance. Each job
+therefore asks for a limit sized to its run (`plan.py` prints `SBATCH_TIMELIMIT`), and `go.sh` skips runs already
+queued, running or finished: if some submissions were refused, run the same phase again once earlier jobs end.
+Lowering a queued job's limit (`scontrol update JobId=<id> TimeLimit=02:30:00`) frees room at once.
 
 `go.sh data` writes `data/mix_pretrain.json`, `data/mix_pretrain_val.json` and `data/mix_pretrain_anneal.json` with
 local paths; every job reads them. `slice-30b-r2` is on Hugging Face (28.5B tokens, published 25 November). Every run of
