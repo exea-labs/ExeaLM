@@ -1,0 +1,102 @@
+#!/bin/bash
+# Does torch.compile speed up the real training loop, and does it train the same? The first job's bare step measured
+# ExeaLM at 0.5B at 297 effective TFLOP/s compiled against 119 eager, and Llama at 295 against 217. This runs the real
+# loop (real data, streaming in ExeaLM's last part, evaluation, one GPU and four) eager and compiled for all three
+# models, and writes results/expanse/compile_check.json: tokens per second and held-out bits per byte of each pair.
+# One node, about 35 minutes (about 2.5 GPU-hours):
+#
+#     sbatch experiments/expanse/compile_check.sb
+#     tail -f logs/expanse/exealm-compile-<job id>.out
+#
+# Compiled training is the same model: its bits per byte should be within about 0.01 of eager after 400 steps (bf16
+# and fused kernels round differently). If they are, and the speed-up holds, the plan trains every model compiled.
+#SBATCH --job-name=exealm-compile
+#SBATCH --partition=nairr-gpu
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=4
+#SBATCH --cpus-per-task=8
+#SBATCH --gpus=h100:4
+#SBATCH --time=01:00:00
+#SBATCH --output=logs/expanse/%x-%j.out
+set -uo pipefail
+export PYTHONUNBUFFERED=1
+cd "$SLURM_SUBMIT_DIR"
+OUT=results/expanse
+RUNLOGS=logs/expanse/compile-$SLURM_JOB_ID
+WORK=${LOCAL_DISK:-/scratch/$USER}/job_$SLURM_JOB_ID
+mkdir -p "$OUT" "$RUNLOGS" "$WORK/runs"
+localize() {        # localize <mix.json> <out.json>: the mix with its paths on this node's disk ($WORK/data/...)
+  python - "$WORK" "$1" > "$2" <<'PY'
+import json, sys
+work, src = sys.argv[1], sys.argv[2]
+mix = json.load(open(src))
+for s in mix["sources"].values():
+    ps = s["paths"] if isinstance(s["paths"], list) else [s["paths"]]
+    ps = [p if p.startswith("/") else f"{work}/{p}" for p in ps]
+    s["paths"] = ps if len(ps) > 1 else ps[0]
+print(json.dumps(mix))
+PY
+}
+echo "== $(date '+%F %T') job $SLURM_JOB_ID: each run writes its progress to $RUNLOGS/<run>.out"
+echo "== $(date '+%F %T') copying data/ ($(du -sh data | cut -f1)) to the node's disk"
+rsync -a data/ "$WORK/data/" && echo "== $(date '+%F %T') data copied"
+localize data/mix_pretrain.json "$WORK/mix.json"; localize data/mix_pretrain_val.json "$WORK/mix_val.json"
+
+# 0.5B, 400 steps of 16 windows of 512 per GPU; ExeaLM reads rows of 4 streamed windows from step 200 on, so both
+# phases are compiled and timed. The last evaluation's tokens per second covers steps 200 to 400, after compiling.
+common="--preset 500m --data $WORK/mix.json --val $WORK/mix_val.json --seq 512 --steps 400 --warmup 40 --lr 6e-4
+        --search 0 --eval_every 200 --eval_batches 16 --seed 0"
+exealm="--config experiments/expanse/exealm_core.json --stream 4 --stream_from 0.5"
+qwen="--model llama --config experiments/expanse/qwen_500m.json"
+llama="--model llama"
+one() {             # one <name> <gpu> <batch> <args...>: a run on one GPU, in the background
+  local name=$1 gpu=$2 batch=$3; shift 3
+  CUDA_VISIBLE_DEVICES=$gpu python -m exealm.train.pretrain $common --batch "$batch" "$@" \
+    --out "$WORK/runs/$name" > "$RUNLOGS/$name.out" 2>&1 &
+}
+echo "== $(date '+%F %T') round 1 of 3: ExeaLM and Qwen3.5-style, eager and compiled, one GPU each"
+one exealm_eager 0 4 $exealm --compile 0
+one exealm_compiled 1 4 $exealm --compile 1
+one qwen_eager 2 16 $qwen --compile 0
+one qwen_compiled 3 16 $qwen --compile 1
+wait
+echo "== $(date '+%F %T') round 2 of 3: Llama, eager and compiled"
+one llama_eager 0 16 $llama --compile 0
+one llama_compiled 1 16 $llama --compile 1
+wait
+echo "== $(date '+%F %T') round 3 of 3: ExeaLM on four GPUs (DDP), eager then compiled"
+for c in 0 1; do
+  name=exealm_4gpu_$([ $c = 1 ] && echo compiled || echo eager)
+  torchrun --nproc_per_node 4 -m exealm.train.pretrain $common --batch 16 $exealm --compile $c \
+    --out "$WORK/runs/$name" > "$RUNLOGS/$name.out" 2>&1
+done
+
+python - "$WORK/runs" "$OUT/compile_check.json" <<'PY'
+import json, os, sys
+runs, out = sys.argv[1], sys.argv[2]
+def last(name):
+    path = os.path.join(runs, name, "log.jsonl")
+    evals = [json.loads(l) for l in open(path) if '"event": "eval"' in l] if os.path.exists(path) else []
+    return evals[-1] if evals else None
+rows = {}
+for model in ("exealm", "qwen", "llama", "exealm_4gpu"):
+    e, c = last(f"{model}_eager"), last(f"{model}_compiled")
+    if not e or not c:
+        rows[model] = dict(error="a run did not finish: read its log in " + os.path.dirname(out).replace("results", "logs"))
+        continue
+    rows[model] = dict(eager_tokens_per_sec=e["tokens_per_sec"], compiled_tokens_per_sec=c["tokens_per_sec"],
+                       speedup=round(c["tokens_per_sec"] / e["tokens_per_sec"], 2),
+                       eager_bits_per_byte=e.get("val_bits_per_byte"), compiled_bits_per_byte=c.get("val_bits_per_byte"),
+                       difference=round(c.get("val_bits_per_byte", 0) - e.get("val_bits_per_byte", 0), 4),
+                       eager_gpu_mem_gb=e.get("gpu_mem_gb"), compiled_gpu_mem_gb=c.get("gpu_mem_gb"))
+json.dump(rows, open(out, "w"), indent=1)
+print(f"{'model':12s} {'eager tok/s':>12s} {'compiled':>10s} {'speed-up':>9s} {'eager bpb':>10s} {'compiled':>9s} {'diff':>8s}")
+for m, r in rows.items():
+    if "error" in r:
+        print(f"{m:12s} {r['error']}")
+    else:
+        print(f"{m:12s} {r['eager_tokens_per_sec']:>12,} {r['compiled_tokens_per_sec']:>10,} {r['speedup']:>8}x "
+              f"{r['eager_bits_per_byte']:>10} {r['compiled_bits_per_byte']:>9} {r['difference']:>+8}")
+print("wrote", out)
+PY
+echo "== $(date '+%F %T') done"
