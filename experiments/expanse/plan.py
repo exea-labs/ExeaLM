@@ -63,11 +63,11 @@ LR_RATES = {"100m": 3, "250m": 3, "500m": 3, "3b": 2}  # how many learning rates
 # (results/a40_check: 11.8 GB at 0.1B with 32 rows, 23.1 GB at 0.5B with 16), scaled by width x depth: about 40 GB at
 # 0.5B and 1B, and about 59 GB at 3B, where 8 rows would come to about 71 GB. Estimates: throughput.py measures them.
 SIZES = {
-    "100m": dict(exealm=94.28, core=93.84, llama=89.73, qwen=95.69, batch=64, gpus=1),
-    "250m": dict(exealm=246.24, core=247.38, llama=234.78, qwen=252.1, batch=32, gpus=1),
-    "500m": dict(exealm=498.08, core=500.34, llama=474.09, qwen=511.27, batch=32, gpus=4),
-    "1b": dict(exealm=966.06, core=970.48, llama=917.82, qwen=991.94, batch=16, gpus=4),
-    "3b": dict(exealm=2902.88, core=2921.17, llama=2757.24, qwen=2986.19, batch=4, gpus=4),
+    "100m": dict(exealm=94.28, core=93.84, mid=95.06, llama=89.73, qwen=95.69, batch=64, gpus=1),
+    "250m": dict(exealm=246.24, core=247.38, mid=250.52, llama=234.78, qwen=252.1, batch=32, gpus=1),
+    "500m": dict(exealm=498.08, core=500.34, mid=508.5, llama=474.09, qwen=511.27, batch=32, gpus=4),
+    "1b": dict(exealm=966.06, core=970.48, mid=987.05, llama=917.82, qwen=991.94, batch=16, gpus=4),
+    "3b": dict(exealm=2902.88, core=2921.17, mid=2973.52, llama=2757.24, qwen=2986.19, batch=4, gpus=4),
 }
 # The study: part, size, tokens per ExeaLM parameter, seeds, models. Every model of a line trains for the same number
 # of steps. 4.1 tokens per parameter is what the 3B pair can afford (about 12B tokens each); the curve uses the same
@@ -94,7 +94,9 @@ SIZE_NAME = {"0.1B": "100m", "0.25B": "250m", "0.5B": "500m", "1B": "1b", "3B": 
 
 
 def steps_of(preset, tpp, variant="core"):
-    return round(tpp * SIZES[preset]["core" if variant == "core" else "exealm"] * 1e6 / STEP_TOKENS)
+    # mid: the steps of core, which the baselines of the curve and of 3B were trained for (each line of STUDY trains
+    # every model for the same number of steps)
+    return round(tpp * SIZES[preset]["core" if variant in ("core", "mid") else "exealm"] * 1e6 / STEP_TOKENS)
 
 
 def runs(variant="core"):
@@ -127,7 +129,7 @@ def gpu_hours(params_m, tokens, tflops, gpus=1, speedup=4.0):
 
 
 def params_of(preset, model, a):
-    return SIZES[preset]["core" if (model == "exealm" and a.variant == "core") else model]
+    return SIZES[preset][a.variant if (model == "exealm" and a.variant in ("core", "mid")) else model]
 
 
 def rate_of(rates, preset, model):
@@ -222,7 +224,7 @@ def time_limit(preset, model, a, steps):
 def command(run, preset, model, seed, a, steps, lr=None, check=False):
     s = SIZES[preset]
     gpus, windows = a.gpus or s["gpus"], a.batch or s["batch"]
-    k = STREAM if model in STREAMED else 1          # windows per row
+    k = STREAM if model in STREAMED and a.variant != "mid" else 1   # windows per row
     batch = windows * gpus // k                     # pretrain's --batch: rows of k windows, over all the GPUs
     accum, rest = divmod(STEP_TOKENS, batch * SEQ * k)
     if rest or windows % k:
@@ -243,7 +245,8 @@ def command(run, preset, model, seed, a, steps, lr=None, check=False):
             args.append("--fla 1")                  # plain-PyTorch form took 13.1 s a step (job 56081618); the curve
                                                     # runs had started without it (results/expanse/fla_check.json)
     else:
-        args.append("--search 0" + (" --config experiments/expanse/exealm_core.json" if a.variant == "core" else ""))
+        args.append("--search 0" + (" --config experiments/expanse/exealm_core.json" if a.variant == "core" else
+                                    f" --config experiments/expanse/exealm_mid_{preset}.json" if a.variant == "mid" else ""))
     if preset == "3b" and gpus > 1:                 # AdamW's state split over the GPUs: without it a 3B run ran out
         args.append("--zero 1")                     # of memory on 80 GB H100s (Expanse jobs 56075772, 56075989)
     args.append(f"--data {a.data} --val {a.val} --seq {SEQ} "
@@ -271,8 +274,10 @@ def parser():
     ap.add_argument("--rates", default=None, help="a throughput_<gpu>.json from experiments/throughput.py")
     ap.add_argument("--speedup", type=float, default=4.0, help="how many times as fast four GPUs are as one "
                     "(speedup_on_4_gpus in results/expanse/scaling_500m.json)")
-    ap.add_argument("--variant", default="core", choices=["core", "memory"],
-                    help="ExeaLM without memory slots, every row alone (core), or with board and library slots in swarms")
+    ap.add_argument("--variant", default="core", choices=["core", "mid", "memory"],
+                    help="ExeaLM without memory slots, a TONN layer every fourth layer and streams in the last 20% "
+                         "(core); one TONN layer at the middle layer, every row alone (mid); or with board and library "
+                         "slots in swarms (memory)")
     ap.add_argument("--run", default=None, help="print the lines that submit this run (needs --lr)")
     ap.add_argument("--lr_check", default=None, help="print the learning-rate check of this size: " + ", ".join(LR_STEPS))
     ap.add_argument("--lr", default=None, help="the learning rate the check picked for this model and size, or 'auto': "
