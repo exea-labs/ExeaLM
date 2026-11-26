@@ -224,7 +224,34 @@ random tokens, the same weights, forward and backward, each kernel against our k
 - Only the 3B run uses it (job 56081885). The curve's Qwen3.5-style runs had started on our kernel and keep it, so
   every curve point is trained the same way. Compute is compared in FLOPs, which the kernel does not change.
 
-## 7. Next
+## 7. The distilled library at 0.1B (jobs 56082586-90)
+
+`library_100m.jsonl`. The library (`exea-labs/exealm-library`): 18,545 entries (13,548 on research topics, 4,997 on
+code), written by Qwen3-30B-A3B-Instruct-2507 from source excerpts, 7.9M tokens, with 55,940 question/answer pairs and
+60,515 tasks that need an entry adapted on training topics and 6,253 and 6,604 on held-out topics. Three post-training
+runs of 600 steps (65,536 tokens a step, half the library's training items and half the pretraining mix,
+`experiments/expanse/library_post.sh`) from the seed-2 curve models: ExeaLM with a library slot (RG) grafted into its
+TONN layer and searching the library, ExeaLM without it, and the Qwen3.5-style model. Bits per byte on the targets of
+the held-out topics' items:
+
+| Model | Questions, nothing | Questions, entry pasted | Tasks, nothing | Tasks, entry pasted |
+|---|---|---|---|---|
+| ExeaLM, post-trained | 1.674 | **0.511** | **0.798** | **0.638** |
+| Qwen3.5-style, post-trained | **1.646** | 0.631 | 0.815 | 0.686 |
+| ExeaLM, before post-training | 1.977 | 0.738 | 1.048 | 0.826 |
+| Qwen3.5-style, before post-training | 1.945 | 0.897 | 1.055 | 0.904 |
+
+- With the right entry in its context, ExeaLM's bits per byte on held-out questions fall by 69% (1.674 to 0.511) and
+  on tasks by 20%. It uses the entry better than the Qwen3.5-style model, before and after post-training (0.511
+  against 0.631 on questions, 0.638 against 0.686 on tasks). Without an entry the two are close: the Qwen3.5-style
+  model is 0.028 ahead on questions, ExeaLM 0.017 ahead on tasks.
+- ExeaLM's own retrieval does not work yet. The grafted RG slot returned a chunk of the right entry for 0.1% of
+  questions and 7.8% of tasks (24% at any chunk of the target), and attaching the library changed nothing (1.6742
+  against 1.6741 on questions). The entries reach the model only when something else puts them in its context.
+- One seed, 0.1B, 600 steps of post-training that never showed an entry in context. `score.py --conditions bm25`
+  measures the same with a keyword search choosing the entry (next section).
+
+## 8. Next
 
 The learning-rate checks (`go.sh lr`), the ablations at 0.1B (`ablate.sb`), and the compile check
 (`compile_check.sb`), then the curve.
