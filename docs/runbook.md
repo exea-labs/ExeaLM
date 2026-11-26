@@ -94,6 +94,12 @@ throughout. Every run reads the anneal mix for the last 10% (`--anneal_data`).
 
 ## Where everything is saved
 
+**Home is capped at 100 GB.** `quota` does not show it. On 26 November at 01:56 the home directory filled with
+checkpoints and finished models; every job's next log write failed, and nine runs died within two minutes without a
+word in their logs (new jobs could not even create theirs). `runs/` is now a link to the project's Lustre space,
+`/expanse/lustre/projects/fli100/abhatia7/runs`, and every run of an hour or more checkpoints every 30 minutes (hourly
+at 3B). If jobs die silently, check `du -sh ~` first.
+
 | What | Where |
 |---|---|
 | Checkpoints and finished models | `KEEP`: a folder (default `./runs`, in your home directory, 100 GB quota) or `s3://bucket/prefix` on SDSC's Ceph (needs `s3cmd` configured). The 3B checkpoints need the S3 option: two runs at ~35 GB each do not fit beside the 60 GB of data. |
