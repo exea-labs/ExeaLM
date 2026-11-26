@@ -53,8 +53,8 @@ Run them one at a time and look at the results between them, or `bash experiment
 
 Every run is `experiments/expanse/train.sb` with `RUN` and `ARGS` set by `plan.py`:
 - copies `data/` to the node's NVMe and trains from there;
-- writes a checkpoint every `SAVE_MIN` minutes (default 30; for the 3B runs use `SAVE_MIN=120`: a 3B checkpoint with
-  its optimizer state is ~35 GB) and copies it to `KEEP` at once;
+- writes a checkpoint every `SAVE_MIN` minutes, as `plan.py` sets it per run (see "Disk" below), and copies it to
+  `KEEP` at once;
 - stops cleanly `MARGIN_MIN` (45) minutes before the 48-hour limit, copies the run back, and submits the next job, which
   continues from the checkpoint (`--resume auto`), up to `JOBS_LEFT` (20) more jobs;
 - when the run is finished, uploads `model.pt` and `log.jsonl` to the private Hugging Face repo `HF_REPO` (default
@@ -74,6 +74,18 @@ throughout. Every run reads the anneal mix for the last 10% (`--anneal_data`).
 | Finished models, off SDSC | Hugging Face `exea-labs/exealm-nairr-runs` (private), `runs/<name>/` |
 | Results | `results/expanse/` and Hugging Face `exea-labs/exealm-nairr-runs`, `results/expanse/` |
 | Job output | `logs/expanse/` |
+
+**Disk.** Home holds 100 GB, and the data takes about 60 of it, the Python environment about 8. A checkpoint with its
+optimizer state is 12 bytes a parameter (1.1 GB at 0.1B, 6 GB at 0.5B, 35 GB at 3B); a finished `model.pt` is 4 bytes
+a parameter. So that phases 1 to 4 fit in home:
+- a finished run's `ckpt.pt` is removed from `KEEP` (`KEEP_CKPT=1` keeps it); `model.pt` and `log.jsonl` stay;
+- a learning-rate check keeps only its `log.jsonl`, all `go.sh pick` reads;
+- `plan.py` sets `SAVE_MIN` per run: no checkpoints on a timer for learning-rate checks and runs under about 8 hours
+  (all of the curve), every hour for the long pair, every 2 hours at 3B. A job that reaches its time limit writes one
+  either way.
+The finished curve and long pair come to about 25 GB. **The 3B pair does not fit**: two checkpoints of 35 GB beside the
+data. Before phase 5, set `KEEP` to `s3://...` on SDSC's Ceph object storage (ask SDSC for credentials and space on the
+allocation's ticket; about 300 GB covers it) or to other space the GPU nodes can read. Check with `df -h ~`.
 
 ## What to expect
 

@@ -23,7 +23,11 @@
 #               the same batches
 #   KEEP        where runs are kept: a folder, or s3://bucket/prefix (needs s3cmd)               (default: ./runs)
 #   DATA        the packed data to copy in: a folder or s3://bucket/prefix                       (default: ./data)
-#   SAVE_MIN    minutes between checkpoints (default 30)       MARGIN_MIN  minutes kept for the last save and copy (45)
+#   SAVE_MIN    minutes between checkpoints (default 30; 0: none on a timer, but a job that reaches its time limit
+#               still writes one to continue from; plan.py sets it per run)
+#   MARGIN_MIN  minutes kept for the last save and copy (45)
+#   KEEP_CKPT   1 keeps a finished run's ckpt.pt (its optimizer state) in KEEP. By default it is removed and model.pt
+#               and log.jsonl stay; a learning-rate check (RUN=lr_*) keeps only its log. Home is 100 GB, the data 60
 #   JOBS_LEFT   how many more jobs may follow this one (default 20)
 #   HF_REPO     a finished run's model.pt and log.jsonl are also uploaded here (default exea-labs/exealm-nairr-runs,
 #               private; needs `huggingface-cli login`); HF_REPO="" turns it off
@@ -63,6 +67,9 @@ copy() {                                                               # copy <f
     *)       mkdir -p "$2" && rsync -a --exclude '*.tmp' "$1" "$2" ;;
   esac
 }
+finished() {                                                           # finished <run folder>: model.pt, or the log's end
+  [ -f "$1/model.pt" ] || grep -qs '"event": "end"' "$1/log.jsonl"
+}
 minutes() {                                                            # Slurm's 2-00:00:00, 12:00:00 or 30:00, in minutes
   python -c "
 import sys
@@ -78,7 +85,7 @@ copy "$DATA/" "$WORK/data/" || { echo "could not copy the data in"; exit 1; }
 if [[ $KEEP == s3://* ]] || [ -d "$KEEP/$RUN" ]; then
   copy "$KEEP/$RUN/" "$OUT/" || echo "nothing to continue from in $KEEP/$RUN"
 fi
-[ -f "$OUT/model.pt" ] && { echo "$RUN is already finished"; exit 0; }
+finished "$OUT" && { echo "$RUN is already finished"; exit 0; }
 [ -f "$OUT/ckpt.pt" ] && echo "continuing from $OUT/ckpt.pt" || echo "starting $RUN from scratch"
 
 limit=$(squeue -h -j "$SLURM_JOB_ID" -o %l)
@@ -106,11 +113,12 @@ if [ "$GPUS" -gt 1 ]; then launch="torchrun --nproc_per_node $GPUS -m"; else lau
 $launch exealm.train.pretrain $ARGS --out "$OUT" --resume auto --save_minutes "$SAVE_MIN" --max_minutes "$max_min"
 code=$?
 kill $copier 2>/dev/null
+case $RUN in lr_*) finished "$OUT" && rm -f "$OUT/model.pt" "$OUT/ckpt.pt" ;; esac   # a learning-rate check: its log
 copy "$OUT/" "$KEEP/$RUN/" || { echo "COULD NOT COPY THE RUN BACK: $OUT is lost when this job ends"; exit 1; }
 
 cd "$REPO"
-if [ -f "$OUT/model.pt" ]; then
-  echo "== $(date '+%F %T') $RUN finished: $KEEP/$RUN/model.pt"
+if finished "$OUT"; then
+  echo "== $(date '+%F %T') $RUN finished: $KEEP/$RUN"
   if [ -n "${HF_REPO-exea-labs/exealm-nairr-runs}" ]; then         # a copy off SDSC: the model and its log
     python - "$OUT" "$RUN" "${HF_REPO:-exea-labs/exealm-nairr-runs}" <<'PY' || echo "upload to Hugging Face failed: $KEEP has the run"
 import sys
@@ -122,6 +130,11 @@ api.upload_folder(folder_path=out, path_in_repo=f"runs/{run}", repo_id=repo, rep
                   allow_patterns=["model.pt", "log.jsonl"])
 print(f"uploaded {run} to {repo}")
 PY
+  fi
+  if [ "${KEEP_CKPT:-0}" != 1 ]; then              # a finished run needs no optimizer state: free KEEP for the others
+    if [[ $KEEP == s3://* ]]; then s3cmd del --quiet "$KEEP/$RUN/ckpt.pt" > /dev/null 2>&1 || true
+    else rm -f "$KEEP/$RUN/ckpt.pt"; fi
+    echo "removed $KEEP/$RUN/ckpt.pt (KEEP_CKPT=1 keeps it)"
   fi
 elif [ $code -ne 0 ]; then
   echo "== $(date '+%F %T') training failed (exit $code). Not resubmitting. The last checkpoint is in $KEEP/$RUN"

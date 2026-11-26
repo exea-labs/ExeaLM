@@ -194,6 +194,18 @@ def pack_tokens(data):
         return None
 
 
+def save_minutes(preset, model, a, steps, check):
+    """Minutes between checkpoints (train.sb's SAVE_MIN). Checkpoints with their optimizer state are large (12 bytes
+    a parameter: 35 GB at 3B) and KEEP is a 100 GB home by default, so only runs long enough to lose much to a crash
+    write them on a timer: none for learning-rate checks and runs under 8 hours, every 2 hours at 3B, else every hour.
+    A job that reaches its time limit writes one either way, so every run can continue."""
+    if check:
+        return 0
+    gpus = a.gpus or SIZES[preset]["gpus"]
+    hours = cost(preset, model, measured([])[0], a, steps * STEP_TOKENS) / gpus     # wall-clock, at the MI300X rates
+    return 120 if preset == "3b" else 60 if hours > 8 else 0
+
+
 def command(run, preset, model, seed, a, steps, lr=None, check=False):
     s = SIZES[preset]
     gpus, windows = a.gpus or s["gpus"], a.batch or s["batch"]
@@ -219,7 +231,7 @@ def command(run, preset, model, seed, a, steps, lr=None, check=False):
     else:
         args.append(f"--steps {steps} --lr {a.lr:g} --seed {seed} --eval_every {a.eval_every}")
     args.append(f"--eval_batches {max(1, 512 // batch)}")   # about 512 windows per evaluation, each read alone
-    lines = [f"RUN={run} \\", 'ARGS="' + " ".join(args) + '" \\']
+    lines = [f"RUN={run} \\", 'ARGS="' + " ".join(args) + '" \\', f"SAVE_MIN={save_minutes(preset, model, a, steps, check)} \\"]
     flags = ""
     if gpus == 1:                                   # one GPU: the shared partition, and one task's worth of cores
         flags = "--ntasks-per-node=1 "

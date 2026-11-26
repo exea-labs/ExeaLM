@@ -119,6 +119,8 @@ def test_every_run_is_a_whole_number_of_swarms_and_passes_per_step():
         else:
             assert get("--search") == "0" and get("--config") == "experiments/expanse/exealm_core.json"
         assert ("--ntasks-per-node=1" in text) == (gpus == 1)
+        save = int(text.split("SAVE_MIN=")[1].split()[0])                # checkpoints on a timer only where they pay
+        assert save == (120 if preset == "3b" else 60 if "_111x_" in name else 0), (name, save)
     memory = printed(["--run", "exealm_3b_4.1x_s0", "--lr", "1e-3", "--variant", "memory"])
     assert "--config" not in memory.split('ARGS="')[1].split('"')[0]
     with pytest.raises(SystemExit, match="needs --lr"):
@@ -127,6 +129,7 @@ def test_every_run_is_a_whole_number_of_swarms_and_passes_per_step():
         plan.main(["--run", "exealm_3b_4.1x_s0", "--lr", "1e-3", "--batch", "6"])
     check = printed(["--lr_check", "500m", "--lrs", "3e-4,6e-4"])
     assert check.count("sbatch ") == 6 and "--steps 1000 --warmup 100" in check and "qwen_500m.json" in check
+    assert check.count("SAVE_MIN=0") == 6                                  # a learning-rate check keeps only its log
     assert printed(["--lr_check", "3b", "--lrs", "3e-4,6e-4"]).count("sbatch ") == 4    # no plain Llama at 3B
 
 
