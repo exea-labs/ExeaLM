@@ -44,7 +44,7 @@ step "topics: $TEXT_TOPICS research topics, $CODE_TOPICS code topics"
 [ -s "$OUT/topics.txt" ] || $B topics "$REL/packed/pes2o/train" "$REL/packed/arxiv/train" "$REL/packed/wikipedia_en/train" \
   --min_doc_tokens 256 --shuffle --limit "$TEXT_TOPICS" --tokenizer "$TOK" --out "$OUT/topics.txt"
 [ -s "$OUT/code_topics.txt" ] || $B topics "$REL/packed/research_python/train" "$REL/packed/starcoder/train" \
-  --kind code --limit "$CODE_TOPICS" --tokenizer "$TOK" --out "$OUT/code_topics.txt"
+  --kind code --limit "$CODE_TOPICS" --max_docs 40000 --tokenizer "$TOK" --out "$OUT/code_topics.txt"
 wc -l "$OUT/topics.txt" "$OUT/code_topics.txt"
 
 V="--backend vllm --model $WORK/model --max_model_len 4096"

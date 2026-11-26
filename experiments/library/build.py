@@ -278,16 +278,22 @@ def load_tokenizer(name):
     return load(name)
 
 
-def pack_starts(path, tok, peek_tokens, min_doc_tokens):
-    """The first peek_tokens tokens of every document of a packed directory, decoded."""
+def pack_starts(path, tok, peek_tokens, min_doc_tokens, max_docs=0, seed=0):
+    """The first peek_tokens tokens of every document of a packed directory, decoded. max_docs > 0: a seeded random
+    sample of that many documents instead (scanning every file of a 7.5B-token code pack for its imports takes hours
+    on one core)."""
     from exealm.data.loader import TokenShards
     if not os.path.exists(os.path.join(path, "meta.json")):
         raise SystemExit(f"{path} is a directory but not a packed one (no meta.json)")
     shards = TokenShards(path)
     ends = np.append(shards.offsets[1:], len(shards.tokens))
-    for a, b in zip(shards.offsets, ends):
+    order = range(len(shards.offsets))
+    if max_docs and max_docs < len(shards.offsets):
+        order = sorted(np.random.default_rng(seed).choice(len(shards.offsets), max_docs, replace=False).tolist())
+    for i in order:
+        a, b = int(shards.offsets[i]), int(ends[i])
         if b - a >= max(1, min_doc_tokens):
-            yield tok.decode([int(i) for i in shards.tokens[a:min(b, a + peek_tokens)]])
+            yield tok.decode([int(t) for t in shards.tokens[a:min(b, a + peek_tokens)]])
 
 
 def records(path):
@@ -333,10 +339,10 @@ def is_data(src):
     return os.path.isdir(src) or src.endswith(RECORD_FILES)
 
 
-def documents(src, tok, peek_tokens, min_doc_tokens):
-    """(title, text) of every document of a packed directory or a records file."""
+def documents(src, tok, peek_tokens, min_doc_tokens, max_docs=0, seed=0):
+    """(title, text) of every document of a packed directory (or max_docs of them, sampled) or a records file."""
     if os.path.isdir(src):
-        for text in pack_starts(src, tok, peek_tokens, min_doc_tokens):
+        for text in pack_starts(src, tok, peek_tokens, min_doc_tokens, max_docs, seed):
             yield None, text
     else:
         yield from records(src)
@@ -355,13 +361,13 @@ def cmd_topics(a):
     if a.kind == "code":                       # the user's own lists first, then the mined topics, most used first
         found += [t for s in a.sources if not is_data(s) for t in read_lines(s)]
         found += code_topics((text for s in a.sources if is_data(s)
-                              for _, text in documents(s, tok, peek, a.min_doc_tokens)), a.min_docs)
+                              for _, text in documents(s, tok, peek, a.min_doc_tokens, a.max_docs, a.seed)), a.min_docs)
     else:
         for s in a.sources:
             if not is_data(s):
                 found += read_lines(s)                                # the user's own topics, taken as they are
                 continue
-            for title, text in documents(s, tok, peek, a.min_doc_tokens):
+            for title, text in documents(s, tok, peek, a.min_doc_tokens, a.max_docs, a.seed):
                 found.append(title.strip() if title and title.strip() else topic_from_text(text, a.max_words))
     seen, topics = set(), []
     for t in found:
@@ -1309,6 +1315,8 @@ def main(argv=None):
     t.add_argument("--peek_tokens", type=int, default=0,
                    help="tokens decoded from the start of each packed document (0: 64 for text, 4096 for code)")
     t.add_argument("--min_doc_tokens", type=int, default=0, help="skip packed documents shorter than this (stubs)")
+    t.add_argument("--max_docs", type=int, default=0,
+                   help="read a seeded random sample of this many documents per packed source (0: all of them)")
     t.add_argument("--max_words", type=int, default=8, help="text: longest topic taken from a first line")
     t.add_argument("--min_docs", type=int, default=2, help="code: a topic must appear in at least this many files")
 
