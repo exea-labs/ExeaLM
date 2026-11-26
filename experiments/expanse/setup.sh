@@ -13,8 +13,10 @@ python - <<'PY'
 import sys
 assert sys.version_info >= (3, 10), "Python 3.10 or newer"
 PY
-python -c "import torch" 2>/dev/null || pip install -q torch          # the default Linux wheel carries CUDA
-pip install -q -e ".[dev,data]" huggingface_hub
+# The default Linux wheel carries CUDA: 3-4 GB with NVIDIA's libraries, so this shows its progress. --no-cache-dir: home
+# is 100 GB and pip would otherwise keep a second copy of every wheel in ~/.cache/pip.
+python -c "import torch" 2>/dev/null || pip install --no-cache-dir --progress-bar on torch
+pip install --no-cache-dir -q -e ".[dev,data]" huggingface_hub
 python - <<'PY'
 import torch
 assert torch.version.cuda, f"torch {torch.__version__} is a CPU-only build: install a CUDA build before submitting jobs"
