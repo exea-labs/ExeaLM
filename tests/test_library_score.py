@@ -167,3 +167,17 @@ def test_bm25_finds_the_entry_whose_rare_tokens_the_question_shares(setup):
     unique = [i for i, it in enumerate(items)
               if any(owners.get(t) == {it["source_doc"]} for t in set(it["prefix"]) if t not in {eot, *sep})]
     assert all(top5[i] for i in unique)
+
+
+def test_rag_pack_puts_the_searched_entry_before_every_item(setup):
+    rag_pack = load("rag_pack")
+    out = setup["dir"] / "rag"
+    rag_pack.main(["--library", setup["lib"], "--split", "heldout", "--device", "cpu", "--out", str(out)])
+    pack, lib = TokenShards(str(out)), TokenShards(setup["lib"])
+    items, eot, sep = sc.load_items(setup["lib"], ["qa", "tasks"], "heldout")
+    picked, _, _ = sc.bm25_pick(lib, items, eot, sep)
+    assert pack.meta["n_docs"] == len(items) and pack.meta["eot_id"] == eot
+    for i in (0, len(items) - 1):
+        a = int(pack.offsets[i])
+        want = sc.entry_ids(lib, int(picked[i])) + list(sep) + items[i]["prefix"] + items[i]["target"] + [eot]
+        assert [int(t) for t in pack.tokens[a:a + len(want)]] == want
