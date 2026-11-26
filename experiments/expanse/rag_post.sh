@@ -22,10 +22,14 @@ LIB=$PWD/data/library/v1
 export SBATCH_ACCOUNT=${SBATCH_ACCOUNT:-fli100}
 mkdir -p logs/expanse results/expanse
 
-jr=$(sbatch --parsable -p nairr-gpu-shared -N 1 --gpus=h100:1 --ntasks-per-node=1 --cpus-per-task=8 -t 00:45:00 \
-  -J "exealm-ragpack" -o "logs/expanse/%x-%j.out" --wrap "source experiments/expanse/env.sh; export PYTHONUNBUFFERED=1; \
-  python experiments/library/rag_pack.py --library $LIB --out $LIB/rag/train")
-echo "RAG pack: $jr -> $LIB/rag/train"
+if [ -f "$LIB/rag/train/meta.json" ]; then           # built by an earlier run of this script: the same for every seed
+  jr="" && echo "RAG pack: $LIB/rag/train (already built)"
+else
+  jr=$(sbatch --parsable -p nairr-gpu-shared -N 1 --gpus=h100:1 --ntasks-per-node=1 --cpus-per-task=8 -t 00:45:00 \
+    -J "exealm-ragpack" -o "logs/expanse/%x-%j.out" --wrap "source experiments/expanse/env.sh; export PYTHONUNBUFFERED=1; \
+    python experiments/library/rag_pack.py --library $LIB --out $LIB/rag/train")
+  echo "RAG pack: $jr -> $LIB/rag/train"
+fi
 
 python - "$LIB" <<'PY'
 import json, sys
@@ -47,7 +51,7 @@ COMMON="--data data/mix_library_rag.json --val data/mix_pretrain_val.json --seq 
 submit() {          # submit <run> <args>: one GPU of the shared partition, through train.sb, after the pack
   RUN=$1 ARGS="$2 $COMMON" SAVE_MIN=0 SBATCH_JOB_NAME=exealm-$1 SBATCH_TIMELIMIT=02:00:00 \
     SBATCH_PARTITION=nairr-gpu-shared SBATCH_GPUS=h100:1 SBATCH_EXTRA="--ntasks-per-node=1" \
-    sbatch --parsable --dependency=afterok:$jr --ntasks-per-node=1 experiments/expanse/train.sb
+    sbatch --parsable ${jr:+--dependency=afterok:$jr} --ntasks-per-node=1 experiments/expanse/train.sb
 }
 j1=$(submit "ragpost_exealm_$TAG" "--search 0 --init $PWD/$EXEALM/model.pt")
 j2=$(submit "ragpost_qwen_$TAG" "--model llama --init $PWD/$QWEN/model.pt")
