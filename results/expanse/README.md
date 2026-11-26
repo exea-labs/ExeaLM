@@ -456,6 +456,20 @@ ExeaLM's stream phase changed `k` to 4, which switched the averaging back on for
   two processes with `--accum 3` (plain and `--zero`) and checks they stay in sync and train the model one process
   trains; it fails on the old code.
 - Rerun: the 3B and 0.5B learning-rate checks (jobs 56084938-50), then the 3B pair and the 0.5B curve.
+- The checks with gradients averaged pick different rates. Last validation bits per byte (500 steps at 3B, 1,000 at
+  0.5B):
+
+| Model | 3e-4 | 6e-4 | 1e-3 | Picked (before the fix) |
+|---|---|---|---|---|
+| ExeaLM 3B | 1.193 | **1.150** | | 6e-4 (3e-4) |
+| Qwen3.5-style 3B | **1.297** | 1.323 | | 3e-4 (3e-4) |
+| ExeaLM 0.5B | 1.115 | 1.060 | **1.044** | 1e-3 (1e-3) |
+| Qwen3.5-style 0.5B | 1.159 | 1.098 | **1.078** | 1e-3 (1e-3) |
+| Llama 0.5B | 1.161 | **1.113** | 1.114 | 6e-4 (6e-4) |
+
+  The 3B pair restarted from scratch at these rates (jobs 56085824-5, 26 November 09:48), the 0.5B curve at 11:31
+  (jobs 56086585-90). The 3B pair's checkpoints now take about a minute (section 6 of the code change: each process
+  writes its own part of AdamW's state), against 14.5 before.
 
 ## 18. Next
 
