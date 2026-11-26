@@ -1,0 +1,48 @@
+NVIDIA H100 80GB HBM3, 81559 MiB
+/home/abhatia7/.conda/envs/exealm/lib/python3.11/site-packages/triton/knobs.py:504: UserWarning: TRITON_DEFAULT_FP_FUSION is unset: defaulting to FP fusion ENABLED for backward compatibility in Triton 3.9. The default will change to DISABLED in Triton 3.10; set TRITON_DEFAULT_FP_FUSION=1 to keep fusion enabled or =0 to adopt the new default early and silence this warning.
+  warn_once(FP_FUSION_DEFAULT_WARNING)
+{"preset": "100m", "params_m": 95.7, "batch": 8, "seq": 2048, "loss_torch": 10.52767, "loss_fla": 10.52691, "loss_diff": 0.000763, "grad_cos_min": 0.93301, "grad_cos_median": 0.978411, "grad_rel_diff_max": 0.36425, "grad_rel_diff_median": 0.207823, "seconds_torch": 0.4527, "seconds_fla": 0.1251, "speedup": 3.62, "peak_gb": 27.4}
+{"preset": "500m", "params_m": 511.3, "batch": 8, "seq": 2048, "loss_torch": 10.64491, "loss_fla": 10.64597, "loss_diff": 0.001061, "grad_cos_min": 0.82842, "grad_cos_median": 0.934353, "grad_rel_diff_max": 0.57156, "grad_rel_diff_median": 0.362367, "seconds_torch": 1.0521, "seconds_fla": 0.3755, "speedup": 2.8, "peak_gb": 73.1}
+Traceback (most recent call last):
+  File "/home/abhatia7/ExeaLM/experiments/expanse/fla_check.py", line 99, in <module>
+    main()
+  File "/home/abhatia7/ExeaLM/experiments/expanse/fla_check.py", line 90, in main
+    rows = [check("100m", 8, a.seq, a.vocab), check("500m", 8, a.seq, a.vocab), check("3b", 4, a.seq, a.vocab)]
+                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/abhatia7/ExeaLM/experiments/expanse/fla_check.py", line 56, in check
+    loss_torch = step(model, idx, tgt)
+                 ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/abhatia7/ExeaLM/experiments/expanse/fla_check.py", line 26, in step
+    _, loss = model(idx, targets=tgt)
+              ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/abhatia7/.conda/envs/exealm/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1787, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/abhatia7/.conda/envs/exealm/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1798, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/abhatia7/ExeaLM/exealm/model/baseline.py", line 129, in forward
+    x = m(mix(a, x, ctx))
+          ^^^^^^^^^^^^^^
+  File "/home/abhatia7/ExeaLM/exealm/model/baseline.py", line 102, in mix
+    return layer(x, ctx)
+           ^^^^^^^^^^^^^
+  File "/home/abhatia7/.conda/envs/exealm/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1787, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/abhatia7/.conda/envs/exealm/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1798, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/abhatia7/ExeaLM/exealm/model/baseline.py", line 71, in forward
+    out = self.out(y)
+          ^^^^^^^^^^^
+  File "/home/abhatia7/.conda/envs/exealm/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1787, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/abhatia7/.conda/envs/exealm/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1798, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/abhatia7/.conda/envs/exealm/lib/python3.11/site-packages/torch/nn/modules/linear.py", line 134, in forward
+    return F.linear(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 14.00 MiB. GPU 0 has a total capacity of 79.18 GiB of which 12.88 MiB is free. Including non-PyTorch memory, this process has 79.16 GiB memory in use. Of the allocated memory 78.29 GiB is allocated by PyTorch, and 65.50 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)

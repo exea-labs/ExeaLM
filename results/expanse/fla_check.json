@@ -1,0 +1,89 @@
+{
+ "gpu": "NVIDIA H100 80GB HBM3",
+ "torch": "2.15.0+cu132",
+ "rows": [
+  {
+   "preset": "100m",
+   "params_m": 95.7,
+   "seq": 2048,
+   "compare_batch": 8,
+   "reference_loss": 10.52928,
+   "ours_bf16": {
+    "loss": 10.52896,
+    "loss_diff": 0.000319,
+    "grad_cos_min": 0.93712,
+    "grad_cos_median": 0.967872,
+    "grad_rel_diff_median": 0.253667,
+    "grad_rel_diff_max": 0.35187
+   },
+   "fla_bf16": {
+    "loss": 10.52914,
+    "loss_diff": 0.000141,
+    "grad_cos_min": 0.94646,
+    "grad_cos_median": 0.967593,
+    "grad_rel_diff_median": 0.255234,
+    "grad_rel_diff_max": 0.34285
+   },
+   "fla_fp32": {
+    "loss": 10.52926,
+    "loss_diff": 2.1e-05,
+    "grad_cos_min": 0.99981,
+    "grad_cos_median": 0.999896,
+    "grad_rel_diff_median": 0.014487,
+    "grad_rel_diff_max": 0.0197
+   },
+   "time_batch": 8,
+   "seconds_ours": 0.4721,
+   "seconds_fla": 0.1245,
+   "speedup": 3.79,
+   "peak_gb": 33.5
+  },
+  {
+   "preset": "500m",
+   "params_m": 511.3,
+   "seq": 2048,
+   "compare_batch": 2,
+   "reference_loss": 10.65957,
+   "ours_bf16": {
+    "loss": 10.65773,
+    "loss_diff": 0.00184,
+    "grad_cos_min": 0.78102,
+    "grad_cos_median": 0.899836,
+    "grad_rel_diff_median": 0.448134,
+    "grad_rel_diff_max": 0.65718
+   },
+   "fla_bf16": {
+    "loss": 10.66122,
+    "loss_diff": 0.001653,
+    "grad_cos_min": 0.76624,
+    "grad_cos_median": 0.897255,
+    "grad_rel_diff_median": 0.45376,
+    "grad_rel_diff_max": 0.67437
+   },
+   "fla_fp32": {
+    "loss": 10.65969,
+    "loss_diff": 0.00012,
+    "grad_cos_min": 0.99906,
+    "grad_cos_median": 0.999614,
+    "grad_rel_diff_median": 0.02778,
+    "grad_rel_diff_max": 0.04329
+   },
+   "time_batch": 8,
+   "seconds_ours": 1.0542,
+   "seconds_fla": 0.374,
+   "speedup": 2.82,
+   "peak_gb": 69.2
+  },
+  {
+   "preset": "3b",
+   "params_m": 2986.2,
+   "seq": 2048,
+   "time_batch": 2,
+   "seconds_ours": 1.1823,
+   "seconds_fla": 0.3497,
+   "speedup": 3.38,
+   "peak_gb": 64.3
+  }
+ ],
+ "note": "one batch of random tokens per preset; compare_batch windows for the comparison with the fp32 reference, time_batch windows for the timing (3B: 2, half of what each GPU trains with; it does not fit 4 without the optimizer split)"
+}

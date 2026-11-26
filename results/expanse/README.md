@@ -200,7 +200,31 @@ The Llama with the four changes at learning rate 2e-3 scored 1.3553, worse than 
 - Every TONN layer beyond one costs, and the stream phase costs 0.015 on windows read alone.
 - This layout is 0.072 ahead of the Qwen3.5-style model (1.3484 against 1.4204) and 0.128 ahead of the plain Llama.
 
-## 6. Next
+## 6. The 3B Qwen3.5-style run uses the flash-linear-attention kernel (jobs 56081770, 56081833)
+
+Our Gated DeltaNet layer (`exealm/model/delta.py`) ran its recurrence as `chunk_gated_delta`, chunk by chunk in plain
+PyTorch. At 3B that made the Qwen3.5-style run take 13.0 s a step on four H100s (job 56081618, cancelled at step 100):
+165 hours, 660 GPU-hours. `--fla 1` runs the same recurrence on the Triton kernel Qwen3-Next uses
+(`fla.ops.gated_delta_rule.chunk_gated_delta_rule`, flash-linear-attention 0.6.0). `fla_check.json`: one batch of
+random tokens, the same weights, forward and backward, each kernel against our kernel in fp32 without autocast:
+
+| Preset | Kernel, precision | Loss off by | Gradient cosine (median, min) |
+|---|---|---|---|
+| 0.1B, 8 windows | ours, bf16 | 0.00032 | 0.968, 0.937 |
+| | fla, bf16 | 0.00014 | 0.968, 0.946 |
+| | fla, fp32 | 0.00002 | 0.9999, 0.9998 |
+| 0.5B, 2 windows | ours, bf16 | 0.00184 | 0.900, 0.781 |
+| | fla, bf16 | 0.00165 | 0.897, 0.766 |
+| | fla, fp32 | 0.00012 | 0.9996, 0.9991 |
+
+- In fp32 the two kernels agree (the rest is TF32 inside the Triton kernel). Under bf16, the precision the study trains
+  in, the fla kernel is as far from the fp32 result as ours is: the spread is bf16 rounding of gradients at
+  initialisation, the same for both.
+- Forward plus backward at 2,048 tokens a window: 3.79 times as fast at 0.1B, 2.82 at 0.5B, 3.38 at 3B (2 windows).
+- Only the 3B run uses it (job 56081885). The curve's Qwen3.5-style runs had started on our kernel and keep it, so
+  every curve point is trained the same way. Compute is compared in FLOPs, which the kernel does not change.
+
+## 7. Next
 
 The learning-rate checks (`go.sh lr`), the ablations at 0.1B (`ablate.sb`), and the compile check
 (`compile_check.sb`), then the curve.
