@@ -31,7 +31,7 @@ mkdir -p runs/_graft logs/expanse results/expanse
 
 GRAFT=$PWD/runs/_graft/exealm_${TAG}_ag.pt
 # The graft runs on a compute node: the login node caps a process's memory (it could not hold a 0.1B model)
-jg=$(sbatch --parsable -p nairr-gpu-shared --gpus=h100:1 --ntasks-per-node=1 --cpus-per-task=4 -t 00:20:00 \
+jg=$(sbatch --parsable -p nairr-gpu-shared -N 1 --gpus=h100:1 --ntasks-per-node=1 --cpus-per-task=4 -t 00:20:00 \
   -J "exealm-graft-$TAG" -o "logs/expanse/%x-%j.out" --wrap "source experiments/expanse/env.sh; \
   python -m exealm.train.graft --ckpt $SMALL/model.pt --add AG:$AG --set '{\"swarm_size\": 3, \"board_order\": \"doc\"}' --out $GRAFT")
 echo "graft: $jg -> $GRAFT"
@@ -50,7 +50,7 @@ j3=$(submit "boardpost_exealm_big" "--search 0 --init $PWD/$BIG/model.pt --batch
 j4=$(submit "boardpost_qwen_big" "--model llama --init $PWD/$QWEN/model.pt --batch 64")
 echo "post-training: ag $j1, solo $j2, exealm 0.25B $j3, qwen 0.25B $j4"
 
-j5=$(sbatch --parsable -p nairr-gpu-shared --gpus=h100:1 --ntasks-per-node=1 --cpus-per-task=8 -t 02:00:00 \
+j5=$(sbatch --parsable -p nairr-gpu-shared -N 1 --gpus=h100:1 --ntasks-per-node=1 --cpus-per-task=8 -t 02:00:00 \
   -J "exealm-boardscore-$TAG" -o "logs/expanse/%x-%j.out" --dependency="afterok:$j1:$j2:$j3:$j4" \
   --wrap "source experiments/expanse/env.sh; export PYTHONUNBUFFERED=1; python experiments/swarm_long.py \
     --swarm runs/boardpost_ag_$TAG --single runs/boardpost_solo_$TAG runs/boardpost_exealm_big runs/boardpost_qwen_big \
