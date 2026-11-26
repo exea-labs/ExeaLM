@@ -1,0 +1,41 @@
+[
+ {
+  "size": "3B",
+  "model": "mid",
+  "precision": "bf16",
+  "seq": 8192,
+  "did_not_fit_batch": 1,
+  "error": "out of memory at batch 1",
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "torch": "2.15.0+cu132",
+  "compile": 1,
+  "tf32": 0,
+  "fla": 1
+ },
+ {
+  "size": "3B",
+  "model": "strong",
+  "precision": "bf16",
+  "seq": 8192,
+  "did_not_fit_batch": 1,
+  "error": "out of memory at batch 1",
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "torch": "2.15.0+cu132",
+  "compile": 1,
+  "tf32": 0,
+  "fla": 1
+ },
+ {
+  "size": "3B",
+  "model": "qwen",
+  "precision": "bf16",
+  "seq": 8192,
+  "did_not_fit_batch": 1,
+  "error": "out of memory at batch 1",
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "torch": "2.15.0+cu132",
+  "compile": 1,
+  "tf32": 0,
+  "fla": 1
+ }
+]

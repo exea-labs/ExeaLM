@@ -1,0 +1,53 @@
+[
+ {
+  "size": "0.5B",
+  "model": "mid",
+  "precision": "bf16",
+  "seq": 8192,
+  "params_M": 508.5,
+  "batch": 2,
+  "s_per_step": 0.4069,
+  "tokens_per_s": 40269,
+  "effective_TFLOPs": 122.9,
+  "peak_mem_gb": 52.2,
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "torch": "2.15.0+cu132",
+  "compile": 0,
+  "tf32": 0,
+  "fla": 1
+ },
+ {
+  "size": "0.5B",
+  "model": "strong",
+  "precision": "bf16",
+  "seq": 8192,
+  "params_M": 510.1,
+  "batch": 2,
+  "s_per_step": 0.3993,
+  "tokens_per_s": 41029,
+  "effective_TFLOPs": 125.6,
+  "peak_mem_gb": 50.7,
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "torch": "2.15.0+cu132",
+  "compile": 0,
+  "tf32": 0,
+  "fla": 1
+ },
+ {
+  "size": "0.5B",
+  "model": "qwen",
+  "precision": "bf16",
+  "seq": 8192,
+  "params_M": 511.3,
+  "batch": 2,
+  "s_per_step": 0.3948,
+  "tokens_per_s": 41503,
+  "effective_TFLOPs": 127.3,
+  "peak_mem_gb": 51.8,
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "torch": "2.15.0+cu132",
+  "compile": 0,
+  "tf32": 0,
+  "fla": 1
+ }
+]

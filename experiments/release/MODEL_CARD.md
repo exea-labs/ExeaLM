@@ -59,7 +59,7 @@ picks the entry; the model reads it and answers. With the GitHub code:
 git clone -b nairr https://github.com/exea-labs/ExeaLM && cd ExeaLM
 pip install torch numpy safetensors tokenizers huggingface_hub
 python experiments/library/ask.py                 # random held-out questions, answered with and without the library
-python experiments/library/ask.py --question "Who proposed the theory of general relativity?"
+python experiments/library/ask.py --question "What does gradient descent move the parameters along?"
 python experiments/library/ask.py --interactive
 python experiments/library/ask.py --score 0       # all 6,253 held-out questions, in bits per byte
 ```

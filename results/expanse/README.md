@@ -6,7 +6,7 @@ sections after it are the record, in the order results came in, with what each d
 [docs/decisions.md](../../docs/decisions.md). The finished models are public on Hugging Face:
 [exea-labs/exealm-nairr](https://huggingface.co/exea-labs/exealm-nairr).
 
-## Summary (26 November 2026, 14:30; the 0.5B and 3B pairs are training)
+## Summary (26 November 2026, 16:10; the 0.5B and 3B pairs are training)
 
 ExeaLM: attention layers with a gate, QK-norm, value residual and XSA, one TONN layer (searched signal-processing
 circuits) at the middle layer, and streams of four windows in the last 20% of training. Every comparison below is at
@@ -15,12 +15,12 @@ the same size, data, tokens and recipe; bits per byte on held-out text, lower is
 | What | Result | Basis | Section |
 |---|---|---|---|
 | Ahead of the Qwen3.5 design | 0.1B: 1.157 against 1.190; 0.25B: 1.014 against 1.026 (plain Llama 1.200, 1.041) | 3 seeds, 18 held-out sets, all 54 set-and-seed pairs at each size | 9, 13 |
-| Long documents | 4,096 tokens read as a stream: 0.1B 1.096 against 1.157; 0.25B 0.955 against 0.997 | 3 seeds, all 54 pairs at each size | 10, 15 |
-| Learns more per token | the Qwen3.5-style model needs 1.33 to 1.41 times ExeaLM's steps to match it at 111 tokens per parameter (the 9B's) | in training, 1 seed; a second seed is running | 12 |
+| Long documents | 4,096 tokens read as a stream: 0.1B 1.096 against 1.157; 0.25B 0.955 against 0.997. 16,384 tokens (8 times the streams it trained on): 0.1B 1.073 against 1.134; 0.25B 0.947 against 0.996, the lead growing along the document | 4,096: 3 seeds, all 54 pairs at each size. 16,384: 3 seeds at 0.1B, 1 at 0.25B | 10, 15, 19 |
+| Learns more per token | the Qwen3.5-style model needs more of ExeaLM's steps to match it at 111 tokens per parameter (the 9B's): 1.41 times at its highest, 1.19 at step 27,500 of 39,735 and falling | in training, 1 seed; a second seed is running | 12 |
 | A library distilled from a larger model | held-out research questions 1.645 to 0.590 with the library and a BM25 search; 0.110 to 0.116 ahead of the Qwen3.5-style model with the same library | 3 seeds, 0.1B | 7, 8, 11 |
 | Against the released Qwen3.5-9B | 0.1B ExeaLM with its library 0.590 against Qwen3.5-9B without one 1.031 on held-out research questions (a system against a model; with the same library Qwen3.5-9B scores 0.313). On text alone Qwen3.5-9B is far ahead (0.674 against 1.011 for ExeaLM 0.25B) | 1 seed | 18 |
 | Where the TONN layer goes | one TONN layer at the middle layer beats one in every fourth layer (1.348 against 1.376, 54 of 54 pairs); one at layer 0 costs 0.038 | 12 layouts, 0.1B | 4, 5 |
-| What the TONN layer itself adds | small: against the same model with attention in its place, 1.3484 against 1.3493 at 0.1B (3 seeds) and 1.0761 against 1.0785 in the curve run (1 seed); 3 seeds at 0.1B and 0.25B and the long run are being scored | | 5 |
+| What the TONN layer itself adds | about 0.1%: against the same model with attention in its place, at 0.1B, 1.1566 against 1.1574 on windows alone, 1.0955 against 1.0968 on 4,096-token streams, 1.0726 against 1.0737 on 16,384-token streams. The lead over the Qwen3.5 design comes from the attention changes and the streams | 3 seeds (ahead in 2, 3 and 3 of them); 0.25B and the long run are training | 5, 19 |
 | The 9B, priced | 206 effective TFLOP/s per H100 on one node; about 75,000 GPU-hours for 1T tokens | 1 node; 2 and 4 nodes measured, being written up | 16 |
 | Did not work | ExeaLM's own retrieval circuit (0.1% of questions find their entry); three 0.1B agents sharing a board lose to one model reading as a stream | | 7, 14 |
 | Void | the first 0.5B runs and the 3B pair's first 1,100 steps: a multi-GPU bug skipped gradient averaging; rerun with the fix | | 17 |
@@ -536,7 +536,41 @@ The library's held-out items (bits per byte on the targets; ExeaLM 0.1B from sec
   research questions (0.590 against 1.031). That is a system against a model: given the same library, Qwen3.5-9B
   scores 0.313.
 
-## 19. Next
+## 19. 16,384-token documents, and the TONN layer against attention (jobs 56088276, 56088365)
 
-The learning-rate checks (`go.sh lr`), the ablations at 0.1B (`ablate.sb`), and the compile check
-(`compile_check.sb`), then the curve.
+`stream32_100m.json`: the curve's models on the first 16,384 tokens of every held-out document at least that long (up
+to 40 a set; 15 of the 18 sets have such documents), read as 32 windows of 512, eight times the four windows ExeaLM
+streamed in training. "Streamed" and "alone" as in section 10. Bits per byte, means of window ranges:
+
+| Model | Seeds | Streamed, windows 1-31 | Windows 1-7 | Windows 24-31 | Alone |
+|---|---|---|---|---|---|
+| **ExeaLM 0.1B** | 3 | **1.0726** | **1.0869** | **1.0644** | **1.1885** |
+| ExeaLM 0.1B with attention in place of its TONN layer | 3 | 1.0737 | 1.0882 | 1.0654 | 1.1893 |
+| Qwen3.5-style 0.1B | 3 | 1.1339 | 1.1459 | 1.1259 | 1.2223 |
+| **ExeaLM 0.25B** | 1 | **0.9471** | **0.9527** | **0.9438** | **1.0538** |
+| Qwen3.5-style 0.25B | 1 | 0.9956 | 0.9958 | 0.9921 | 1.0656 |
+
+- Streams of four windows in training carry to 32: every model keeps improving deeper into the document.
+- ExeaLM's lead over the Qwen3.5-style model is 0.061 at 0.1B (5.4%, 3 seeds) and 0.049 at 0.25B (4.9%, 1 seed). At
+  0.25B it grows along the document, from 0.043 in windows 1-7 to 0.048 in windows 24-31.
+
+The TONN layer against attention (`text_100m_strong.json`, `stream8_100m_strong.json` and the table above). The
+control is ExeaLM with attention in the place of its TONN layer (`experiments/expanse/diag/llama_two.json`), trained
+with the same recipe, streams included; 3 seeds each at 0.1B:
+
+| Reading | ExeaLM | Attention in its place | Seeds where ExeaLM is ahead |
+|---|---|---|---|
+| Windows of 512 alone (section 9's) | **1.1566** | 1.1574 | 2 of 3 |
+| 4,096-token documents as a stream | **1.0955** | 1.0968 | 3 of 3 |
+| 16,384-token documents as a stream | **1.0726** | 1.0737 | 3 of 3 |
+
+The TONN layer is ahead by about 0.1%. What puts ExeaLM ahead of the Qwen3.5 design is the rest of it: the attention
+changes (gate, QK-norm, value residual, XSA) and the streams. The 0.25B control (3 seeds) and the long control at 111
+tokens per parameter are training; in the long run's first 4,000 steps the control is ahead (1.0316 against 1.0348 at
+step 4,000), with the gap closing from 0.028 at step 1,000.
+
+## 20. Next
+
+The 0.5B curve (seed 1 training), the 3B pair (Sunday evening), the second long seed, the library at 0.5B and on a
+mid-run 3B checkpoint, the library written by DeepSeek-V4-Flash (`experiments/expanse/library_v2.sb`), distillation into
+the weights (`experiments/distill`), then a scaling fit and the 9B projection against section 18's bar.

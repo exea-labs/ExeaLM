@@ -8,7 +8,7 @@ library and 1.635 without it.
 
     pip install torch numpy safetensors tokenizers huggingface_hub
     python experiments/library/ask.py                              # 5 held-out questions, with and without the library
-    python experiments/library/ask.py --question "What does the Adam optimizer keep for every parameter?"
+    python experiments/library/ask.py --question "What does gradient descent move the parameters along?"
     python experiments/library/ask.py --interactive
     python experiments/library/ask.py --score 500                  # bits per byte on 500 held-out questions, both ways
 
