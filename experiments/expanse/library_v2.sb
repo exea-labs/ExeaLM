@@ -1,0 +1,65 @@
+#!/bin/bash
+# The library v2, written by a frontier model on a whole node (experiments/library/README.md): DeepSeek-V4-Flash
+# (284B mixture of experts, 13B active, MIT, FP8), served by vLLM across the node's 4 H100s, writes an encyclopedia
+# entry for each research topic and a code entry for each code topic, then tasks that need an entry adapted rather than
+# copied; everything is packed with the study's 32k tokenizer into data/library_v2/v2. Topics come from the study's own
+# data (slice-30b-r2): papers, arXiv and Wikipedia for text (each entry written from its source's first 1,200 tokens);
+# scientific Python, StarCoder and math code for code. v1 (library.sb, Qwen3-30B-A3B) stays as it is.
+#
+#     sbatch -A fli100 --export=ALL,TEXT_TOPICS=200,CODE_TOPICS=100,CODE_DOCS=2000,PACK=0,OUT=data/library_v2_trial experiments/expanse/library_v2.sb
+#     sbatch -A fli100 experiments/expanse/library_v2.sb
+#
+# Needs the conda environment vllm. The model is read from MODEL (downloaded once to Lustre). Every step appends to
+# its output and skips what is done, so a job that ran out of time continues where it stopped when submitted again.
+#SBATCH --job-name=exealm-library2
+#SBATCH --partition=nairr-gpu
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=32
+#SBATCH --gpus=h100:4
+#SBATCH --time=24:00:00
+#SBATCH --output=logs/expanse/%x-%j.out
+set -uo pipefail
+export PYTHONUNBUFFERED=1
+cd "$SLURM_SUBMIT_DIR"
+MODEL=${MODEL:-/expanse/lustre/projects/fli100/abhatia7/hf/DeepSeek-V4-Flash-0731}
+TEXT_TOPICS=${TEXT_TOPICS:-100000}
+CODE_TOPICS=${CODE_TOPICS:-30000}
+PACK=${PACK:-1}
+REL=data/exealm-pretrain/slice-30b-r2
+TOK=$REL/tokenizer
+OUT=${OUT:-data/library_v2}
+WORK=${LOCAL_DISK:-/scratch/$USER}/job_$SLURM_JOB_ID
+mkdir -p "$OUT" "$WORK"
+module load anaconda3/2021.05/q4munrg > /dev/null 2>&1
+eval "$(conda shell.bash hook)" && conda activate vllm || { echo "no conda environment named vllm"; exit 1; }
+B="python experiments/library/build.py"
+step() { echo "== $(date '+%F %T') $*"; }
+
+nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
+
+step "topics: $TEXT_TOPICS research topics, $CODE_TOPICS code topics"
+# Research topics keep the first 1,200 tokens of their own paper or article, and each entry is written from that
+# excerpt alone: written from the title alone, the model invented records, dates and labs for niche topics.
+[ -s "$OUT/topics.jsonl" ] || $B topics "$REL/packed/pes2o/train" "$REL/packed/arxiv/train" "$REL/packed/wikipedia_en/train" \
+  --min_doc_tokens 256 --shuffle --limit "$TEXT_TOPICS" --source_tokens 1200 --max_docs $((TEXT_TOPICS / 2 + 500)) \
+  --tokenizer "$TOK" --out "$OUT/topics.jsonl"      # a sample of each source: decoding every document takes hours
+[ -s "$OUT/code_topics.txt" ] || $B topics "$REL/packed/research_python/train" "$REL/packed/starcoder/train" \
+  "$REL/packed/algebraic_stack/train" --kind code --limit "$CODE_TOPICS" --max_docs "${CODE_DOCS:-120000}" --tokenizer "$TOK" \
+  --out "$OUT/code_topics.txt"
+wc -l "$OUT/topics.jsonl" "$OUT/code_topics.txt"
+
+V="--backend vllm --model $MODEL --tensor_parallel 4 --max_model_len 8192"
+step "research entries"
+$B write --topics "$OUT/topics.jsonl" $V --limit "$TEXT_TOPICS" --out "$OUT/entries.jsonl"
+step "code entries"
+$B write --kind code --topics "$OUT/code_topics.txt" $V --limit "$CODE_TOPICS" --out "$OUT/code_entries.jsonl"
+step "tasks that need an entry adapted"
+$B morph "$OUT/entries.jsonl" "$OUT/code_entries.jsonl" $V --out "$OUT/tasks.jsonl"
+wc -l "$OUT"/*.jsonl
+
+if [ "$PACK" = 1 ]; then
+  step "packing with the study's tokenizer"
+  $B pack "$OUT/entries.jsonl" "$OUT/code_entries.jsonl" --tasks "$OUT/tasks.jsonl" --tokenizer "$TOK" --out "$OUT/v2"
+fi
+step "done"
