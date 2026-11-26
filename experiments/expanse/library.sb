@@ -1,0 +1,72 @@
+#!/bin/bash
+# Build the distilled library on one H100 (experiments/library/README.md): Qwen3-30B-A3B-Instruct-2507, served by
+# vLLM, writes an encyclopedia entry for each research topic and a code entry for each code topic, then tasks that
+# need an entry adapted rather than copied; everything is packed with the study's 32k tokenizer into data/library/v1
+# and uploaded to Hugging Face (exea-labs/exealm-library). Topics come from the study's own data (slice-30b-r2):
+# papers, arXiv and Wikipedia for text; scientific Python and StarCoder for code.
+#
+#     sbatch --export=ALL,TEXT_TOPICS=200,CODE_TOPICS=100,PACK=0 experiments/expanse/library.sb   # a trial: read it
+#     sbatch experiments/expanse/library.sb                                                       # the library
+#
+# Needs a conda environment named vllm with vllm and tokenizers (vLLM pins its own PyTorch, so not the exealm one).
+# The model (about 61 GB) is downloaded to the node's own disk at the start of each job. Every step appends to its
+# output and skips what is done, so a job that ran out of time continues where it stopped when submitted again.
+#SBATCH --job-name=exealm-library
+#SBATCH --partition=nairr-gpu-shared
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=16
+#SBATCH --gpus=h100:1
+#SBATCH --time=10:00:00
+#SBATCH --output=logs/expanse/%x-%j.out
+set -uo pipefail
+export PYTHONUNBUFFERED=1
+cd "$SLURM_SUBMIT_DIR"
+MODEL=${MODEL:-Qwen/Qwen3-30B-A3B-Instruct-2507}
+TEXT_TOPICS=${TEXT_TOPICS:-20000}
+CODE_TOPICS=${CODE_TOPICS:-5000}
+PACK=${PACK:-1}
+REL=data/exealm-pretrain/slice-30b-r2
+TOK=$REL/tokenizer
+OUT=data/library
+WORK=${LOCAL_DISK:-/scratch/$USER}/job_$SLURM_JOB_ID
+mkdir -p "$OUT" "$WORK"
+module load anaconda3/2021.05/q4munrg > /dev/null 2>&1
+eval "$(conda shell.bash hook)" && conda activate vllm || { echo "no conda environment named vllm"; exit 1; }
+B="python experiments/library/build.py"
+step() { echo "== $(date '+%F %T') $*"; }
+
+step "downloading $MODEL to the node's disk"
+HF_HUB_DISABLE_XET=1 hf download "$MODEL" --local-dir "$WORK/model" --max-workers 8 > /dev/null || { echo "download failed"; exit 1; }
+du -sh "$WORK/model"
+
+step "topics: $TEXT_TOPICS research topics, $CODE_TOPICS code topics"
+[ -s "$OUT/topics.txt" ] || $B topics "$REL/packed/pes2o/train" "$REL/packed/arxiv/train" "$REL/packed/wikipedia_en/train" \
+  --min_doc_tokens 256 --shuffle --limit "$TEXT_TOPICS" --tokenizer "$TOK" --out "$OUT/topics.txt"
+[ -s "$OUT/code_topics.txt" ] || $B topics "$REL/packed/research_python/train" "$REL/packed/starcoder/train" \
+  --kind code --limit "$CODE_TOPICS" --tokenizer "$TOK" --out "$OUT/code_topics.txt"
+wc -l "$OUT/topics.txt" "$OUT/code_topics.txt"
+
+V="--backend vllm --model $WORK/model --max_model_len 4096"
+step "research entries"
+$B write --topics "$OUT/topics.txt" $V --limit "$TEXT_TOPICS" --out "$OUT/entries.jsonl"
+step "code entries"
+$B write --kind code --topics "$OUT/code_topics.txt" $V --limit "$CODE_TOPICS" --out "$OUT/code_entries.jsonl"
+step "tasks that need an entry adapted"
+$B morph "$OUT/entries.jsonl" "$OUT/code_entries.jsonl" $V --out "$OUT/tasks.jsonl"
+wc -l "$OUT"/*.jsonl
+
+if [ "$PACK" = 1 ]; then
+  step "packing with the study's tokenizer"
+  $B pack "$OUT/entries.jsonl" "$OUT/code_entries.jsonl" --tasks "$OUT/tasks.jsonl" --tokenizer "$TOK" --out "$OUT/v1"
+  python - "$OUT" <<'PY' || echo "upload failed: the library is in data/library"
+import sys
+from huggingface_hub import HfApi
+out = sys.argv[1]
+api = HfApi()
+api.upload_folder(folder_path=out, path_in_repo="v1", repo_id="exea-labs/exealm-library", repo_type="dataset",
+                  allow_patterns=["v1/**", "*.jsonl", "*.txt"], commit_message="Library v1: Qwen3-30B-A3B entries, code entries, tasks")
+print("uploaded to exea-labs/exealm-library")
+PY
+fi
+step "done"
