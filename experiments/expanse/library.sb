@@ -44,7 +44,8 @@ step "topics: $TEXT_TOPICS research topics, $CODE_TOPICS code topics"
 # Research topics keep the first 1,200 tokens of their own paper or article, and each entry is written from that
 # excerpt alone: written from the title alone, the model invented records, dates and labs for niche topics.
 [ -s "$OUT/topics.jsonl" ] || $B topics "$REL/packed/pes2o/train" "$REL/packed/arxiv/train" "$REL/packed/wikipedia_en/train" \
-  --min_doc_tokens 256 --shuffle --limit "$TEXT_TOPICS" --source_tokens 1200 --tokenizer "$TOK" --out "$OUT/topics.jsonl"
+  --min_doc_tokens 256 --shuffle --limit "$TEXT_TOPICS" --source_tokens 1200 --max_docs $((TEXT_TOPICS / 2 + 500)) \
+  --tokenizer "$TOK" --out "$OUT/topics.jsonl"      # a sample of each source: decoding every document takes hours
 [ -s "$OUT/code_topics.txt" ] || $B topics "$REL/packed/research_python/train" "$REL/packed/starcoder/train" \
   --kind code --limit "$CODE_TOPICS" --max_docs 40000 --tokenizer "$TOK" --out "$OUT/code_topics.txt"
 wc -l "$OUT/topics.jsonl" "$OUT/code_topics.txt"
