@@ -29,9 +29,42 @@ DRY=${DRY:-0}
 PLAN="python experiments/expanse/plan.py"
 log() { echo "$(date '+%F %T') $*"; }
 need_account() { [ -n "${SBATCH_ACCOUNT:-}" ] || [ "$DRY" = 1 ] || { echo "export SBATCH_ACCOUNT=<your project> first"; exit 1; }; }
-submit() {                                       # run plan.py's lines (RUN=... ARGS=... sbatch ...), or print them
-  if [ "$DRY" = 1 ]; then cat; else bash; fi
-}
+# plan.py's blocks (RUN=... ARGS=... sbatch ...), one per run, from stdin: submit each, or print it with DRY=1. A run
+# already queued or running (a job named exealm-<run>) or finished in KEEP is skipped, so a phase can be submitted
+# again safely, for example after Slurm refused some of its jobs. (The script is an argument: stdin is the blocks.)
+SUBMIT_PY=$(cat <<'PY'
+import json, os, subprocess, sys
+keep, dry = sys.argv[1], sys.argv[2] == "1"
+blocks = [b.strip() for b in sys.stdin.read().split("\n\n") if b.strip() and not b.strip().startswith("#")]
+try:
+    queued = set(subprocess.run(["squeue", "-h", "-u", os.environ.get("USER", ""), "-o", "%j"], capture_output=True,
+                                text=True).stdout.split())
+except FileNotFoundError:
+    queued = set()
+def finished(run):
+    if keep.startswith("s3://"):
+        return False
+    d = os.path.join(keep, run)
+    if os.path.exists(os.path.join(d, "model.pt")):
+        return True
+    try:
+        return any('"event": "end"' in l for l in open(os.path.join(d, "log.jsonl")))
+    except OSError:
+        return False
+for b in blocks:
+    run = next((l.split("=", 1)[1].split()[0] for l in b.splitlines() if l.startswith("RUN=")), None)
+    if run and f"exealm-{run}" in queued:
+        print(f"skip {run}: already queued or running", flush=True)
+    elif run and finished(run):
+        print(f"skip {run}: finished in {keep}", flush=True)
+    elif dry:
+        print(b + "\n", flush=True)
+    else:
+        r = subprocess.run(["bash"], input=b + "\n", text=True, capture_output=True)
+        print(f"{run}: {(r.stdout + r.stderr).strip()}", flush=True)
+PY
+)
+submit() { python3 -c "$SUBMIT_PY" "$KEEP" "$DRY"; }
 queued() { squeue -h -u "$USER" -o "%j" 2>/dev/null | grep -c "^exealm" ; }
 wait_queue() {                                   # until no exealm job of ours is queued or running
   while [ "$(queued)" -gt 0 ]; do log "waiting: $(queued) exealm job(s) in the queue"; sleep 900; done

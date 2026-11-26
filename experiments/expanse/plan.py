@@ -36,6 +36,7 @@ default.
 import argparse
 import glob
 import json
+import math
 import os
 
 SEQ = 512
@@ -206,6 +207,18 @@ def save_minutes(preset, model, a, steps, check):
     return 120 if preset == "3b" else 60 if hours > 8 else 0
 
 
+def time_limit(preset, model, a, steps):
+    """Slurm's time limit for one job of this run, HH:MM:SS. Expanse holds a job's whole request (GPUs x limit)
+    against the project's balance while it is queued or running, and refuses submissions beyond the balance ("Project
+    balance is not enough"): ten jobs asking for the 48-hour maximum did that. So a job asks for 1.5 times the run's
+    estimated wall-clock time (at the MI300X rates, slower than the H100's) plus 45 minutes for copying and saving,
+    between 1.5 and 48 hours. A run longer than its limit stops cleanly and continues in the next job."""
+    gpus = a.gpus or SIZES[preset]["gpus"]
+    hours = cost(preset, model, measured([])[0], a, steps * STEP_TOKENS) / gpus * (gpus / a.speedup if gpus > 1 else 1)
+    minutes = min(48 * 60, max(90, math.ceil((1.5 * hours + 0.75) * 2) * 30))
+    return f"{minutes // 60:02d}:{minutes % 60:02d}:00"
+
+
 def command(run, preset, model, seed, a, steps, lr=None, check=False):
     s = SIZES[preset]
     gpus, windows = a.gpus or s["gpus"], a.batch or s["batch"]
@@ -233,7 +246,7 @@ def command(run, preset, model, seed, a, steps, lr=None, check=False):
     args.append(f"--eval_batches {max(1, 512 // (batch * k))}")   # 512 windows per evaluation, each read alone, the
                                                                     # same windows for every model
     lines = [f"RUN={run} \\", 'ARGS="' + " ".join(args) + '" \\', f"SAVE_MIN={save_minutes(preset, model, a, steps, check)} \\",
-             f"SBATCH_JOB_NAME=exealm-{run} \\"]           # squeue shows the run; its log is logs/expanse/exealm-<run>-<job>.out
+             f"SBATCH_JOB_NAME=exealm-{run} \\", f"SBATCH_TIMELIMIT={time_limit(preset, model, a, steps)} \\"]           # squeue shows the run; its log is logs/expanse/exealm-<run>-<job>.out
     flags = ""
     if gpus == 1:                                   # one GPU: the shared partition, and one task's worth of cores
         flags = "--ntasks-per-node=1 "
