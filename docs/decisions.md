@@ -3,6 +3,15 @@
 What ExeaLM is trained as, decided by Avneh Bhatia, and why. Newest first. Change an entry only with a new dated
 entry that says what replaced it.
 
+## 26 November 2026 (1 p.m.): papers include the strong-attention baseline; its controls run with streams
+
+Avneh's decision: the papers (the ExeaLM paper and the TONN paper, aimed at an ICML main-track oral) include the Llama
+with ExeaLM's four attention changes (gate, QK-norm, value residual, XSA), the comparison a reviewer asks for first;
+blog posts may still describe the Llama baseline as plain. It is the same model as ExeaLM with its one TONN layer made
+attention, so it measures what the TONN layer itself adds. It is trained with ExeaLM's recipe, streams in the last
+20% included: `strongllama_100m_4.1x_s0-2`, `strongllama_250m_4.1x_s0-2` and `strongllama_100m_111x_s0` (jobs
+56087562-9, `experiments/expanse/diag/llama_two.json`, about 31 GPU-hours).
+
 ## 26 November 2026 (8:30 a.m.): the multi-GPU runs are redone after a gradient-averaging bug
 
 Every run on more than one GPU with gradient accumulation trained without averaging gradients across GPUs
