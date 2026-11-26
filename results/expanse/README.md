@@ -180,7 +180,27 @@ The Llama with the four changes at learning rate 2e-3 scored 1.3553, worse than 
   1.3477 to 1.3509) and is ahead of it on 13 of 18 sets. It is 0.072 ahead of the Qwen3.5-style model.
 - `layout2.sb` follows up: more seeds of the middle layer, and more TONN layers with none at layer 0.
 
-## 5. Next
+## 5. One TONN layer in the middle beats the Llama with four attention changes (job 56081126)
+
+`layout2_100m.json`, with §3 and §4 for the other rows. Same setting, no streams unless stated. Mean of the 18 sets:
+
+| ExeaLM layout (TONN layers of 14) | Seeds | Bits per byte | Per seed | Against the Llama (1.3493) | Sets ahead |
+|---|---|---|---|---|---|
+| one, layer 7 (the middle) | 3 | **1.3484** | 1.3488, 1.3501, 1.3464 | -0.0009 | 14 of 18 |
+| one, layer 6 | 1 | 1.3497 | | +0.0004 | 9 |
+| one, layer 13 | 1 | 1.3512 | | +0.0019 | 0 |
+| two, layers 5 and 9 | 1 | 1.3520 | | +0.0027 | 1 |
+| three, layers 4, 7, 10 | 2 | 1.3562 | 1.3573, 1.3552 | +0.0069 | 0 |
+| three, layers 3, 7, 11 | 1 | 1.3576 | | +0.0083 | 0 |
+| one, layer 7, with streams in the last 20% | 1 | 1.3639 | | +0.0146 | 0 |
+
+- With one TONN layer in the middle, ExeaLM is ahead of the Llama with gated attention, QK-norm, value residual and
+  XSA on all three seeds, pairing seed with seed (by 0.0006, 0.0008 and 0.0013), and on 14 of 18 sets. The margin is
+  small; it is consistent.
+- Every TONN layer beyond one costs, and the stream phase costs 0.015 on windows read alone.
+- This layout is 0.072 ahead of the Qwen3.5-style model (1.3484 against 1.4204) and 0.128 ahead of the plain Llama.
+
+## 6. Next
 
 The learning-rate checks (`go.sh lr`), the ablations at 0.1B (`ablate.sb`), and the compile check
 (`compile_check.sb`), then the curve.

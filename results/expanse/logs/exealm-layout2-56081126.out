@@ -1,0 +1,51 @@
+== 2026-11-25 23:54:29 job 56081126: each run writes its progress to logs/expanse/layout2-56081126/<run>.out
+== 2026-11-25 23:54:29 copying data/ (40G) to the node's disk
+== 2026-11-25 23:57:54 data copied
+== 2026-11-25 23:57:54 round 1 of 2: one TONN layer in the middle (seeds 1, 2); TONN at 4, 7, 10; at 3, 7, 11
+== 2026-11-26 00:04:16 round 2 of 2: TONN at 5, 9; only at 6; at 4, 7, 10 seed 1; the middle layer with streams
+   mid2_s0: 1.2528
+   mid3_s0: 1.2566
+   mid3_s1: 1.2555
+   only6_s0: 1.2504
+   only7_s1: 1.2505
+   only7_s2: 1.248
+   only7_stream_s0: 1.2662
+   shift4_s0: 1.2577
+== 2026-11-26 00:11:11 scoring every run on the same windows as lead_100m.json
+00:11:14 held-out text:   0%|                                                                   | 0/8 [00:00<?, ?run/s]
+scoring /scratch/abhatia7/job_56081126/runs/mid2_s0 on 18 held-out sets
+{"run": "/scratch/abhatia7/job_56081126/runs/mid2_s0", "file": "model.pt", "model": "tonn", "step": 3000, "params_M": 94.65, "bits_per_byte": {"research_python": 0.8963, "code_reasoning": 0.8537, "algebraic_stack": 1.2018, "pretrain_behaviors": 1.3607, "starcoder": 1.218, "stackexchange": 1.2351, "pes2o": 1.2429, "arxiv": 1.3969, "wikipedia_en": 1.568, "megamath": 1.3208, "open_web_math": 1.4423, "math_reasoning": 1.1258, "dclm": 1.6143, "txt360_web": 1.6234, "fineweb2_ja": 1.6733, "wikipedia_ja": 1.8554, "txt360_qa": 1.3882, "sft_pretrain": 1.3195}, "mean": 1.352}
+00:11:44 held-out text:  12%|█████▊                                        | 1/8 [00:30<03:31, 30.17s/run, last=1.3520]
+scoring /scratch/abhatia7/job_56081126/runs/mid3_s0 on 18 held-out sets
+{"run": "/scratch/abhatia7/job_56081126/runs/mid3_s0", "file": "model.pt", "model": "tonn", "step": 3000, "params_M": 94.25, "bits_per_byte": {"research_python": 0.9012, "code_reasoning": 0.8586, "algebraic_stack": 1.2082, "pretrain_behaviors": 1.3639, "starcoder": 1.2242, "stackexchange": 1.241, "pes2o": 1.247, "arxiv": 1.4015, "wikipedia_en": 1.5719, "megamath": 1.3266, "open_web_math": 1.4483, "math_reasoning": 1.1333, "dclm": 1.6182, "txt360_web": 1.6278, "fineweb2_ja": 1.6781, "wikipedia_ja": 1.8649, "txt360_qa": 1.393, "sft_pretrain": 1.3244}, "mean": 1.3573}
+00:12:14 held-out text:  25%|███████████▌                                  | 2/8 [00:59<02:59, 29.86s/run, last=1.3573]
+scoring /scratch/abhatia7/job_56081126/runs/mid3_s1 on 18 held-out sets
+{"run": "/scratch/abhatia7/job_56081126/runs/mid3_s1", "file": "model.pt", "model": "tonn", "step": 3000, "params_M": 94.25, "bits_per_byte": {"research_python": 0.9005, "code_reasoning": 0.86, "algebraic_stack": 1.198, "pretrain_behaviors": 1.3685, "starcoder": 1.2201, "stackexchange": 1.2378, "pes2o": 1.2472, "arxiv": 1.3983, "wikipedia_en": 1.5678, "megamath": 1.3209, "open_web_math": 1.4457, "math_reasoning": 1.1302, "dclm": 1.6158, "txt360_web": 1.626, "fineweb2_ja": 1.6764, "wikipedia_ja": 1.8658, "txt360_qa": 1.3908, "sft_pretrain": 1.3238}, "mean": 1.3552}
+00:12:44 held-out text:  38%|█████████████████▎                            | 3/8 [01:29<02:28, 29.80s/run, last=1.3552]
+scoring /scratch/abhatia7/job_56081126/runs/only6_s0 on 18 held-out sets
+{"run": "/scratch/abhatia7/job_56081126/runs/only6_s0", "file": "model.pt", "model": "tonn", "step": 3000, "params_M": 95.06, "bits_per_byte": {"research_python": 0.8923, "code_reasoning": 0.8507, "algebraic_stack": 1.1958, "pretrain_behaviors": 1.3578, "starcoder": 1.2152, "stackexchange": 1.2307, "pes2o": 1.2419, "arxiv": 1.3941, "wikipedia_en": 1.5649, "megamath": 1.3197, "open_web_math": 1.4403, "math_reasoning": 1.1228, "dclm": 1.6121, "txt360_web": 1.6215, "fineweb2_ja": 1.6742, "wikipedia_ja": 1.8587, "txt360_qa": 1.386, "sft_pretrain": 1.316}, "mean": 1.3497}
+00:13:13 held-out text:  50%|███████████████████████                       | 4/8 [01:59<01:59, 29.77s/run, last=1.3497]
+scoring /scratch/abhatia7/job_56081126/runs/only7_s1 on 18 held-out sets
+{"run": "/scratch/abhatia7/job_56081126/runs/only7_s1", "file": "model.pt", "model": "tonn", "step": 3000, "params_M": 95.06, "bits_per_byte": {"research_python": 0.8942, "code_reasoning": 0.8535, "algebraic_stack": 1.1896, "pretrain_behaviors": 1.3641, "starcoder": 1.2132, "stackexchange": 1.2312, "pes2o": 1.2443, "arxiv": 1.3935, "wikipedia_en": 1.5634, "megamath": 1.3163, "open_web_math": 1.4407, "math_reasoning": 1.1253, "dclm": 1.6127, "txt360_web": 1.6215, "fineweb2_ja": 1.6719, "wikipedia_ja": 1.8614, "txt360_qa": 1.3866, "sft_pretrain": 1.3176}, "mean": 1.3501}
+00:13:43 held-out text:  62%|████████████████████████████▊                 | 5/8 [02:28<01:29, 29.71s/run, last=1.3501]
+scoring /scratch/abhatia7/job_56081126/runs/only7_s2 on 18 held-out sets
+{"run": "/scratch/abhatia7/job_56081126/runs/only7_s2", "file": "model.pt", "model": "tonn", "step": 3000, "params_M": 95.06, "bits_per_byte": {"research_python": 0.8883, "code_reasoning": 0.8491, "algebraic_stack": 1.1942, "pretrain_behaviors": 1.3574, "starcoder": 1.2134, "stackexchange": 1.2272, "pes2o": 1.2409, "arxiv": 1.3916, "wikipedia_en": 1.5625, "megamath": 1.3149, "open_web_math": 1.4406, "math_reasoning": 1.1206, "dclm": 1.6094, "txt360_web": 1.6176, "fineweb2_ja": 1.6596, "wikipedia_ja": 1.8491, "txt360_qa": 1.384, "sft_pretrain": 1.3148}, "mean": 1.3464}
+00:14:12 held-out text:  75%|██████████████████████████████████▌           | 6/8 [02:57<00:59, 29.66s/run, last=1.3464]
+scoring /scratch/abhatia7/job_56081126/runs/only7_stream_s0 on 18 held-out sets
+{"run": "/scratch/abhatia7/job_56081126/runs/only7_stream_s0", "file": "model.pt", "model": "tonn", "step": 3000, "params_M": 95.06, "bits_per_byte": {"research_python": 0.9088, "code_reasoning": 0.8618, "algebraic_stack": 1.2205, "pretrain_behaviors": 1.3762, "starcoder": 1.2331, "stackexchange": 1.2448, "pes2o": 1.2563, "arxiv": 1.4097, "wikipedia_en": 1.5836, "megamath": 1.3288, "open_web_math": 1.4558, "math_reasoning": 1.1345, "dclm": 1.6281, "txt360_web": 1.6387, "fineweb2_ja": 1.6785, "wikipedia_ja": 1.8578, "txt360_qa": 1.3997, "sft_pretrain": 1.3328}, "mean": 1.3639}
+00:14:42 held-out text:  88%|████████████████████████████████████████▎     | 7/8 [03:27<00:29, 29.68s/run, last=1.3639]
+scoring /scratch/abhatia7/job_56081126/runs/shift4_s0 on 18 held-out sets
+{"run": "/scratch/abhatia7/job_56081126/runs/shift4_s0", "file": "model.pt", "model": "tonn", "step": 3000, "params_M": 94.25, "bits_per_byte": {"research_python": 0.9031, "code_reasoning": 0.8578, "algebraic_stack": 1.211, "pretrain_behaviors": 1.3641, "starcoder": 1.2246, "stackexchange": 1.2413, "pes2o": 1.2475, "arxiv": 1.4015, "wikipedia_en": 1.5721, "megamath": 1.3252, "open_web_math": 1.447, "math_reasoning": 1.1315, "dclm": 1.6185, "txt360_web": 1.6286, "fineweb2_ja": 1.6799, "wikipedia_ja": 1.8651, "txt360_qa": 1.3926, "sft_pretrain": 1.3246}, "mean": 1.3576}
+00:15:12 held-out text: 100%|██████████████████████████████████████████████| 8/8 [03:57<00:00, 29.66s/run, last=1.3576]
+mid2: 1.3520 bits per byte, mean of 1 (1.3520)
+mid3: 1.3562 bits per byte, mean of 2 (1.3573, 1.3552); +0.0042 against mid2
+only6: 1.3497 bits per byte, mean of 1 (1.3497); -0.0023 against mid2
+only7: 1.3483 bits per byte, mean of 2 (1.3501, 1.3464); -0.0037 against mid2
+only7_stream: 1.3639 bits per byte, mean of 1 (1.3639); +0.0119 against mid2
+shift4: 1.3576 bits per byte, mean of 1 (1.3576); +0.0056 against mid2
+wrote results/expanse/layout2_100m.json
+/home/abhatia7/.conda/envs/exealm/lib/python3.11/site-packages/huggingface_hub/hf_api.py:11711: UserWarning: Warnings while validating metadata in README.md:
+- empty or missing yaml metadata in repo card
+  warnings.warn(f"Warnings while validating metadata in README.md:\n{message}")
+uploaded results/expanse to exea-labs/exealm-nairr-runs
+== 2026-11-26 00:15:13 done: results/expanse/layout2_100m.json
