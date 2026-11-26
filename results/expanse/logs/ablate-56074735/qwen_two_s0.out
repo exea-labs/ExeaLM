@@ -1,0 +1,21 @@
+{"event": "start", "model": "llama", "params": 95692412, "device": "cuda", "processes": 1, "tokens_per_step": 16384, "cfg": {"vocab_size": 32768, "d": 640, "n_layers": 14, "slots": 20, "h": 32, "ffn": -1, "menu": ["D", "I", "GI", "M", "MI", "MIM", "EP", "G", "C", "RP", "SM", "OS", "RG", "AG"], "lags": [0, 1, 2, 3, 4, 6, 8, 12, 16, 32, 64, 128], "tie_embeddings": true, "pinned": {"RG": 1, "AG": 1}, "init_weights": {"C": 4.0, "G": 0.25, "D": 0.25, "RP": 0.0}, "attn_layers": [1, 2, 4, 5, 7, 8, 10, 11, 13], "delta_layers": [0, 1, 2, 4, 5, 6, 8, 9, 10, 12, 13], "attn_gate": true, "qk_norm": true, "value_residual": true, "xsa": true, "peri_ln": false, "canon": false, "seed": 0, "chunk": 64, "rag_topk": 4, "rag_chunk_len": 64, "enc_dim": 256, "rag_query": "last", "rag_null": false, "rag_key_dim": 0, "rag_lexical": 0, "swarm_size": 4, "board_read_self": true, "board_chunk": 0, "board_identity_size": 0, "board_order": "time", "wa_target": -1, "wa_matrix": "out", "wa_key": "learned", "wa_scope": "all", "tonn_every": 0, "wa_persist": 0.0, "chunk_pool": "mean"}, "architecture": null}
+18:49:11 qwen_two_s0:   0%|                                                                 | 0/3000 [00:00<?, ?step/s]
+18:50:11 qwen_two_s0:   9%|█▍               | 259/3000 [01:00<10:36,  4.31step/s, loss=5.976, lr=1.00e-03, tok_s=70.5k]
+{"event": "eval", "step": 500, "train_loss": 6.6139, "lr": 0.001, "secs": 115.6, "tokens": 8192000, "tokens_per_sec": 70873, "gpu_mem_gb": 26.5, "val_bits_per_token": 7.5439, "val_bits_per_byte": 2.0428}
+18:51:11 qwen_two_s0:  17%|██▉              | 518/3000 [02:00<09:36,  4.31step/s, loss=5.108, lr=1.00e-03, tok_s=70.5k]
+18:52:11 qwen_two_s0:  26%|████▍            | 780/3000 [03:00<08:33,  4.33step/s, loss=4.239, lr=1.00e-03, tok_s=70.9k]
+{"event": "eval", "step": 1000, "train_loss": 4.4868, "lr": 0.001, "secs": 230.8, "tokens": 16384000, "tokens_per_sec": 71454, "gpu_mem_gb": 26.5, "val_bits_per_token": 5.9679, "val_bits_per_byte": 1.616}
+18:53:11 qwen_two_s0:  35%|█████▌          | 1040/3000 [04:00<07:33,  4.32step/s, loss=3.764, lr=1.00e-03, tok_s=70.9k]
+18:54:11 qwen_two_s0:  43%|██████▉         | 1301/3000 [05:00<06:32,  4.33step/s, loss=3.978, lr=1.00e-03, tok_s=70.9k]
+{"event": "eval", "step": 1500, "train_loss": 3.8701, "lr": 0.001, "secs": 346.1, "tokens": 24576000, "tokens_per_sec": 71390, "gpu_mem_gb": 26.5, "val_bits_per_token": 5.5182, "val_bits_per_byte": 1.4943}
+18:55:11 qwen_two_s0:  52%|████████▎       | 1561/3000 [06:00<05:32,  4.33step/s, loss=3.930, lr=1.00e-03, tok_s=70.9k]
+18:56:11 qwen_two_s0:  61%|██████████▉       | 1823/3000 [07:00<04:31,  4.33step/s, loss=3.427, lr=1.00e-03, tok_s=71k]
+{"event": "eval", "step": 2000, "train_loss": 3.653, "lr": 0.001, "secs": 461.3, "tokens": 32768000, "tokens_per_sec": 71406, "gpu_mem_gb": 26.5, "val_bits_per_token": 5.2855, "val_bits_per_byte": 1.4313}
+18:57:11 qwen_two_s0:  69%|████████████▍     | 2083/3000 [08:00<03:31,  4.33step/s, loss=3.779, lr=1.00e-03, tok_s=71k]
+18:58:11 qwen_two_s0:  78%|██████████████    | 2345/3000 [09:00<02:31,  4.34step/s, loss=3.495, lr=1.00e-03, tok_s=71k]
+{"event": "eval", "step": 2500, "train_loss": 3.5357, "lr": 0.000851, "secs": 576.4, "tokens": 40960000, "tokens_per_sec": 71513, "gpu_mem_gb": 26.5, "val_bits_per_token": 5.104, "val_bits_per_byte": 1.3821}
+18:59:11 qwen_two_s0:  87%|███████████████▋  | 2605/3000 [10:00<01:31,  4.34step/s, loss=3.192, lr=6.94e-04, tok_s=71k]
+19:00:12 qwen_two_s0:  96%|███████████████▎| 2867/3000 [11:01<00:30,  4.34step/s, loss=3.297, lr=3.01e-04, tok_s=71.1k]
+19:00:42 qwen_two_s0: 100%|████████████████| 3000/3000 [11:31<00:00,  4.34step/s, loss=3.545, lr=1.02e-04, tok_s=71.1k]
+{"event": "eval", "step": 3000, "train_loss": 3.34, "lr": 0.000102, "secs": 691.5, "tokens": 49152000, "tokens_per_sec": 71453, "gpu_mem_gb": 26.5, "val_bits_per_token": 4.7994, "val_bits_per_byte": 1.2996}
+{"event": "end", "step": 3000}

@@ -120,7 +120,45 @@ second over steps 200 to 400, after compiling; held-out bits per byte at step 40
 - ExeaLM reads streams at half its speed (70,891 against 141,809 tokens/s on 4 GPUs): each window's forward pass sees
   a quarter of the rows. Its last 20% costs about 1.2 times what the throughput test suggests.
 
-## 3. Next
+## 3. Ablations at 0.1B (job 56074735, 40 minutes)
+
+`ablation_100m.json`. The lead check's setting (0.1B, 3,000 steps of 16,384 tokens, warm-up 200, learning rate 1e-3,
+the study's data), one change at a time, scored on the same fixed windows as `lead_100m.json`. Bits per byte, mean of
+the 18 held-out sets, lower is better:
+
+| Model | Seeds | Bits per byte | Per seed |
+|---|---|---|---|
+| Llama with gated attention, QK-norm, value residual and XSA | 3 | **1.349** | 1.349, 1.351, 1.348 |
+| ExeaLM without its stream phase | 3 | 1.376 | 1.378, 1.376, 1.374 |
+| the same at learning rate 2e-3 | 1 | 1.379 | |
+| the same with a TONN layer every third layer | 1 | 1.382 | |
+| ExeaLM as planned (streams in the last 20%; lead check) | 3 | 1.393 | 1.395, 1.393, 1.391 |
+| ExeaLM without streams, learning rate 5e-4 | 1 | 1.397 | |
+| ExeaLM without streams, value residual or XSA | 3 | 1.401 | 1.397, 1.406, 1.401 |
+| Qwen3.5-style with value residual and XSA | 1 | 1.403 | |
+| Qwen3.5-style as planned (lead check) | 3 | 1.420 | 1.424, 1.420, 1.418 |
+| Llama as planned (lead check) | 3 | 1.477 | 1.483, 1.475, 1.472 |
+
+What it shows:
+
+- **A Llama with the four attention changes beats every ExeaLM, on all 18 held-out sets** (by 0.016 to 0.064 against
+  ExeaLM without streams; 0.027 on the mean, 3 seeds each). At this scale and token count, attention layers with these
+  changes do better than TONN layers.
+- **TONN layers beat Gated DeltaNet layers as a hybrid's non-attention layer, with or without the two changes, on all
+  18 sets.** Without value residual and XSA: ExeaLM 1.401 against the Qwen3.5-style model's 1.420 (3 seeds each). With
+  them: ExeaLM 1.376 (3 seeds) against 1.403 (1 seed).
+- **The stream phase costs 0.017 on windows read alone** (1.393 against 1.376, 3 seeds each). On the MI300X it gained
+  0.023 on the fourth window of long documents read as a stream; the study's single-window comparisons pay for it.
+- Value residual and XSA give ExeaLM 0.026 (1.401 to 1.376), the Qwen3.5-style model 0.017 (one seed), and the Llama
+  0.128 together with the gate and QK-norm (1.477 to 1.349).
+- A TONN layer every fourth layer beats every third (1.376 against 1.382, one seed for every third), as on the MI300X.
+  More attention helps; the Llama above is the limit of that trend.
+- ExeaLM's learning rate: 1e-3 and 2e-3 are within 0.003 of each other; 5e-4 is 0.021 worse.
+
+What it does not show: one size, 49M training tokens (far below the plan's 4.1 tokens per parameter at 0.1B, 0.38B
+tokens, and the long pair's 111), one learning rate for the baselines, single seeds for four rows.
+
+## 4. Next
 
 The learning-rate checks (`go.sh lr`), the ablations at 0.1B (`ablate.sb`), and the compile check
 (`compile_check.sb`), then the curve.
