@@ -374,7 +374,32 @@ row read alone, mean of the 18 held-out sets:
   training, it was 0.020 at step 2,500 and fell to 0.011 over the stream phase and the anneal; the stream phase costs
   ExeaLM on windows read alone (0.007 at 0.1B, section 9). The long-document scores at 0.25B come from the same job.
 
-## 14. Next
+## 14. Agents on a board against one bigger model, at 0.1B (jobs 56083871-6, 56084006-7, `board_100m.json`)
+
+`experiments/expanse/board_post.sh`: board slots (AG:2) grafted into the 0.1B ExeaLM's TONN layer, post-trained for 600
+steps in swarms of 3 (agent j reads window j of 3 consecutive windows; `board_order` "doc", so an agent sees only the
+agents before it); the same 0.1B ExeaLM, the 0.25B ExeaLM and the 0.25B Qwen3.5-style model post-trained the same steps
+on the same mix, every row alone. `experiments/swarm_long.py` scores them on the first 1,536 tokens of the held-out
+documents at least that long (64 a set, 18 sets). Bits per byte, mean of windows 1 and 2 (seed 0):
+
+| Model | Parameters read per token | Windows 1-2 |
+|---|---|---|
+| 3 x 0.1B ExeaLM sharing a board | 95M (3 x 95M in all) | 1.181 |
+| the same, board cut | 95M | 1.184 |
+| 0.1B ExeaLM, reading the windows as a stream | 95M | **1.096** |
+| 0.25B ExeaLM, as a stream | 251M | **0.956** |
+| 0.25B Qwen3.5-style, as a stream | 252M | 0.992 |
+| 0.25B ExeaLM, each window alone | 251M | 1.042 |
+
+- The board does not do what the claim needs. Sharing it gains the swarm 0.0035 over the same agents with the board cut,
+  and the swarm loses to one 0.1B model that carries the window before into the next (1.096) by 0.085, let alone to a
+  0.25B model. Three small agents on this board do not beat one bigger model, at 0.1B and 600 steps of post-training.
+- What does work is the stream: one model carrying its state from window to window. At 0.25B, read as a stream,
+  ExeaLM is 0.036 ahead of the Qwen3.5-style model after this post-training (0.038 before it, the curve checkpoints),
+  against 0.011 on windows read alone (section 13).
+- The board here is narrow: two slots in the one TONN layer, 32 numbers each per 64 tokens. One seed.
+
+## 15. Next
 
 The learning-rate checks (`go.sh lr`), the ablations at 0.1B (`ablate.sb`), and the compile check
 (`compile_check.sb`), then the curve.
