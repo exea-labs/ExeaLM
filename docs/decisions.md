@@ -3,6 +3,15 @@
 What ExeaLM is trained as, decided by Avneh Bhatia, and why. Newest first. Change an entry only with a new dated
 entry that says what replaced it.
 
+## 26 November 2026 (5 a.m.): a second seed of the long pair
+
+The long pair (0.1B, 111 tokens per parameter, as the 9B would train) is the study's test of whether ExeaLM's lead
+holds with long training, and it had one seed. In training, the Qwen3.5-style model needs 1.15 to 1.19 times ExeaLM's
+steps to match it through step 5,000 (results §12) while the gap in bits per byte shrinks. Seed 1 of both
+(`exealm_100m_111x_s1`, `qwen_100m_111x_s1`, the same arguments with `--seed 1`, the Qwen3.5-style run on the same
+kernel as seed 0) costs about 34 GPU-hours of the roughly 800 the forecast leaves spare. Started on GPUs of the shared
+partition that were idle. Taken under Avneh's standing instruction to adjust the runs toward the funding case.
+
 ## 26 November 2026: one TONN layer at the middle layer; ExeaLM keeps its streams, the baselines do not
 
 ExeaLM is now one TONN layer at the middle layer (layer n/2 of n: 7 of 14 at 0.1B, 8 of 16 at 0.25B, 11 of 22 at
