@@ -335,7 +335,26 @@ time. Bits per byte on the held-out topics:
 - ExeaLM stays ahead of the Qwen3.5-style model with the library on every set: by 0.115 on questions, 0.050 on text
   tasks and 0.039 on code tasks.
 
-## 12. Next
+## 12. How many times the steps the Qwen3.5-style model needs (in training, 26 November 04:20)
+
+`experiments/expanse/step_multiplier.py`: for each in-run evaluation of an ExeaLM run (512 fixed held-out windows, the
+same for every model), the step at which the paired Qwen3.5-style run (same size, seed 0) first reaches that score.
+A step is the same tokens for both, and the two have the same parameters within 1%, so this is a token and compute
+multiplier. Preliminary: one seed, runs still training.
+
+| Pair | ExeaLM step: multiplier |
+|---|---|
+| 0.1B, 111 tokens per parameter | 1,000: 1.18; 1,500: 1.18; 2,000: 1.14; 2,500: 1.15; 3,000: 1.16; 3,500: 1.17; 4,000: 1.19 |
+| 0.25B, 4.1 | 1,000: 1.34; 1,500: 1.29; 2,000: 1.24 |
+| 0.5B, 4.1 | 1,000: 1.43; 1,500: 1.35 |
+
+- The gap in bits per byte shrinks as both curves flatten (0.055 to 0.016 on the long pair), but the steps the
+  Qwen3.5-style model needs to match ExeaLM do not: about 1.15 to 1.19 times through the first 4,000 of the long pair's
+  39,735 steps. The long pair, trained as long per parameter as the 9B would be, decides whether that holds.
+- Early in training the multiplier is larger for larger models. Read at the same fraction of each run, once the runs
+  finish, before reading anything into the size trend.
+
+## 13. Next
 
 The learning-rate checks (`go.sh lr`), the ablations at 0.1B (`ablate.sb`), and the compile check
 (`compile_check.sb`), then the curve.
