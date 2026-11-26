@@ -243,6 +243,23 @@ def save(path, model, opt, step, cfg, kind, state=None):
     os.replace(tmp, path)
 
 
+def place_optimizer_state(opt):
+    """After loading an optimizer state dict: AdamW's fused and capturable kernels need every state tensor, the step
+    counts included, on its parameter's device, but a loaded --zero state can leave the step counts on the CPU (the
+    3B runs' resume failed so, Expanse job 56082968). Moves them."""
+    inner = opt.optim if is_zero(opt) else opt
+    for group in inner.param_groups:
+        if not (group.get("fused") or group.get("capturable")):
+            continue
+        for p in group["params"]:
+            st = inner.state.get(p)
+            if not st:
+                continue
+            for k, v in list(st.items()):
+                if torch.is_tensor(v) and v.device != p.device:
+                    st[k] = v.to(p.device, dtype=torch.float32 if k == "step" else v.dtype)
+
+
 def zero_shard_path(path, rank):
     return f"{path}.zero{rank}"
 
@@ -405,6 +422,8 @@ def main(argv=None):
         opt.optim.load_state_dict(part["opt"])
     elif ck is not None:
         opt.load_state_dict(ck["opt"])
+    if ck is not None:
+        place_optimizer_state(opt)
     warmup = a.warmup if a.warmup is not None else max(1, min(2000, a.steps // 20))
     swarm = cfg.swarm_size if a.model == "tonn" else 1
     seams = getattr(cfg, "board_order", "time") != "doc"               # a doc-order board cannot hear the next window
