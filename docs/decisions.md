@@ -3,6 +3,22 @@
 What ExeaLM is trained as, decided by Avneh Bhatia, and why. Newest first. Change an entry only with a new dated
 entry that says what replaced it.
 
+## 25 November 2026 (night): the plan stays as it is after the 0.1B ablations on Expanse
+
+The study keeps its design: ExeaLM (a TONN layer every fourth layer, value residual and XSA, streams in the last 20%)
+against the base Qwen3.5-style model at 3B and on the curve, with the plain Llama on the curve. Decided with these
+results in hand (`results/expanse/README.md`, sections 1 and 3; 0.1B, 3,000 steps, the study's data, all 18 held-out
+sets):
+
+- ExeaLM beats the Qwen3.5-style model on all 18 sets on every seed: 1.393 against 1.420 bits per byte (3 seeds each),
+  and also when both have value residual and XSA (1.376 against 1.403, ExeaLM without streams) or neither (1.401
+  against 1.420). TONN layers beat Gated DeltaNet layers as a hybrid's non-attention layer.
+- A Llama with gated attention, QK-norm, value residual and XSA beats every ExeaLM on all 18 sets: 1.349 against
+  1.376 (ExeaLM without streams, 3 seeds each). It is not in the study. Write-ups say so where they compare ExeaLM with
+  Llama.
+- Streams in the last 20% cost ExeaLM 0.017 on windows read alone (1.393 against 1.376); they are kept for long
+  documents read as a stream.
+
 ## 25 November 2026 (evening): every run serves the funding case for the 9B
 
 Avneh's direction: the study exists to make funders (government grants or investors) confident in a 9B ExeaLM. Three
