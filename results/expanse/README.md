@@ -419,7 +419,7 @@ The curve's 0.25B models (3 seeds each), scored as in section 10: 4,096 tokens o
 | Windows read alone (18 sets) | 0.034 | 0.011 |
 | Long documents read as a stream, windows 1-7 | 0.061 | 0.042 |
 
-## 16. The 9B model on one node (job 56084410, `nine_b.json`)
+## 16. The 9B model on one node (job 56084410, `nine_b.json`; speed only, unaffected by section 17)
 
 `experiments/expanse/nine_b.sb`: ExeaLM at 9B as the study now defines it (`exealm_mid_9b.json`: 9,276.8M parameters,
 42 layers, one TONN layer at layer 21), sharded over 4 H100s with FSDP2, activation checkpointing on, 512-token rows,
@@ -436,7 +436,28 @@ bf16. Speed of the full training step (forward, backward, AdamW), effective TFLO
 - Memory is at 40 of 80 GB, and speed still rises with the batch: 16 and 32 rows per GPU, and 2 and 4 nodes, are queued
   (jobs 56084546-8). Those rows replace this estimate.
 
-## 17. Next
+## 17. A bug in multi-GPU training: the 0.5B and 3B runs are void (fixed 26 November, 08:30)
+
+In `exealm/train/pretrain.py` the gradient-accumulation loop's variable (`for k in range(a.accum)`) was overwritten on
+its first line by the stream factor (`k = a.stream if ... else 1`), and `no_sync()` tested that overwritten `k`. On more
+than one process with `--accum` above 2, every forward and backward pass ran under `no_sync()`: DDP never averaged the
+processes' gradients. Each process trained on its own quarter of every batch; the in-run check saw the processes
+drift apart (`processes_in_sync: false` at 13 to 16 of 16 evaluations) and copied process 0's weights to the others.
+With `--zero`, each process updated its part of the weights from its own rows alone, and the check could not see it.
+ExeaLM's stream phase changed `k` to 4, which switched the averaging back on for ExeaLM's last 20% at 0.5B only.
+
+- Void: the six 0.5B curve runs (the Qwen3.5-style and Llama 0.5B models scored worse than their 0.25B models: 1.053
+  and 1.078 against 1.026 and 1.041), the 0.5B and 3B learning-rate checks, and the 3B pair's first 1,100 steps. They
+  are in `runs/_broken_ddp/` on Expanse. About 190 GPU-hours.
+- Not affected: everything on one GPU, which is every result in sections 1 to 15 except the 0.5B rows: the 0.1B and
+  0.25B curve, the long pairs, the layout search, and the library, RAG and board tests. The 9B speed measurement
+  (`nine_b.py`, its own loop) measures speed only.
+- Fix: the loop variable is `micro`. `tests/test_ddp.py::test_accumulation_averages_gradients_over_processes` runs
+  two processes with `--accum 3` (plain and `--zero`) and checks they stay in sync and train the model one process
+  trains; it fails on the old code.
+- Rerun: the 3B and 0.5B learning-rate checks (jobs 56084938-50), then the 3B pair and the 0.5B curve.
+
+## 18. Next
 
 The learning-rate checks (`go.sh lr`), the ablations at 0.1B (`ablate.sb`), and the compile check
 (`compile_check.sb`), then the curve.

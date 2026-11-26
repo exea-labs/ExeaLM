@@ -3,6 +3,14 @@
 What ExeaLM is trained as, decided by Avneh Bhatia, and why. Newest first. Change an entry only with a new dated
 entry that says what replaced it.
 
+## 26 November 2026 (8:30 a.m.): the multi-GPU runs are redone after a gradient-averaging bug
+
+Every run on more than one GPU with gradient accumulation trained without averaging gradients across GPUs
+(`results/expanse/README.md` section 17). The 0.5B curve, the 0.5B and 3B learning-rate checks and the 3B pair are void
+and are run again with the fix: the checks first (the rate a model wants depends on its real batch), then the 3B pair
+and the 0.5B curve. About 190 GPU-hours were lost. The forecast stays near 1,200 of the 2,000. Taken under Avneh's
+standing instruction to adjust the runs as needed.
+
 ## 26 November 2026 (5 a.m.): a second seed of the long pair
 
 The long pair (0.1B, 111 tokens per parameter, as the 9B would train) is the study's test of whether ExeaLM's lead
