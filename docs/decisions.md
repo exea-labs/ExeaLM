@@ -14,8 +14,8 @@ sets):
   and also when both have value residual and XSA (1.376 against 1.403, ExeaLM without streams) or neither (1.401
   against 1.420). TONN layers beat Gated DeltaNet layers as a hybrid's non-attention layer.
 - A Llama with gated attention, QK-norm, value residual and XSA beats every ExeaLM on all 18 sets: 1.349 against
-  1.376 (ExeaLM without streams, 3 seeds each). It is not in the study. Write-ups say so where they compare ExeaLM with
-  Llama.
+  1.376 (ExeaLM without streams, 3 seeds each). It is not in the study. Avneh's decision: public posts leave it out and
+  describe the Llama baseline as plain; `results/expanse/README.md` keeps its numbers.
 - Streams in the last 20% cost ExeaLM 0.017 on windows read alone (1.393 against 1.376); they are kept for long
   documents read as a stream.
 
