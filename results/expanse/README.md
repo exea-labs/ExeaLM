@@ -399,7 +399,27 @@ documents at least that long (64 a set, 18 sets). Bits per byte, mean of windows
   against 0.011 on windows read alone (section 13).
 - The board here is narrow: two slots in the one TONN layer, 32 numbers each per 64 tokens. One seed.
 
-## 15. Next
+## 15. Long documents at 0.25B (job 56083853, `stream8_250m.json`)
+
+The curve's 0.25B models (3 seeds each), scored as in section 10: 4,096 tokens of every long held-out document (up to
+64 a set, 18 sets) as 8 windows of 512. Bits per byte, mean of windows 1 to 7:
+
+| Model | Streamed | Alone | Window 7, streamed |
+|---|---|---|---|
+| **ExeaLM** | **0.955** | 1.048 | **0.947** |
+| Qwen3.5-style | 0.997 | 1.060 | 0.992 |
+| Plain Llama | 1.185 | 1.076 | 1.181 |
+
+- Read as a stream, ExeaLM is ahead of the Qwen3.5-style model on all 54 set-and-seed pairs, by 0.025 to 0.069
+  (0.042 on average), against 0.011 on windows read alone (section 13).
+- From 0.1B to 0.25B the lead on long documents goes from 0.061 to 0.042, and on windows read alone from 0.034 to 0.011.
+
+| Lead over the Qwen3.5-style model | 0.1B | 0.25B |
+|---|---|---|
+| Windows read alone (18 sets) | 0.034 | 0.011 |
+| Long documents read as a stream, windows 1-7 | 0.061 | 0.042 |
+
+## 16. Next
 
 The learning-rate checks (`go.sh lr`), the ablations at 0.1B (`ablate.sb`), and the compile check
 (`compile_check.sb`), then the curve.
