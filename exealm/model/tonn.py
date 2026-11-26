@@ -185,15 +185,23 @@ class TONNLayer(nn.Module):
     def _unit_scale(self, y, o):
         """Divide each slot by the size its output had on PAST batches (a running average), so a prediction never
         depends on other rows of the same batch and no slot drowns out the others. y is in type order o."""
+        used = self._measure(y.detach(), o)
+        return y / (used.view(1, 1, -1, 1).to(y.dtype) + 1e-3)
+
+    @torch.compiler.disable
+    def _measure(self, y, o):
+        """The sizes to divide by, and the running update of self.scale. Outside torch.compile: compiled, the backward
+        pass saved the buffer itself, and a stream's next window updates it in place before that backward runs (the
+        error "modified by an inplace operation"). Here `used` is a fresh tensor, so nothing saved is ever changed."""
         with torch.no_grad():
-            rms = y.detach().float().pow(2).mean(dim=(0, 1, 3)).sqrt()
+            rms = y.float().pow(2).mean(dim=(0, 1, 3)).sqrt()
             sc = self.scale.index_select(0, o)
             # A new/replaced slot has no past measurement. Using this batch's
             # RMS would leak future tokens and unrelated rows into its outputs.
-            used = torch.where(sc > 0, sc, torch.ones_like(sc))
+            used = torch.where(sc > 0, sc, torch.ones_like(sc)).clone()
             if self.training:
                 self.scale.index_copy_(0, o, torch.where(sc > 0, 0.99 * sc + 0.01 * rms, rms))
-        return y / (used.view(1, 1, -1, 1).to(y.dtype) + 1e-3)
+        return used
 
 
 # --------------------------------------------------------------------------------------------- the model
