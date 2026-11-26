@@ -1,0 +1,25 @@
+#!/bin/bash
+# Export the finished models (experiments/release/export_hf.py) and upload them to the public repo. CPU work on one
+# shared GPU node (the login node cannot hold a checkpoint in memory):
+#
+#     sbatch -A fli100 experiments/release/release.sb
+#SBATCH --job-name=exealm-release
+#SBATCH --partition=nairr-gpu-shared
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=8
+#SBATCH --gpus=h100:1
+#SBATCH --time=03:00:00
+#SBATCH --output=logs/expanse/%x-%j.out
+set -uo pipefail
+cd "$SLURM_SUBMIT_DIR"
+source experiments/expanse/env.sh
+export PYTHONUNBUFFERED=1 HF_HUB_DISABLE_XET=1
+RUNS=""
+for d in runs/*/; do
+  n=$(basename "$d")
+  if [[ $n == _* || $n == lr_* ]]; then continue; fi
+  if [ -f "$d/model.pt" ]; then RUNS="$RUNS ${d%/}"; fi
+done
+python experiments/release/export_hf.py $RUNS --repo "${REPO:-exea-labs/exealm-nairr}" \
+  --stage /expanse/lustre/projects/fli100/abhatia7/release/exealm-nairr --upload
