@@ -33,6 +33,8 @@ WORK=${LOCAL_DISK:-/scratch/$USER}/job_$SLURM_JOB_ID
 mkdir -p "$OUT" "$WORK"
 module load anaconda3/2021.05/q4munrg > /dev/null 2>&1
 eval "$(conda shell.bash hook)" && conda activate vllm || { echo "no conda environment named vllm"; exit 1; }
+# DeepSeek's FP8 kernels are compiled when the model loads (NVRTC), which needs libnvrtc-builtins from the CUDA wheels
+for d in "$CONDA_PREFIX"/lib/python3*/site-packages/nvidia/cu13/lib; do export LD_LIBRARY_PATH="$d:${LD_LIBRARY_PATH:-}"; done
 B="python experiments/library/build.py"
 step() { echo "== $(date '+%F %T') $*"; }
 
