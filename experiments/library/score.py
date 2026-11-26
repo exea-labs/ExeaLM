@@ -9,6 +9,8 @@ the user's context) and a target. Conditions:
     none      no library and nothing pasted: the model alone
     pasted    the item's source entry pasted before the prefix: ordinary RAG with the right document, an upper bound
               on what a perfect search could give
+    bm25      the entry a BM25 keyword search over the library ranks first for the prefix, pasted the same way:
+              ordinary RAG with a real search (bm25_pick), any model
 
 For ExeaLM, "library" and "none" are the attached and removed comparison; for a Llama baseline, "pasted" and "none" are
 RAG with the right document and the model with nothing. With the library, it also reports how often the model's own
@@ -44,7 +46,7 @@ from exealm.data.loader import TokenShards  # noqa: E402
 from exealm.hub import build_model  # noqa: E402
 from exealm.memory import Datastore, MemoryContext  # noqa: E402
 
-CONDITIONS = ("library", "none", "pasted")
+CONDITIONS = ("library", "none", "pasted", "bm25")
 
 
 def checkpoint(path):
@@ -125,10 +127,41 @@ def library_store(lib, chunk_len, n_chunks=0, seed=1):
     return Datastore(toks[idx].astype(np.int64), np.array(docs))
 
 
+def bm25_pick(lib, items, eot, sep, k1=1.2, b=0.75, batch=512, dev="cpu"):
+    """Ordinary RAG with a keyword search: for each item, the library entry that BM25 ranks first for the item's
+    prefix (its question, or its instruction and context), over the entries' token ids. Returns (picked entry ids,
+    whether the first is the item's source entry, whether the source is among the first 5)."""
+    n = len(lib.offsets)
+    V = int(np.max(lib.tokens)) + 1
+    rows, cols, tfs, lens = [], [], [], np.zeros(n)
+    for d in range(n):
+        u, c = np.unique(np.asarray(entry_ids(lib, d), dtype=np.int64), return_counts=True)
+        rows.append(np.full(len(u), d)); cols.append(u); tfs.append(c); lens[d] = c.sum()
+    rows, cols, tfs = np.concatenate(rows), np.concatenate(cols), np.concatenate(tfs).astype(np.float64)
+    df = np.bincount(cols, minlength=V)
+    idf = np.log1p((n - df + 0.5) / (df + 0.5))
+    w = idf[cols] * tfs * (k1 + 1) / (tfs + k1 * (1 - b + b * lens[rows] / lens.mean()))
+    W = torch.sparse_coo_tensor(np.stack([rows, cols]), w.astype(np.float32), (n, V)).coalesce().to(dev)
+    picked, top1, top5 = np.zeros(len(items), np.int64), np.zeros(len(items), bool), np.zeros(len(items), bool)
+    skip = {eot, *sep}
+    for b0 in range(0, len(items), batch):
+        part = items[b0:b0 + batch]
+        Q = torch.zeros(V, len(part))
+        for j, it in enumerate(part):
+            q = [t for t in set(it["prefix"]) if t not in skip and t < V]
+            Q[q, j] = 1.0
+        best = torch.sparse.mm(W, Q.to(dev)).topk(5, dim=0).indices.cpu().numpy()      # (5, items)
+        src = np.array([it["source_doc"] for it in part])
+        picked[b0:b0 + len(part)] = best[0]
+        top1[b0:b0 + len(part)] = best[0] == src
+        top5[b0:b0 + len(part)] = (best == src[None]).any(0)
+    return picked, top1, top5
+
+
 def layout(item, condition, chunk, eot, sep, entry=None):
     """(token ids, position where the target starts) of one item in one condition (see the module docstring)."""
     pre, tgt = item["prefix"], item["target"]
-    head = [eot] + entry + sep if condition == "pasted" else [eot] * (1 + (-(1 + len(pre))) % chunk)
+    head = [eot] + entry + sep if condition in ("pasted", "bm25") else [eot] * (1 + (-(1 + len(pre))) % chunk)
     return head + pre + tgt, len(head) + len(pre)
 
 
@@ -140,13 +173,16 @@ def rg_circuits(model):
 
 
 @torch.no_grad()
-def score(model, items, condition, eot, sep, lib, ds=None, offset=0, batch=8, dev="cpu", amp=None):
+def score(model, items, condition, eot, sep, lib, ds=None, offset=0, batch=8, dev="cpu", amp=None, picked=None):
     """Bits on each item's target, and whether the search returned a chunk of the item's source entry (at the
     target's first chunk, and at any of its chunks; only with a datastore). Library document d is document
     d + offset in ds; scored row i is document i."""
     C = model.cfg.chunk
-    rows = [layout(it, condition, C, eot, sep, entry_ids(lib, it["source_doc"]) if condition == "pasted" else None)
-            for it in items]
+    def entry(i, it):
+        if condition == "pasted":
+            return entry_ids(lib, it["source_doc"])
+        return entry_ids(lib, int(picked[i])) if condition == "bm25" else None
+    rows = [layout(it, condition, C, eot, sep, entry(i, it)) for i, it in enumerate(items)]
     bits = np.zeros(len(items))
     first, anyhit = np.zeros(len(items), bool), np.zeros(len(items), bool)
     rgs = rg_circuits(model) if ds is not None else []
@@ -225,6 +261,13 @@ def main(argv=None):
     items, eot, sep = load_items(a.library, [s for s in a.sets.split(",") if s], a.split, a.limit)
     top = max(max(max(it["prefix"] + it["target"]) for it in items), int(np.max(lib.tokens)))
     out = []
+    picked = top1 = top5 = None
+    if "bm25" in conditions:
+        picked, top1, top5 = bm25_pick(lib, items, eot, sep, dev=dev)
+        for s_ in dict.fromkeys(it["set"] for it in items):
+            idx = [i for i, it in enumerate(items) if it["set"] == s_]
+            print(f"BM25 on {s_}: the source entry first for {top1[idx].mean():.3f} of items, in the first 5 for "
+                  f"{top5[idx].mean():.3f}")
     for path in a.ckpts:
         path = checkpoint(path)
         model = build_model(torch.load(path, map_location="cpu", weights_only=False)).to(dev).eval()
@@ -242,13 +285,15 @@ def main(argv=None):
                 ds.doc_ids += len(items)                                 # scored rows are documents 0 .. n - 1
                 ds = ds.to(dev)
                 ds.refresh(model.encoder, model.emb)
-            bits, first, anyhit = score(model, items, cond, eot, sep, lib, ds, len(items), a.batch, dev, amp)
+            bits, first, anyhit = score(model, items, cond, eot, sep, lib, ds, len(items), a.batch, dev, amp, picked)
             in_store = set((ds.doc_ids.cpu() - len(items)).tolist()) if ds is not None else set()
             for s in dict.fromkeys(it["set"] for it in items):
                 idx = [i for i, it in enumerate(items) if it["set"] == s]
                 row = dict(ckpt=path, model=name, set=s, condition=cond, **summarize(items, bits, idx))
                 row["by_kind"] = {k: summarize(items, bits, [i for i in idx if items[i]["kind"] == k])["bits_per_byte"]
                                   for k in dict.fromkeys(items[i]["kind"] for i in idx)}
+                if cond == "bm25":
+                    row.update(bm25_top1=round(float(top1[idx].mean()), 4), bm25_top5=round(float(top5[idx].mean()), 4))
                 if ds is not None:
                     ok = [i for i in idx if items[i]["source_doc"] in in_store]
                     row.update(searchable=len(ok), search_first=round(float(first[ok].mean()), 4) if ok else None,

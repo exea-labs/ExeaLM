@@ -71,13 +71,15 @@ def test_every_model_gets_its_conditions_on_every_set(setup):
     rows = sc.main([setup["exealm"], setup["llama"], "--library", setup["lib"], "--device", "cpu",
                     "--out", str(setup["dir"] / "score.jsonl")])
     got = {(r["model"], r["set"], r["condition"]) for r in rows}
-    assert got == {("ExeaLM", s, c) for s in ("qa", "tasks") for c in ("library", "none", "pasted")} | \
-                  {("Llama", s, c) for s in ("qa", "tasks") for c in ("none", "pasted")}   # no RG: no library
+    assert got == {("ExeaLM", s, c) for s in ("qa", "tasks") for c in ("library", "none", "pasted", "bm25")} | \
+                  {("Llama", s, c) for s in ("qa", "tasks") for c in ("none", "pasted", "bm25")}   # no RG: no library
     for r in rows:
         n = sum(1 for _ in open(pathlib.Path(setup["lib"]) / r["set"] / "heldout" / "items.jsonl"))
         assert r["items"] == n and 0 < r["bits_per_byte"] < 20 and math.isfinite(r["bits_per_token"])
         if r["condition"] == "library":
             assert r["searchable"] == n and 0 <= r["search_first"] <= r["search_any"] <= 1
+        elif r["condition"] == "bm25":
+            assert 0 <= r["bm25_top1"] <= r["bm25_top5"] <= 1 and "search_first" not in r
         else:
             assert "search_first" not in r
     tasks = next(r for r in rows if r["set"] == "tasks" and r["condition"] == "none")
@@ -150,3 +152,18 @@ def test_a_model_with_another_vocabulary_is_refused(tmp_path, setup):
     torch.save(dict(model=small.state_dict(), cfg=asdict(cfg), kind="tonn", specs=small.specs), tmp_path / "s.pt")
     with pytest.raises(SystemExit, match="tokenizer the model was trained with"):
         sc.main([str(tmp_path / "s.pt"), "--library", setup["lib"], "--device", "cpu"])
+
+
+def test_bm25_finds_the_entry_whose_rare_tokens_the_question_shares(setup):
+    """Every held-out item whose prefix shares a token with only its own source entry gets that entry first."""
+    lib = TokenShards(setup["lib"])
+    items, eot, sep = sc.load_items(setup["lib"], ["qa", "tasks"], "heldout")
+    picked, top1, top5 = sc.bm25_pick(lib, items, eot, sep)
+    assert len(picked) == len(items) and (top1 <= top5).all()
+    owners = {}
+    for d in range(len(lib.offsets)):
+        for t in set(sc.entry_ids(lib, d)):
+            owners.setdefault(t, set()).add(d)
+    unique = [i for i, it in enumerate(items)
+              if any(owners.get(t) == {it["source_doc"]} for t in set(it["prefix"]) if t not in {eot, *sep})]
+    assert all(top5[i] for i in unique)
