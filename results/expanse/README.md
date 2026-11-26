@@ -295,7 +295,47 @@ sets:
 - The new layout beats the old on all 54 pairs (by 0.006 to 0.024). Streams cost 0.007 on windows read alone here,
   against 0.015 in the shorter test.
 
-## 10. Next
+## 10. Long documents at 0.1B (job 56082581, `stream8_100m.json`)
+
+The curve's 0.1B models (3 seeds each) on the first 4,096 tokens of every held-out document at least that long (up to
+64 a set, 18 sets), read as 8 windows of 512: "streamed" carries each window's state into the next (attention keys and
+values of the window before; ExeaLM's TONN state; Gated DeltaNet's matrix state), "alone" reads every window by itself.
+Bits per byte, mean of windows 1 to 7 (window 0 has nothing before it):
+
+| Model | Streamed | Alone | Window 7, streamed |
+|---|---|---|---|
+| **ExeaLM, the study's (streams in its last 20%)** | **1.096** | 1.194 | **1.083** |
+| ExeaLM, one TONN layer, trained without streams | 1.132 | 1.187 | 1.122 |
+| ExeaLM, a TONN layer every fourth layer, streams | 1.110 | 1.206 | 1.097 |
+| Qwen3.5-style | 1.157 | 1.230 | 1.144 |
+| Plain Llama | 1.584 | 1.238 | 1.586 |
+
+- Read as a stream, the study's ExeaLM is ahead of the Qwen3.5-style model on all 54 set-and-seed pairs, by 0.039 to
+  0.083 (0.061 on average): nearly twice its lead on windows read alone (0.034, section 9).
+- Part of that is the stream phase, which the baselines do not train. The same ExeaLM trained without streams is still
+  ahead on all 54 pairs (by 0.011 to 0.039, 0.025 on average), with neither model trained to stream.
+- The plain Llama cannot use the window before without training for it: its scores get worse streamed (1.584 against
+  1.238 alone). The Qwen3.5-style model gains 0.073 from streaming untrained, ExeaLM without stream training 0.055,
+  ExeaLM with it 0.099.
+
+## 11. The library as trained RAG at 0.1B (jobs 56082787-90, `library_rag_100m.jsonl`)
+
+`experiments/expanse/rag_post.sh`: the same post-training as section 7, except that half of the library share is the
+training items with the entry a BM25 search picks placed before them (`experiments/library/rag_pack.py`), as at test
+time. Bits per byte on the held-out topics:
+
+| Model | Questions: nothing, BM25, pasted | Text tasks: nothing, BM25 | Code tasks: nothing, BM25 |
+|---|---|---|---|
+| ExeaLM, RAG post-training | 1.649, **0.592**, 0.407 | 0.932, **0.739** | 0.447, **0.363** |
+| Qwen3.5-style, RAG post-training | 1.624, 0.707, 0.534 | 0.948, 0.789 | 0.472, 0.402 |
+| ExeaLM, post-training without entries (section 8) | 1.674, 0.689, 0.511 | 0.933, 0.754 | 0.438, 0.366 |
+
+- Trained to read a searched entry, ExeaLM with the library and a BM25 search cuts its bits per byte on held-out
+  questions by 64% (1.649 to 0.592), 0.097 better than without that training.
+- ExeaLM stays ahead of the Qwen3.5-style model with the library on every set: by 0.115 on questions, 0.050 on text
+  tasks and 0.039 on code tasks.
+
+## 12. Next
 
 The learning-rate checks (`go.sh lr`), the ablations at 0.1B (`ablate.sb`), and the compile check
 (`compile_check.sb`), then the curve.
