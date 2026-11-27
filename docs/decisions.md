@@ -12,7 +12,7 @@ lead of the long 0.1B run at 111 tokens per parameter fell from 0.009 to 0.002 w
 at 0.1B (results/expanse/README.md, section 21):
 
 - `--stream_mix 0.5` over the last 20% (half of each step's micro-batches are streams, half windows alone, the same
-  tokens): 1.1516 on windows alone, 1.0946 on 4,096-token documents streamed (1 seed; seeds 1 and 2 are training);
+  tokens): 1.1532 on windows alone, 1.0969 on 4,096-token documents streamed (3 seeds);
   the study's recipe 1.1566 and 1.0955, no streams 1.1496 and 1.1321 (3 seeds each).
 - the same over the last 40%: 1.1546 and 1.0956 (3 seeds).
 - averaging the weights of the streamed and unstreamed runs (`experiments/expanse/merge.py`): 1.2085 and 1.1523, worse

@@ -22,7 +22,9 @@ the same size, data, tokens and recipe; bits per byte on held-out text, lower is
 | Where the TONN layer goes | one TONN layer at the middle layer beats one in every fourth layer (1.348 against 1.376, 54 of 54 pairs); one at layer 0 costs 0.038 | 12 layouts, 0.1B | 4, 5 |
 | What the TONN layer itself adds | about 0.1%: against the same model with attention in its place, at 0.1B, 1.1566 against 1.1574 on windows alone, 1.0955 against 1.0968 on 4,096-token streams, 1.0726 against 1.0737 on 16,384-token streams. The lead over the Qwen3.5 design comes from the attention changes and the streams | 3 seeds (ahead in 2, 3 and 3 of them); 0.25B and the long run are training | 5, 19 |
 | The 9B, priced | 206 effective TFLOP/s per H100 on one node; about 75,000 GPU-hours for 1T tokens | 1 node; 2 and 4 nodes measured, being written up | 16 |
-| Streams without their cost | mixing windows alone into the stream phase keeps the long-document gain (1.0946 against 1.0955) and gives back 0.005 of the 0.007 it cost on windows alone; now the recipe | 1 seed so far, 0.1B | 21 |
+| Streams without most of their cost | mixing windows alone into the stream phase gives back half of what it cost on windows alone (1.1532 against 1.1566; none 1.1496) for 0.0014 of its long-document gain (1.0969 against 1.0955); now the recipe | 3 seeds, 0.1B | 21 |
+| Distillation into the weights | 30% teacher text (Qwen3.5-9B) in pretraining: worse, 1.1592 against 1.1549 | 1 seed, 0.1B | 22 |
+| Benchmarks at 0.5B | level: mean of 7 zero-shot tasks 0.424 against 0.422 | 1 seed | 20 |
 | Did not work | ExeaLM's own retrieval circuit (0.1% of questions find their entry); three 0.1B agents sharing a board lose to one model reading as a stream | | 7, 14 |
 | Void | the first 0.5B runs and the 3B pair's first 1,100 steps: a multi-GPU bug skipped gradient averaging; rerun with the fix | | 17 |
 
@@ -583,7 +585,18 @@ The fixed-code 0.5B runs (section 17), same data, tokens and recipe; bits per by
 - On windows alone ExeaLM's lead shrinks with size: 0.034 at 0.1B, 0.012 at 0.25B, 0.006 at 0.5B (seed 0). It
   shrank most in the stream phase: 0.011 at step 6,000 of 7,825 in the training log, 0.004 at the end (section 21).
 - Read as a stream it is 0.031 ahead (3.4%), against 0.061 at 0.1B and 0.042 at 0.25B.
-- Seed 1 of both and the plain Llama are training; the downstream benchmarks are being scored.
+- Seed 1 of both and the plain Llama are training.
+
+Downstream benchmarks (lm-eval harness, zero-shot; `bench_exealm_500m_4.1x_s0.json`, `bench_qwen_500m_4.1x_s0.json`;
+accuracy, normalized where the task has it):
+
+| | HellaSwag | ARC-Easy | ARC-Challenge | PIQA | WinoGrande | SciQ | LAMBADA | Mean |
+|---|---|---|---|---|---|---|---|---|
+| ExeaLM 0.5B | **0.309** | 0.396 | 0.233 | 0.585 | **0.489** | **0.685** | **0.269** | **0.424** |
+| Qwen3.5-style 0.5B | 0.303 | **0.409** | 0.233 | **0.596** | 0.484 | 0.677 | 0.249 | 0.422 |
+
+At 2B training tokens both models are near chance on ARC-Challenge and WinoGrande; the means differ by 0.002, within
+what one seed can tell apart. Benchmarks start to separate models later in the curve (the 3B pair).
 
 ## 21. Keeping the streams' gain without their cost on windows alone (jobs 56090436-41, 56091069)
 
@@ -596,22 +609,31 @@ without the cost, at 0.1B, scored as sections 9 and 10 (`text_mix100m.json`, `st
 | ExeaLM 0.1B | Seeds | Windows alone, 18 sets | 4,096-token documents, streamed | Same, windows alone |
 |---|---|---|---|---|
 | No stream phase | 3 | **1.1496** | 1.1321 | **1.1874** |
-| **Stream phase, half of every step's micro-batches streams (`--stream_mix 0.5`), last 20%** | 1 | 1.1516 | **1.0946** | 1.1894 |
+| **Stream phase, half of every step's micro-batches streams (`--stream_mix 0.5`), last 20%** | 3 | 1.1532 | 1.0969 | 1.1910 |
 | The same over the last 40% (as many stream tokens as the study's recipe) | 3 | 1.1546 | 1.0956 | 1.1922 |
 | The study's stream phase, last 20% | 3 | 1.1566 | 1.0955 | 1.1941 |
 | The study's run and the no-stream run, weights averaged 50/50 | 3 | 1.2085 | 1.1523 | 1.2457 |
 | Qwen3.5-style, for scale | 3 | 1.1904 | 1.1566 | 1.2297 |
 
-- Mixing over the last 20% keeps all of the long-document gain (1.0946 against 1.0955) and gives back 0.005 of the
-  0.007 on windows alone. One seed so far; seeds 1 and 2 are training.
+- Mixing over the last 20% (3 seeds: 1.1516, 1.1539, 1.1541 on windows alone; 1.0946, 1.0989, 1.0973 streamed)
+  gives back 0.0034 of the 0.0070 the stream phase costs on windows alone and gives up 0.0014 of its 0.037 gain on long
+  documents: a better balance, not a free one. The first seed alone suggested 0.005 and no loss.
 - Averaging the weights of the two runs, which part only in their last 20%, is worse than either: they are not in one
   basin after the stream phase.
 - The recipe from here mixes (docs/decisions.md, 26 November, 7 p.m.): the 3B ExeaLM from its next job, before its
   stream phase, and the second long 0.1B seed at 111 tokens per parameter from step 28,400. The finished runs and the
   first long seed keep the old recipe.
 
-## 22. Next
+## 22. Distillation into the weights at 0.1B: no gain (jobs 56088613-4, `text_mix20distill.json`)
 
-The 0.5B curve (seed 1 training), the 3B pair (Sunday evening), the second long seed, the library at 0.5B and on a
-mid-run 3B checkpoint, the library written by DeepSeek-V4-Flash (`experiments/expanse/library_v2.sb`), distillation into
-the weights (`experiments/distill`), then a scaling fit and the 9B projection against section 18's bar.
+`experiments/distill`: Qwen3.5-9B-Base continued 200,000 openings of 128 tokens from the training mix, and the 0.1B
+ExeaLM was pretrained with this teacher text as 30% of its tokens (same steps, seed 0). Against the same seed trained
+normally: 1.1592 against 1.1549 on windows alone, 1.0986 against 1.0939 on 4,096-token documents streamed. Teacher text
+in place of a third of the data does not help a 0.1B model on held-out human text at 0.4B tokens. What a frontier model
+knows goes in the library instead (section 23 when it is built).
+
+## 23. Next
+
+The 0.5B curve (seed 1 training), the 3B pair (Sunday evening), the second long seed at 111 tokens per parameter with
+the mixed stream phase, library v2 (the human tier and the DeepSeek-V4-Flash entries, being built) and training on it at
+0.5B and on a mid-run 3B checkpoint, then a scaling fit and the 9B projection against section 18's bar.
