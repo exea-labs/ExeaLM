@@ -251,6 +251,7 @@ def main(argv=None):
                     help="0: every chunk of every entry. N: N chunks sampled as pretraining samples them")
     ap.add_argument("--seed", type=int, default=0, help="the run's --seed: a sampled datastore uses seed + 1, as in "
                                                         "pretraining")
+    ap.add_argument("--lexical", action="store_true", help="library condition: the RG circuit takes BM25 candidates")
     ap.add_argument("--batch", type=int, default=8)
     ap.add_argument("--limit", type=int, default=0, help="score at most this many items of each set (0: all)")
     ap.add_argument("--device", default="auto")
@@ -290,6 +291,9 @@ def main(argv=None):
                     continue
                 ds = library_store(lib, model.cfg.rag_chunk_len, a.datastore_chunks, a.seed + 1)
                 ds.doc_ids += len(items)                                 # scored rows are documents 0 .. n - 1
+                if a.lexical:                                            # BM25 candidates (exealm/memory/lexical.py)
+                    from exealm.memory.lexical import LexicalDatastore
+                    ds = LexicalDatastore(ds.tokens, ds.doc_ids)
                 ds = ds.to(dev)
                 ds.refresh(model.encoder, model.emb)
             bits, first, anyhit = score(model, items, cond, eot, sep, lib, ds, len(items), a.batch, dev, amp, picked)

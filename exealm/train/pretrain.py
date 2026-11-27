@@ -326,6 +326,10 @@ def main(argv=None):
     ap.add_argument("--datastore_data", default=None,
                     help="one packed directory to sample the retrieval library from (default: --data, which must "
                          "then be one packed directory)")
+    ap.add_argument("--datastore_lexical", action="store_true",
+                    help="the RG circuit takes its candidates from BM25 over the previous chunk's tokens "
+                         "(exealm/memory/lexical.py) instead of from the model's own keys; it still scores and reads "
+                         "them with its own encoder and attention")
     ap.add_argument("--refresh_every", type=int, default=200)
     ap.add_argument("--eval_every", type=int, default=100)
     ap.add_argument("--eval_batches", type=int, default=8)
@@ -451,6 +455,9 @@ def main(argv=None):
             ds = Datastore.from_shards(data, a.datastore_chunks, cfg.rag_chunk_len, seed=a.seed + 1)
         else:
             raise ValueError("--data is a mix or has many shards: name the retrieval library with --datastore_data")
+        if a.datastore_lexical:
+            from exealm.memory.lexical import LexicalDatastore
+            ds = LexicalDatastore(ds.tokens, ds.doc_ids)
         ds = ds.to(dev)
         ds.refresh(model.encoder, model.emb, step=0)
         if world > 1:
