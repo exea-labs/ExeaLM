@@ -100,6 +100,9 @@ def write_pack(tmp, name, texts, tok_dir):
     pack([src], tok_dir, os.path.join(tmp, name))
 
 
+COMMON = "Notable people with the surname include the following persons of some renown in their fields."
+
+
 @pytest.fixture
 def world(tmp_path):
     from exealm.data.tokenizer import train
@@ -107,6 +110,7 @@ def world(tmp_path):
     docs = [se_doc(rng, i) for i in range(400)]
     val_text = docs[4]["text"]                                  # a val document that a pool document copies
     docs.append(se_doc(rng, 400, text=docs[7]["text"]))         # an exact duplicate
+    docs[10]["text"] += "\n\n" + COMMON                         # a phrase that val and training text both have
     sample = tmp_path / "sample.jsonl.gz"
     with gzip.open(sample, "wt", encoding="utf-8") as f:
         for d in docs[:100]:
@@ -114,8 +118,9 @@ def world(tmp_path):
     slice_dir = tmp_path / "slice"
     tok_dir = slice_dir / "tokenizer"
     train([str(sample)], 600, str(tok_dir))
-    write_pack(tmp_path, "slice/packed/stackexchange/val", [val_text], str(tok_dir))
-    write_pack(tmp_path, "slice/packed/stackexchange/train", [words(rng, 500) for _ in range(5)], str(tok_dir))
+    write_pack(tmp_path, "slice/packed/stackexchange/val", [val_text, "Unrelated words. " + COMMON], str(tok_dir))
+    write_pack(tmp_path, "slice/packed/stackexchange/train", [words(rng, 500) for _ in range(5)] + [COMMON],
+               str(tok_dir))
     write_pack(tmp_path, "libv1/qa/heldout", ["Question: what is it?\nAnswer: nothing at all, really."], str(tok_dir))
     write_pack(tmp_path, "libv1/tasks/heldout", ["Rewrite it.\n\nSomething else entirely."], str(tok_dir))
     root = tmp_path / "root"
@@ -172,7 +177,11 @@ def test_end_to_end_parts_continue_and_the_pack_is_clean(world):
             assert r["license"] == "CC-BY-SA-3.0+CC-BY-SA-4.0" and r["url"].startswith("https://math.stackexchange.com/")
             seen_text.append(t["text"])
         stats = json.load(open(os.path.join(out, "stats.json")))["stackexchange"]["stats"]
+        flagged = [r for r, t in zip(idx, txt) if COMMON in t["text"]]
+        assert all(r.get("strict_drop") == "val" for r in flagged)          # kept, marked for the strict rule
+        assert not any(r.get("strict_drop") for r, t in zip(idx, txt) if COMMON not in t["text"])
         if part == 0:
+            assert flagged and stats["kept, common val windows only"] == len(flagged)
             assert stats["dropped: val"] >= 1 and sh.meta["n_tokens"] >= 20000
             assert stats.get("dropped: duplicate", 0) == 0
             assert os.path.realpath(os.path.join(world["root"], "human_pool_v0")) == os.path.realpath(out)

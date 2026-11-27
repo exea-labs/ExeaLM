@@ -145,6 +145,12 @@ SPECIAL = ["<|endoftext|>", "<|pad|>", "<|im_start|>", "<|im_end|>", "<|system|>
 
 # passages, in estimated tokens (bytes / bpt); the packed counts are exact
 TARGET, MAX, UNIT, MERGE_MAX, MIN_TOKENS, MAX_PER_DOC = 768, 1024, 512, 1280, 128, 24
+CLEAN_RULES = dict(
+    specific="a passage is dropped when it shares a 13-token window with a val split of the slice or library v1's "
+             "held-out packs that never occurs in the slice's training text, or any benchmark window (the slice's "
+             "benchmark rule). Windows the training text also has are common text (LaTeX markup, Wikipedia "
+             "templates, headings); passages that share only those are kept and marked strict_drop in index.jsonl",
+    strict="a passage is dropped when it shares any 13-token window with a val split, a held-out pack or a benchmark")
 CODE_REPO_CAP = 10                      # files per repository: many projects rather than a few big ones
 ML_CATS = {"cs.LG", "cs.CL", "cs.AI", "cs.CV", "cs.NE", "stat.ML"}
 OTHER_ARXIV = 0.3                       # share of the other arXiv papers kept (all machine-learning papers are)
@@ -501,6 +507,29 @@ def _train_sample(job):
     return np.unique(h[(h >> np.uint64(TRAIN_SAMPLE_SHIFT)) == 0])
 
 
+def _init_clean(path):
+    _G["clean"] = np.load(path, mmap_mode="r")
+
+
+def _clean_in_train(job):
+    """Indices (into clean_hash) of the clean windows that occur in one chunk of training tokens."""
+    path, a, b = job
+    dt = np.dtype(read_json(os.path.join(path, "meta.json"))["dtype"])
+    t = np.fromfile(os.path.join(path, "tokens.bin"), dtype=dt, count=b - a, offset=a * dt.itemsize)
+    hs = np.unique(clean_windows(t))
+    i = member(_G["clean"], hs)
+    return np.unique(i[i >= 0])
+
+
+def train_chunks(packed, buckets, chunk=32_000_000):
+    jobs = []
+    for b in buckets:
+        p = os.path.join(packed, b, "train")
+        n = read_json(os.path.join(p, "meta.json"))["n_tokens"]
+        jobs += [(p, a, min(n, a + chunk + NGRAM - 1)) for a in range(0, n, chunk)]
+    return jobs
+
+
 def cmd_index(args):
     idx = os.path.join(args.root, "index")
     os.makedirs(idx, exist_ok=True)
@@ -537,11 +566,7 @@ def cmd_index(args):
         write_json(os.path.join(idx, "meta.json"), meta)
         log(f"index: {len(H)} windows that must stay clean ({len(names)} benchmarks)")
     if not os.path.exists(os.path.join(idx, "train_s32.npy")) or args.reindex:
-        jobs, chunk = [], 32_000_000
-        for b in buckets:
-            p = os.path.join(packed, b, "train")
-            n = read_json(os.path.join(p, "meta.json"))["n_tokens"]
-            jobs += [(p, a, min(n, a + chunk + NGRAM - 1)) for a in range(0, n, chunk)]
+        jobs = train_chunks(packed, buckets)
         log(f"index: sampling training windows from {len(jobs)} chunks")
         t0 = time.time()
         with ProcessPoolExecutor(args.workers) as ex:
@@ -552,6 +577,24 @@ def cmd_index(args):
                                       buckets=buckets, seconds=round(time.time() - t0)))
         write_json(os.path.join(idx, "meta.json"), meta)
         log(f"index: {len(S)} sampled training windows in {time.time() - t0:.0f} s")
+    if not os.path.exists(os.path.join(idx, "clean_in_train.npy")) or args.reindex:
+        # A clean window that also occurs in the slice's training text (all of it, not a sample) is common text:
+        # LaTeX markup, Wikipedia templates, section headings. Sharing one says nothing about copying held-out text;
+        # a passage that copies a held-out document shares many windows that occur nowhere in training.
+        jobs = train_chunks(packed, buckets)
+        log(f"index: which clean windows occur in the training text ({len(jobs)} chunks)")
+        t0 = time.time()
+        hpath = os.path.join(idx, "clean_hash.npy")
+        mark = np.zeros(len(np.load(hpath, mmap_mode="r")), dtype=bool)
+        with ProcessPoolExecutor(args.workers, initializer=_init_clean, initargs=(hpath,)) as ex:
+            for found in ex.map(_clean_in_train, jobs):
+                mark[found] = True
+        np.save(os.path.join(idx, "clean_in_train.npy"), mark)
+        K = np.load(os.path.join(idx, "clean_kind.npy"), mmap_mode="r")
+        meta.update(clean_in_train={name: dict(windows=int((K == k).sum()), in_train=int(mark[K == k].sum()))
+                                    for name, k in (("val", 1), ("heldout", 2))} | dict(seconds=round(time.time() - t0)))
+        write_json(os.path.join(idx, "meta.json"), meta)
+        log(f"index: {int(mark.sum())} of {len(mark)} clean windows occur in the training text ({time.time() - t0:.0f} s)")
 
 
 def bench_index(args):
@@ -846,7 +889,7 @@ def norm_hash(text):
 _G = {}
 
 
-def _init(tok_path, index_dir, name, root, train_threshold):
+def _init(tok_path, index_dir, name, root, train_threshold, clean_rule="specific"):
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     os.environ["RAYON_NUM_THREADS"] = "1"
     from tokenizers import Tokenizer
@@ -857,6 +900,8 @@ def _init(tok_path, index_dir, name, root, train_threshold):
     _G["clean"] = np.load(os.path.join(index_dir, "clean_hash.npy"), mmap_mode="r")
     _G["kind"] = np.load(os.path.join(index_dir, "clean_kind.npy"), mmap_mode="r")
     _G["train"] = np.load(os.path.join(index_dir, "train_s32.npy"), mmap_mode="r")
+    _G["in_train"] = (np.load(os.path.join(index_dir, "clean_in_train.npy"), mmap_mode="r")
+                      if clean_rule == "specific" else None)
     meta = read_json(os.path.join(index_dir, "meta.json"), {})
     _G["bench_names"] = meta.get("benchmarks") or []
     ctx = {}
@@ -899,19 +944,25 @@ def check(ids_list):
     flat = np.zeros(int(lens.sum() + n), dtype=np.uint16)                # each passage followed by end-of-text (0)
     for s, x in zip(starts, ids_list):
         flat[s:s + len(x)] = x
-    reasons, overlap, where = [None] * n, np.zeros(n), {}
+    reasons, overlap, where, common = [None] * n, np.zeros(n), {}, {}
     if len(flat) < NGRAM:
-        return reasons, overlap, where
+        return reasons, overlap, where, common
     h = window_hashes(flat)
     z = np.concatenate([[0], np.cumsum(flat == 0, dtype=np.int64)])
     ok = np.flatnonzero((z[NGRAM:] - z[:-NGRAM]) == 0)
     hv = h[ok]
     pid = np.searchsorted(starts, ok, side="right") - 1
     hit = member(_G["clean"], hv)
+    in_train = _G["in_train"]
     for w in np.flatnonzero(hit >= 0):
         p = pid[w]
+        k = int(_G["kind"][hit[w]])
+        if k < 10 and in_train is not None and in_train[hit[w]]:     # val/heldout text that training has too
+            if p not in common:
+                common[p] = (kind_name(k), tuple(int(x) for x in flat[ok[w]:ok[w] + NGRAM]))
+            continue
         if reasons[p] is None:
-            reasons[p] = kind_name(int(_G["kind"][hit[w]]))
+            reasons[p] = kind_name(k)
             where[p] = tuple(int(x) for x in flat[ok[w]:ok[w] + NGRAM])     # the first window that matched
     sampled = (hv >> np.uint64(TRAIN_SAMPLE_SHIFT)) == 0
     sp = pid[sampled]
@@ -922,7 +973,7 @@ def check(ids_list):
     for p in range(n):
         if _G["src"].get("train_check", True) and reasons[p] is None and tot[p] >= 3 and overlap[p] >= _G["threshold"]:
             reasons[p] = "train_overlap"
-    return reasons, overlap, where
+    return reasons, overlap, where, common
 
 
 def process(batch):
@@ -961,7 +1012,7 @@ def process(batch):
     ids = [e.ids for e in _G["tok"].encode_batch(texts)]
     keep = [j for j, x in enumerate(ids) if len(x) >= s.get("min_tokens", MIN_TOKENS)]
     stats["quality: short"] += len(ids) - len(keep)
-    reasons, overlap, where = check([ids[j] for j in keep])
+    reasons, overlap, where, common = check([ids[j] for j in keep])
     out, windows = [], Counter()
     for q, (j, why, ov) in enumerate(zip(keep, reasons, overlap)):
         if why:
@@ -971,8 +1022,12 @@ def process(batch):
                 windows[(why, where[q])] += 1
             continue
         row, k, title, body, info = cands[j]
+        if q in common:                          # kept, but the strict rule (any shared window) would drop it
+            stats[f"kept, common {common[q][0]} windows only"] += 1
+            windows[("kept: common " + common[q][0], common[q][1])] += 1
         out.append(dict(ids=np.asarray(ids[j], dtype=np.uint16), text=texts[j], hash=norm_hash(body), row=row, rank=rank,
-                        chunk=k, title=title, info=info, overlap=round(float(ov), 3)))
+                        chunk=k, title=title, info=info, overlap=round(float(ov), 3),
+                        common=common[q][0] if q in common else None))
     return out, stats, windows
 
 
@@ -1098,7 +1153,8 @@ def run_source(args, name, target, seen, index_dir):
     missing = None
     last_log = time.time()
     with ProcessPoolExecutor(args.workers, initializer=_init,
-                             initargs=(tok_path, index_dir, name, args.root, args.train_threshold)) as ex:
+                             initargs=(tok_path, index_dir, name, args.root, args.train_threshold,
+                                       args.clean_rule)) as ex:
         inflight = []
         gen = batches()
         exhausted = False
@@ -1164,6 +1220,8 @@ def run_source(args, name, target, seen, index_dir):
                 for k in ("site", "subset", "code_lang"):
                     if info.get(k):
                         rec[k] = info[k]
+                if p["common"]:
+                    rec["strict_drop"] = p["common"]         # shares a val/heldout window that training has too
                 f_idx.write(json.dumps(rec, ensure_ascii=False) + "\n")
                 f_txt.write(json.dumps(dict(id=pid, source=name, title=p["title"], license=info["license"],
                                             url=info.get("url"), text=p["text"]), ensure_ascii=False) + "\n")
@@ -1196,7 +1254,7 @@ def run_source(args, name, target, seen, index_dir):
         write_json(os.path.join(out, "repos.json"), dict(added_repos))
     from tokenizers import Tokenizer
     tk = Tokenizer.from_file(tok_path)
-    top = [dict(reason=why, window=tk.decode(list(w)), passages=c) for (why, w), c in windows.most_common(25)]
+    top = [dict(reason=why, window=tk.decode(list(w)), passages=c) for (why, w), c in windows.most_common(40)]
     done = dict(source=name, part=args.part, target=int(target), tokens=int(tokens), passages=passages,
                 start=cur, end=end, short=not stopped, exhausted=not stopped and not missing, missing=missing,
                 repos=len(added_repos) if repo_counts is not None else None,
@@ -1253,7 +1311,8 @@ def part_targets(root, part, part_tokens, names=None):
 
 def cmd_passages(args):
     index_dir = args.index_dir or os.path.join(args.root, "index")
-    for f in ("clean_hash.npy", "clean_kind.npy", "train_s32.npy"):
+    for f in ("clean_hash.npy", "clean_kind.npy", "train_s32.npy") + (("clean_in_train.npy",)
+                                                                       if args.clean_rule == "specific" else ()):
         if not os.path.exists(os.path.join(index_dir, f)):
             raise SystemExit(f"no {f} in {index_dir}: run index first")
     targets = part_targets(args.root, args.part, args.part_tokens, args.sources)
@@ -1325,7 +1384,9 @@ def cmd_pack(args):
                             packed=time.strftime("%Y-%m-%d"), title_line=True,
                             passage_tokens=dict(target=TARGET, max=MAX, merge_max=MERGE_MAX, min=MIN_TOKENS,
                                                 max_per_doc=MAX_PER_DOC),
-                            decontamination=dict(ngram=NGRAM, clean_windows=index_meta.get("clean_windows"),
+                            decontamination=dict(ngram=NGRAM, rule=args.clean_rule, rules=CLEAN_RULES,
+                                                 clean_windows=index_meta.get("clean_windows"),
+                                                 clean_in_train=index_meta.get("clean_in_train"),
                                                  benchmarks=index_meta.get("benchmarks"),
                                                  train_overlap_threshold=args.train_threshold,
                                                  train_sample=index_meta.get("train_sample")),
@@ -1387,6 +1448,7 @@ def main(argv=None):
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 1))
     ap.add_argument("--index_dir", default=None, help="a copy of <root>/index (e.g. on node-local disk)")
     ap.add_argument("--train_threshold", type=float, default=0.5)
+    ap.add_argument("--clean_rule", choices=list(CLEAN_RULES), default="specific")
     ap.add_argument("--out", default=None)
     ap.add_argument("--replan", action="store_true")
     ap.add_argument("--reindex", action="store_true")
