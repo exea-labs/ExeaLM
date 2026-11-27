@@ -20,6 +20,7 @@
 #SBATCH --time=24:00:00
 #SBATCH --output=logs/expanse/%x-%j.out
 set -uo pipefail
+ulimit -c 0                               # a crashing vLLM worker wrote four 117 MB core files into home (100 GB cap)
 export PYTHONUNBUFFERED=1
 cd "$SLURM_SUBMIT_DIR"
 MODEL=${MODEL:-/expanse/lustre/projects/fli100/abhatia7/hf/DeepSeek-V4-Flash-0731}
