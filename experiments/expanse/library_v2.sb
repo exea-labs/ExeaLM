@@ -33,8 +33,12 @@ WORK=${LOCAL_DISK:-/scratch/$USER}/job_$SLURM_JOB_ID
 mkdir -p "$OUT" "$WORK"
 module load anaconda3/2021.05/q4munrg > /dev/null 2>&1
 eval "$(conda shell.bash hook)" && conda activate vllm || { echo "no conda environment named vllm"; exit 1; }
-# DeepSeek's FP8 kernels are compiled when the model loads (NVRTC), which needs libnvrtc-builtins from the CUDA wheels
-for d in "$CONDA_PREFIX"/lib/python3*/site-packages/nvidia/cu13/lib; do export LD_LIBRARY_PATH="$d:${LD_LIBRARY_PATH:-}"; done
+# DeepSeek's FP8 kernels (DeepGEMM) are compiled when the model loads: they need a CUDA toolkit (CUDA_HOME, with nvcc
+# and headers) and libnvrtc-builtins. The CUDA 13 wheels in the environment are a whole toolkit; Expanse has none.
+for d in "$CONDA_PREFIX"/lib/python3*/site-packages/nvidia/cu13; do
+  export CUDA_HOME="$d" CUDA_PATH="$d" PATH="$d/bin:$PATH" LD_LIBRARY_PATH="$d/lib:${LD_LIBRARY_PATH:-}"
+done
+[ -x "${CUDA_HOME:-}/bin/nvcc" ] || { echo "no CUDA toolkit in the vllm environment (nvidia/cu13)"; exit 1; }
 B="python experiments/library/build.py"
 step() { echo "== $(date '+%F %T') $*"; }
 
@@ -52,12 +56,14 @@ step "topics: $TEXT_TOPICS research topics, $CODE_TOPICS code topics"
 wc -l "$OUT/topics.jsonl" "$OUT/code_topics.txt"
 
 V="--backend vllm --model $MODEL --tensor_parallel 4 --max_model_len 8192"
+fail() { echo "== $(date '+%F %T') failed: $*"; exit 1; }   # a failed step ends the job: the next would read nothing
 step "research entries"
-$B write --topics "$OUT/topics.jsonl" $V --limit "$TEXT_TOPICS" --out "$OUT/entries.jsonl"
+$B write --topics "$OUT/topics.jsonl" $V --limit "$TEXT_TOPICS" --out "$OUT/entries.jsonl" || fail "research entries"
 step "code entries"
-$B write --kind code --topics "$OUT/code_topics.txt" $V --limit "$CODE_TOPICS" --out "$OUT/code_entries.jsonl"
+$B write --kind code --topics "$OUT/code_topics.txt" $V --limit "$CODE_TOPICS" --out "$OUT/code_entries.jsonl" \
+  || fail "code entries"
 step "tasks that need an entry adapted"
-$B morph "$OUT/entries.jsonl" "$OUT/code_entries.jsonl" $V --out "$OUT/tasks.jsonl"
+$B morph "$OUT/entries.jsonl" "$OUT/code_entries.jsonl" $V --out "$OUT/tasks.jsonl" || fail "tasks"
 wc -l "$OUT"/*.jsonl
 
 if [ "$PACK" = 1 ]; then
