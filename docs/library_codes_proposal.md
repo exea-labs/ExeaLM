@@ -1,6 +1,6 @@
 # Proposal: a library the model reads as learned codes, not text
 
-Status: approved 27 November 2026; tests T0 to T2 run that day (results at the end). Sizes are arithmetic from the numbers in
+Status: tested 27 November 2026 (T0 to T2, results at the end): the codes failed; the library ships as text. Sizes are arithmetic from the numbers in
 `docs/library.md` and the 9B preset (`exealm/config.py`: width 4096, 42 layers, 41 of them attention). The cited
 papers need checking before any of this goes into the paper.
 
@@ -142,3 +142,25 @@ ExeaLM's stream training, with a skim-then-read path for exact text.
 Token ids are 3% smaller than UTF-8 text after compression, so storing bytes saves nothing; it only buys independence
 from the tokenizer. Compressed text costs about 2.0 bits a byte. A model that scores about 1 bit a byte would halve it,
 which is the arithmetic-coding row above, and the codes must beat 620 bytes a passage to ship smaller.
+
+**T1 and T2** (jobs 56105167-8, `results/expanse/codes/*.json`, `experiments/library/codes.py`): the 0.1B ExeaLM after
+RAG post-training (`ragpost_exealm_100m_s0`) as reader and encoder, 5,000 steps of 48 library v2 training items, the
+entry BM25 picks for each; 3,000 held-out questions and 3,000 held-out tasks; one seed. Bits per byte on the targets:
+
+| Run | Bytes an entry | Questions: no entry | entry as text | entry as codes | Tasks: no entry | as text | as codes | Code search finds the source first (questions, tasks) |
+|---|---|---|---|---|---|---|---|---|
+| Text control (entry as text in training) | | 1.489 | **0.388** | | 1.053 | **0.813** | | |
+| 4 codes | 128 | 1.434 | | 1.386 | 1.171 | | 1.163 | 0.42, 0.24 |
+| 16 codes | 512 | 1.440 | | 1.369 | 1.174 | | 1.162 | 0.48, 0.27 |
+| 16 codes, not rounded | 2,048 | 1.443 | | 1.357 | 1.174 | | 1.160 | 0.53, 0.29 |
+| 64 codes | 2,048 | 1.445 | | 1.368 | 1.174 | | 1.160 | 0.49, 0.30 |
+
+BM25 finds the source entry first for 0.885 of the held-out questions and 0.638 of the tasks.
+
+- **T1 fails.** Codes keep 6% to 8% of the gain the entry gives as text (questions: 1.44 to about 1.37, against 1.49
+  to 0.39 for text), far from the 80% the test asked for. Sixty-four codes do no better than sixteen, and unrounded
+  codes barely better than rounded ones, so the number of bytes is not what limits them: the reader does not learn to
+  use them in 5,000 steps at 0.1B.
+- **T2 fails.** Searching by the first code finds the source entry first about half as often as BM25.
+- The library ships as text, searched by BM25. A learned compressed form would need a larger encoder, far more
+  training and a reading path the model is pretrained with. It moves to the later list.
