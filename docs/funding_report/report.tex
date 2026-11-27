@@ -90,7 +90,7 @@ Tier~2 adds a year of the library's search service on one GPU and support for th
 We plan to release the weights, the code, the data and the library, each under its sources' licenses.
 
 \paragraph{What is not shown yet.}
-Our largest finished models have 0.5B parameters, and the 3B pair is due to finish around 29 November 2026.
+Our largest finished models have 0.5B parameters, and the 3B pair is due to finish on the evening of 29 November 2026.
 On windows read alone, ExeaLM's lead shrinks with size, from 2.8\% at 0.1B to 0.6\% at 0.5B (1 seed at 0.5B).
 The library results are from 0.1B models only.
 With no library, the released Qwen3.5-9B-Base is far ahead of our 0.25B model (0.674 against 1.011 bits per byte, seed 0).
@@ -175,16 +175,16 @@ Size & Seeds & ExeaLM & Qwen3.5-style & Llama & Lead & ExeaLM & Qwen3.5-style & 
 0.1B & 3 & \textbf{1.157} & 1.190 & 1.200 & 0.034 & \textbf{1.096} & 1.157 & 0.061 & \sect{9}, \sect{10} \\
 0.25B & 3 & \textbf{1.014} & 1.026 & 1.041 & 0.011 & \textbf{0.955} & 0.997 & 0.042 & \sect{13}, \sect{15} \\
 0.5B & 1 & \textbf{0.933} & 0.939 & training & 0.006 & \textbf{0.873} & 0.904 & 0.031 & \sect{20} \\
-3B, step 7,000$^{*}$ & 1 & \textbf{0.855} & 0.873 & not trained & 0.018 & \multicolumn{3}{c}{after training} & run log \\
-3B, final & 1 & \multicolumn{8}{l}{\pend{3B final, both readings, from the 3B pair due about 29 November 2026}} \\
+3B, step 7,500$^{*}$ & 1 & \textbf{0.850} & 0.866 & not trained & 0.016 & \multicolumn{3}{c}{after training} & \sect{23} \\
+3B, final & 1 & \multicolumn{8}{l}{\pend{3B final, both readings, from the 3B pair due on the evening of 29 November 2026}} \\
 \bottomrule
 \end{tabularx}
-\par\smallskip\raggedright\footnotesize $^{*}$In-run check during training, step 7,000 of 45,688: 512 fixed windows of the held-out mix, read alone, before the stream phase and the anneal. A different reading from the 18-set mean of the other rows.
+\par\smallskip\raggedright\footnotesize $^{*}$In-run check during training, step 7,500 of 45,688: fixed held-out windows read alone, before the stream phase and the anneal. A different reading from the 18-set mean of the other rows.
 \end{table}
 
 The \emph{in-run check} scores a model on 512 fixed held-out windows while it trains.
 At 0.5B the in-run lead fell from 0.011 at step 6,000 of 7,825 to 0.004 at the end, mostly in the stream phase (\sect{20}).
-So the final 3B lead may be smaller than its 0.018 at step 7,000.
+At 3B the in-run lead has narrowed from 0.034 at step 3,000 to 0.016 at step 7,500 (\sect{23}), so the final 3B lead may be smaller still.
 The 3B ExeaLM switches to the mixed stream phase of Section~3 before its own stream phase, which costs less on windows alone.
 
 The control that a reviewer asks for first is ExeaLM with attention in place of its TONN layer, trained the same way.
@@ -283,7 +283,7 @@ Tier & What & Size & State \\
 \midrule
 Written & entries by DeepSeek-V4-Flash on 150,000 research and 50,000 code topics, each with questions and adaptation tasks & about 200M tokens & writing on Expanse (job 56091937) \\
 Written & v1: 18,545 entries by Qwen3-30B-A3B & 8M tokens & done, public \\
-Human & passages of real text: 41\% research, 30\% Wikipedia, 21\% code from about 2M repositories, 4\% Q\&A, 2\% math & 25.0B tokens, 36.8M passages & done \\
+Human & passages of real text: 44\% research, 28\% Wikipedia, 21\% code from about 2M repositories, 4\% Q\&A, 2\% math (rounded) & 25.0B tokens, 36.8M passages & done \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -430,7 +430,7 @@ In the planned hosted service, one GPU holds the compressed index and serves eve
 \subsection{Memory layers, the next research bet}
 
 Memory layers are large key-value tables that a model reads sparsely, a few entries for each token.
-Berges et al.\ (ICML 2025) scale them to 128B parameters and report the largest gains on factual tasks.
+In the abstract of Berges et al.\ (ICML 2025), models with memory layers of up to 128B parameters beat dense models with twice the compute, most of all on factual tasks.
 We will test memory layers at 0.1B against the same model with library search (\texttt{docs/library.md}, ``Later'').
 They are not part of the funded 9B run.
 
@@ -476,7 +476,7 @@ Tier~2 adds a public search service for the library and paid time for the team.
 When & Milestone & Paid by \\
 \midrule
 27 November 2026 & Library v2 research entries due; code entries and tasks follow & NAIRR \\
-About 29 November 2026 & 3B pair finishes; its scores and benchmarks fill Table~\ref{tab:main} & NAIRR \\
+29 November 2026 & 3B pair finishes in the evening; its scores and benchmarks fill Table~\ref{tab:main} & NAIRR \\
 Next, in the allocation & Library v2 post-training at 0.5B and 3B for both models; the long pair's second seed; a scaling fit and 9B projection; the small post-training tests & NAIRR \\
 Month 1 & The 1T-token data build; weight splitting in the training code; a speed test at full cluster size & Tier 1 \\
 Months 2 and 3 & Pretraining, about 25 days on 128 H100s & Tier 1 \\
@@ -561,7 +561,7 @@ Long documents at 0.1B (1.096, 1.157); without streams 1.132, lead 0.025 & \sect
 0.25B windows alone (1.014, 1.026, 1.041; range 0.007 to 0.026) and long documents (0.955, 0.997) & \sect{13}, \sect{15}, \texttt{text\_250m.json}, \texttt{stream8\_250m.json} \\
 0.5B (0.933, 0.939; 0.873, 0.904; 3.4\%); in-run lead 0.011 to 0.004 & \sect{20}, \texttt{text\_500m.json}, \texttt{stream8\_500m.json} \\
 0.5B benchmarks (0.424, 0.422) & \sect{20}, \texttt{bench\_exealm\_500m\_4.1x\_s0.json}, \texttt{bench\_qwen\_500m\_4.1x\_s0.json} \\
-3B in-run check at step 7,000 (0.855, 0.873) & training logs of \texttt{exealm\_3b\_4.1x\_s0} and \texttt{qwen\_3b\_4.1x\_s0} on Expanse \\
+3B in-run check at step 7,500 (0.850, 0.866, 0.016); 0.034 at step 3,000; finish on the evening of 29 November & \sect{23} \\
 Step multiplier 1.19 at step 27,500 of 39,735; peak 1.41 & \sect{12} summary row \\
 Long run's lead 0.009 to 0.002 after the switch; switch at step 31,788; second seed mixed from 28,400 & \texttt{docs/decisions.md}, 26 November (7 p.m.) \\
 Long pair tokens (10.4B) and tokens per parameter (109.6, 108.9) & \texttt{docs/budget.md}, ``The runs'' \\
@@ -569,7 +569,7 @@ Long pair tokens (10.4B) and tokens per parameter (109.6, 108.9) & \texttt{docs/
 Library v1 (1.645, 0.590, 0.405; 1.633, 0.704, 0.529; 64\%, 21\%, 19\%; 0.110 to 0.116) & \sect{11}, \texttt{library\_rag\_100m\_s0.jsonl} to \texttt{\_s2} \\
 BM25 first hit 86.2\% & \sect{8} \\
 Qwen3.5-9B-Base (1.031, 0.313, 0.169; 0.674 against 1.011, seed 0) & \sect{18}, \texttt{external\_qwen35\_9b\_base.json} \\
-Library v2 tiers, two-tier search (0.44, 0.74, 0.72), search time, index size, prompt-reading estimate & \texttt{docs/library.md} \\
+Library v2 tiers and shares (44\%, 28\%, 21\%, 4\%, 2\%), two-tier search (0.44, 0.74, 0.72), search time, index size, prompt-reading estimate; memory layers & \texttt{docs/library.md} \\
 DeepSeek-V4-Flash, 13B used per token & \texttt{docs/post\_training.md}, section 3.1 \\
 9B speed (206, 40 of 80 GB), 75,000 GPU-hours & \sect{16}, \texttt{nine\_b.json} \\
 Stream phase at 1.2 times the cost & \sect{2} \\
@@ -592,8 +592,6 @@ Team & NAIRR proposal, section D; \texttt{CONTRIBUTORS.md} \\
 \end{tabularx}
 \end{table}
 
-One number is not in the repository yet: the 3B in-run check at step 7,000, from the runs' logs on Expanse.
-It goes on the results page with the final 3B result.
 The Appendix~C rows beyond the three in \sect{16} are in \texttt{nine\_b.json} and not yet written up on the results page.
 Numbers from \texttt{docs/} are plans and estimates, and the report labels them as such.
 

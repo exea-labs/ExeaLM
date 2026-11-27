@@ -90,7 +90,7 @@ for x, v in zip(xpos, ll):
 for x, v in zip(xpos, la):
     ax.annotate(f"{v:.1f}%", (x, v), textcoords="offset points", xytext=(0, -12), ha="center", color=INK, fontsize=8)
 ax.axvspan(2.6, 3.4, color="#f1f0ec", zorder=0)
-ax.text(3.0, 3.0, "3B pair\ntraining;\ndue about\n29 Nov", ha="center", va="center", color=INK2, fontsize=8)
+ax.text(3.0, 3.0, "3B pair\ntraining;\ndue\n29 Nov", ha="center", va="center", color=INK2, fontsize=8)
 ax.set_xticks([0, 1, 2, 3])
 ax.set_xticklabels(["0.1B\n3 seeds", "0.25B\n3 seeds", "0.5B\n1 seed", "3B"])
 ax.set_xlim(-0.4, 3.45)
