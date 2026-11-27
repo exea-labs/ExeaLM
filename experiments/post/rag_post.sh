@@ -18,35 +18,42 @@ QWEN=${2:?a Qwen3.5-style run folder (with model.pt)}
 STEPS=${STEPS:-600}
 LR=${LR:-3e-4}
 TAG=${TAG:-100m}
-LIB=$PWD/data/library/v1
+LIB=${LIB:-$PWD/data/library/v1}       # library v2: LIB=$PWD/data/library_v2/v2
+HUMAN=${HUMAN:-}                        # a second tier (index.py index): its top passage goes after the entry
+HUMAN_TOKENS=${HUMAN_TOKENS:-384}
+STREAM_ARGS=${STREAM_ARGS:-}            # e.g. "--stream 4 --stream_from 0 --stream_mix 0.5 --batch 16 --accum 8": rows
+                                        # with two passages run past one 512-token window; both models get the same
+RAG=$([ -n "$HUMAN" ] && echo "$LIB/rag2/train" || echo "$LIB/rag/train")
 export SBATCH_ACCOUNT=${SBATCH_ACCOUNT:-fli100}
 mkdir -p logs/expanse results/expanse
 
-if [ -f "$LIB/rag/train/meta.json" ]; then           # built by an earlier run of this script: the same for every seed
-  jr="" && echo "RAG pack: $LIB/rag/train (already built)"
+if [ -f "$RAG/meta.json" ]; then                   # built by an earlier run of this script: the same for every seed
+  jr="" && echo "RAG pack: $RAG (already built)"
 else
-  jr=$(sbatch --parsable -p nairr-gpu-shared -N 1 --gpus=h100:1 --ntasks-per-node=1 --cpus-per-task=8 -t 00:45:00 \
-    -J "exealm-ragpack" -o "logs/expanse/%x-%j.out" --wrap "source experiments/expanse/env.sh; export PYTHONUNBUFFERED=1; \
-    python experiments/library/rag_pack.py --library $LIB --out $LIB/rag/train")
-  echo "RAG pack: $jr -> $LIB/rag/train"
+  jr=$(sbatch --parsable -p nairr-gpu-shared -N 1 --gpus=h100:1 --ntasks-per-node=1 --cpus-per-task=8 --mem=120G \
+    -t 02:00:00 -J "exealm-ragpack" -o "logs/expanse/%x-%j.out" --wrap "source experiments/expanse/env.sh; \
+    export PYTHONUNBUFFERED=1; python experiments/library/rag_pack.py --library $LIB --out $RAG \
+    ${HUMAN:+--human $HUMAN --human_tokens $HUMAN_TOKENS}")
+  echo "RAG pack: $jr -> $RAG"
 fi
 
-python - "$LIB" <<'PY'
+python - "$LIB" "$RAG" <<'PY'
 import json, sys
-lib = sys.argv[1]
+lib, rag = sys.argv[1], sys.argv[2]
 mix = json.load(open("data/mix_pretrain.json"))
 total = sum(s["weight"] for s in mix["sources"].values())
 tok = {k: json.load(open(f"{lib}/{k}/train/meta.json"))["n_tokens"] for k in ("qa", "tasks")}
 for k, n in tok.items():
     mix["sources"][f"library_{k}"] = {"paths": f"{lib}/{k}/train", "weight": round(total / 2 * n / sum(tok.values()), 3)}
-mix["sources"]["library_rag"] = {"paths": f"{lib}/rag/train", "weight": round(total / 2, 3)}
+mix["sources"]["library_rag"] = {"paths": rag, "weight": round(total / 2, 3)}
 mix["note"] = ("post-training for the RAG test (experiments/post/rag_post.sh): the pretraining mix, half; the "
                "library's training items, a quarter; the same items with a BM25-picked entry before them, a quarter")
-json.dump(mix, open("data/mix_library_rag.json", "w"), indent=1)
-print("data/mix_library_rag.json:", {k: v["weight"] for k, v in mix["sources"].items() if k.startswith("library")})
+json.dump(mix, open(f"data/mix_library_rag_{rag.split('/')[-3].replace('.', '')}.json", "w"), indent=1)
+print(f"data/mix_library_rag_{rag.split('/')[-3]}.json:", {k: v["weight"] for k, v in mix["sources"].items() if k.startswith("library")})
 PY
 
-COMMON="--data data/mix_library_rag.json --val data/mix_pretrain_val.json --seq 512 --batch 64 --accum 2 \
+MIX=data/mix_library_rag_$(basename "$(dirname "$(dirname "$RAG")")" | tr -d .).json
+COMMON="--data $MIX --val data/mix_pretrain_val.json --seq 512 ${STREAM_ARGS:---batch 64 --accum 2} \
 --steps $STEPS --warmup $((STEPS / 10)) --lr $LR --seed 0 --eval_every 200 --eval_batches 8"
 submit() {          # submit <run> <args>: one GPU of the shared partition, through train.sb, after the pack
   RUN=$1 ARGS="$2 $COMMON" SAVE_MIN=0 SBATCH_JOB_NAME=exealm-$1 SBATCH_TIMELIMIT=02:00:00 \

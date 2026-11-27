@@ -3,6 +3,19 @@
 What ExeaLM is trained as, decided by Avneh Bhatia, and why. Newest first. Change an entry only with a new dated
 entry that says what replaced it.
 
+## 26 November 2026 (midnight): open-book benchmarks, and the same RAG post-training for every model
+
+Avneh's decision: the paper's benchmarks run with the library, since ExeaLM is trained to use it. So that the numbers
+hold up: every benchmark is reported closed-book and open-book side by side; every baseline gets the same library and
+the same retrieval (`exealm.eval.harness --library`, the question alone as the query, the top written entry and the top
+human passage); library entries that share a 13-token window with any of the 14 decontamination benchmarks are never
+given (`experiments/library/bench_check.py`, `--rag_exclude`: 10 of v1's 18,545 entries); and open-book results are
+claimed only on those 14 benchmarks (MMLU, ARC, SciQ, PubMedQA, HellaSwag, GSM8K, MATH, HumanEval, MBPP and others).
+
+RAG post-training (`experiments/post/rag_post.sh`) on library v2 gives ExeaLM and the Qwen3.5-style model the same
+recipe, streams included (`STREAM_ARGS`): the rows hold an entry, a human passage and an item, longer than one window.
+"Only ExeaLM streams" is a pretraining decision; post-training for the library test is the same for both.
+
 ## 26 November 2026 (7 p.m.): the stream phase mixes streams with windows alone
 
 Avneh asked whether ExeaLM can have the windows-alone score of a run trained without streams and the long-document gain
