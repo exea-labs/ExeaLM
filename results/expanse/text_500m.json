@@ -1,0 +1,64 @@
+{
+ "runs": [
+  {
+   "run": "/home/abhatia7/ExeaLM/runs/exealm_500m_4.1x_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 7825,
+   "params_M": 508.5,
+   "bits_per_byte": {
+    "research_python": 0.6045,
+    "code_reasoning": 0.4706,
+    "algebraic_stack": 0.851,
+    "pretrain_behaviors": 0.8308,
+    "starcoder": 0.8003,
+    "stackexchange": 0.8734,
+    "pes2o": 0.9047,
+    "arxiv": 1.0139,
+    "wikipedia_en": 1.1164,
+    "megamath": 0.9589,
+    "open_web_math": 1.0546,
+    "math_reasoning": 0.6891,
+    "dclm": 1.237,
+    "txt360_web": 1.2173,
+    "fineweb2_ja": 1.1098,
+    "wikipedia_ja": 1.2071,
+    "txt360_qa": 1.0151,
+    "sft_pretrain": 0.8436
+   },
+   "mean": 0.9332
+  },
+  {
+   "run": "/home/abhatia7/ExeaLM/runs/qwen_500m_4.1x_s0",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 7825,
+   "params_M": 511.27,
+   "bits_per_byte": {
+    "research_python": 0.6104,
+    "code_reasoning": 0.475,
+    "algebraic_stack": 0.8529,
+    "pretrain_behaviors": 0.8367,
+    "starcoder": 0.8049,
+    "stackexchange": 0.8806,
+    "pes2o": 0.9103,
+    "arxiv": 1.0171,
+    "wikipedia_en": 1.1203,
+    "megamath": 0.9625,
+    "open_web_math": 1.0593,
+    "math_reasoning": 0.6998,
+    "dclm": 1.2412,
+    "txt360_web": 1.221,
+    "fineweb2_ja": 1.1228,
+    "wikipedia_ja": 1.2181,
+    "txt360_qa": 1.0181,
+    "sft_pretrain": 0.8513
+   },
+   "mean": 0.939
+  }
+ ],
+ "means": {
+  "exealm_500m_4.1x": 0.9332,
+  "qwen_500m_4.1x": 0.939
+ }
+}

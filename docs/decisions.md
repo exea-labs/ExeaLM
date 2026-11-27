@@ -3,6 +3,27 @@
 What ExeaLM is trained as, decided by Avneh Bhatia, and why. Newest first. Change an entry only with a new dated
 entry that says what replaced it.
 
+## 26 November 2026 (7 p.m.): the stream phase mixes streams with windows alone
+
+Avneh asked whether ExeaLM can have the windows-alone score of a run trained without streams and the long-document gain
+of one trained with them. The stream phase (rows of four windows in the last 20%, `--stream 4 --stream_from 0.8`) cost
+0.007 bits per byte on windows read alone at 0.1B and took most of the 0.5B lead on them (0.004 at the end), and the
+lead of the long 0.1B run at 111 tokens per parameter fell from 0.009 to 0.002 within 500 steps of the switch. Tested
+at 0.1B (results/expanse/README.md, section 21):
+
+- `--stream_mix 0.5` over the last 20% (half of each step's micro-batches are streams, half windows alone, the same
+  tokens): 1.1516 on windows alone, 1.0946 on 4,096-token documents streamed (1 seed; seeds 1 and 2 are training);
+  the study's recipe 1.1566 and 1.0955, no streams 1.1496 and 1.1321 (3 seeds each).
+- the same over the last 40%: 1.1546 and 1.0956 (3 seeds).
+- averaging the weights of the streamed and unstreamed runs (`experiments/expanse/merge.py`): 1.2085 and 1.1523, worse
+  than either. Dropped.
+
+So the recipe from here is `--stream_mix 0.5` over the last 20%. It applies to the runs whose stream phase has not
+started, through `train.sb`'s new `runs/<run>/extra_args`: `exealm_3b_4.1x_s0` from its next job (Saturday morning; its
+stream phase starts near step 36,550, Sunday night) and `exealm_100m_111x_s1`, stopped and continued at step 28,400
+(its stream phase starts at step 31,788). `exealm_100m_111x_s0` and the finished curve runs keep the old recipe; the
+qwen and llama baselines never stream. Only ExeaLM streams, as decided on 26 November.
+
 ## 26 November 2026 (1 p.m.): papers include the strong-attention baseline; its controls run with streams
 
 Avneh's decision: the papers (the ExeaLM paper and the TONN paper, aimed at an ICML main-track oral) include the Llama

@@ -14,7 +14,7 @@ the same size, data, tokens and recipe; bits per byte on held-out text, lower is
 
 | What | Result | Basis | Section |
 |---|---|---|---|
-| Ahead of the Qwen3.5 design | 0.1B: 1.157 against 1.190; 0.25B: 1.014 against 1.026 (plain Llama 1.200, 1.041) | 3 seeds, 18 held-out sets, all 54 set-and-seed pairs at each size | 9, 13 |
+| Ahead of the Qwen3.5 design | 0.1B: 1.157 against 1.190; 0.25B: 1.014 against 1.026 (plain Llama 1.200, 1.041); 0.5B: 0.933 against 0.939 on windows alone, 0.873 against 0.904 on long documents | 0.1B and 0.25B: 3 seeds, all 54 set-and-seed pairs at each size; 0.5B: 1 seed | 9, 13, 20 |
 | Long documents | 4,096 tokens read as a stream: 0.1B 1.096 against 1.157; 0.25B 0.955 against 0.997. 16,384 tokens (8 times the streams it trained on): 0.1B 1.073 against 1.134; 0.25B 0.947 against 0.996, the lead growing along the document | 4,096: 3 seeds, all 54 pairs at each size. 16,384: 3 seeds at 0.1B, 1 at 0.25B | 10, 15, 19 |
 | Learns more per token | the Qwen3.5-style model needs more of ExeaLM's steps to match it at 111 tokens per parameter (the 9B's): 1.41 times at its highest, 1.19 at step 27,500 of 39,735 and falling | in training, 1 seed; a second seed is running | 12 |
 | A library distilled from a larger model | held-out research questions 1.645 to 0.590 with the library and a BM25 search; 0.110 to 0.116 ahead of the Qwen3.5-style model with the same library | 3 seeds, 0.1B | 7, 8, 11 |
@@ -22,6 +22,7 @@ the same size, data, tokens and recipe; bits per byte on held-out text, lower is
 | Where the TONN layer goes | one TONN layer at the middle layer beats one in every fourth layer (1.348 against 1.376, 54 of 54 pairs); one at layer 0 costs 0.038 | 12 layouts, 0.1B | 4, 5 |
 | What the TONN layer itself adds | about 0.1%: against the same model with attention in its place, at 0.1B, 1.1566 against 1.1574 on windows alone, 1.0955 against 1.0968 on 4,096-token streams, 1.0726 against 1.0737 on 16,384-token streams. The lead over the Qwen3.5 design comes from the attention changes and the streams | 3 seeds (ahead in 2, 3 and 3 of them); 0.25B and the long run are training | 5, 19 |
 | The 9B, priced | 206 effective TFLOP/s per H100 on one node; about 75,000 GPU-hours for 1T tokens | 1 node; 2 and 4 nodes measured, being written up | 16 |
+| Streams without their cost | mixing windows alone into the stream phase keeps the long-document gain (1.0946 against 1.0955) and gives back 0.005 of the 0.007 it cost on windows alone; now the recipe | 1 seed so far, 0.1B | 21 |
 | Did not work | ExeaLM's own retrieval circuit (0.1% of questions find their entry); three 0.1B agents sharing a board lose to one model reading as a stream | | 7, 14 |
 | Void | the first 0.5B runs and the 3B pair's first 1,100 steps: a multi-GPU bug skipped gradient averaging; rerun with the fix | | 17 |
 
@@ -569,7 +570,47 @@ changes (gate, QK-norm, value residual, XSA) and the streams. The 0.25B control 
 tokens per parameter are training; in the long run's first 4,000 steps the control is ahead (1.0316 against 1.0348 at
 step 4,000), with the gap closing from 0.028 at step 1,000.
 
-## 20. Next
+## 20. The 0.5B pair, seed 0 (job 56090409, `text_500m.json`, `stream8_500m.json`)
+
+The fixed-code 0.5B runs (section 17), same data, tokens and recipe; bits per byte on the 18 held-out sets:
+
+| | ExeaLM 0.5B | Qwen3.5-style 0.5B |
+|---|---|---|
+| Windows of 512 read alone (section 9's reading) | **0.933** | 0.939 |
+| 4,096-token documents read as a stream, windows 1-7 | **0.873** | 0.904 |
+| The same documents, every window alone | **0.965** | 0.971 |
+
+- On windows alone ExeaLM's lead shrinks with size: 0.034 at 0.1B, 0.012 at 0.25B, 0.006 at 0.5B (seed 0). It
+  shrank most in the stream phase: 0.011 at step 6,000 of 7,825 in the training log, 0.004 at the end (section 21).
+- Read as a stream it is 0.031 ahead (3.4%), against 0.061 at 0.1B and 0.042 at 0.25B.
+- Seed 1 of both and the plain Llama are training; the downstream benchmarks are being scored.
+
+## 21. Keeping the streams' gain without their cost on windows alone (jobs 56090436-41, 56091069)
+
+The stream phase (rows of four windows of one document in the last 20% of steps, at the same tokens per step) gives
+ExeaLM most of its long-document lead, but each step then reads a quarter as many documents and three of every four
+windows have the window before in memory. On windows read alone it costs 0.007 at 0.1B. Three ways to keep the gain
+without the cost, at 0.1B, scored as sections 9 and 10 (`text_mix100m.json`, `stream8_mix100m.json`,
+`text_merge100m.json`, `stream8_merge100m.json`):
+
+| ExeaLM 0.1B | Seeds | Windows alone, 18 sets | 4,096-token documents, streamed | Same, windows alone |
+|---|---|---|---|---|
+| No stream phase | 3 | **1.1496** | 1.1321 | **1.1874** |
+| **Stream phase, half of every step's micro-batches streams (`--stream_mix 0.5`), last 20%** | 1 | 1.1516 | **1.0946** | 1.1894 |
+| The same over the last 40% (as many stream tokens as the study's recipe) | 3 | 1.1546 | 1.0956 | 1.1922 |
+| The study's stream phase, last 20% | 3 | 1.1566 | 1.0955 | 1.1941 |
+| The study's run and the no-stream run, weights averaged 50/50 | 3 | 1.2085 | 1.1523 | 1.2457 |
+| Qwen3.5-style, for scale | 3 | 1.1904 | 1.1566 | 1.2297 |
+
+- Mixing over the last 20% keeps all of the long-document gain (1.0946 against 1.0955) and gives back 0.005 of the
+  0.007 on windows alone. One seed so far; seeds 1 and 2 are training.
+- Averaging the weights of the two runs, which part only in their last 20%, is worse than either: they are not in one
+  basin after the stream phase.
+- The recipe from here mixes (docs/decisions.md, 26 November, 7 p.m.): the 3B ExeaLM from its next job, before its
+  stream phase, and the second long 0.1B seed at 111 tokens per parameter from step 28,400. The finished runs and the
+  first long seed keep the old recipe.
+
+## 22. Next
 
 The 0.5B curve (seed 1 training), the 3B pair (Sunday evening), the second long seed, the library at 0.5B and on a
 mid-run 3B checkpoint, the library written by DeepSeek-V4-Flash (`experiments/expanse/library_v2.sb`), distillation into

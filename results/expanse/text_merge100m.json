@@ -1,0 +1,91 @@
+{
+ "runs": [
+  {
+   "run": "runs/_merge/exealm_merge_100m_4.1x_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 1468,
+   "params_M": 95.06,
+   "bits_per_byte": {
+    "research_python": 0.7896,
+    "code_reasoning": 0.7219,
+    "algebraic_stack": 1.0704,
+    "pretrain_behaviors": 1.1747,
+    "starcoder": 1.0557,
+    "stackexchange": 1.1036,
+    "pes2o": 1.1183,
+    "arxiv": 1.2586,
+    "wikipedia_en": 1.3989,
+    "megamath": 1.1889,
+    "open_web_math": 1.306,
+    "math_reasoning": 0.9718,
+    "dclm": 1.4789,
+    "txt360_web": 1.4737,
+    "fineweb2_ja": 1.3502,
+    "wikipedia_ja": 1.4767,
+    "txt360_qa": 1.2508,
+    "sft_pretrain": 1.1567
+   },
+   "mean": 1.1859
+  },
+  {
+   "run": "runs/_merge/exealm_merge_100m_4.1x_s1",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 1468,
+   "params_M": 95.06,
+   "bits_per_byte": {
+    "research_python": 0.8124,
+    "code_reasoning": 0.749,
+    "algebraic_stack": 1.0989,
+    "pretrain_behaviors": 1.2059,
+    "starcoder": 1.0833,
+    "stackexchange": 1.1305,
+    "pes2o": 1.1402,
+    "arxiv": 1.2832,
+    "wikipedia_en": 1.4259,
+    "megamath": 1.2119,
+    "open_web_math": 1.332,
+    "math_reasoning": 1.0028,
+    "dclm": 1.5052,
+    "txt360_web": 1.5001,
+    "fineweb2_ja": 1.371,
+    "wikipedia_ja": 1.5042,
+    "txt360_qa": 1.2736,
+    "sft_pretrain": 1.185
+   },
+   "mean": 1.2119
+  },
+  {
+   "run": "runs/_merge/exealm_merge_100m_4.1x_s2",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 1468,
+   "params_M": 95.06,
+   "bits_per_byte": {
+    "research_python": 0.8267,
+    "code_reasoning": 0.7695,
+    "algebraic_stack": 1.1139,
+    "pretrain_behaviors": 1.2249,
+    "starcoder": 1.0986,
+    "stackexchange": 1.145,
+    "pes2o": 1.1561,
+    "arxiv": 1.3015,
+    "wikipedia_en": 1.4433,
+    "megamath": 1.2282,
+    "open_web_math": 1.3488,
+    "math_reasoning": 1.019,
+    "dclm": 1.5197,
+    "txt360_web": 1.5176,
+    "fineweb2_ja": 1.376,
+    "wikipedia_ja": 1.5127,
+    "txt360_qa": 1.2919,
+    "sft_pretrain": 1.2042
+   },
+   "mean": 1.2276
+  }
+ ],
+ "means": {
+  "exealm_merge_100m_4.1x": 1.2085
+ }
+}
