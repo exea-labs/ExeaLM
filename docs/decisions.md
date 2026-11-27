@@ -15,7 +15,8 @@ So three 0.5B runs train to 20 tokens per parameter (38,173 steps, 10.0B tokens,
 curve's), seed 0: `exealm_500m_20x_s0` (mixed stream phase), `strongllama_500m_20x_s0` (the same recipe, the TONN layer
 made attention) and `qwen_500m_20x_s0`. About 240 GPU-hours (jobs 56095208, 56095210-1); the forecast goes from about
 1,260 to about 1,500 of the 2,000, which leaves the 3B pair, its RAG test and evaluations covered. The shared
-partition allows 3 GPUs a job, so ExeaLM and the strong Llama run on 2 GPUs each (`--accum 8`, the same tokens a step);
+partition allows 3 GPUs a job, so ExeaLM and the strong Llama run on 2 GPUs each (`--batch 16 --accum 8`: the same 8 rows a GPU and the same
+262,144 tokens a step as the 4-GPU runs; jobs 56095305-6 after a first try ran out of memory with `--batch 32`);
 the Qwen3.5-style model runs on a full node. Taken under Avneh's standing instruction to adjust the runs as needed.
 
 ## 26 November 2026 (midnight): open-book benchmarks, and the same RAG post-training for every model

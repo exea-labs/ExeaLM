@@ -6,7 +6,7 @@ sections after it are the record, in the order results came in, with what each d
 [docs/decisions.md](../../docs/decisions.md). The finished models are public on Hugging Face:
 [exea-labs/exealm-nairr](https://huggingface.co/exea-labs/exealm-nairr).
 
-## Summary (26 November 2026, 16:10; the 0.5B and 3B pairs are training)
+## Summary (27 November 2026, 2 a.m.; the 3B pair is training)
 
 ExeaLM: attention layers with a gate, QK-norm, value residual and XSA, one TONN layer (searched signal-processing
 circuits) at the middle layer, and streams of four windows in the last 20% of training. Every comparison below is at
@@ -14,7 +14,7 @@ the same size, data, tokens and recipe; bits per byte on held-out text, lower is
 
 | What | Result | Basis | Section |
 |---|---|---|---|
-| Ahead of the Qwen3.5 design | 0.1B: 1.157 against 1.190; 0.25B: 1.014 against 1.026 (plain Llama 1.200, 1.041); 0.5B: 0.933 against 0.939 on windows alone, 0.873 against 0.904 on long documents | 0.1B and 0.25B: 3 seeds, all 54 set-and-seed pairs at each size; 0.5B: 1 seed | 9, 13, 20 |
+| Ahead of the Qwen3.5 design | 0.1B: 1.157 against 1.190; 0.25B: 1.014 against 1.026 (plain Llama 1.200, 1.041); 0.5B: 0.933 against 0.939 (Llama 0.958) on windows alone, 0.873 against 0.906 on long documents | 0.1B and 0.25B: 3 seeds, all 54 set-and-seed pairs at each size; 0.5B: 2 seeds, all 36 pairs | 9, 13, 20 |
 | Long documents | 4,096 tokens read as a stream: 0.1B 1.096 against 1.157; 0.25B 0.955 against 0.997. 16,384 tokens (8 times the streams it trained on): 0.1B 1.073 against 1.134; 0.25B 0.947 against 0.996, the lead growing along the document | 4,096: 3 seeds, all 54 pairs at each size. 16,384: 3 seeds at 0.1B, 1 at 0.25B | 10, 15, 19 |
 | Learns more per token | at 111 tokens per parameter (the 9B's), the Qwen3.5-style model needs 1.34 and 1.41 times ExeaLM's steps to match it at step 20,000, rising through training, and never reaches its final score. Finished: 0.958 against 0.963 on windows alone, 0.902 against 0.946 on long documents | 2 seeds, 0.1B, both ahead on every reading | 12, 25 |
 | A library distilled from a larger model | held-out research questions 1.645 to 0.590 with the library and a BM25 search; 0.110 to 0.116 ahead of the Qwen3.5-style model with the same library | 3 seeds, 0.1B | 7, 8, 11 |
@@ -585,7 +585,20 @@ The fixed-code 0.5B runs (section 17), same data, tokens and recipe; bits per by
 - On windows alone ExeaLM's lead shrinks with size: 0.034 at 0.1B, 0.012 at 0.25B, 0.006 at 0.5B (seed 0). It
   shrank most in the stream phase: 0.011 at step 6,000 of 7,825 in the training log, 0.004 at the end (section 21).
 - Read as a stream it is 0.031 ahead (3.4%), against 0.061 at 0.1B and 0.042 at 0.25B.
-- Seed 1 of both and the plain Llama are training.
+
+**Both seeds and the plain Llama** (eval job 56094554, `text_500m_all.json`, `stream8_500m_all.json`; seed 1 of every
+model trained with the study's recipe, like seed 0):
+
+| 0.5B, 2 seeds | ExeaLM | Qwen3.5-style | Llama |
+|---|---|---|---|
+| Windows alone, 18 sets | **0.9334** (0.9332, 0.9335) | 0.9388 (0.9390, 0.9387) | 0.9576 (0.9575, 0.9577) |
+| 4,096-token documents read as a stream | **0.8730** (0.8731, 0.8729) | 0.9057 (0.9041, 0.9072) | 1.0590 (1.0413, 1.0768) |
+| The same documents, every window alone | **0.9647** | 0.9711 | 0.9901 |
+
+- ExeaLM is ahead of the Qwen3.5-style model on all 36 set-and-seed pairs (by 0.002 to 0.013) and of the Llama on all
+  36 (by 0.017 to 0.039). The seeds agree to 0.0003 on windows alone.
+- Read as a stream, ExeaLM is 0.033 ahead of the Qwen3.5-style model (3.6%). The plain Llama, which never trained on
+  streams, does worse with the window before carried in than without it (1.059 against 0.990).
 
 Downstream benchmarks (lm-eval harness, zero-shot; `bench_exealm_500m_4.1x_s0.json`, `bench_qwen_500m_4.1x_s0.json`;
 accuracy, normalized where the task has it):
