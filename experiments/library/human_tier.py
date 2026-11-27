@@ -442,17 +442,22 @@ def cmd_benchmarks(args):
     from exealm.data.benchmarks import BENCHMARKS
     out = os.path.join(bench_work(args.root), "benchmarks")
     os.makedirs(out, exist_ok=True)
+    failed = []
     for name in config.DECONTAM:
         dst = os.path.join(out, name)
         if os.path.exists(os.path.join(dst, "text.jsonl.gz")):
             continue
         log(f"benchmark export {name}")
-        if name in BENCHMARKS:
-            subprocess.run([sys.executable, "-m", "exealm.data.benchmarks", "--benchmark", name, "--out", dst],
-                           check=True)
-        else:
-            export_extra(name, dst)
-    log("benchmarks: exported")
+        try:
+            if name in BENCHMARKS:
+                subprocess.run([sys.executable, "-m", "exealm.data.benchmarks", "--benchmark", name, "--out", dst],
+                               check=True)
+            else:
+                export_extra(name, dst)
+        except (Exception, MemoryError) as e:     # LiveCodeBench's lines are too big for a login node: the index
+            failed.append(name)                   # step exports it in the job, from the download cached here
+            log(f"benchmark export {name} FAILED here ({type(e).__name__}: {e}); index will try again")
+    log(f"benchmarks: exported, failed here: {failed or 'none'}")
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -544,6 +549,8 @@ def bench_index(args):
     if not os.path.isdir(os.path.join(work, "benchmarks")):
         log("index: NO benchmark exports (run the benchmarks step on the login node): benchmarks not checked")
         return None
+    for k, d in (("HF_HUB_CACHE", "hub"), ("HF_DATASETS_CACHE", "datasets")):      # what the export step cached
+        os.environ.setdefault(k, os.path.join(args.root, "hf_cache", d))
     from experiments.data_mix import config
     from experiments.data_mix.common import Paths
     from experiments.data_mix.tok import run_benchmarks
