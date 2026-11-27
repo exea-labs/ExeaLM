@@ -90,7 +90,7 @@ ExeaLM's lead held at every size and training length we finished, and it held be
 This paper does not show results above 0.5B parameters.
 The 3B pair finishes after this draft, and its results are marked as pending.
 The library results come from 0.1B models and are scored in bits per byte, not answer accuracy.
-On seven zero-shot benchmarks, meaning tasks given without worked examples, the 0.5B models (one seed) are level, and both are near chance on two.
+On seven zero-shot benchmarks, meaning tasks given without worked examples, the 0.5B models differ by less than 0.01 in mean accuracy (2 seeds), and all three are near chance on two.
 
 %=====================================================================================================
 \section{Model and training}
@@ -274,10 +274,12 @@ The 3B ExeaLM uses the mixed stream phase, which begins near step 36,550.
 \pendbox{3B pair (\texttt{exealm\_3b\_4.1x\_s0}, \texttt{qwen\_3b\_4.1x\_s0}): final windows-alone and long-document scores, set-and-seed pairs, and a 3B point in Figure~\ref{fig:trends}a. Due on the evening of 29 November 2026.}
 
 \paragraph{Benchmarks at 0.5B.}
-We score both 0.5B models (seed 0) on seven zero-shot benchmarks, meaning the prompt has no worked examples, with the lm-eval toolkit \citep{gao2024eval}.
+We score the three 0.5B models (2 seeds each) on seven zero-shot benchmarks, meaning the prompt has no worked examples, with the lm-eval toolkit \citep{gao2024eval}.
 Table~\ref{tab:bench} in Appendix~\ref{app:extra} gives each task.
-The mean accuracy is 0.424 for ExeaLM and 0.421 for the Qwen3.5-style model, which one seed cannot tell apart.
-At 2.1B training tokens both models are near chance on ARC-Challenge (0.233 each, with chance at 0.25) and WinoGrande (0.489 and 0.484, with chance at 0.5).
+The mean accuracy is 0.429 for ExeaLM, 0.421 for the Qwen3.5-style model and 0.417 for the Llama.
+ExeaLM is ahead of the Qwen3.5-style model in both seeds and on 5 of 7 tasks.
+Its largest gaps are on SciQ (0.032) and LAMBADA (0.020), which asks for the last word of a passage.
+At 2.1B training tokens all three models are near chance on ARC-Challenge (chance 0.25) and WinoGrande (chance 0.5).
 
 
 \pendbox{Benchmarks at 3B, from the finished 3B pair. Open-book benchmarks for every model, closed-book and with the library side by side, every model given the same library and search (running). Entries that share a 13-token window with any of 14 benchmarks are never given, which excludes 10 of v1's 18,545.}
@@ -655,7 +657,7 @@ Number & Source \\
 0.5B in-run lead 0.011 at step 6,000, 0.004 at the end & \sect{20} \\
 Leads 2.8\%, 1.1\%, 0.6\%; 5.3\%, 4.2\%, 3.6\%; 0.034, 0.011, 0.0055; 0.061, 0.042, 0.033 & computed from the files above by \texttt{make\_figs.py} \\
 Largest per-set leads on the Japanese sets & \texttt{make\_figs.py}, Appendix~\ref{app:sets} \\
-Benchmarks at 0.5B (Table~\ref{tab:bench}) & \sect{20}, \texttt{bench\_exealm\_500m\_4.1x\_s0.json}, \texttt{bench\_qwen\_500m\_4.1x\_s0.json} \\
+Benchmarks at 0.5B, 2 seeds (Table~\ref{tab:bench}) & \sect{20}, \texttt{bench\_<model>\_500m\_4.1x\_s0.json} and \texttt{\_s1.json} \\
 3B in-run check 0.850, 0.866 at step 7,500; 0.034 at step 3,000; stream phase near step 36,550 & \sect{23}, \texttt{docs/decisions.md} (26 November, 7 p.m.) \\
 Long runs: 0.958, 0.963; 0.902, 0.946; 4.7\%; 33 of 36 and 36 of 36 pairs; exceptions of 0.0003 or less & \sect{24}, \texttt{text\_111x.json}, \texttt{stream8\_111x.json} \\
 Long runs, in-run leads and step multipliers (Table~\ref{tab:long}); switch at step 28,400; decay from step 31,788 & \sect{24}, \texttt{docs/decisions.md} (26 November, 7 p.m.) \\
@@ -873,22 +875,22 @@ GPU, each token's 100,000 best passages, merged into one index & 25.0 GB & \text
 
 \begin{table}[h]
 \centering\small
-\caption{Zero-shot accuracy at 0.5B (seed 0), normalized where the task has a normalized score (\sect{20}). Means are of unrounded scores. Both models are near chance on ARC-Challenge and WinoGrande.}
+\caption{Zero-shot accuracy at 0.5B, mean of 2 seeds, normalized where the task has a normalized score (\sect{20}). Means are of unrounded scores. All three models are near chance on ARC-Challenge and WinoGrande.}
 \label{tab:bench}
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}l cc@{}}
+\begin{tabular}{@{}l ccc@{}}
 \toprule
-Task & ExeaLM & Qwen3.5-style \\
+Task & ExeaLM & Qwen3.5-style & Llama \\
 \midrule
-HellaSwag \citep{zellers2019hellaswag} & \textbf{0.309} & 0.303 \\
-ARC-Easy \citep{clark2018arc} & 0.396 & \textbf{0.409} \\
-ARC-Challenge \citep{clark2018arc} & 0.233 & 0.233 \\
-PIQA \citep{bisk2020piqa} & 0.585 & \textbf{0.596} \\
-WinoGrande \citep{sakaguchi2020winogrande} & \textbf{0.489} & 0.484 \\
-SciQ \citep{welbl2017sciq} & \textbf{0.685} & 0.677 \\
-LAMBADA \citep{paperno2016lambada} & \textbf{0.269} & 0.249 \\
+HellaSwag \citep{zellers2019hellaswag} & \textbf{0.309} & 0.304 & 0.298 \\
+ARC-Easy \citep{clark2018arc} & 0.402 & \textbf{0.408} & 0.393 \\
+ARC-Challenge \citep{clark2018arc} & \textbf{0.236} & 0.234 & 0.233 \\
+PIQA \citep{bisk2020piqa} & 0.584 & \textbf{0.591} & 0.584 \\
+WinoGrande \citep{sakaguchi2020winogrande} & 0.495 & 0.493 & \textbf{0.508} \\
+SciQ \citep{welbl2017sciq} & \textbf{0.699} & 0.667 & 0.647 \\
+LAMBADA \citep{paperno2016lambada} & \textbf{0.274} & 0.254 & 0.255 \\
 \midrule
-Mean of 7 & \textbf{0.424} & 0.421 \\
+Mean of 7 & \textbf{0.429} & 0.421 & 0.417 \\
 \bottomrule
 \end{tabular}
 \end{table}

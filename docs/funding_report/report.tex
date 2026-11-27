@@ -209,8 +209,9 @@ Seed 1 switched to the mixed stream phase before its own began and kept 0.006 to
 A 0.5B run at 20 tokens per parameter (ExeaLM, its attention-only control and the Qwen3.5-style model; 10B tokens each, one seed) started on 27 November. It tests whether these trends hold at a larger size.
 
 \paragraph{Benchmarks at 0.5B.}
-On 7 zero-shot benchmarks (no worked examples in the prompt), the two 0.5B models are level at 0.424 and 0.421 mean accuracy (\sect{20}, one seed).
-At 2B training tokens both are near chance on two of the tasks.
+On 7 zero-shot benchmarks (no worked examples in the prompt), ExeaLM's mean accuracy is 0.429 against 0.421 for the Qwen3.5-style model and 0.417 for the plain Llama (2 seeds, \sect{20}).
+It is ahead in both seeds and on 5 of 7 tasks, most on SciQ (0.032) and LAMBADA (0.020), which asks for the last word of a passage.
+The gaps are small: at 2B training tokens all three models are near chance on two of the tasks.
 
 \subsection{Long documents}
 
@@ -570,7 +571,7 @@ Number & Source \\
 Long documents at 0.1B (1.096, 1.157); without streams 1.132, lead 0.025 & \sect{10}, \texttt{stream8\_100m.json} \\
 0.25B windows alone (1.014, 1.026, 1.041; range 0.007 to 0.026) and long documents (0.955, 0.997) & \sect{13}, \sect{15}, \texttt{text\_250m.json}, \texttt{stream8\_250m.json} \\
 0.5B, 2 seeds (0.933, 0.939, 0.958; 0.873, 0.906; 3.6\%; 36 of 36 pairs); seed 0's in-run lead 0.011 to 0.004 & \sect{20}, \texttt{text\_500m\_all.json}, \texttt{stream8\_500m\_all.json} \\
-0.5B benchmarks (0.424, 0.421) & \sect{20}, \texttt{bench\_exealm\_500m\_4.1x\_s0.json}, \texttt{bench\_qwen\_500m\_4.1x\_s0.json} \\
+0.5B benchmarks, 2 seeds (0.429, 0.421, 0.417; SciQ 0.032, LAMBADA 0.020) & \sect{20}, \texttt{bench\_<model>\_500m\_4.1x\_s0.json} and \texttt{\_s1.json} \\
 3B in-run check at step 7,500 (0.850, 0.866, 0.016); 0.034 at step 3,000; finish on the evening of 29 November & \sect{23} \\
 Long pair, 2 seeds: step multiplier 1.18, 1.21 at step 5,000 and 1.34, 1.41 at step 20,000; finals 0.958, 0.963 and 0.902, 0.946; in-run leads 0.009 to 0.001 (seed 0) and 0.006 to 0.008 (seed 1) & \sect{24}, \texttt{text\_111x.json}, \texttt{stream8\_111x.json} \\
 Switch at step 31,788; second seed mixed from 28,400 & \texttt{docs/decisions.md}, 26 November (7 p.m.) \\

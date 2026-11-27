@@ -24,7 +24,7 @@ the same size, data, tokens and recipe; bits per byte on held-out text, lower is
 | The 9B, priced | 206 effective TFLOP/s per H100 on one node; about 75,000 GPU-hours for 1T tokens | 1 node; 2 and 4 nodes measured, being written up | 16 |
 | Streams without most of their cost | mixing windows alone into the stream phase gives back half of what it cost on windows alone (1.1532 against 1.1566; none 1.1496) for 0.0014 of its long-document gain (1.0969 against 1.0955); now the recipe | 3 seeds, 0.1B | 21 |
 | Distillation into the weights | 30% teacher text (Qwen3.5-9B) in pretraining: worse, 1.1592 against 1.1549 | 1 seed, 0.1B | 22 |
-| Benchmarks at 0.5B | level: mean of 7 zero-shot tasks 0.424 against 0.421 | 1 seed | 20 |
+| Benchmarks at 0.5B | mean of 7 zero-shot tasks 0.429 against 0.421 (Llama 0.417), ahead in both seeds and on 5 of 7 tasks; small: two tasks near chance | 2 seeds | 20 |
 | Did not work | ExeaLM's own retrieval circuit (0.1% of questions find their entry); three 0.1B agents sharing a board lose to one model reading as a stream | | 7, 14 |
 | Void | the first 0.5B runs and the 3B pair's first 1,100 steps: a multi-GPU bug skipped gradient averaging; rerun with the fix | | 17 |
 
@@ -610,6 +610,19 @@ accuracy, normalized where the task has it):
 
 At 2B training tokens both models are near chance on ARC-Challenge and WinoGrande; the means differ by 0.002, within
 what one seed can tell apart. Benchmarks start to separate models later in the curve (the 3B pair).
+
+Both seeds, with the plain Llama (`bench_<model>_500m_4.1x_s0.json` and `_s1.json`; mean of the two seeds):
+
+| | HellaSwag | ARC-Easy | ARC-Challenge | PIQA | WinoGrande | SciQ | LAMBADA | Mean (seed 0, seed 1) |
+|---|---|---|---|---|---|---|---|---|
+| ExeaLM 0.5B | **0.309** | 0.402 | **0.236** | 0.584 | 0.495 | **0.699** | **0.274** | **0.429** (0.424, 0.433) |
+| Qwen3.5-style 0.5B | 0.304 | **0.408** | 0.234 | **0.591** | 0.493 | 0.667 | 0.254 | 0.421 (0.422, 0.421) |
+| Llama 0.5B | 0.298 | 0.393 | 0.233 | 0.584 | **0.508** | 0.647 | 0.255 | 0.417 (0.416, 0.417) |
+
+ExeaLM's mean is ahead of the Qwen3.5-style model's in both seeds (by 0.002 and 0.012) and ahead on 5 of 7 tasks. The
+largest gaps are SciQ (0.032; one seed's standard error on its 1,000 questions is about 0.015) and LAMBADA (0.020, about
+0.006), which asks for the last word of a passage and so rewards reading the passage before it. ARC-Challenge and
+WinoGrande stay near chance for all three models.
 
 ## 21. Keeping the streams' gain without their cost on windows alone (jobs 56090436-41, 56091069)
 
