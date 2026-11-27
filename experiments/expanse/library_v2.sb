@@ -57,10 +57,18 @@ export LIBRARY_PATH="$LINK:$CU/lib:$(dirname "$CU")/nvshmem/lib:${LIBRARY_PATH:-
 [ -x "$CUDA_HOME/bin/nvcc" ] && [[ $GXX == *gcc-10* ]] || { echo "no CUDA toolkit or no GCC 10 ($CUDA_HOME, $GXX)"; exit 1; }
 B="python experiments/library/build.py"
 step() { echo "== $(date '+%F %T') $*"; }
+fail() { echo "== $(date '+%F %T') failed: $*"; exit 1; }   # a failed step ends the job: the next would read nothing
 
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
 
 step "topics: $TEXT_TOPICS research topics, $CODE_TOPICS code topics"
+# TOPICS_FROM (human pool parts, experiments/library/human_tier.py): research topics are the pool's own documents, one
+# each, by QUOTA per source (pool_topics.py); without it they come from the training slice's papers and Wikipedia.
+if [ -n "${TOPICS_FROM:-}" ] && [ ! -s "$OUT/topics.jsonl" ]; then
+  python experiments/library/pool_topics.py $TOPICS_FROM --out "$OUT/topics.jsonl" \
+    --quota "${QUOTA:-arxiv:50000,pes2o:30000,wikipedia_en:35000,wikipedia_ja:10000,kaken:10000,stackexchange:15000}" \
+    || fail "topics from the pool"
+fi
 # Research topics keep the first 1,200 tokens of their own paper or article, and each entry is written from that
 # excerpt alone: written from the title alone, the model invented records, dates and labs for niche topics.
 [ -s "$OUT/topics.jsonl" ] || $B topics "$REL/packed/pes2o/train" "$REL/packed/arxiv/train" "$REL/packed/wikipedia_en/train" \
@@ -72,9 +80,9 @@ step "topics: $TEXT_TOPICS research topics, $CODE_TOPICS code topics"
 wc -l "$OUT/topics.jsonl" "$OUT/code_topics.txt"
 
 V="--backend vllm --model $MODEL --tensor_parallel 4 --max_model_len 8192"
-fail() { echo "== $(date '+%F %T') failed: $*"; exit 1; }   # a failed step ends the job: the next would read nothing
 step "research entries"
-$B write --topics "$OUT/topics.jsonl" $V --limit "$TEXT_TOPICS" --out "$OUT/entries.jsonl" || fail "research entries"
+$B write --topics "$OUT/topics.jsonl" $V --style "${STYLE:-frontier}" --limit "$TEXT_TOPICS" --out "$OUT/entries.jsonl" \
+  || fail "research entries"
 step "code entries"
 $B write --kind code --topics "$OUT/code_topics.txt" $V --limit "$CODE_TOPICS" --out "$OUT/code_entries.jsonl" \
   || fail "code entries"

@@ -227,3 +227,34 @@ def test_deepseek_v4_chat_mode_prompt():
             return {"a": 1}
     with pytest.raises(SystemExit):
         lb.chat_text(Plain(), msgs)
+
+
+def test_pool_topics_take_each_documents_first_passage_by_quota(tmp_path):
+    """experiments/library/pool_topics.py: one topic per document (its first passage), quotas per source, ML arXiv first."""
+    import gzip
+    pt = load("pool_topics")
+    part = tmp_path / "part_000"
+    part.mkdir()
+    rows = [dict(source="arxiv", chunk=0, title="Adam: a method", categories="cs.LG"),
+            dict(source="arxiv", chunk=1, title="Adam: a method", categories="cs.LG"),
+            dict(source="arxiv", chunk=0, title="Galois theory notes", categories="math.GR"),
+            dict(source="wikipedia_en", chunk=0, title="Kyoto"),
+            dict(source="wikipedia_en", chunk=0, title="kyoto"),                     # the same title: skipped
+            dict(source="starcoder", chunk=0, title="main.py")]                      # not in the quota
+    with open(part / "index.jsonl", "w") as f:
+        f.writelines(json.dumps(r) + "\n" for r in rows)
+    with gzip.open(part / "passages.jsonl.gz", "wt") as f:
+        f.writelines(json.dumps(dict(text=f"{r['title']}\nbody {i}")) + "\n" for i, r in enumerate(rows))
+    out = tmp_path / "topics.jsonl"
+    pt.main([str(part), "--out", str(out), "--quota", "arxiv:1,wikipedia_en:5"])
+    got = [json.loads(l) for l in open(out)]
+    assert sorted(r["topic"] for r in got) == ["Adam: a method", "Kyoto"]          # ML first; one Kyoto
+    assert next(r for r in got if r["topic"] == "Adam: a method")["source"] == "Adam: a method\nbody 0"
+
+
+def test_frontier_prompt_asks_for_an_expert_entry_that_never_cites_its_source():
+    m = lb.messages_for("Adam (optimizer)", "en", 250, 450, source="Adam is a method ...", style="frontier")
+    assert m[0]["content"] == lb.FRONTIER_SYSTEM and "Never mention the document" in m[1]["content"]
+    assert "Adam is a method" in m[1]["content"]
+    g = lb.messages_for("Adam (optimizer)", "en", 250, 450, source="Adam is a method ...")
+    assert g[0]["content"] == lb.GROUNDED_SYSTEM

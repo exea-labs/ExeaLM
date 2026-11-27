@@ -454,6 +454,24 @@ GROUNDED_PROMPT = PROMPT.replace(
     "- Give the key facts the source states, with its numbers, dates, places and names.").replace(
     "If you know nothing reliable about the topic, write only: UNKNOWN",
     "If the source says too little to write the entry, write only: UNKNOWN")
+
+# For a frontier-scale writer (DeepSeek-V4): the source says what the topic is, and the entry is the writer's own expert
+# account of it, so the library carries what the large model knows. The grounded prompt above held a 30B writer to the
+# source because it invented facts on niche topics; a frontier model is asked instead to leave out what it is unsure of.
+FRONTIER_PROMPT_VERSION = "v3-frontier"
+FRONTIER_SYSTEM = ("You write entries for a reference library that a small language model searches while it reads. You "
+                   "are an expert in every field. Write plain, dense, accurate text, and leave out any number, date or "
+                   "name you are not sure of rather than guess it.")
+FRONTIER_PROMPT = PROMPT.replace(
+    "Topic: {topic}\n",
+    "Topic: {topic}\n\nWhat the topic is, from the document it comes from:\n<<<\n{source}\n>>>\n").replace(
+    "Write an encyclopedia entry about this topic in {language}, {length}.",
+    "Write an expert encyclopedia entry about this topic in {language}, {length}: what a specialist knows about it, "
+    "not a summary of the document above. Never mention the document, the source, the text, the paper or its "
+    "authors: the entry stands alone.").replace(
+    "- If the topic is mathematical, scientific or technical, include one short worked example.",
+    "- If the topic is mathematical, scientific or technical, include one short worked example or the key equation, "
+    "and the method's main assumptions and limits.")
 assert GROUNDED_PROMPT.count("{source}") == 1
 
 CODE_SYSTEM = ("You write entries for a code reference library that a small language model searches while it writes "
@@ -547,12 +565,17 @@ def language_name(lang):
     return {"ja": "Japanese", "en": "English"}.get(lang) or LANG_NAMES.get(lang) or lang.capitalize()
 
 
-def messages_for(topic, lang, min_words, max_words, source=None):
+def messages_for(topic, lang, min_words, max_words, source=None, style="grounded"):
     """The chat for one text topic. Japanese length is in characters, about two per English word. source: an excerpt
-    of the topic's own document; the entry is then written from it alone (written from the title alone, a 30B model
-    invented records, dates and lab names for niche topics)."""
+    of the topic's own document; with style "grounded" the entry is written from it alone (written from the title
+    alone, a 30B model invented records, dates and lab names for niche topics); with "frontier" the excerpt only says
+    what the topic is and the writer's own knowledge fills the entry."""
     length = (f"{2 * min_words} to {2 * max_words} characters long" if lang == "ja"
               else f"{min_words} to {max_words} words long")
+    if source and style == "frontier":
+        return [{"role": "system", "content": FRONTIER_SYSTEM},
+                {"role": "user", "content": FRONTIER_PROMPT.format(topic=topic, source=source,
+                                                                   language=language_name(lang), length=length)}]
     if source:
         return [{"role": "system", "content": GROUNDED_SYSTEM},
                 {"role": "user", "content": GROUNDED_PROMPT.format(topic=topic, source=source,
@@ -1075,10 +1098,11 @@ def cmd_write(a):
                          kind="code", code=code)], []
     else:
         sources = read_sources(a.topics)
-        version = GROUNDED_PROMPT_VERSION if sources else PROMPT_VERSION
+        version = ((FRONTIER_PROMPT_VERSION if a.style == "frontier" else GROUNDED_PROMPT_VERSION) if sources
+                   else PROMPT_VERSION)
 
         def make_chat(t):
-            return messages_for(t, lang_of(t, a.lang), a.min_words, a.max_words, sources.get(t))
+            return messages_for(t, lang_of(t, a.lang), a.min_words, a.max_words, sources.get(t), a.style)
 
         def judge(t, reply, model):
             entry, qa, why = parse_output(reply, a.min_qa, a.max_qa, a.min_entry_words)
@@ -1408,6 +1432,9 @@ def main(argv=None):
                         "Code: e.g. Qwen/Qwen3-Coder-30B-A3B-Instruct or Qwen/Qwen3-30B-A3B-Instruct-2507. All "
                         "Apache-2.0. The first run downloads the weights")
     add_generation_args(w)
+    w.add_argument("--style", default="grounded", choices=["grounded", "frontier"],
+                   help="text topics with a source: grounded writes from the source alone (a mid-size writer); "
+                        "frontier writes the writer's own expert entry, the source only saying what the topic is")
     w.add_argument("--min_words", type=int, default=250, help="text entry length asked for (Japanese: twice, in "
                                                               "characters)")
     w.add_argument("--max_words", type=int, default=450)
