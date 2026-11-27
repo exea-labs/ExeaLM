@@ -33,7 +33,7 @@ at 0.1B (results/expanse/README.md, section 21):
 
 So the recipe from here is `--stream_mix 0.5` over the last 20%. It applies to the runs whose stream phase has not
 started, through `train.sb`'s new `runs/<run>/extra_args`: `exealm_3b_4.1x_s0` from its next job (Saturday morning; its
-stream phase starts near step 36,550, Sunday night) and `exealm_100m_111x_s1`, stopped and continued at step 28,400
+stream phase starts near step 36,550, early on 29 November) and `exealm_100m_111x_s1`, stopped and continued at step 28,400
 (its stream phase starts at step 31,788). `exealm_100m_111x_s0` and the finished curve runs keep the old recipe; the
 qwen and llama baselines never stream. Only ExeaLM streams, as decided on 26 November.
 

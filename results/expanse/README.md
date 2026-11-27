@@ -632,7 +632,28 @@ normally: 1.1592 against 1.1549 on windows alone, 1.0986 against 1.0939 on 4,096
 in place of a third of the data does not help a 0.1B model on held-out human text at 0.4B tokens. What a frontier model
 knows goes in the library instead (section 23 when it is built).
 
-## 23. Next
+## 23. The 3B pair in training (seed 0; the training log's held-out windows)
+
+`runs/exealm_3b_4.1x_s0/log.jsonl` and `runs/qwen_3b_4.1x_s0/log.jsonl`: the fixed-code 3B pair (section 17), 45,688
+steps each, scored every 500 steps on the same held-out windows (the training-time check, not section 9's 18-set
+reading, which runs on the finished models). Bits per byte:
+
+| Step | ExeaLM 3B | Qwen3.5-style 3B | Lead |
+|---|---|---|---|
+| 1,000 | **1.1465** | 1.3324 | 0.186 |
+| 2,000 | **1.0194** | 1.0741 | 0.055 |
+| 3,000 | **0.9482** | 0.9819 | 0.034 |
+| 4,000 | **0.9104** | 0.9367 | 0.026 |
+| 5,000 | **0.8876** | 0.9100 | 0.022 |
+| 6,000 | **0.8693** | 0.8893 | 0.020 |
+| 7,000 | **0.8548** | 0.8725 | 0.018 |
+| 7,500 | **0.8498** | 0.8659 | 0.016 |
+
+The lead narrows as training goes on, more slowly at each step: early leads shrink like this at every size in the
+study, and the finished models settle it. ExeaLM's stream phase starts near step 36,550 (early on 29 November) with the
+mixed recipe of section 21; both runs end near the evening of 29 November.
+
+## 24. Next
 
 The 0.5B curve (seed 1 training), the 3B pair (Sunday evening), the second long seed at 111 tokens per parameter with
 the mixed stream phase, library v2 (the human tier and the DeepSeek-V4-Flash entries, being built) and training on it at

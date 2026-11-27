@@ -10,7 +10,7 @@ model with it should answer research and code questions like a far larger one. R
 |---|---|---|---|
 | Written | entries by DeepSeek-V4-Flash (284B MoE, MIT): 150,000 research topics drawn from the human tier's own documents (arXiv 50k with machine learning first, papers 30k, English Wikipedia 35k, Japanese Wikipedia 10k, KAKEN 10k, Stack Exchange 15k) and 50,000 code topics, each with questions and adaptation tasks; prompt v3-frontier (the writer's own expert entry, the source only saying what the topic is) | about 200M tokens | writing on Expanse (job 56091937): research entries by about 2 a.m. on 27 November, code entries and tasks after |
 | Written | v1: 18,545 entries by Qwen3-30B-A3B | 8M tokens | done, public |
-| Human | passages of real text no ExeaLM model trained on (the 90% of each recipe source outside the training slice, plus all of English and Japanese Wikipedia, KAKEN and Stack Exchange), checked against every held-out set and 14 benchmarks (experiments/library/human_tier.py) | 25.0B tokens, 36.8M passages | done: 41% research, 30% Wikipedia, 21% code (about 2M repositories), 4% Q&A, 2% math |
+| Human | passages of real text no ExeaLM model trained on (the 90% of each recipe source outside the training slice, plus all of English and Japanese Wikipedia, KAKEN and Stack Exchange), checked against every held-out set and 14 benchmarks (experiments/library/human_tier.py) | 25.0B tokens, 36.8M passages | done: 44% research (arXiv, papers and abstracts, KAKEN), 28% Wikipedia, 21% code (about 2M repositories), 4% Q&A, 2% math (shares of 25.0B tokens, rounded) |
 
 The written tier gives clean, dense answers; the human tier gives breadth. Licenses: only redistributable sources;
 the open questions (KAKEN's mirror, pes2o papers' own licenses, Stack Exchange attribution) are in
@@ -63,6 +63,7 @@ index and the per-query work several times over; and Tantivy at 2.4M passages, f
 ## Later
 
 Knowledge in the weights themselves: memory layers (Berges et al., ICML 2025; key-value tables of up to 128B
-parameters read sparsely, more than doubling factual QA accuracy at the same compute), tested at 0.1B against the same
+parameters read sparsely; in their abstract, models with them beat dense models with twice the compute, most of all
+on factual tasks), tested at 0.1B against the same
 model with library search. Plain weights cannot hold the library (about 2 bits of knowledge per parameter, Allen-Zhu
 and Li, Physics of Language Models 3.3), and putting teacher text into pretraining did not help at 0.1B (section 22).
