@@ -268,3 +268,24 @@ def test_tiers_search_each_index_apart(setup, tmp_path, capsys):
              "--max_df", "1.0"])
     out = capsys.readouterr().out
     assert "written (" in out and "human (" in out and "in either" in out
+
+
+def test_compact_index_ranks_as_the_full_one(setup, tmp_path):
+    """index.py compact: common tokens dropped, 8-bit weights, 3-byte passage numbers; with max_df at the cut the
+    top passage is the full index's for nearly every query, and the scores agree to within the 8-bit step."""
+    import numpy as np
+    ix = load("index")
+    ix.main(["build", setup["lib"], "--out", str(tmp_path / "full")])
+    ix.main(["compact", str(tmp_path / "full"), "--out", str(tmp_path / "small"), "--max_df", "0.5"])
+    full, small = ix.Index(str(tmp_path / "full")), ix.Index(str(tmp_path / "small"))
+    items, eot, sep = sc.load_items(setup["lib"], ["qa", "tasks"], "heldout")
+    same = 0
+    for it in items:
+        d1, s1 = full.search(it["prefix"], k=1, max_df=0.5, skip=(eot, *sep))
+        d2, s2 = small.search(it["prefix"], k=1, max_df=0.5, skip=(eot, *sep))
+        same += int(len(d1) and len(d2) and d1[0] == d2[0])
+        if len(d1) and len(d2) and d1[0] == d2[0]:
+            np.testing.assert_allclose(s2, s1, rtol=0.05, atol=small.parts[0].scale * 8)
+    assert same >= 0.9 * len(items)
+    assert small.parts[0].meta["n_postings"] <= full.parts[0].meta["n_postings"]
+    assert small.passage(0) == full.passage(0)

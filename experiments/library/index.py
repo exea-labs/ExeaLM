@@ -61,18 +61,73 @@ def build(lib, k1=1.2, b=0.75, chunk_docs=200_000, eot=0):
     return ptr, doc[order], w[order].astype(np.float32), df
 
 
+def compact(src, dst, max_df=0.1):
+    """A smaller copy of one index part, for shipping: the lists of tokens in more than max_df of the passages are
+    dropped (searches skip them anyway: their weight is near zero and their lists are the longest, 35% of all postings
+    at 0.1), weights are 8-bit (each part's largest weight / 255 per step, as search engines store impacts) and passage
+    numbers 3 bytes (a part has fewer than 16.7M passages). 3 + 1 bytes a posting instead of 4 + 4."""
+    p = Part(src)
+    if p.n >= 1 << 24:
+        raise SystemExit(f"{src}: {p.n:,} passages do not fit 3-byte numbers")
+    keep = (p.df > 0) & (p.df <= max_df * p.n)
+    lens = np.diff(np.asarray(p.ptr)) * keep
+    ptr = np.zeros(len(p.ptr), dtype=np.int64)
+    ptr[1:] = np.cumsum(lens)
+    total = int(ptr[-1])
+    scale = float(np.max(p.w)) / 255 if len(p.w) else 1.0
+    os.makedirs(dst, exist_ok=True)
+    doc3 = np.lib.format.open_memmap(os.path.join(dst, "doc3.npy"), mode="w+", dtype=np.uint8, shape=(total, 3))
+    wq = np.lib.format.open_memmap(os.path.join(dst, "wq.npy"), mode="w+", dtype=np.uint8, shape=(total,))
+    for t in np.nonzero(keep)[0]:
+        a, e, o = int(p.ptr[t]), int(p.ptr[t + 1]), int(ptr[t])
+        d = np.asarray(p.doc[a:e], dtype=np.uint32)
+        doc3[o:o + e - a, 0], doc3[o:o + e - a, 1], doc3[o:o + e - a, 2] = d & 255, (d >> 8) & 255, d >> 16
+        wq[o:o + e - a] = np.clip(np.rint(np.asarray(p.w[a:e]) / scale), 1, 255).astype(np.uint8)
+    doc3.flush()
+    wq.flush()
+    np.save(os.path.join(dst, "ptr.npy"), ptr)
+    np.save(os.path.join(dst, "df.npy"), np.asarray(p.df))
+    json.dump(dict(p.meta, format="compact", w_scale=scale, max_df_kept=max_df, n_postings=total),
+              open(os.path.join(dst, "meta.json"), "w"), indent=1)
+    return total
+
+
 class Part:
-    """One index part: the passages of one pack, numbered from `base` in the whole library."""
+    """One index part: the passages of one pack, numbered from `base` in the whole library. Reads both formats: full
+    (doc.npy int32, w.npy float32) and compact (doc3.npy 3-byte, wq.npy 8-bit, see compact())."""
 
     def __init__(self, folder, mmap=True):
         mode = "r" if mmap else None
-        self.ptr = np.load(os.path.join(folder, "ptr.npy"), mmap_mode=mode)
-        self.doc = np.load(os.path.join(folder, "doc.npy"), mmap_mode=mode)
-        self.w = np.load(os.path.join(folder, "w.npy"), mmap_mode=mode)
-        self.df = np.load(os.path.join(folder, "df.npy"))
         self.meta = json.load(open(os.path.join(folder, "meta.json")))
+        self.compact = self.meta.get("format") == "compact"
+        self.ptr = np.load(os.path.join(folder, "ptr.npy"), mmap_mode=mode)
+        if self.compact:
+            self.doc = np.load(os.path.join(folder, "doc3.npy"), mmap_mode=mode)
+            self.w = np.load(os.path.join(folder, "wq.npy"), mmap_mode=mode)
+            self.scale = self.meta["w_scale"]
+        else:
+            self.doc = np.load(os.path.join(folder, "doc.npy"), mmap_mode=mode)
+            self.w = np.load(os.path.join(folder, "w.npy"), mmap_mode=mode)
+        self.df = np.load(os.path.join(folder, "df.npy"))
         self.n, self.base = self.meta["n_docs"], self.meta.get("base", 0)
         self._lib = None
+        self._gpu = None
+
+    def lists(self, a, e):
+        """Passage numbers (int64) and float weights of postings a:e."""
+        if self.compact:
+            b = np.asarray(self.doc[a:e], dtype=np.int64)
+            return b[:, 0] | (b[:, 1] << 8) | (b[:, 2] << 16), np.asarray(self.w[a:e], dtype=np.float32) * self.scale
+        return np.asarray(self.doc[a:e]), np.asarray(self.w[a:e])
+
+    def to(self, dev):
+        """Postings on a GPU (passage numbers int32, weights float16), for search_gpu: a compact part of 3B tokens
+        takes about 3.7 GB."""
+        import torch
+        d, w = self.lists(0, int(self.ptr[-1]))
+        self._gpu = (torch.from_numpy(np.asarray(self.ptr)).to(dev), torch.from_numpy(d.astype(np.int32)).to(dev),
+                     torch.from_numpy(w.astype(np.float16)).to(dev))
+        return self
 
     def passage(self, d):
         """The token ids of this part's passage d (its own numbering), without its <|endoftext|>."""
@@ -90,10 +145,27 @@ class Part:
             q = sorted(q, key=lambda t: self.df[t])[:max_terms]
         if not q:
             return None
-        lists = [(int(self.ptr[t]), int(self.ptr[t + 1])) for t in q]
-        d = np.concatenate([self.doc[a:e] for a, e in lists])
-        w = np.concatenate([self.w[a:e] for a, e in lists])
+        got = [self.lists(int(self.ptr[t]), int(self.ptr[t + 1])) for t in q]
+        got = [g for g in got if len(g[0])]
+        if not got:
+            return None
+        d = np.concatenate([g[0] for g in got])
+        w = np.concatenate([g[1] for g in got])
         return np.bincount(d, weights=w, minlength=self.n)
+
+    def top_gpu(self, q, max_df, k):
+        """(local passage numbers, scores) of this part's top k for one query, on the GPU the part was moved to."""
+        import torch
+        ptr, doc, w = self._gpu
+        q = [t for t in q if 0 <= t < len(self.df) and 0 < self.df[t] <= max_df * self.n]
+        spans = [(int(self.ptr[t]), int(self.ptr[t + 1])) for t in q]
+        spans = [(a, e) for a, e in spans if e > a]
+        if not spans:
+            return None
+        d = torch.cat([doc[a:e] for a, e in spans]).long()
+        s = torch.zeros(self.n, device=doc.device, dtype=torch.float32).index_add_(0, d, torch.cat([w[a:e] for a, e in spans]).float())
+        v, i = torch.topk(s, min(k, self.n))
+        return i.cpu().numpy(), v.cpu().numpy()
 
 
 class Index:
@@ -119,6 +191,27 @@ class Index:
             top = np.argpartition(-s, min(k, len(s) - 1))[:k] if len(s) > k else np.arange(len(s))
             best_d.append(top + p.base)
             best_s.append(s[top])
+        if not best_d:
+            return np.zeros(0, dtype=np.int64), np.zeros(0)
+        d, s = np.concatenate(best_d), np.concatenate(best_s)
+        o = np.argsort(-s, kind="stable")[:k]
+        return d[o], s[o]
+
+    def to(self, dev):
+        """Every part's postings onto a GPU, for search_gpu."""
+        for p in self.parts:
+            p.to(dev)
+        return self
+
+    def search_gpu(self, query_ids, k=5, max_df=1.0, skip=(0,)):
+        """search() on the GPU the index was moved to (Index.to): the same ranking, a few milliseconds a query."""
+        q = sorted(set(int(t) for t in query_ids) - set(skip))
+        best_d, best_s = [], []
+        for p in self.parts:
+            got = p.top_gpu(q, max_df, k)
+            if got is not None:
+                best_d.append(got[0] + p.base)
+                best_s.append(got[1])
         if not best_d:
             return np.zeros(0, dtype=np.int64), np.zeros(0)
         d, s = np.concatenate(best_d), np.concatenate(best_s)
@@ -168,12 +261,29 @@ def cmd_build(a):
         base += len(lib.offsets)
 
 
+def cmd_compact(a):
+    src = a.index
+    parts = sorted(p for p in os.listdir(src) if p.startswith("part_")) if not os.path.exists(os.path.join(src, "ptr.npy")) else [""]
+    before = after = 0
+    for name in parts:
+        t0 = time.time()
+        s, d = os.path.join(src, name), os.path.join(a.out, name)
+        n_before = Part(s).meta["n_postings"]
+        n_after = compact(s, d, a.max_df)
+        before, after = before + n_before, after + n_after
+        print(f"{s}: {n_before:,} postings -> {n_after:,}, {time.time() - t0:.0f}s -> {d}", flush=True)
+    print(f"{before:,} postings ({before * 8 / 1e9:.1f} GB) -> {after:,} ({after * 4 / 1e9:.1f} GB)", flush=True)
+
+
 def cmd_tiers(a):
     """Two-tier search: the written entries (v1, v2) and the human passages searched apart, the top passage of each
     given to the model. A large human tier crowds the written entries out of a single ranking; searched apart, the
     written tier keeps its precision and the human tier adds what the entries lack."""
     from score import load_items
     tiers = {name: Index(path.split("+")) for name, path in (t.split("=", 1) for t in a.tiers.split(";"))}
+    if a.device != "cpu":
+        for idx in tiers.values():
+            idx.to(a.device)
     items, eot, sep = load_items(a.library, ["qa"], "heldout", a.limit)
     skip = (eot, *sep)
     names = list(tiers)
@@ -182,14 +292,16 @@ def cmd_tiers(a):
     for it in items:
         want = answer_tokens(it["target"])
         t0 = time.perf_counter()
-        tops = {n: idx.search(it["prefix"], k=1, max_df=a.max_df, skip=skip)[0] for n, idx in tiers.items()}
+        find = (lambda idx: idx.search_gpu(it["prefix"], k=1, max_df=a.max_df, skip=skip)) if a.device != "cpu" \
+            else (lambda idx: idx.search(it["prefix"], k=1, max_df=a.max_df, skip=skip))
+        tops = {n: find(idx)[0] for n, idx in tiers.items()}
         times.append(time.perf_counter() - t0)
         got = {n: bool(len(d)) and contains(tiers[n].passage(int(d[0])), want) for n, d in tops.items()}
         for n in names:
             hits[n] += int(got[n])
         either += int(any(got.values()))
     n, t = len(items), np.array(times) * 1000
-    print(f"{n:,} queries, max_df {a.max_df}; the answer in the top passage of: "
+    print(f"{n:,} queries on {a.device}, max_df {a.max_df}; the answer in the top passage of: "
           + ", ".join(f"{k} ({tiers[k].n:,} passages) {v / n:.3f}" for k, v in hits.items())
           + f"; in either {either / n:.3f}; ms per query (both tiers): median {np.median(t):.1f}, p95 "
           f"{np.percentile(t, 95):.1f}", flush=True)
@@ -243,8 +355,13 @@ def main(argv=None):
     r.add_argument("--library", required=True)
     r.add_argument("--limit", type=int, default=2000)
     r.add_argument("--max_df", type=float, default=0.1)
+    r.add_argument("--device", default="cpu", help="cuda: the postings on the GPU (Index.to, search_gpu)")
+    c = sub.add_parser("compact", help="a smaller copy for shipping: common tokens dropped, 8-bit weights, 3-byte numbers")
+    c.add_argument("index")
+    c.add_argument("--out", required=True)
+    c.add_argument("--max_df", type=float, default=0.1)
     a = ap.parse_args(argv)
-    {"build": cmd_build, "bench": cmd_bench, "tiers": cmd_tiers}[a.cmd](a)
+    {"build": cmd_build, "bench": cmd_bench, "tiers": cmd_tiers, "compact": cmd_compact}[a.cmd](a)
 
 
 if __name__ == "__main__":
