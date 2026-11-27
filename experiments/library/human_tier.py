@@ -440,13 +440,23 @@ def cmd_benchmarks(args):
     from experiments.data_mix import config
     from experiments.data_mix.bench_extra import EXTRA, export as export_extra
     from exealm.data.benchmarks import BENCHMARKS
+    from huggingface_hub import HfApi, hf_hub_download
     out = os.path.join(bench_work(args.root), "benchmarks")
     os.makedirs(out, exist_ok=True)
     failed = []
+    revs_path = os.path.join(bench_work(args.root), "revisions.json")
     for name in config.DECONTAM:
         dst = os.path.join(out, name)
         if os.path.exists(os.path.join(dst, "text.jsonl.gz")):
             continue
+        spec = EXTRA.get(name) or {}
+        if spec.get("files"):                     # download now, so the job can export them without the network
+            revs = read_json(revs_path, {})
+            if name not in revs:
+                revs[name] = HfApi().dataset_info(spec["repo"]).sha
+                write_json(revs_path, revs)
+            for f in spec["files"]:
+                hf_hub_download(spec["repo"], f, repo_type="dataset", revision=revs[name])
         log(f"benchmark export {name}")
         try:
             if name in BENCHMARKS:
@@ -554,6 +564,15 @@ def bench_index(args):
     from experiments.data_mix import config
     from experiments.data_mix.common import Paths
     from experiments.data_mix.tok import run_benchmarks
+    from experiments.data_mix.bench_extra import EXTRA, export as export_extra, rows_of
+    for name, rev in read_json(os.path.join(work, "revisions.json"), {}).items():
+        dst = os.path.join(work, "benchmarks", name)
+        if not os.path.exists(os.path.join(dst, "text.jsonl.gz")):     # left by the login node (too big there)
+            log(f"index: exporting {name} from the files downloaded on the login node")
+            try:
+                export_extra(name, dst, rows=rows_of(name, EXTRA[name], rev), revision=rev)
+            except Exception as e:
+                log(f"index: {name} export FAILED ({type(e).__name__}: {e})")
     tok_dir = os.path.join(work, "tokenizer")
     os.makedirs(tok_dir, exist_ok=True)
     shutil.copy(os.path.join(args.slice, "tokenizer", "tokenizer.json"), os.path.join(tok_dir, "tokenizer.json"))
