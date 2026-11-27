@@ -61,7 +61,7 @@ def test_quality_filter():
     assert ht.quality(ok + "QUJD" * 100, "prose") == "blob"
     assert ht.quality("\n".join(["the same navigation line here"] * 10), "prose") == "repeated lines"
     assert ht.quality("x" * 10, "prose") == "near-empty"
-    assert ht.quality("a = 1\n" * 50 + "b = [1, 2];" * 120, "code") == "minified"
+    assert ht.quality("a = 1\n" * 50 + "var alpha=function(beta){return beta.gamma(delta)};" * 30, "code") == "minified"
 
 
 def test_licenses():
