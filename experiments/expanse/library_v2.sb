@@ -33,12 +33,17 @@ WORK=${LOCAL_DISK:-/scratch/$USER}/job_$SLURM_JOB_ID
 mkdir -p "$OUT" "$WORK"
 module load anaconda3/2021.05/q4munrg > /dev/null 2>&1
 eval "$(conda shell.bash hook)" && conda activate vllm || { echo "no conda environment named vllm"; exit 1; }
-# DeepSeek's FP8 kernels (DeepGEMM) are compiled when the model loads: they need a CUDA toolkit (CUDA_HOME, with nvcc
-# and headers) and libnvrtc-builtins. The CUDA 13 wheels in the environment are a whole toolkit; Expanse has none.
-for d in "$CONDA_PREFIX"/lib/python3*/site-packages/nvidia/cu13; do
-  export CUDA_HOME="$d" CUDA_PATH="$d" PATH="$d/bin:$PATH" LD_LIBRARY_PATH="$d/lib:${LD_LIBRARY_PATH:-}"
-done
-[ -x "${CUDA_HOME:-}/bin/nvcc" ] || { echo "no CUDA toolkit in the vllm environment (nvidia/cu13)"; exit 1; }
+# DeepSeek's FP8 kernels (DeepGEMM) are compiled with nvcc when the model loads. Three things they need here:
+# - a CUDA toolkit (CUDA_HOME: nvcc and headers) and libnvrtc-builtins: the CUDA 13 wheels in the environment are one;
+# - a C++20 host compiler: Rocky 8's GCC is 8.5, so nvcc runs GCC 10.2 from Expanse's modules, by its path (loading the
+#   module would put GCC 10's older libstdc++ ahead of the environment's);
+# - the wheels mix nvcc 13.5 with runtime headers 13.0, which CCCL refuses by default: the check is turned off (the
+#   kernels are built for sm_90a, and CUDA 13 minor versions are compatible).
+CU=$(python -c "import nvidia, os; print(os.path.join(list(nvidia.__path__)[0], 'cu13'))")
+export CUDA_HOME="$CU" CUDA_PATH="$CU" PATH="$CU/bin:$PATH" LD_LIBRARY_PATH="$CU/lib:${LD_LIBRARY_PATH:-}"
+GXX=$(module load gcc/10.2.0 > /dev/null 2>&1; which g++)
+export NVCC_PREPEND_FLAGS="-ccbin $GXX" NVCC_APPEND_FLAGS="-DCCCL_DISABLE_CTK_COMPATIBILITY_CHECK"
+[ -x "$CUDA_HOME/bin/nvcc" ] && [[ $GXX == *gcc-10* ]] || { echo "no CUDA toolkit or no GCC 10 ($CUDA_HOME, $GXX)"; exit 1; }
 B="python experiments/library/build.py"
 step() { echo "== $(date '+%F %T') $*"; }
 
