@@ -169,6 +169,31 @@ def test_bm25_finds_the_entry_whose_rare_tokens_the_question_shares(setup):
     assert all(top5[i] for i in unique)
 
 
+def test_the_inverted_index_ranks_as_bm25_pick_does(setup, tmp_path):
+    """experiments/library/index.py: with every token kept (max_df 1) its scores are bm25_pick's, in one part or two."""
+    import numpy as np
+    ix = load("index")
+    lib = TokenShards(setup["lib"])
+    items, eot, sep = sc.load_items(setup["lib"], ["qa", "tasks"], "heldout")
+    ix.main(["build", setup["lib"], "--out", str(tmp_path / "one")])
+    W = sc.bm25_index(lib)
+    idx = ix.Index(str(tmp_path / "one"))
+    for it in items:
+        q = sorted({t for t in it["prefix"] if t not in {eot, *sep}})
+        dense = torch.zeros(W.shape[1])
+        dense[q] = 1.0
+        want = torch.sparse.mm(W, dense[:, None])[:, 0].numpy()
+        d, s = idx.search(it["prefix"], k=3, skip=(eot, *sep))
+        np.testing.assert_allclose(s, np.sort(want)[::-1][:3], rtol=1e-5)
+        assert want[d[0]] == want.max()
+    # Two parts (the same library twice): passage numbers run on, and each part's best is found.
+    ix.main(["build", setup["lib"], setup["lib"], "--out", str(tmp_path / "two")])
+    two = ix.Index(str(tmp_path / "two"))
+    assert two.n == 2 * len(lib.offsets)
+    d, s = two.search(items[0]["prefix"], k=2, skip=(eot, *sep))
+    assert {int(x) % len(lib.offsets) for x in d} == {int(idx.search(items[0]["prefix"], k=1, skip=(eot, *sep))[0][0])}
+
+
 def test_rag_pack_puts_the_searched_entry_before_every_item(setup):
     rag_pack = load("rag_pack")
     out = setup["dir"] / "rag"
