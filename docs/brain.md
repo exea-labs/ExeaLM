@@ -25,9 +25,9 @@ for window in windows:                       # (B, 512) tokens each, in the orde
   remembers one window; the TONN state remembers everything.
 - **The gradient** flows through the carried state. `python -m exealm.train.pretrain ... --stream 4` trains on rows of
   4 windows read in order (truncated backpropagation through time, as recurrent models are trained).
-- Not yet streamed: rotary-attention circuits (RP, never in the starting circuits; they refuse), Gated DeltaNet mixer
-  layers of the Qwen3.5-style baseline (they start fresh each window), and the memory circuits (board, library,
-  weight-alter), which read only their own window.
+- Not yet streamed: rotary-attention circuits (RP, never in the starting circuits; they refuse) and the memory circuits
+  (board, library, weight-alter), which read only their own window. The Qwen3.5-style baseline's Gated DeltaNet layers
+  carry their matrix state from window to window when it is read as a stream (results/expanse/README.md, section 10).
 
 ## The test
 

@@ -335,9 +335,9 @@ Bits per byte, mean of windows 1 to 7 (window 0 has nothing before it):
 | Plain Llama | 1.584 | 1.238 | 1.586 |
 
 - Read as a stream, the study's ExeaLM is ahead of the Qwen3.5-style model on all 54 set-and-seed pairs, by 0.039 to
-  0.083 (0.061 on average): nearly twice its lead on windows read alone (0.034, section 9).
+  0.098 (0.061 on average): nearly twice its lead on windows read alone (0.034, section 9).
 - Part of that is the stream phase, which the baselines do not train. The same ExeaLM trained without streams is still
-  ahead on all 54 pairs (by 0.011 to 0.039, 0.025 on average), with neither model trained to stream.
+  ahead on all 54 pairs (by 0.011 to 0.056, 0.025 on average), with neither model trained to stream.
 - The plain Llama cannot use the window before without training for it: its scores get worse streamed (1.584 against
   1.238 alone). The Qwen3.5-style model gains 0.073 from streaming untrained, ExeaLM without stream training 0.055,
   ExeaLM with it 0.099.
@@ -434,7 +434,7 @@ The curve's 0.25B models (3 seeds each), scored as in section 10: 4,096 tokens o
 | Qwen3.5-style | 0.997 | 1.060 | 0.992 |
 | Plain Llama | 1.185 | 1.076 | 1.181 |
 
-- Read as a stream, ExeaLM is ahead of the Qwen3.5-style model on all 54 set-and-seed pairs, by 0.025 to 0.069
+- Read as a stream, ExeaLM is ahead of the Qwen3.5-style model on all 54 set-and-seed pairs, by 0.025 to 0.066
   (0.042 on average), against 0.011 on windows read alone (section 13).
 - From 0.1B to 0.25B the lead on long documents goes from 0.061 to 0.042, and on windows read alone from 0.034 to 0.011.
 
