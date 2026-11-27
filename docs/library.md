@@ -12,9 +12,12 @@ model with it should answer research and code questions like a far larger one. R
 | Written | v1: 18,545 entries by Qwen3-30B-A3B | 8M tokens | done, public |
 | Human | passages of real text no ExeaLM model trained on (the 90% of each recipe source outside the training slice, plus all of English and Japanese Wikipedia, KAKEN and Stack Exchange), checked against every held-out set and 14 benchmarks (experiments/library/human_tier.py) | 25.0B tokens, 36.8M passages | done: 44% research (arXiv, papers and abstracts, KAKEN), 28% Wikipedia, 21% code (about 2M repositories), 4% Q&A, 2% math (shares of 25.0B tokens, rounded) |
 
-The written tier gives clean, dense answers; the human tier gives breadth. Licenses: only redistributable sources;
-the open questions (KAKEN's mirror, pes2o papers' own licenses, Stack Exchange attribution) are in
-experiments/library/README.md and must be settled before the human tier is published.
+The written tier gives clean, dense answers; the human tier gives breadth. Published 27 November: 18.8B of the human
+tier's 25.0B tokens, with a license and URL on every passage
+([exea-labs/exealm-library](https://huggingface.co/datasets/exea-labs/exealm-library), `v2/human`). Left out: arXiv
+papers under arXiv's default license (5.2B tokens, not redistributable) and Stack Exchange (1.0B, CC-BY-SA needs each
+post's author, which the source files lack). The library that ships with the model is the published part and the
+written tier; the study's tests search all 25.0B.
 
 ## How it is searched
 
