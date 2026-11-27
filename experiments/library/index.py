@@ -121,13 +121,47 @@ class Part:
         return np.asarray(self.doc[a:e]), np.asarray(self.w[a:e])
 
     def to(self, dev):
-        """Postings on a GPU (passage numbers int32, weights float16), for search_gpu: a compact part of 3B tokens
-        takes about 3.7 GB."""
+        """Postings on a GPU for search_gpu. A compact part stays compact there (3-byte numbers and 8-bit weights,
+        decoded per query: 4 bytes a posting, 24.6 GB for the 25B-token pool); a full part goes as int32 and float16."""
         import torch
-        d, w = self.lists(0, int(self.ptr[-1]))
-        self._gpu = (torch.from_numpy(np.asarray(self.ptr)).to(dev), torch.from_numpy(d.astype(np.int32)).to(dev),
-                     torch.from_numpy(w.astype(np.float16)).to(dev))
+        if self.compact:
+            self._gpu = (torch.from_numpy(np.ascontiguousarray(self.doc)).to(dev),
+                         torch.from_numpy(np.ascontiguousarray(self.w)).to(dev))
+        else:
+            d, w = self.lists(0, int(self.ptr[-1]))
+            self._gpu = (torch.from_numpy(d.astype(np.int32)).to(dev), torch.from_numpy(w.astype(np.float16)).to(dev))
         return self
+
+    def gpu_lists(self, spans):
+        """Passage numbers (int64) and float32 weights of the postings in spans, on the part's GPU."""
+        import torch
+        doc, w = self._gpu
+        if self.compact:
+            b = torch.cat([doc[a:e] for a, e in spans]).long()
+            return b[:, 0] | (b[:, 1] << 8) | (b[:, 2] << 16), torch.cat([w[a:e] for a, e in spans]).float() * self.scale
+        return torch.cat([doc[a:e] for a, e in spans]).long(), torch.cat([w[a:e] for a, e in spans]).float()
+
+    def spans(self, q, max_df):
+        q = [t for t in q if 0 <= t < len(self.df) and 0 < self.df[t] <= max_df * self.n]
+        return [(int(self.ptr[t]), int(self.ptr[t + 1])) for t in q if self.ptr[t + 1] > self.ptr[t]]
+
+    def top_gpu_batch(self, qs, max_df, k):
+        """(local passage numbers, scores), each (len(qs), k), for several queries at once: their postings are added
+        into one (queries x passages) score table, a row per query."""
+        import torch
+        dev = self._gpu[0].device
+        ds, ws, rows = [], [], []
+        for i, q in enumerate(qs):
+            sp = self.spans(q, max_df)
+            if sp:
+                d, w = self.gpu_lists(sp)
+                ds.append(d + i * self.n)
+                ws.append(w)
+        s = torch.zeros(len(qs) * self.n, device=dev, dtype=torch.float32)
+        if ds:
+            s.index_add_(0, torch.cat(ds), torch.cat(ws))
+        v, i = torch.topk(s.view(len(qs), self.n), min(k, self.n), dim=1)
+        return i.cpu().numpy(), v.cpu().numpy()
 
     def passage(self, d):
         """The token ids of this part's passage d (its own numbering), without its <|endoftext|>."""
@@ -156,14 +190,11 @@ class Part:
     def top_gpu(self, q, max_df, k):
         """(local passage numbers, scores) of this part's top k for one query, on the GPU the part was moved to."""
         import torch
-        ptr, doc, w = self._gpu
-        q = [t for t in q if 0 <= t < len(self.df) and 0 < self.df[t] <= max_df * self.n]
-        spans = [(int(self.ptr[t]), int(self.ptr[t + 1])) for t in q]
-        spans = [(a, e) for a, e in spans if e > a]
-        if not spans:
+        sp = self.spans(q, max_df)
+        if not sp:
             return None
-        d = torch.cat([doc[a:e] for a, e in spans]).long()
-        s = torch.zeros(self.n, device=doc.device, dtype=torch.float32).index_add_(0, d, torch.cat([w[a:e] for a, e in spans]).float())
+        d, w = self.gpu_lists(sp)
+        s = torch.zeros(self.n, device=d.device, dtype=torch.float32).index_add_(0, d, w)
         v, i = torch.topk(s, min(k, self.n))
         return i.cpu().numpy(), v.cpu().numpy()
 
@@ -217,6 +248,25 @@ class Index:
         d, s = np.concatenate(best_d), np.concatenate(best_s)
         o = np.argsort(-s, kind="stable")[:k]
         return d[o], s[o]
+
+    def search_gpu_batch(self, queries, k=5, max_df=1.0, skip=(0,)):
+        """search_gpu for many queries in one pass (a retrieval service batching its callers): a list of (passage
+        numbers, scores) per query, best first."""
+        qs = [sorted(set(int(t) for t in q) - set(skip)) for q in queries]
+        best_d = [[] for _ in qs]
+        best_s = [[] for _ in qs]
+        for p in self.parts:
+            d, s = p.top_gpu_batch(qs, max_df, k)
+            for i in range(len(qs)):
+                keep = s[i] > 0
+                best_d[i].append(d[i][keep] + p.base)
+                best_s[i].append(s[i][keep])
+        out = []
+        for bd, bs in zip(best_d, best_s):
+            d, s = np.concatenate(bd), np.concatenate(bs)
+            o = np.argsort(-s, kind="stable")[:k]
+            out.append((d[o], s[o]))
+        return out
 
     def passage(self, d):
         """The token ids of passage d (the library's numbering)."""
@@ -273,6 +323,39 @@ def cmd_compact(a):
         before, after = before + n_before, after + n_after
         print(f"{s}: {n_before:,} postings -> {n_after:,}, {time.time() - t0:.0f}s -> {d}", flush=True)
     print(f"{before:,} postings ({before * 8 / 1e9:.1f} GB) -> {after:,} ({after * 4 / 1e9:.1f} GB)", flush=True)
+
+
+def cmd_gpubench(a):
+    """GPU memory, one-query latency and batched throughput of an index moved to a GPU."""
+    import torch
+    from score import load_items
+    idx = Index(a.index)
+    torch.cuda.reset_peak_memory_stats()
+    t0 = time.time()
+    idx.to("cuda")
+    torch.cuda.synchronize()
+    print(f"{idx.n:,} passages on the GPU in {time.time() - t0:.0f}s, {torch.cuda.memory_allocated() / 1e9:.1f} GB",
+          flush=True)
+    items, eot, sep = load_items(a.questions, ["qa"], "heldout", a.limit)
+    qs, skip = [it["prefix"] for it in items], (eot, *sep)
+    idx.search_gpu(qs[0], k=5, max_df=a.max_df, skip=skip)                   # warm-up
+    times = []
+    for q in qs[:500]:
+        t0 = time.perf_counter()
+        idx.search_gpu(q, k=5, max_df=a.max_df, skip=skip)
+        times.append(time.perf_counter() - t0)
+    t = np.array(times) * 1000
+    print(f"one query at a time: median {np.median(t):.2f} ms, p95 {np.percentile(t, 95):.2f} ms", flush=True)
+    for b in [int(x) for x in a.batches.split(",")]:
+        t0 = time.perf_counter()
+        n = 0
+        for i in range(0, min(len(qs), 4 * b), b):
+            idx.search_gpu_batch(qs[i:i + b], k=5, max_df=a.max_df, skip=skip)
+            n += len(qs[i:i + b])
+        torch.cuda.synchronize()
+        dt = time.perf_counter() - t0
+        print(f"batches of {b}: {n / dt:,.0f} queries a second, {1000 * dt / max(1, n // b):.1f} ms a batch, peak "
+              f"{torch.cuda.max_memory_allocated() / 1e9:.1f} GB", flush=True)
 
 
 def cmd_tiers(a):
@@ -356,12 +439,18 @@ def main(argv=None):
     r.add_argument("--limit", type=int, default=2000)
     r.add_argument("--max_df", type=float, default=0.1)
     r.add_argument("--device", default="cpu", help="cuda: the postings on the GPU (Index.to, search_gpu)")
+    g = sub.add_parser("gpubench", help="GPU memory, latency and batched throughput")
+    g.add_argument("index", nargs="+")
+    g.add_argument("--questions", required=True)
+    g.add_argument("--limit", type=int, default=2000)
+    g.add_argument("--max_df", type=float, default=0.1)
+    g.add_argument("--batches", default="16,64,256")
     c = sub.add_parser("compact", help="a smaller copy for shipping: common tokens dropped, 8-bit weights, 3-byte numbers")
     c.add_argument("index")
     c.add_argument("--out", required=True)
     c.add_argument("--max_df", type=float, default=0.1)
     a = ap.parse_args(argv)
-    {"build": cmd_build, "bench": cmd_bench, "tiers": cmd_tiers, "compact": cmd_compact}[a.cmd](a)
+    {"build": cmd_build, "bench": cmd_bench, "tiers": cmd_tiers, "compact": cmd_compact, "gpubench": cmd_gpubench}[a.cmd](a)
 
 
 if __name__ == "__main__":

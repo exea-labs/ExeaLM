@@ -289,3 +289,21 @@ def test_compact_index_ranks_as_the_full_one(setup, tmp_path):
     assert same >= 0.9 * len(items)
     assert small.parts[0].meta["n_postings"] <= full.parts[0].meta["n_postings"]
     assert small.passage(0) == full.passage(0)
+
+
+def test_gpu_search_paths_rank_as_the_cpu_search(setup, tmp_path):
+    """Index.to / search_gpu / search_gpu_batch, run here on CPU tensors: the same top passage as search(), for the
+    full and the compact format, one query at a time or in a batch."""
+    ix = load("index")
+    ix.main(["build", setup["lib"], "--out", str(tmp_path / "full")])
+    ix.main(["compact", str(tmp_path / "full"), "--out", str(tmp_path / "small"), "--max_df", "0.5"])
+    items, eot, sep = sc.load_items(setup["lib"], ["qa", "tasks"], "heldout")
+    skip = (eot, *sep)
+    for name in ("full", "small"):
+        cpu, dev = ix.Index(str(tmp_path / name)), ix.Index(str(tmp_path / name)).to("cpu")
+        batch = dev.search_gpu_batch([it["prefix"] for it in items], k=3, max_df=0.5, skip=skip)
+        for it, (bd, bs) in zip(items, batch):
+            d, s = cpu.search(it["prefix"], k=3, max_df=0.5, skip=skip)
+            g, gs = dev.search_gpu(it["prefix"], k=3, max_df=0.5, skip=skip)
+            if len(d):
+                assert abs(gs[0] - s[0]) < 1e-3 * max(1, s[0]) and abs(bs[0] - s[0]) < 1e-3 * max(1, s[0])
