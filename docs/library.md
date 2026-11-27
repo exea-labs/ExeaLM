@@ -8,7 +8,7 @@ model with it should answer research and code questions like a far larger one. R
 
 | Tier | What | Size | State |
 |---|---|---|---|
-| Written | entries by DeepSeek-V4-Flash (284B MoE, MIT): 150,000 research topics drawn from the human tier's own documents (arXiv 50k with machine learning first, papers 30k, English Wikipedia 35k, Japanese Wikipedia 10k, KAKEN 10k, Stack Exchange 15k) and 50,000 code topics, each with questions and adaptation tasks; prompt v3-frontier (the writer's own expert entry, the source only saying what the topic is) | about 200M tokens | writing on Expanse (job 56091937): research entries by about 2 a.m. on 27 November, code entries and tasks after |
+| Written | entries by DeepSeek-V4-Flash (284B MoE, MIT): 150,000 research topics drawn from the human tier's own documents (arXiv 50k with machine learning first, papers 30k, English Wikipedia 35k, Japanese Wikipedia 10k, KAKEN 10k, Stack Exchange 15k) and 50,000 code topics, each with questions and adaptation tasks; prompt v3-frontier (the writer's own expert entry, the source only saying what the topic is) | 99M tokens: 145,376 research and 48,936 code entries, 733,756 questions and tasks | done 27 November, 7 a.m. (job 56091937). 268 entries share a 13-token window with a benchmark (PubMedQA 209, MMLU 31, SciQ 8, APPS 8, HumanEval 4, MATH 3, ARC-Easy 3, HellaSwag 2; `v2/bench_hits.json`). Searched with v1 as one written tier (212,857 passages), the answer to a held-out v2 question is in the top passage for 0.703 of 2,000 queries, 0.058 from the human tier, 6.9 ms a query for both tiers (job 56104634) |
 | Written | v1: 18,545 entries by Qwen3-30B-A3B | 8M tokens | done, public |
 | Human | passages of real text no ExeaLM model trained on (the 90% of each recipe source outside the training slice, plus all of English and Japanese Wikipedia, KAKEN and Stack Exchange), checked against every held-out set and 14 benchmarks (experiments/library/human_tier.py) | 25.0B tokens, 36.8M passages | done: 44% research (arXiv, papers and abstracts, KAKEN), 28% Wikipedia, 21% code (about 2M repositories), 4% Q&A, 2% math (shares of 25.0B tokens, rounded) |
 
@@ -68,7 +68,14 @@ laptops and CPU servers.
 - Tests: v1 and v2 held-out questions (topics never trained on), and a new test the written tier cannot answer alone:
   held-out documents and questions no entry was written from, scored with and without the human passages.
 
+- The v2 post-training (jobs 56104636-9, started 27 November, 1:41 p.m.) packs every entry, the 268 that overlap a
+  benchmark included. Held-out questions are unaffected. Before any benchmark is read open-book after it, those
+  entries and their items come out of the pack (or the benchmark questions they overlap are scored apart).
+
 ## Later
+
+A library stored as learned codes the model reads directly, smaller to ship and cheaper to read:
+`docs/library_codes_proposal.md` (proposal, not approved).
 
 Knowledge in the weights themselves: memory layers (Berges et al., ICML 2025; key-value tables of up to 128B
 parameters read sparsely; in their abstract, models with them beat dense models with twice the compute, most of all

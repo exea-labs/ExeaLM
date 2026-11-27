@@ -267,9 +267,10 @@ It is 0.061 (5.3\%) at 0.1B, 0.042 (4.2\%) at 0.25B and 0.033 (3.6\%) at 0.5B, a
 
 \paragraph{The 3B pair.}
 The 3B pair trains for 45,688 steps on 12.0B tokens, one seed of each model.
-At step 7,500 its in-run check reads 0.850 for ExeaLM against 0.866.
-That lead has narrowed from 0.034 at step 3,000 to 0.016 at step 7,500 (\sect{23}), so the final lead may be smaller still.
-Early leads narrowed in this way at every size in the study.
+At step 14,500 its in-run check reads 0.806 for ExeaLM against 0.813.
+That lead has narrowed from 0.034 at step 3,000 to 0.016 at step 7,500 and 0.007 at step 14,500 (\sect{23}), about 0.001 every 1,000 steps.
+At that rate the two models will be about even on windows alone before the stream phase.
+Early leads narrowed in this way at every size in the study; the long-document reading, where the lead held at every finished size, is read on the finished models.
 The 3B ExeaLM uses the mixed stream phase, which begins near step 36,550.
 \pendbox{3B pair (\texttt{exealm\_3b\_4.1x\_s0}, \texttt{qwen\_3b\_4.1x\_s0}): final windows-alone and long-document scores, set-and-seed pairs, and a 3B point in Figure~\ref{fig:trends}a. Due on the evening of 29 November 2026.}
 
@@ -282,7 +283,16 @@ Its largest gaps are on SciQ (0.032) and LAMBADA (0.020), which asks for the las
 At 2.1B training tokens all three models are near chance on ARC-Challenge (chance 0.25) and WinoGrande (chance 0.5).
 
 
-\pendbox{Benchmarks at 3B, from the finished 3B pair. Open-book benchmarks for every model, closed-book and with the library side by side, every model given the same library and search (running). Entries that share a 13-token window with any of 14 benchmarks are never given, which excludes 10 of v1's 18,545.}
+\paragraph{Benchmarks with the library at 0.1B.}
+We score four 0.1B models (seed 0) closed-book and open-book: ExeaLM and the Qwen3.5-style model, each as pretrained and after RAG post-training (Section~\ref{sec:library}).
+Open book places the top passage of each library tier before the question, 384 tokens each, and both models get the same library and search.
+Entries that share a 13-token window with any of 14 benchmarks are never given, which excludes 10 of v1's 18,545.
+Given the library, the post-trained ExeaLM gains on four of five tasks (ARC-Easy 0.349 to 0.361, ARC-Challenge 0.212 to 0.229; mean without MMLU 0.384 to 0.393).
+The post-trained Qwen3.5-style model loses with it (0.372 to 0.364), most on SciQ (0.654 to 0.630).
+MMLU stays at chance (0.23) for every model.
+This is one seed at 0.1B, and no single gain is beyond two standard errors, so we report it as a lead (\sect{25}).
+
+\pendbox{Benchmarks at 3B, from the finished 3B pair. Open-book benchmarks at 0.5B after RAG post-training on library v2 (running), with the 268 v2 entries that overlap a benchmark taken out of the post-training items before any benchmark is read.}
 
 %=====================================================================================================
 \section{Training length}
@@ -331,7 +341,14 @@ The multiplier then compares unlike phases of training, so we stop it at step 20
 Neither finished Qwen3.5-style run reaches ExeaLM's final in-run score.
 Seed 0 kept the original stream phase, and seed 1 switched to the mixed one at step 28,400 (Section~\ref{sec:recipe}).
 
-\pendbox{The attention-only control at 110 tokens per parameter (\texttt{strongllama\_100m\_111x\_s0}, one seed): final scores on both readings. A 0.5B three-way run at 20 tokens per parameter, one seed, 38,173 steps and 10.0B tokens each, started 27 November. Its models are ExeaLM with the mixed stream phase, the attention-only control and the Qwen3.5-style model. It tests whether these trends hold at a larger size and whether the TONN layer helps in long training.}
+\paragraph{The attention-only control at the same length.}
+The control trained the same 39,735 steps with the original stream phase, like ExeaLM's seed 0 (\sect{24}; one seed each).
+It is ahead of ExeaLM on all three readings: 0.958 against 0.960 on windows alone (17 of 18 sets), 0.898 against 0.902 on long documents read as a stream (all 18 sets, by 0.002 to 0.007), and 0.991 against 0.993 on the same documents read window by window.
+Both are far ahead of the Qwen3.5-style model on long documents (0.944).
+So at the 9B's ratio of tokens to parameters, ExeaLM's lead over the Qwen3.5 design comes from its four attention changes and its stream training, and the one TONN layer costs about 0.4\% on long documents.
+ExeaLM's seed 1, with the mixed stream phase, scores 0.956 and 0.902; the stream recipe moves these numbers by as much as the gap.
+
+\pendbox{A 0.5B three-way run at 20 tokens per parameter, one seed, 38,173 steps and 10.0B tokens each, started 27 November. Its models are ExeaLM with the mixed stream phase, the attention-only control and the Qwen3.5-style model. It tests whether these trends hold at a larger size and whether the TONN layer helps in long training.}
 
 %=====================================================================================================
 \section{Long documents}
@@ -407,10 +424,9 @@ On long documents the stream phase adds to it, and on windows alone it takes som
 The control has attention where the Qwen3.5-style model has Gated DeltaNet, so these runs do not separate the four changes from that swap.
 Section~\ref{sec:layout} gives a short test that does.
 
-In longer training the control is ahead of ExeaLM so far.
-At step 24,000 of the long 0.1B run, before either stream phase, the control's in-run check reads 0.932 against ExeaLM's 0.936 (one seed, still training).
-At step 4,000 it read 1.0316 against 1.0348 (\sect{19}).
-\pendbox{Attention-only control at 0.25B (3 seeds), all three readings. The long run and the 0.5B run are in the box of Section~\ref{sec:length}.}
+In longer training the control is ahead of ExeaLM.
+Trained to 110 tokens per parameter, it beats ExeaLM on all three readings, by 0.4\% on long documents (Section~\ref{sec:length}, one seed each).
+\pendbox{Attention-only control at 0.25B (3 seeds, eval job 56104720), all three readings. The 0.5B three-way run at 20 tokens per parameter is in the box of Section~\ref{sec:length}.}
 
 \subsection{Layouts and attention changes, at 49 million tokens}
 \label{sec:layout}
@@ -608,7 +624,7 @@ Each learning rate comes from short checks of two or three values.
 We have 3 seeds at 0.1B and 0.25B, 2 at 0.5B and for the long runs, and 1 at 3B and for several controls.
 Bits per byte is not task accuracy, and the 0.5B benchmarks are near chance on two tasks.
 The library test uses 0.1B models, questions written by the model that wrote the entries, and bits per byte.
-The TONN layer adds about 0.1\% at 0.1B, and in longer training the attention-only control is ahead so far.
+The TONN layer adds about 0.1\% at 0.1B, and trained to 110 tokens per parameter the attention-only control is ahead of ExeaLM on every reading, by 0.4\% on long documents (one seed each).
 This paper does not show that the TONN layer is needed.
 
 \section*{Use of generative AI}
@@ -665,7 +681,7 @@ Long runs: 39,735 steps, 10.4B tokens, 109.6 and 108.9 tokens per parameter; 9B 
 16,384-token documents: 1.0726, 1.1339, 0.9471, 0.9956; 5.4\%, 4.9\%; 0.043 to 0.048; 15 of 18 sets; 5.0\% to 5.8\% & \sect{19}, \texttt{stream32\_100m.json} \\
 Attention-only control 1.1574, 1.0969, 1.0737; 2 of 3 seeds; 40 of 54 pairs (\sect{19} gives 1.0968; the file's seeds average to 1.0969) & \sect{19}, \texttt{text\_100m\_strong.json}, \texttt{stream8\_100m\_strong.json}, \texttt{stream32\_100m.json} \\
 Control in the long run: 1.0316, 1.0348 at step 4,000 & \sect{19} \\
-Control in the long run: 0.932, 0.936 at step 24,000 & \texttt{runs/strongllama\_100m\_111x\_s0/log.jsonl} on the cluster (not in the repository), as quoted in \texttt{docs/funding\_report/report.tex}; \texttt{docs/decisions.md} (27 November) gives the gap as 0.003 \\
+Control in the long run, finished: 0.958, 0.960 (17 of 18 sets); 0.898, 0.902 (18 of 18); 0.991, 0.993 & \sect{24}, \texttt{text\_strong\_111x.json}, \texttt{stream8\_strong\_111x.json} \\
 No stream phase 1.1496, 1.1321; mixed 1.1532, 1.0969; mixed 40\% 1.1546, 1.0956; averaged 1.2085, 1.1523; 0.0034 of 0.0070; 0.0014 of 0.037 & \sect{21}, \texttt{text\_100m.json}, \texttt{stream8\_100m.json}, \texttt{text\_mix20distill.json}, \texttt{stream8\_mix20distill.json}, \texttt{text\_mix100m.json}, \texttt{stream8\_mix100m.json}, \texttt{text\_merge100m.json}, \texttt{stream8\_merge100m.json} \\
 49M-token tests (Table~\ref{tab:layout}); 0.038 at layer 0; 0.0006 to 0.0013; 14 of 18 sets; 0.026; 1.403 against 1.349 & \sect{3}, \sect{4}, \sect{5}, \texttt{ablation\_100m.json}, \texttt{layout\_100m.json}, \texttt{layout2\_100m.json} \\
 Library v1: 18,545 entries, 13,548 and 4,997, 7.9M tokens; 6,253 and 6,604 held-out items & \sect{7} \\

@@ -568,9 +568,8 @@ with the same recipe, streams included; 3 seeds each at 0.1B:
 | 16,384-token documents as a stream | **1.0726** | 1.0737 | 3 of 3 |
 
 The TONN layer is ahead by about 0.1%. What puts ExeaLM ahead of the Qwen3.5 design is the rest of it: the attention
-changes (gate, QK-norm, value residual, XSA) and the streams. The 0.25B control (3 seeds) and the long control at 111
-tokens per parameter are training; in the long run's first 4,000 steps the control is ahead (1.0316 against 1.0348 at
-step 4,000), with the gap closing from 0.028 at step 1,000.
+changes (gate, QK-norm, value residual, XSA) and the streams. At 111 tokens per parameter the control is ahead of
+ExeaLM on every reading (section 24). The 0.25B control (3 seeds) is being scored (eval job 56104720).
 
 ## 20. The 0.5B pair, seed 0 (job 56090409, `text_500m.json`, `stream8_500m.json`)
 
@@ -674,9 +673,17 @@ reading, which runs on the finished models). Bits per byte:
 | 6,000 | **0.8693** | 0.8893 | 0.020 |
 | 7,000 | **0.8548** | 0.8725 | 0.018 |
 | 7,500 | **0.8498** | 0.8659 | 0.016 |
+| 8,000 | **0.8446** | 0.8601 | 0.016 |
+| 10,000 | **0.8288** | 0.8412 | 0.012 |
+| 12,000 | **0.8175** | 0.8268 | 0.009 |
+| 14,000 | **0.8080** | 0.8158 | 0.008 |
+| 14,500 (27 November, 1:40 p.m.) | **0.8063** | 0.8133 | 0.007 |
 
-The lead narrows as training goes on, more slowly at each step: early leads shrink like this at every size in the
-study, and the finished models settle it. ExeaLM's stream phase starts near step 36,550 (early on 29 November) with the
+The lead narrows as training goes on, by about 0.001 every 1,000 steps since step 8,000. Early leads shrink like this
+at every size in the study, and the finished models settle it: at 0.5B the in-run lead ended at 0.004 and the 18-set
+lead at 0.005 (section 20). If the 3B lead keeps shrinking at this rate, ExeaLM and the Qwen3.5-style model will be
+about even on windows read alone before the stream phase. Long documents, where the lead held at every finished size
+(3.6% to 5.4%), are read on the finished models. ExeaLM's stream phase starts near step 36,550 (early on 29 November) with the
 mixed recipe of section 21; both runs end near the evening of 29 November.
 
 ## 24. The long pair at 111 tokens per parameter, finished (2 seeds; eval job 56094555, `text_111x.json`, `stream8_111x.json`)
@@ -718,11 +725,58 @@ multiplier (how many times ExeaLM's steps the Qwen3.5-style run needs to reach t
   thing and is left out. At the end, the finished Qwen3.5-style runs never reach ExeaLM's final score.
 - The study's stream phase cost seed 0 most of its lead within 1,500 steps (0.009 to 0.001). The mixed phase kept seed 1
   at 0.006 to 0.008 through the decay. This is the result behind section 21's recipe change, at the 9B's ratio.
-- The plain Llama with ExeaLM's attention changes (gate, QK-norm, value residual, XSA) at the same ratio is still
-  training (job 56087569); it separates the attention changes from the TONN layer and the streams at this length.
+**The attention-only control at the same length** (job 56087569, eval job 56104635, `text_strong_111x.json`,
+`stream8_strong_111x.json`). ExeaLM with its TONN layer replaced by attention with the same four changes, trained the
+same 39,735 steps with the study's stream phase, like ExeaLM seed 0. One seed each:
 
-## 25. Next
+| 0.1B, 111 tokens per parameter, seed 0 | ExeaLM | Attention in its place | Qwen3.5-style |
+|---|---|---|---|
+| Windows of 512 read alone, 18 sets | 0.9599 | **0.9580** | 0.9629 |
+| 4,096-token documents read as a stream, windows 1-7 | 0.9020 | **0.8982** | 0.9438 |
+| The same documents, every window alone | 0.9925 | **0.9907** | 0.9962 |
 
-The 0.5B curve with two seeds and the plain Llama (being scored), the 3B pair (Sunday evening), the strong Llama at 111
-tokens per parameter, open-book benchmarks with the library (running), library v2 (the human tier and the DeepSeek-V4-Flash entries, being built) and training on it at
-0.5B and on a mid-run 3B checkpoint, then a scaling fit and the 9B projection against section 18's bar.
+- Trained as long per parameter as the 9B would be, the control is ahead of ExeaLM on all three readings: on 17 of
+  18 sets read alone (by 0.0019 on the mean) and on all 18 read as a stream (by 0.0017 to 0.0070, 0.0038 on the mean).
+  At 4.1 tokens per parameter ExeaLM was ahead by about 0.1% (section 19). Here the TONN layer costs about 0.4% on
+  long documents, the reading it was meant to win.
+- Both stay well ahead of the Qwen3.5-style model on long documents (0.898 and 0.902 against 0.944). That lead comes
+  from the four attention changes and the stream training, which the control shares.
+- One seed each, and ExeaLM's seed 1 with the mixed stream phase (0.9559 alone, 0.9019 streamed) shows the stream
+  recipe moves the numbers by as much as the gap. The 0.5B three-way run at 20 tokens per parameter (Saturday
+  morning) and the 0.25B control (3 seeds, being scored) decide whether the TONN layer stays in the 9B.
+
+## 25. Benchmarks with the library at 0.1B, closed and open book (jobs 56094538, 56095280; `openbook/`)
+
+The lm-eval harness, zero-shot, on four 0.1B models (seed 0): the curve's ExeaLM and Qwen3.5-style models (section 9)
+and the same two after RAG post-training (section 11). Closed book is the question alone. Open book places the top
+passage of each library tier before the question (384 tokens each: the written tier, `data/library/v1/bm25`, and the
+public human tier, `bm25_pool_p100000`), read as a stream of 512-token windows as in section 10. The search leaves out
+the 10 written entries that share text with a benchmark question (`--rag_exclude`). Both models search the same
+library with the same query. Accuracy, normalized where the task has it:
+
+| 0.1B, seed 0 | SciQ | ARC-Easy | ARC-Challenge | MMLU | HellaSwag | Mean without MMLU |
+|---|---|---|---|---|---|---|
+| ExeaLM, closed | 0.591 | 0.330 | 0.205 | 0.232 | 0.278 | 0.351 |
+| ExeaLM, open | 0.592 | 0.337 | 0.206 | 0.231 | 0.281 | 0.354 (+0.003) |
+| Qwen3.5-style, closed | 0.547 | 0.341 | 0.226 | 0.231 | 0.275 | 0.347 |
+| Qwen3.5-style, open | 0.528 | 0.340 | 0.228 | 0.234 | 0.274 | 0.343 (-0.005) |
+| ExeaLM with RAG post-training, closed | 0.697 | 0.349 | 0.212 | 0.231 | 0.279 | 0.384 |
+| ExeaLM with RAG post-training, open | **0.700** | **0.361** | **0.229** | 0.231 | **0.281** | **0.393** (+0.008) |
+| Qwen3.5-style with RAG post-training, closed | 0.654 | 0.357 | 0.205 | 0.231 | 0.274 | 0.372 |
+| Qwen3.5-style with RAG post-training, open | 0.630 | 0.358 | 0.192 | 0.231 | 0.276 | 0.364 (-0.008) |
+
+- Given the library, ExeaLM gains on 4 of the 5 tasks, more after RAG post-training (+0.012 on ARC-Easy, +0.017 on
+  ARC-Challenge). The Qwen3.5-style model loses with it, most on SciQ (-0.019, and -0.024 after RAG post-training).
+  One seed, at 0.1B: ARC-Challenge has 1,172 questions, so one standard error on an accuracy is about 0.012, and no
+  single gain here is beyond two standard errors. It is a lead, consistent with section 11's held-out questions.
+- MMLU stays at chance (0.23 for every model, 4 choices), open or closed. A 0.1B model cannot use the passages for it.
+- The largest change is closed-book SciQ after RAG post-training: +0.106 for ExeaLM and +0.107 for the Qwen3.5-style
+  model, with no library at test time. It comes from post-training on the library's questions and answers. Their overlap
+  with the benchmarks has not been checked yet (only the search's has), so we do not claim it.
+- The test that counts is the same reading at 0.5B and 3B after post-training on library v2 (section 26).
+
+## 26. Next
+
+The 0.5B three-way run at 20 tokens per parameter (Saturday morning), the 3B pair (Sunday evening), library v2's check
+against the benchmarks and RAG post-training on it at 0.5B (jobs 56104634-9, running) and on a mid-run 3B checkpoint,
+then a scaling fit and the 9B projection against section 18's bar.

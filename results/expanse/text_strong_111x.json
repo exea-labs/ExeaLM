@@ -1,0 +1,93 @@
+{
+ "runs": [
+  {
+   "run": "/home/abhatia7/ExeaLM/runs/strongllama_100m_111x_s0",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 39735,
+   "params_M": 95.47,
+   "bits_per_byte": {
+    "research_python": 0.6225,
+    "code_reasoning": 0.4866,
+    "algebraic_stack": 0.8768,
+    "pretrain_behaviors": 0.862,
+    "starcoder": 0.8284,
+    "stackexchange": 0.8981,
+    "pes2o": 0.9266,
+    "arxiv": 1.0372,
+    "wikipedia_en": 1.147,
+    "megamath": 0.9843,
+    "open_web_math": 1.0811,
+    "math_reasoning": 0.711,
+    "dclm": 1.2695,
+    "txt360_web": 1.2474,
+    "fineweb2_ja": 1.1306,
+    "wikipedia_ja": 1.2201,
+    "txt360_qa": 1.0413,
+    "sft_pretrain": 0.8743
+   },
+   "mean": 0.958
+  },
+  {
+   "run": "runs/exealm_100m_111x_s0",
+   "file": "model.pt",
+   "model": "tonn",
+   "step": 39735,
+   "params_M": 95.06,
+   "bits_per_byte": {
+    "research_python": 0.6242,
+    "code_reasoning": 0.4888,
+    "algebraic_stack": 0.8768,
+    "pretrain_behaviors": 0.8656,
+    "starcoder": 0.8307,
+    "stackexchange": 0.8992,
+    "pes2o": 0.9278,
+    "arxiv": 1.0403,
+    "wikipedia_en": 1.1488,
+    "megamath": 0.986,
+    "open_web_math": 1.0825,
+    "math_reasoning": 0.7125,
+    "dclm": 1.2706,
+    "txt360_web": 1.2486,
+    "fineweb2_ja": 1.1324,
+    "wikipedia_ja": 1.2216,
+    "txt360_qa": 1.0439,
+    "sft_pretrain": 0.8771
+   },
+   "mean": 0.9599
+  },
+  {
+   "run": "runs/qwen_100m_111x_s0",
+   "file": "model.pt",
+   "model": "llama",
+   "step": 39735,
+   "params_M": 95.69,
+   "bits_per_byte": {
+    "research_python": 0.6286,
+    "code_reasoning": 0.4885,
+    "algebraic_stack": 0.8767,
+    "pretrain_behaviors": 0.8653,
+    "starcoder": 0.8308,
+    "stackexchange": 0.9043,
+    "pes2o": 0.9314,
+    "arxiv": 1.0408,
+    "wikipedia_en": 1.149,
+    "megamath": 0.9869,
+    "open_web_math": 1.0841,
+    "math_reasoning": 0.7196,
+    "dclm": 1.2725,
+    "txt360_web": 1.2517,
+    "fineweb2_ja": 1.1409,
+    "wikipedia_ja": 1.2332,
+    "txt360_qa": 1.0457,
+    "sft_pretrain": 0.8823
+   },
+   "mean": 0.9629
+  }
+ ],
+ "means": {
+  "strongllama_100m_111x": 0.958,
+  "exealm_100m_111x": 0.9599,
+  "qwen_100m_111x": 0.9629
+ }
+}
