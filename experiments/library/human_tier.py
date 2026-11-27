@@ -114,12 +114,12 @@ SOURCES = {
                          full=3e9),
     "arxiv": dict(group="research", repo=OLMO, patterns=PROOF_PILE, file_kind="arxiv", reader="arxiv", bpt=3.67,
                   lang="en", kind="latex", yield_=0.4, v0=0.35e9, full=6e9),
-    "research_python": dict(CODE, patterns=STARCODER, langs=PYTHON, sci=True, bpt=3.35, yield_=0.3, v0=0.15e9,
+    "research_python": dict(CODE, patterns=STARCODER, langs=PYTHON, sci=True, bpt=3.35, yield_=0.2, v0=0.15e9,
                             full=1.5e9),
-    "starcoder": dict(CODE, patterns=STARCODER, langs_not=NOT_CODE | DOCS | PYTHON, bpt=3.16, yield_=0.35, v0=0.2e9,
+    "starcoder": dict(CODE, patterns=STARCODER, langs_not=NOT_CODE | DOCS | PYTHON, bpt=3.16, yield_=0.15, v0=0.2e9,
                       full=2.5e9),
-    "algebraic_stack": dict(CODE, patterns=PROOF_PILE, file_kind="code", bpt=2.68, yield_=0.5, v0=0.08e9, full=1e9),
-    "code_docs": dict(CODE, patterns=STARCODER, langs=DOCS, bpt=3.6, lang="en", kind="docs", yield_=0.4, v0=0.07e9,
+    "algebraic_stack": dict(CODE, patterns=PROOF_PILE, file_kind="code", bpt=2.68, yield_=0.3, v0=0.08e9, full=1e9),
+    "code_docs": dict(CODE, patterns=STARCODER, langs=DOCS, bpt=3.6, lang="en", kind="docs", yield_=0.2, v0=0.07e9,
                       full=0.8e9),
     "pes2o": dict(group="research", repo="allenai/peS2o", patterns=["data/v2/train-0001*-of-00020.json.gz"],
                   reader="pes2o", license="ODC-BY", bpt=4.39, lang="en", kind="prose", yield_=0.8, v0=0.2e9,
@@ -1208,6 +1208,15 @@ def run_source(args, name, target, seen, index_dir):
     return done
 
 
+def downloaded(root, name, rank):
+    o = order(root, name)
+    if rank >= len(o["files"]):
+        return False
+    f = o["files"][rank]
+    path = raw_path(root, o["repo"], f["path"])
+    return os.path.exists(path) and os.path.getsize(path) == f["size"]
+
+
 def part_targets(root, part, part_tokens, names=None):
     """Tokens per source for a part: part 0 takes every source's v0; later parts fill up to part_tokens with what each
     source has left of its full target, in ORDER (Wikipedia first), skipping sources that ran out of documents.
@@ -1228,8 +1237,8 @@ def part_targets(root, part, part_tokens, names=None):
                 if d is None:
                     raise SystemExit(f"part {p} has not finished {n}: run it first")
                 used[n] += d["tokens"]
-                if d.get("exhausted"):
-                    done_with.add(n)
+                if d.get("exhausted") or (d.get("missing") and not downloaded(root, n, d["end"]["file"])):
+                    done_with.add(n)                # out of documents, or waiting for a fetch
         t, left = {}, part_tokens
         for n in (n for n in ORDER if n in names):
             r = SOURCES[n]["full"] - used[n]
@@ -1342,8 +1351,8 @@ def cmd_run(args):
     while True:
         if not cmd_passages(args):
             break
-        cmd_pack(args)
-        if not args.until_done:
+        meta = cmd_pack(args)
+        if not args.until_done or meta["n_tokens"] == 0:
             break
         args.part += 1
 
