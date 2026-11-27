@@ -1257,6 +1257,7 @@ def run_source(args, name, target, seen, index_dir):
     top = [dict(reason=why, window=tk.decode(list(w)), passages=c) for (why, w), c in windows.most_common(40)]
     done = dict(source=name, part=args.part, target=int(target), tokens=int(tokens), passages=passages,
                 start=cur, end=end, short=not stopped, exhausted=not stopped and not missing, missing=missing,
+                clean_rule=args.clean_rule,
                 repos=len(added_repos) if repo_counts is not None else None,
                 files=files_used, repo=o["repo"], revision=o["revision"],
                 stats=dict(sorted(stats.items())), top_windows=top, seconds=round(time.time() - t0))
