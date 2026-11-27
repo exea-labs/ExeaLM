@@ -281,6 +281,57 @@ class Index:
         o = np.argsort(-s, kind="stable")[:k]
         return d[o], s[o]
 
+    def merge_to(self, dev):
+        """One GPU index for all parts (a retrieval service): each token's lists of every part joined, passage numbers
+        global (int32) and weights 8-bit on one scale (the parts' largest). A query is then one gather, one add and
+        one top-k over the whole library, instead of a round of each per part."""
+        import torch
+        V = max(len(p.df) for p in self.parts)
+        scale = max((p.scale if p.compact else float(np.max(p.w)) / 255) for p in self.parts)
+        lens = np.zeros(V, dtype=np.int64)
+        for p in self.parts:
+            lens[:len(p.df)] += np.diff(np.asarray(p.ptr))
+        ptr = np.zeros(V + 1, dtype=np.int64)
+        ptr[1:] = np.cumsum(lens)
+        doc = torch.empty(int(ptr[-1]), dtype=torch.int32, device=dev)
+        wq = torch.empty(int(ptr[-1]), dtype=torch.uint8, device=dev)
+        fill = ptr[:-1].copy()
+        for p in self.parts:
+            d, w = p.lists(0, int(p.ptr[-1]))
+            pl = np.diff(np.asarray(p.ptr))
+            tok = np.repeat(np.arange(len(pl)), pl)                      # the token of every posting of this part
+            pos = fill[tok] + (np.arange(len(tok)) - np.repeat(np.asarray(p.ptr[:-1]), pl))
+            doc[torch.from_numpy(pos).to(dev)] = torch.from_numpy((d + p.base).astype(np.int32)).to(dev)
+            wq[torch.from_numpy(pos).to(dev)] = torch.from_numpy(np.clip(np.rint(w / scale), 1, 255).astype(np.uint8)).to(dev)
+            fill[:len(pl)] += pl
+        self._merged = dict(ptr=ptr, doc=doc, w=wq, scale=scale, n=self.n,
+                            df=sum(np.pad(np.asarray(p.df, dtype=np.int64), (0, V - len(p.df))) for p in self.parts))
+        return self
+
+    def search_merged(self, query_ids, k=5, max_df=1.0, skip=(0,)):
+        """search() on the merged GPU index (merge_to): (passage numbers, scores), best first."""
+        import torch
+        m = self._merged
+        q = np.array(sorted(set(int(t) for t in query_ids) - set(skip)), dtype=np.int64)
+        q = q[(q >= 0) & (q < len(m["df"]))]
+        q = q[(m["df"][q] > 0) & (m["df"][q] <= max_df * m["n"])]
+        st, ln = m["ptr"][q], m["ptr"][q + 1] - m["ptr"][q]
+        keep = ln > 0
+        st, ln = st[keep], ln[keep]
+        T = int(ln.sum())
+        if not T:
+            return np.zeros(0, dtype=np.int64), np.zeros(0)
+        dev = m["doc"].device
+        st_t, ln_t = torch.from_numpy(st).to(dev), torch.from_numpy(ln).to(dev)
+        idx = torch.repeat_interleave(st_t - (torch.cumsum(ln_t, 0) - ln_t), ln_t, output_size=T) + \
+            torch.arange(T, device=dev)
+        base0 = min(p.base for p in self.parts)
+        s = torch.zeros(max(p.base + p.n for p in self.parts) - base0, device=dev, dtype=torch.float32)
+        s.index_add_(0, m["doc"][idx].long() - base0, m["w"][idx].float() * m["scale"])
+        v, i = torch.topk(s, min(k, len(s)))
+        keep = v > 0
+        return (i[keep] + base0).cpu().numpy(), v[keep].cpu().numpy()
+
     def search_gpu_batch(self, queries, k=5, max_df=1.0, skip=(0,)):
         """search_gpu for many queries in one pass (a retrieval service batching its callers): a list of (passage
         numbers, scores) per query, best first."""
@@ -364,6 +415,22 @@ def cmd_gpubench(a):
     idx = Index(a.index)
     torch.cuda.reset_peak_memory_stats()
     t0 = time.time()
+    if a.merged:
+        idx.merge_to("cuda")
+        torch.cuda.synchronize()
+        print(f"{idx.n:,} passages merged on the GPU in {time.time() - t0:.0f}s, "
+              f"{torch.cuda.memory_allocated() / 1e9:.1f} GB", flush=True)
+        items, eot, sep = load_items(a.questions, ["qa"], "heldout", a.limit)
+        skip, times = (eot, *sep), []
+        idx.search_merged(items[0]["prefix"], k=5, max_df=a.max_df, skip=skip)
+        for it in items[:500]:
+            t1 = time.perf_counter()
+            idx.search_merged(it["prefix"], k=5, max_df=a.max_df, skip=skip)
+            times.append(time.perf_counter() - t1)
+        t = np.array(times) * 1000
+        print(f"merged, one query at a time: median {np.median(t):.2f} ms, p95 {np.percentile(t, 95):.2f} ms, "
+              f"{1000 / np.median(t):,.0f} queries a second", flush=True)
+        return
     idx.to("cuda")
     torch.cuda.synchronize()
     print(f"{idx.n:,} passages on the GPU in {time.time() - t0:.0f}s, {torch.cuda.memory_allocated() / 1e9:.1f} GB",
@@ -499,6 +566,7 @@ def main(argv=None):
     g.add_argument("--limit", type=int, default=2000)
     g.add_argument("--max_df", type=float, default=0.1)
     g.add_argument("--batches", default="16,64,256")
+    g.add_argument("--merged", action="store_true", help="one merged GPU index (Index.merge_to), single queries")
     ag = sub.add_parser("agree", help="a smaller index against a reference: same top passage, top-5 overlap, speed")
     ag.add_argument("index")
     ag.add_argument("--reference", required=True)

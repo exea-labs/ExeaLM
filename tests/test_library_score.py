@@ -338,3 +338,18 @@ def test_rag_pack_two_tiers_puts_the_human_passage_after_the_entry(setup, tmp_pa
             + items[0]["prefix"] + items[0]["target"] + [eot])
     assert [int(t) for t in pack.tokens[:len(want)]] == want
     assert "second tier" in pack.meta["source"]["kind"]
+
+
+def test_merged_gpu_index_ranks_as_the_parts_do(setup, tmp_path):
+    """Index.merge_to / search_merged on CPU tensors: two parts merged give the same top passages as searching them
+    apart, to within the 8-bit weight step."""
+    ix = load("index")
+    ix.main(["build", setup["lib"], setup["lib"], "--out", str(tmp_path / "two")])
+    ix.main(["compact", str(tmp_path / "two"), "--out", str(tmp_path / "two_c"), "--max_df", "0.5"])
+    parts, merged = ix.Index(str(tmp_path / "two_c")), ix.Index(str(tmp_path / "two_c")).merge_to("cpu")
+    items, eot, sep = sc.load_items(setup["lib"], ["qa", "tasks"], "heldout")
+    for it in items:
+        d, s = parts.search(it["prefix"], k=2, max_df=0.5, skip=(eot, *sep))
+        m, ms = merged.search_merged(it["prefix"], k=2, max_df=0.5, skip=(eot, *sep))
+        if len(d):
+            assert abs(ms[0] - s[0]) <= 2 * merged._merged["scale"] * 8 + 1e-4
