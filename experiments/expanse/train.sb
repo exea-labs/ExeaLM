@@ -122,6 +122,12 @@ for f in "$REPO"/*; do                                                 # the rep
   [ -e "$WORK/$(basename "$f")" ] || ln -s "$f" "$WORK/"
 done
 cd "$WORK"                                                             # so data/... in ARGS is the copy on the NVMe
+# A recipe change for a live run: arguments in $KEEP/$RUN/extra_args are added after ARGS (the last of a repeated
+# option wins) from the run's next job on, e.g. --stream_mix 0.5 before the stream phase starts (docs/decisions.md)
+if [ -s "$KEEP/$RUN/extra_args" ]; then
+  ARGS="$ARGS $(tr '\n' ' ' < "$KEEP/$RUN/extra_args")"
+  echo "== extra arguments from $KEEP/$RUN/extra_args: $(tr '\n' ' ' < "$KEEP/$RUN/extra_args")"
+fi
 if [ "$GPUS" -gt 1 ]; then launch="torchrun --nproc_per_node $GPUS -m"; else launch="python -m"; fi
 $launch exealm.train.pretrain $ARGS --out "$OUT" --resume auto --save_minutes "$SAVE_MIN" --max_minutes "$max_min" \
   --heartbeat "$WORK/heartbeat" &
