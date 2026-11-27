@@ -1131,7 +1131,9 @@ def cmd_pack(args):
     np.save(os.path.join(tmp, "offsets.npy"), offsets)
     tok_file = os.path.join(args.slice, "tokenizer", "tokenizer.json")
     index_meta = read_json(os.path.join(args.index_dir or os.path.join(args.root, "index"), "meta.json"), {})
-    meta = dict(dtype="uint16", vocab_size=32768, n_tokens=int(n_tok), n_docs=int(len(offsets)),
+    from tokenizers import Tokenizer
+    vocab = Tokenizer.from_file(tok_file).get_vocab_size()
+    meta = dict(dtype="uint16", vocab_size=vocab, n_tokens=int(n_tok), n_docs=int(len(offsets)),
                 bytes_per_token=n_bytes / max(1, n_tok), tokenizer=os.path.join(SLICE, "tokenizer"),
                 tokenizer_sha256=file_sha256(tok_file), eot_id=0,
                 source=dict(kind="human tier", built_by="experiments/library/human_tier.py", part=args.part,
