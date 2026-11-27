@@ -122,7 +122,7 @@ def save(folder, ptr, doc, w, df, meta):
 
 
 def cmd_build(a):
-    base = 0
+    base = a.base
     for i, path in enumerate(a.libraries):
         lib = TokenShards(path)
         t0 = time.time()
@@ -164,6 +164,8 @@ def main(argv=None):
     b.add_argument("--k1", type=float, default=1.2)
     b.add_argument("--b", type=float, default=0.75)
     b.add_argument("--chunk_docs", type=int, default=200_000)
+    b.add_argument("--base", type=int, default=0, help="the first passage number: an index built apart from another "
+                                                       "(v1 first, then the human pool) continues its numbering")
     q = sub.add_parser("bench", help="speed and hit rate on the library's held-out questions")
     q.add_argument("index", nargs="+")
     q.add_argument("--library", required=True, help="the packed library the questions come from (qa/heldout)")
