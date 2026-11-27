@@ -145,13 +145,14 @@ $M plan                      # file orders, without the slice's files (Wikipedia
 $M fetch --scope v0          # part 0's files and the arXiv metadata; --scope full for the whole pool
 $M benchmarks                # the decontamination benchmarks (LiveCodeBench is exported in the job)
 
-# Slurm: index (clean windows, a sample of the slice's training windows), then part 0 = human_pool_v0
+# Slurm: index (clean windows, which of them training has, a sample of the training windows; about 45 min once),
+# then part 0 = human_pool_v0 (about 10 min) and every later part, each about 3B tokens (about 10 min each), until
+# every source reaches its full target or runs out. Rerunning the same line continues where it stopped.
 sbatch -N 1 --ntasks-per-node=1 -A fli100 -p nairr-gpu-shared --gpus=h100:1 --cpus-per-task=16 --mem=128G \
-    -t 4:00:00 -J exealm-humanpool -o logs/expanse/%x-%j.out --wrap "source experiments/expanse/env.sh && \
-    HF_HUB_OFFLINE=1 $M run --part 0 --workers 15"
-# then the parts after it, each about 3B tokens, until every source reaches its full target or runs out
-sbatch ... --wrap "source experiments/expanse/env.sh && $M run --part 1 --until_done --workers 15"
+    -t 8:00:00 -J exealm-humanpool -o logs/expanse/%x-%j.out --wrap "source experiments/expanse/env.sh && \
+    HF_HUB_OFFLINE=1 $M run --part 0 --until_done --allow_short --workers 15"
 $M stats                     # tokens, passages and drops per part and source
+# to grow further: raise a source's `full` in SOURCES, `fetch --scope full`, then run --part <next> --until_done
 ```
 
 Output, under `/expanse/lustre/projects/fli100/abhatia7/library_v2`:
