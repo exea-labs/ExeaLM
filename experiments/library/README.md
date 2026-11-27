@@ -163,8 +163,16 @@ Output, under `/expanse/lustre/projects/fli100/abhatia7/library_v2`:
 | `manifest/` | pinned commits, file orders, arXiv metadata; `work/part_N/<source>/done.json` says where each part stopped |
 
 Part 0 takes a fixed amount from every source; later parts take what each source has left of its full target, in
-order: Wikipedia, arXiv, code, then the rest, so the most useful text is packed first. Every passage that shares a
-13-token window with a val split of the slice, with library v1's held-out `qa/` and `tasks/` packs, or with a
-decontamination benchmark is dropped (Wikipedia included); so is one whose sampled windows are mostly in the slice's
-training data (another file's copy of the same text; not applied to Wikipedia), an exact duplicate, a code file past
-its repository's first 10, and text that is mostly not text.
+order: Wikipedia, arXiv, code, then the rest, so the most useful text is packed first.
+
+Held-out text stays out. A passage is dropped when it shares a 13-token window with a val split of the slice or with
+library v1's held-out `qa/` and `tasks/` packs, unless the slice's training text has that window too, or when it shares
+any decontamination-benchmark window (the slice's own benchmark rule). The exception is there because the plain
+any-window rule, run on part 0 first, dropped 1.72M passages against 2.95M kept, nearly all for markup and templates:
+70% of scientific Python, 48% of arXiv (`\begin{figure}\n\centering\n\includegraphics[`), 11% of Japanese Wikipedia
+(`脚注\n\n注釈\n\n出典`), 7% of English Wikipedia (`County, in the U.S. state of Missouri`). A passage that copies a
+held-out document still shares windows that training never saw, so it is still dropped. Passages kept only by the
+exception say so in `index.jsonl` (`"strict_drop": "val"` or `"heldout"`): filter them out for the strict rule, or
+build with `--clean_rule strict`. Also dropped: a passage whose sampled windows are mostly in the slice's training text
+(another file's copy of the same text, such as a paper in both peS2o and arXiv; not applied to Wikipedia), an exact
+duplicate, a code file past its repository's first 10, and text that is mostly not text.
