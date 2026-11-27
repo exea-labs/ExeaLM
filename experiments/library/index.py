@@ -168,6 +168,33 @@ def cmd_build(a):
         base += len(lib.offsets)
 
 
+def cmd_tiers(a):
+    """Two-tier search: the written entries (v1, v2) and the human passages searched apart, the top passage of each
+    given to the model. A large human tier crowds the written entries out of a single ranking; searched apart, the
+    written tier keeps its precision and the human tier adds what the entries lack."""
+    from score import load_items
+    tiers = {name: Index(path.split("+")) for name, path in (t.split("=", 1) for t in a.tiers.split(";"))}
+    items, eot, sep = load_items(a.library, ["qa"], "heldout", a.limit)
+    skip = (eot, *sep)
+    names = list(tiers)
+    hits = {n: 0 for n in names}
+    either, times = 0, []
+    for it in items:
+        want = answer_tokens(it["target"])
+        t0 = time.perf_counter()
+        tops = {n: idx.search(it["prefix"], k=1, max_df=a.max_df, skip=skip)[0] for n, idx in tiers.items()}
+        times.append(time.perf_counter() - t0)
+        got = {n: bool(len(d)) and contains(tiers[n].passage(int(d[0])), want) for n, d in tops.items()}
+        for n in names:
+            hits[n] += int(got[n])
+        either += int(any(got.values()))
+    n, t = len(items), np.array(times) * 1000
+    print(f"{n:,} queries, max_df {a.max_df}; the answer in the top passage of: "
+          + ", ".join(f"{k} ({tiers[k].n:,} passages) {v / n:.3f}" for k, v in hits.items())
+          + f"; in either {either / n:.3f}; ms per query (both tiers): median {np.median(t):.1f}, p95 "
+          f"{np.percentile(t, 95):.1f}", flush=True)
+
+
 def cmd_bench(a):
     from score import load_items
     idx = Index(a.index)
@@ -210,8 +237,14 @@ def main(argv=None):
     q.add_argument("--limit", type=int, default=2000)
     q.add_argument("--max_df", default="1.0,0.1,0.02")
     q.add_argument("--max_terms", default="0", help="comma list; 0: every token of the query")
+    r = sub.add_parser("tiers", help="two tiers searched apart: how often each tier's top passage holds the answer")
+    r.add_argument("--tiers", required=True, help="name=index[+index];name=index..., e.g. "
+                                                  "written=data/library/v1/bm25;human=/path/bm25_pool")
+    r.add_argument("--library", required=True)
+    r.add_argument("--limit", type=int, default=2000)
+    r.add_argument("--max_df", type=float, default=0.1)
     a = ap.parse_args(argv)
-    {"build": cmd_build, "bench": cmd_bench}[a.cmd](a)
+    {"build": cmd_build, "bench": cmd_bench, "tiers": cmd_tiers}[a.cmd](a)
 
 
 if __name__ == "__main__":

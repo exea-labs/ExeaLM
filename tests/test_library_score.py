@@ -258,3 +258,13 @@ def test_frontier_prompt_asks_for_an_expert_entry_that_never_cites_its_source():
     assert "Adam is a method" in m[1]["content"]
     g = lb.messages_for("Adam (optimizer)", "en", 250, 450, source="Adam is a method ...")
     assert g[0]["content"] == lb.GROUNDED_SYSTEM
+
+
+def test_tiers_search_each_index_apart(setup, tmp_path, capsys):
+    ix = load("index")
+    ix.main(["build", setup["lib"], "--out", str(tmp_path / "a")])
+    ix.main(["build", setup["lib"], "--out", str(tmp_path / "b"), "--base", "1000"])
+    ix.main(["tiers", "--tiers", f"written={tmp_path / 'a'};human={tmp_path / 'b'}", "--library", setup["lib"],
+             "--max_df", "1.0"])
+    out = capsys.readouterr().out
+    assert "written (" in out and "human (" in out and "in either" in out
