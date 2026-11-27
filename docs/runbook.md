@@ -143,3 +143,13 @@ The configs in `experiments/expanse/` are what every phase trains ([decisions.md
 20%); `qwen_<size>.json` is the base Qwen3.5-style model, the baseline at every size (Gated DeltaNet in 3 of every 4
 layers, gated attention, QK-norm); the plain Llama, on the curve only, is `--model llama` with no config.
 `gated_llama.json` is kept for the MI300X record only.
+
+## Changing a live run's recipe, or stopping it cleanly
+
+Put the extra arguments in `runs/<run>/extra_args` (one line, e.g. `--stream_mix 0.5`); `train.sb` adds them from the
+run's next job on. To make that job start now, ask the trainer to save and stop: `SIGUSR1` to the training processes
+only, on the run's node (`squeue -u $USER -o "%j %N"`, then `ssh <node>`). On one GPU that is the `python -m
+exealm.train.pretrain` process; on several it is the workers under torchrun, never torchrun itself: torchrun dies of
+SIGUSR1, the job counts as failed and is not resubmitted (llama_500m_4.1x_s1, 26 November: back to its 30-minute
+checkpoint). Match the workers with `pgrep -P <torchrun pid>`. The job then copies the run back and submits the next
+one, which continues from the checkpoint.
