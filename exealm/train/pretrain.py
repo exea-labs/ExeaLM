@@ -315,6 +315,10 @@ def main(argv=None):
     ap.add_argument("--stream_from", type=float, default=0.0,
                     help="with --stream k: read rows as streams only from this fraction of the steps on; before it, "
                          "batch x k rows of one window each (the same tokens per step), e.g. 0.8 for the last 20%%")
+    ap.add_argument("--stream_mix", type=float, default=1.0,
+                    help="with --stream k, in the stream phase: the share of micro-batches read as streams, the others "
+                         "batch x k windows alone (the same tokens). 1/n only (1, 0.5, 0.25...): every n-th micro-batch "
+                         "streams, so with --accum 2 or more every step has both")
     ap.add_argument("--search", type=int, default=1)
     ap.add_argument("--search_every", type=int, default=100)
     ap.add_argument("--search_until", type=float, default=0.5)
@@ -433,6 +437,9 @@ def main(argv=None):
     per = a.batch // world                                              # rows each process trains on
     rng = np.random.default_rng(a.seed)                                 # the same on every process: the same batches
     tokens_per_step = a.batch * a.seq * a.stream * a.accum
+    if not 0 < a.stream_mix <= 1 or abs(1 / a.stream_mix - round(1 / a.stream_mix)) > 1e-6:
+        raise SystemExit(f"--stream_mix must be 1/n (1, 0.5, 0.25...), got {a.stream_mix}")
+    stream_every = round(1 / a.stream_mix)                  # the stream phase streams every stream_every-th micro-batch
 
     ds = None
     if a.model == "tonn" and a.datastore_chunks:
@@ -653,6 +660,8 @@ def main(argv=None):
                 # stream factor and every pass of a multi-GPU run with --accum > 1 skipped DDP's gradient
                 # averaging (the 0.5B and 3B runs of 25-26 November; tests/test_ddp.py now checks this)
                 k = a.stream if step >= int(a.stream_from * a.steps) else 1   # --stream_from: windows alone first
+                if k > 1 and (step * a.accum + micro) % stream_every:          # --stream_mix: some read windows alone
+                    k = 1
                 rows = a.batch if k == a.stream else a.batch * a.stream         # the same tokens per step either way
                 per = rows // world
                 src_now = anneal if (anneal is not None and step >= int(a.anneal_from * a.steps)) else data

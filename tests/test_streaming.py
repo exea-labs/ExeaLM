@@ -102,3 +102,27 @@ def test_streaming_can_start_late_with_the_same_tokens_per_step(tmp_path):
                    "--config", str(cfg), "--out", str(tmp_path / "late")])
     log = [json.loads(l) for l in open(tmp_path / "late" / "log.jsonl")]
     assert log[0]["tokens_per_step"] == 2 * 16 * 4 and any(r.get("event") == "eval" for r in log)
+
+
+def test_stream_mix_reads_half_the_micro_batches_as_streams(tmp_path, monkeypatch):
+    import json
+    from exealm.train import pretrain
+    cfg = tmp_path / "c.json"
+    cfg.write_text(json.dumps(CORE))
+    from exealm.data.loader import SyntheticShards
+    seen, orig = [], SyntheticShards.batch                      # (rows, length) of every batch the run draws
+
+    def spy(self, rows, length, *args, **kw):
+        seen.append((rows, length))
+        return orig(self, rows, length, *args, **kw)
+    monkeypatch.setattr(SyntheticShards, "batch", spy)
+    pretrain.main(["--preset", "tiny", "--data", "synthetic", "--seq", "16", "--batch", "2", "--stream", "4",
+                   "--stream_from", "0.5", "--stream_mix", "0.5", "--accum", "2", "--steps", "4", "--eval_every", "4",
+                   "--search", "0", "--device", "cpu", "--config", str(cfg), "--out", str(tmp_path / "mix")])
+    train = seen[-8:]                                           # the validation draws come first
+    assert train[:4] == [(8, 16)] * 4                            # steps 0-1: windows alone
+    assert train[4:8] == [(2, 64), (8, 16), (2, 64), (8, 16)]   # steps 2-3: one stream and one alone each step
+    import pytest
+    with pytest.raises(SystemExit):
+        pretrain.main(["--preset", "tiny", "--data", "synthetic", "--stream", "4", "--stream_mix", "0.4",
+                       "--steps", "1", "--device", "cpu", "--out", str(tmp_path / "bad")])
