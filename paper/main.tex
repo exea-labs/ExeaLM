@@ -345,7 +345,9 @@ Seed 0 kept the original stream phase, and seed 1 switched to the mixed one at s
 The control trained the same 39,735 steps with the original stream phase, like ExeaLM's seed 0 (\sect{24}; one seed each).
 It is ahead of ExeaLM on all three readings: 0.958 against 0.960 on windows alone (17 of 18 sets), 0.898 against 0.902 on long documents read as a stream (all 18 sets, by 0.002 to 0.007), and 0.991 against 0.993 on the same documents read window by window.
 Both are far ahead of the Qwen3.5-style model on long documents (0.944).
-So at the 9B's ratio of tokens to parameters, ExeaLM's lead over the Qwen3.5 design comes from its four attention changes and its stream training, and the one TONN layer costs about 0.4\% on long documents.
+So on plain text at the 9B's ratio of tokens to parameters, ExeaLM's lead over the Qwen3.5 design comes from its four attention changes and its stream training.
+This control measures the TONN layer as a plain text layer: these runs train without the memory circuits (library search, board and weight edits), which are TONN circuits that an attention layer cannot hold.
+The 9B keeps its TONN layer for those circuits.
 ExeaLM's seed 1, with the mixed stream phase, scores 0.956 and 0.902; the stream recipe moves these numbers by as much as the gap.
 
 \pendbox{A 0.5B three-way run at 20 tokens per parameter, one seed, 38,173 steps and 10.0B tokens each, started 27 November. Its models are ExeaLM with the mixed stream phase, the attention-only control and the Qwen3.5-style model. It tests whether these trends hold at a larger size and whether the TONN layer helps in long training.}

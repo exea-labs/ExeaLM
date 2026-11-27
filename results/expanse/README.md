@@ -737,13 +737,16 @@ same 39,735 steps with the study's stream phase, like ExeaLM seed 0. One seed ea
 
 - Trained as long per parameter as the 9B would be, the control is ahead of ExeaLM on all three readings: on 17 of
   18 sets read alone (by 0.0019 on the mean) and on all 18 read as a stream (by 0.0017 to 0.0070, 0.0038 on the mean).
-  At 4.1 tokens per parameter ExeaLM was ahead by about 0.1% (section 19). Here the TONN layer costs about 0.4% on
-  long documents, the reading it was meant to win.
+  At 4.1 tokens per parameter ExeaLM was ahead by about 0.1% (section 19).
+- What this control measures: the TONN layer as a plain text layer. The study's models train without the memory
+  circuits (library search, board, weight edits), which are TONN circuits; an attention layer cannot hold them, so
+  the control has no counterpart to them and this test says nothing about them.
 - Both stay well ahead of the Qwen3.5-style model on long documents (0.898 and 0.902 against 0.944). That lead comes
   from the four attention changes and the stream training, which the control shares.
 - One seed each, and ExeaLM's seed 1 with the mixed stream phase (0.9559 alone, 0.9019 streamed) shows the stream
   recipe moves the numbers by as much as the gap. The 0.5B three-way run at 20 tokens per parameter (Saturday
-  morning) and the 0.25B control (3 seeds, being scored) decide whether the TONN layer stays in the 9B.
+  morning) and the 0.25B control (3 seeds, being scored) add two more readings. The 9B keeps its TONN layer, for its
+  memory circuits (`docs/decisions.md`, 27 November).
 
 ## 25. Benchmarks with the library at 0.1B, closed and open book (jobs 56094538, 56095280; `openbook/`)
 

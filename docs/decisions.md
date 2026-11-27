@@ -3,6 +3,16 @@
 What ExeaLM is trained as, decided by Avneh Bhatia, and why. Newest first. Change an entry only with a new dated
 entry that says what replaced it.
 
+## 27 November 2026 (2:30 p.m.): the 9B keeps its TONN layer
+
+Avneh's decision. The attention-only control (ExeaLM with its TONN layer replaced by attention) finished the long 0.1B
+run slightly ahead on plain text: 0.958 against 0.960 on windows alone and 0.898 against 0.902 on long documents, one
+seed each (results section 24). That control measures the TONN layer only as a plain text layer: the study's runs
+train without the memory circuits. The library search, the board and the weight edits are TONN circuits, and an
+attention layer cannot hold them, so dropping the TONN layer would drop them. The TONN layer stays in the 9B. The
+result stays in the record, stated with what it does and does not measure, and the next test of the TONN layer is
+with its memory circuits trained.
+
 ## 27 November 2026 (1:45 a.m.): a 0.5B three-way run at 20 tokens per parameter
 
 The finished long pair (results section 24) answers "does the lead hold when a small model trains as long as the 9B
