@@ -23,17 +23,22 @@ written entries and the human passages are searched apart and the model reads th
 the 36.8M human passages crowd the entries out (the answer in the top passage fell from 0.74 to 0.44 for v1's held-out
 questions); in two tiers the written tier keeps 0.72.
 
-Measured on Expanse (H100), the whole library:
+Measured on Expanse (H100), the whole library (36.8M human passages and v1), v1's held-out questions as queries:
 
-| Search | Index size | Latency per query | Throughput |
+| Search | Index size | Latency per query (median) | Same top passage as the full index |
 |---|---|---|---|
-| CPU, full index | 76 GB | 426 ms median | |
-| CPU, compact index (common tokens dropped, 8-bit weights, 3-byte numbers) | 24.6 GB | 349 ms | |
-| GPU, compact index | 24.6 GB of GPU memory | 3.5 to 7.5 ms | about 525 a second batched |
-| Tantivy (Rust engine, block-max WAND) on CPU, v1 | 0.01 GB | 0.42 ms, same top passage 99.2% of the time | |
+| CPU, full index | 76 GB | 426 ms | 1.00 |
+| CPU, compact index (common tokens dropped, 8-bit weights, 3-byte numbers) | 24.6 GB | 349 ms | 1.00 |
+| GPU, compact index, part by part | 24.6 GB of GPU memory | 3.9 ms (batched: about 525 a second) | 1.00 |
+| GPU, each token's 100,000 best passages (static pruning) | 20.0 GB | 6.2 ms (batched: about 714 a second) | 0.86 (top-5 overlap 0.89) |
+| GPU, each token's 20,000 best passages | 10.0 GB | 5.4 ms (batched: about 1,206 a second) | 0.60 |
+| **GPU, 100,000 best, all parts merged into one index** | **25.0 GB** | **2.0 ms** (p95 2.8) | 0.86 |
+| Tantivy (Rust engine, block-max WAND) on CPU, one 2.4M-passage part | 1.09 GB | 26.6 ms | 0.93 |
+| Tantivy on CPU, v1 | 0.01 GB | 0.42 ms | 0.99 |
 
-Being measured: static pruning (each token keeps its 20,000 or 100,000 best passages), which should cut both the
-index and the per-query work several times over; and Tantivy at 2.4M passages, for CPU servers and laptops.
+For a hosted model the merged GPU index is the path: a lookup costs about as much as generating a tenth of a token on
+the 9B. Tantivy's index is the smallest by far (about 17 GB for the whole pool, extrapolated from one part) and serves
+laptops and CPU servers.
 
 ## How it ships
 
