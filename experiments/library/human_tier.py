@@ -862,7 +862,11 @@ def _init(tok_path, index_dir, name, root, train_threshold):
     ctx = {}
     if SOURCES[name]["reader"] == "arxiv":                         # memory-mapped: shared by the workers
         import pyarrow as pa
-        t = pa.ipc.open_file(pa.memory_map(os.path.join(root, "manifest", "arxiv_meta.arrow"))).read_all()
+        path = os.path.join(root, "manifest", "arxiv_meta.arrow")
+        try:
+            t = pa.ipc.open_file(pa.memory_map(path)).read_all()
+        except OSError:                                             # an address-space limit (login nodes): read it
+            t = pa.ipc.open_file(pa.OSFile(path)).read_all()
         ctx["arxiv"] = t
         ctx["arxiv_keys"] = t.column("key").chunk(0).to_numpy()
     _G["ctx"] = ctx
@@ -895,9 +899,9 @@ def check(ids_list):
     flat = np.zeros(int(lens.sum() + n), dtype=np.uint16)                # each passage followed by end-of-text (0)
     for s, x in zip(starts, ids_list):
         flat[s:s + len(x)] = x
-    reasons, overlap = [None] * n, np.zeros(n)
+    reasons, overlap, where = [None] * n, np.zeros(n), {}
     if len(flat) < NGRAM:
-        return reasons, overlap
+        return reasons, overlap, where
     h = window_hashes(flat)
     z = np.concatenate([[0], np.cumsum(flat == 0, dtype=np.int64)])
     ok = np.flatnonzero((z[NGRAM:] - z[:-NGRAM]) == 0)
@@ -908,6 +912,7 @@ def check(ids_list):
         p = pid[w]
         if reasons[p] is None:
             reasons[p] = kind_name(int(_G["kind"][hit[w]]))
+            where[p] = tuple(int(x) for x in flat[ok[w]:ok[w] + NGRAM])     # the first window that matched
     sampled = (hv >> np.uint64(TRAIN_SAMPLE_SHIFT)) == 0
     sp = pid[sampled]
     found = member(_G["train"], hv[sampled]) >= 0
@@ -917,7 +922,7 @@ def check(ids_list):
     for p in range(n):
         if _G["src"].get("train_check", True) and reasons[p] is None and tot[p] >= 3 and overlap[p] >= _G["threshold"]:
             reasons[p] = "train_overlap"
-    return reasons, overlap
+    return reasons, overlap, where
 
 
 def process(batch):
@@ -951,22 +956,24 @@ def process(batch):
                 continue
             cands.append((row0 + i, k, title, part, info))
     if not cands:
-        return [], stats
+        return [], stats, Counter()
     texts = [f"{t}\n{b}" for _, _, t, b, _ in cands]
     ids = [e.ids for e in _G["tok"].encode_batch(texts)]
     keep = [j for j, x in enumerate(ids) if len(x) >= s.get("min_tokens", MIN_TOKENS)]
     stats["quality: short"] += len(ids) - len(keep)
-    reasons, overlap = check([ids[j] for j in keep])
-    out = []
-    for j, why, ov in zip(keep, reasons, overlap):
+    reasons, overlap, where = check([ids[j] for j in keep])
+    out, windows = [], Counter()
+    for q, (j, why, ov) in enumerate(zip(keep, reasons, overlap)):
         if why:
             stats[f"dropped: {why}"] += 1
             stats[f"dropped tokens: {why.split(':')[0]}"] += len(ids[j])
+            if q in where:
+                windows[(why, where[q])] += 1
             continue
         row, k, title, body, info = cands[j]
         out.append(dict(ids=np.asarray(ids[j], dtype=np.uint16), text=texts[j], hash=norm_hash(body), row=row, rank=rank,
                         chunk=k, title=title, info=info, overlap=round(float(ov), 3)))
-    return out, stats
+    return out, stats, windows
 
 
 def iter_records(path, start_row, columns=None, batch_bytes=4 << 20):
@@ -1065,7 +1072,7 @@ def run_source(args, name, target, seen, index_dir):
     os.makedirs(out)
     cur = start_cursor(args.root, args.part, name)
     tok_path = os.path.join(args.slice, "tokenizer", "tokenizer.json")
-    stats, lens, hashes = Counter(), [], []
+    stats, lens, hashes, windows = Counter(), [], [], Counter()
     tokens = passages = 0
     repo_counts = load_repo_counts(args.root, args.part, name) if s.get("repo_cap") else None
     added_repos, cur_doc, doc_ok = Counter(), None, True
@@ -1120,8 +1127,9 @@ def run_source(args, name, target, seen, index_dir):
                 end = dict(file=rank + 1, row=0)
                 feed()
                 continue
-            res, st = fut.result()
+            res, st, wins = fut.result()
             stats.update(st)
+            windows.update(wins)
             rel = os.path.relpath(path, os.path.join(args.root, "raw", o["repo"]))
             if not files_used or files_used[-1]["path"] != rel:
                 files_used.append(dict(path=rel, rank=rank, first_row=row0, docs=0))
@@ -1186,11 +1194,14 @@ def run_source(args, name, target, seen, index_dir):
     np.save(os.path.join(out, "hashes.npy"), np.array(hashes, dtype=np.int64))
     if repo_counts is not None:
         write_json(os.path.join(out, "repos.json"), dict(added_repos))
+    from tokenizers import Tokenizer
+    tk = Tokenizer.from_file(tok_path)
+    top = [dict(reason=why, window=tk.decode(list(w)), passages=c) for (why, w), c in windows.most_common(25)]
     done = dict(source=name, part=args.part, target=int(target), tokens=int(tokens), passages=passages,
                 start=cur, end=end, short=not stopped, exhausted=not stopped and not missing, missing=missing,
                 repos=len(added_repos) if repo_counts is not None else None,
                 files=files_used, repo=o["repo"], revision=o["revision"],
-                stats=dict(sorted(stats.items())), seconds=round(time.time() - t0))
+                stats=dict(sorted(stats.items())), top_windows=top, seconds=round(time.time() - t0))
     write_json(os.path.join(out, "done.json"), done)
     log(f"{name}: {tokens / 1e6:.0f}M tokens in {passages} passages ({time.time() - t0:.0f} s); "
         f"dropped {', '.join(f'{k[9:]} {v}' for k, v in sorted(stats.items()) if k.startswith('dropped: '))}")
@@ -1291,7 +1302,7 @@ def cmd_pack(args):
             per[n] = dict(group=SOURCES[n]["group"], passages=d["passages"], tokens=d["tokens"], target=d["target"],
                           short=d["short"], exhausted=d.get("exhausted"), repos=d.get("repos"), bytes=src_bytes, repo=d["repo"], revision=d["revision"],
                           start=d["start"], end=d["end"], files=[f["path"] for f in d["files"]],
-                          licenses=dict(licenses.most_common()), stats=d["stats"])
+                          licenses=dict(licenses.most_common()), stats=d["stats"], top_windows=d.get("top_windows"))
     offsets = np.concatenate(offsets).astype(np.int64)
     np.save(os.path.join(tmp, "offsets.npy"), offsets)
     tok_file = os.path.join(args.slice, "tokenizer", "tokenizer.json")
@@ -1309,7 +1320,7 @@ def cmd_pack(args):
                                                  benchmarks=index_meta.get("benchmarks"),
                                                  train_overlap_threshold=args.train_threshold,
                                                  train_sample=index_meta.get("train_sample")),
-                            sources={n: {k: v for k, v in p.items() if k not in ("stats", "files")}
+                            sources={n: {k: v for k, v in p.items() if k not in ("stats", "files", "top_windows")}
                                      for n, p in per.items()}))
     write_json(os.path.join(tmp, "meta.json"), meta)
     write_json(os.path.join(tmp, "stats.json"), per)
