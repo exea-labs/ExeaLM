@@ -1,10 +1,19 @@
-"""Evaluate a checkpoint through EleutherAI's harness (solo, no external memory).
+"""Evaluate a checkpoint through EleutherAI's harness: closed-book (no external memory), or open-book with the library.
 
 python -m exealm.eval.harness --ckpt runs/pretrain/model.pt --tokenizer tokenizer --tasks hellaswag --limit 20
 Install exealm[eval]. Use the exact tokenizer the checkpoint was trained with.
+
+Open-book (--library "written=data/library/v1/bm25;human=/path/bm25_pool_p100000"): for every request the question
+(the request's context, never its answer choices) is searched in each tier (experiments/library/index.py, BM25 over
+token ids), and the top passage of each tier, cut to --rag_tokens tokens, goes before the context with a blank line after
+each: the layout RAG post-training uses. Every answer choice of a question gets the same passages. Any model with the
+same tokenizer can be scored this way, so baselines get the same library. --stream_window W reads the input as windows of
+W tokens with each window's state carried into the next (how the models were trained to read long input, and how the
+study's long-document evaluation reads every model); 0 reads it in one pass.
 """
 import argparse
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 
@@ -14,7 +23,18 @@ from lm_eval.api.registry import register_model
 from lm_eval.utils import get_rolling_token_windows, handle_non_serializable, make_disjoint_window
 
 from ..data.tokenizer import load
+from ..memory import MemoryContext
 from ..train.pretrain import load_model, pick_device
+
+INDEX_PY = Path(__file__).resolve().parents[2] / 'experiments' / 'library' / 'index.py'
+
+
+def library_index_module():
+    """experiments/library/index.py, loaded by path (experiments/library is not a package)."""
+    spec = importlib.util.spec_from_file_location('library_index', INDEX_PY)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 
 def file_hash(path):
@@ -35,7 +55,8 @@ class ExeaLMHarness(TemplateLM):
     Generation is greedy and re-reads a bounded context at each step.
     """
 
-    def __init__(self, ckpt, tokenizer='tokenizer', device='cpu', max_length=1024, max_gen_toks=128):
+    def __init__(self, ckpt, tokenizer='tokenizer', device='cpu', max_length=1024, max_gen_toks=128, library=None,
+                 rag_tokens=384, rag_max_df=0.1, stream_window=0):
         super().__init__()
         if max_length < 1 or max_gen_toks < 0:
             raise ValueError('positive max_length and nonnegative max_gen_toks required')
@@ -56,6 +77,18 @@ class ExeaLMHarness(TemplateLM):
         tok_file = tok_file / 'tokenizer.json' if tok_file.is_dir() else tok_file
         self.tokenizer_hash = file_hash(tok_file)
         self.checkpoint_hash = file_hash(ckpt)
+        self.stream_window = int(stream_window)
+        self.library, self.rag_tokens, self.rag_max_df = library, int(rag_tokens), float(rag_max_df)
+        self.tiers, self._rag_cache = {}, {}
+        if library:
+            ix = library_index_module()
+            for part in library.split(';'):
+                name, paths = part.split('=', 1)
+                self.tiers[name] = ix.Index(paths.split('+'))
+                if self.device.type == 'cuda':
+                    self.tiers[name].to(self.device)
+            self._sep = self.tok_encode('\n\n')
+            self._skip = (self._eot, *self._sep)
 
     @property
     def eot_token_id(self):
@@ -72,8 +105,34 @@ class ExeaLMHarness(TemplateLM):
         return self.tokenizer.decode(tokens, skip_special_tokens=False)
 
     def get_model_info(self):
+        memory = (f'library {self.library}: top passage of each tier, {self.rag_tokens} tokens each'
+                  if self.library else 'solo; no external datastore or board')
         return dict(checkpoint_sha256=self.checkpoint_hash, tokenizer_sha256=self.tokenizer_hash,
-                    max_length=self.max_length, evaluation_memory='solo; no external datastore or board')
+                    max_length=self.max_length, evaluation_memory=memory, stream_window=self.stream_window)
+
+    def with_library(self, context_ids):
+        """The context with each tier's top passage for it before it (searched once per context)."""
+        if not self.tiers or not context_ids:
+            return context_ids
+        key = tuple(context_ids)
+        if key not in self._rag_cache:
+            head = [self._eot]
+            for idx in self.tiers.values():
+                find = idx.search_gpu if self.device.type == 'cuda' else idx.search
+                d, _ = find(context_ids, k=1, max_df=self.rag_max_df, skip=self._skip)
+                if len(d):
+                    head += idx.passage(int(d[0]))[:self.rag_tokens] + self._sep
+            self._rag_cache[key] = head
+        return self._rag_cache[key] + list(context_ids)
+
+    def forward_logits(self, inputs):
+        """Logits for a (1, T) input: one pass, or windows of stream_window tokens with the state carried."""
+        if not self.stream_window or inputs.shape[1] <= self.stream_window:
+            return self.model(inputs)[0]
+        state, out = {}, []
+        for s in range(0, inputs.shape[1], self.stream_window):
+            out.append(self.model(inputs[:, s:s + self.stream_window], MemoryContext(stream=state))[0])
+        return torch.cat(out, dim=1)
 
     def loglikelihood(self, requests, disable_tqdm=False):
         encoded = []
@@ -88,6 +147,8 @@ class ExeaLMHarness(TemplateLM):
                     continuation_ids = continuation_ids[1:]
             else:
                 context_ids, continuation_ids = self._encode_pair(context, continuation)
+            if self.tiers and context:
+                context_ids = self.with_library(context_ids)
             encoded.append(((context, continuation), context_ids, continuation_ids))
         return self._loglikelihood_tokens(encoded)
 
@@ -101,7 +162,7 @@ class ExeaLMHarness(TemplateLM):
             targets = continuation[start:start + self.max_length]
             joined = (context + continuation[:start] + targets)[-(self.max_length + 1):]
             inputs = torch.tensor([joined[:-1]], device=self.device, dtype=torch.long)
-            logits = self.model(inputs)[0][0, -len(targets):].float()
+            logits = self.forward_logits(inputs)[0, -len(targets):].float()
             target = torch.tensor(targets, device=self.device, dtype=torch.long)
             total += float(logits.log_softmax(-1).gather(1, target[:, None]).sum())
             greedy = greedy and bool((logits.argmax(-1) == target).all())
@@ -145,11 +206,13 @@ class ExeaLMHarness(TemplateLM):
             if kwargs:
                 raise ValueError(f'unsupported generation options: {sorted(kwargs)}')
             prefix = self.tok_encode(prompt) or [self.eot_token_id]
+            if self.tiers:
+                prefix = self.with_library(prefix)
             generated, decoded = [], ''
             for _ in range(0 if '' in until else limit):
                 tokens = (prefix + generated)[-self.max_length:]
                 idx = torch.tensor([tokens], device=self.device, dtype=torch.long)
-                nxt = int(self.model(idx)[0][0, -1].argmax())
+                nxt = int(self.forward_logits(idx)[0, -1].argmax())
                 if nxt == self.eot_token_id:
                     break
                 generated.append(nxt)
@@ -164,9 +227,10 @@ class ExeaLMHarness(TemplateLM):
 
 
 def evaluate_checkpoint(ckpt, tokenizer, tasks, limit=None, include_path=None, max_length=1024, max_gen_toks=128,
-                        device='cpu'):
+                        device='cpu', library=None, rag_tokens=384, stream_window=0):
     """Run harness tasks on one checkpoint and return the harness's result dict (used by main and by eval/auto.py)."""
-    model = ExeaLMHarness(ckpt, tokenizer, device, max_length, max_gen_toks)
+    model = ExeaLMHarness(ckpt, tokenizer, device, max_length, max_gen_toks, library=library, rag_tokens=rag_tokens,
+                          stream_window=stream_window)
     from lm_eval import simple_evaluate
     from lm_eval.tasks import TaskManager
     manager = TaskManager(include_path=include_path) if include_path else None
@@ -184,6 +248,11 @@ def main(argv=None):
     parser.add_argument('--max_length', type=int, default=1024)
     parser.add_argument('--max_gen_toks', type=int, default=128)
     parser.add_argument('--device', default='cpu')
+    parser.add_argument('--library', default=None, help='open-book: "name=index[+index];name=index", e.g. '
+                                                        '"written=data/library/v1/bm25;human=/path/bm25_pool_p100000"')
+    parser.add_argument('--rag_tokens', type=int, default=384, help='tokens kept of each retrieved passage')
+    parser.add_argument('--stream_window', type=int, default=0, help='read the input as windows of this many tokens '
+                                                                     'with the state carried (0: one pass)')
     parser.add_argument('--threads', type=int, default=4)
     parser.add_argument('--out', default=None, help='new JSON results file')
     args = parser.parse_args(argv)
@@ -193,7 +262,8 @@ def main(argv=None):
         parser.error('--out must be a new file')
     torch.set_num_threads(args.threads)
     result = evaluate_checkpoint(args.ckpt, args.tokenizer, args.tasks.split(','), args.limit, args.include_path,
-                                 args.max_length, args.max_gen_toks, args.device)
+                                 args.max_length, args.max_gen_toks, args.device, args.library, args.rag_tokens,
+                                 args.stream_window)
     encoded = json.dumps(result, default=handle_non_serializable, indent=2, ensure_ascii=False)
     if args.out:
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)

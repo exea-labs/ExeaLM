@@ -166,3 +166,45 @@ def test_module_cli_writes_results_with_callable_task_metadata(adapter, tmp_path
     saved = json.loads(output.read_text(encoding="utf-8"))
     assert saved['results']['exealm_cli_fixture']['acc,none'] in (0., 1.)
     assert 'identity' in saved['configs']['exealm_cli_fixture']['process_docs']
+
+
+def write_pack(folder, docs, vocab):
+    """A TokenShards pack of token-id documents, each ended by <|endoftext|> (id 0 here)."""
+    import numpy as np
+    folder.mkdir(parents=True, exist_ok=True)
+    toks, offsets = [], []
+    for d in docs:
+        offsets.append(len(toks))
+        toks += list(d) + [0]
+    np.array(toks, dtype=np.uint16).tofile(folder / 'tokens.bin')
+    np.save(folder / 'offsets.npy', np.array(offsets, dtype=np.int64))
+    (folder / 'meta.json').write_text(json.dumps(dict(dtype='uint16', vocab_size=vocab, n_tokens=len(toks),
+                                                      n_docs=len(docs), bytes_per_token=1.0, eot_id=0)))
+    return str(folder)
+
+
+def test_open_book_puts_each_tiers_top_passage_before_the_question(adapter, tmp_path):
+    """--library: the passage sharing the question's rare tokens goes first, cut to rag_tokens, with a blank line;
+    the same passages for every answer choice, and every model with the tokenizer can be scored this way."""
+    from exealm.eval.harness import library_index_module
+    ix = library_index_module()
+    q = adapter.tok_encode('hello world')
+    other = [t for t in range(3, 40) if t not in q][:6]
+    written = write_pack(tmp_path / 'written', [other, q + other[:2], other[::-1]], adapter.model.cfg.vocab_size)
+    ix.main(['build', written, '--out', str(tmp_path / 'w_idx')])
+    adapter.library = f'written={tmp_path / "w_idx"}'
+    adapter.tiers = {'written': ix.Index(str(tmp_path / 'w_idx'))}
+    adapter._sep, adapter.rag_tokens, adapter.rag_max_df = adapter.tok_encode('\n\n'), 3, 1.0
+    adapter._skip = (adapter.eot_token_id, *adapter._sep)
+    got = adapter.with_library(q)
+    assert got == [adapter.eot_token_id] + (q + other[:2])[:3] + adapter._sep + q
+    assert adapter.with_library(q) is not got and adapter.with_library(q) == got          # cached, same passages
+    assert 'library written=' in adapter.get_model_info()['evaluation_memory']
+
+
+def test_stream_window_reads_long_input_in_windows(adapter):
+    adapter.stream_window = 4
+    x = torch.tensor([adapter.tok_encode('a b c hello world a b c')[:10]])
+    assert adapter.forward_logits(x).shape == adapter.model(x)[0].shape
+    adapter.stream_window = 0
+    assert torch.equal(adapter.forward_logits(x), adapter.model(x)[0])
