@@ -45,10 +45,14 @@ GXX=$(module load gcc/10.2.0 > /dev/null 2>&1; which g++)
 # Appended, not prepended: TileLang (DeepSeek-V4's attention kernels) passes its own -ccbin, and nvcc keeps the last
 export NVCC_APPEND_FLAGS="-ccbin $GXX -DCCCL_DISABLE_CTK_COMPATIBILITY_CHECK"
 export CXX="$GXX" CC="$(dirname "$GXX")/gcc" PATH="$(dirname "$GXX"):$PATH"   # host-side builds too
-# Kernels built at startup link -lcudart, and the wheels ship only libcudart.so.13: a folder with the plain name. The
-# sampler is vLLM's own rather than FlashInfer's, which would be built here at startup too.
-LINK=$WORK/cudalink && mkdir -p "$LINK" && ln -sf "$CU/lib/libcudart.so.13" "$LINK/libcudart.so"
-export LIBRARY_PATH="$LINK:$CU/lib:${LIBRARY_PATH:-}" VLLM_USE_FLASHINFER_SAMPLER=0
+# Kernels built at startup link -lcudart, -lnvrtc, -lnccl, -lnvshmem_device..., and the wheels ship only versioned
+# files (libnvrtc.so.13): a folder with every one under its plain name, CUDA 13's last so they win. The node's own
+# libcuda.so is in /usr/lib64. The sampler is vLLM's own rather than FlashInfer's, which would be built here too.
+LINK=$WORK/cudalink && mkdir -p "$LINK"
+for f in "$(dirname "$CU")"/*/lib/lib*.so.* "$CU"/lib/lib*.so.*; do
+  [ -f "$f" ] && b=$(basename "$f") && ln -sf "$f" "$LINK/${b%%.so*}.so"
+done
+export LIBRARY_PATH="$LINK:$CU/lib:$(dirname "$CU")/nvshmem/lib:${LIBRARY_PATH:-}" VLLM_USE_FLASHINFER_SAMPLER=0
 [ -x "$CUDA_HOME/bin/nvcc" ] && [[ $GXX == *gcc-10* ]] || { echo "no CUDA toolkit or no GCC 10 ($CUDA_HOME, $GXX)"; exit 1; }
 B="python experiments/library/build.py"
 step() { echo "== $(date '+%F %T') $*"; }
