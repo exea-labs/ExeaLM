@@ -47,7 +47,10 @@ def cmd_build(a):
     t0 = time.time()
     for d in range(n):
         a0, e = int(lib.offsets[d]), int(ends[d]) - 1                  # without the final <|endoftext|>
-        writer.add_document(tantivy.Document(t=words(lib.tokens[a0:e]), id=d + a.base))
+        doc = tantivy.Document()
+        doc.add_text("t", words(lib.tokens[a0:e]))
+        doc.add_unsigned("id", d + a.base)                  # explicitly unsigned: a Python int alone becomes i64
+        writer.add_document(doc)
         if d and d % 500_000 == 0:
             print(f"{d:,} of {n:,} passages, {time.time() - t0:.0f}s", flush=True)
     writer.commit()

@@ -132,36 +132,62 @@ class Part:
             self._gpu = (torch.from_numpy(d.astype(np.int32)).to(dev), torch.from_numpy(w.astype(np.float16)).to(dev))
         return self
 
-    def gpu_lists(self, spans):
-        """Passage numbers (int64) and float32 weights of the postings in spans, on the part's GPU."""
-        import torch
+    def batch_spans(self, qs, max_df):
+        """(starts, lengths, query numbers) of the posting lists of every query's tokens, in numpy, without a Python loop
+        over tokens: the per-token lookups were most of a GPU search's time."""
+        if not qs:
+            z = np.zeros(0, dtype=np.int64)
+            return z, z, z
+        tok = np.concatenate([np.asarray(q, dtype=np.int64) for q in qs])
+        qid = np.repeat(np.arange(len(qs), dtype=np.int64), [len(q) for q in qs])
+        ok = (tok >= 0) & (tok < len(self.df))
+        tok, qid = tok[ok], qid[ok]
+        df = self.df[tok]
+        ok = (df > 0) & (df <= max_df * self.n)
+        tok, qid = tok[ok], qid[ok]
+        st = np.asarray(self.ptr[tok], dtype=np.int64)
+        ln = np.asarray(self.ptr[tok + 1], dtype=np.int64) - st
+        ok = ln > 0
+        return st[ok], ln[ok], qid[ok]
+
+    def gather(self, idx):
+        """Passage numbers (int64) and float32 weights of the postings at idx, on the part's GPU."""
         doc, w = self._gpu
         if self.compact:
-            b = torch.cat([doc[a:e] for a, e in spans]).long()
-            return b[:, 0] | (b[:, 1] << 8) | (b[:, 2] << 16), torch.cat([w[a:e] for a, e in spans]).float() * self.scale
-        return torch.cat([doc[a:e] for a, e in spans]).long(), torch.cat([w[a:e] for a, e in spans]).float()
+            b = doc[idx].long()
+            return b[:, 0] | (b[:, 1] << 8) | (b[:, 2] << 16), w[idx].float() * self.scale
+        return doc[idx].long(), w[idx].float()
 
-    def spans(self, q, max_df):
-        q = [t for t in q if 0 <= t < len(self.df) and 0 < self.df[t] <= max_df * self.n]
-        return [(int(self.ptr[t]), int(self.ptr[t + 1])) for t in q if self.ptr[t + 1] > self.ptr[t]]
-
-    def top_gpu_batch(self, qs, max_df, k):
-        """(local passage numbers, scores), each (len(qs), k), for several queries at once: their postings are added
-        into one (queries x passages) score table, a row per query."""
+    def top_gpu_batch(self, qs, max_df, k, budget=150_000_000):
+        """(local passage numbers, scores), each (len(qs), k), for several queries at once. Every posting of every
+        query is gathered with one index (repeat_interleave over the lists' starts) and added into a (queries x
+        passages) score table; queries go in groups of at most `budget` postings, to bound GPU memory."""
         import torch
         dev = self._gpu[0].device
-        ds, ws, rows = [], [], []
-        for i, q in enumerate(qs):
-            sp = self.spans(q, max_df)
-            if sp:
-                d, w = self.gpu_lists(sp)
-                ds.append(d + i * self.n)
-                ws.append(w)
-        s = torch.zeros(len(qs) * self.n, device=dev, dtype=torch.float32)
-        if ds:
-            s.index_add_(0, torch.cat(ds), torch.cat(ws))
-        v, i = torch.topk(s.view(len(qs), self.n), min(k, self.n), dim=1)
-        return i.cpu().numpy(), v.cpu().numpy()
+        st, ln, qid = self.batch_spans(qs, max_df)
+        per_q = np.bincount(qid, weights=ln, minlength=len(qs))
+        out_i = np.zeros((len(qs), min(k, self.n)), dtype=np.int64)
+        out_v = np.zeros((len(qs), min(k, self.n)), dtype=np.float32)
+        g0 = 0
+        while g0 < len(qs):
+            g1, total = g0, 0
+            while g1 < len(qs) and (g1 == g0 or total + per_q[g1] <= budget):
+                total += per_q[g1]
+                g1 += 1
+            sel = (qid >= g0) & (qid < g1)
+            s = torch.zeros((g1 - g0) * self.n, device=dev, dtype=torch.float32)
+            T = int(ln[sel].sum())
+            if T:
+                st_t, ln_t = torch.from_numpy(st[sel]).to(dev), torch.from_numpy(ln[sel]).to(dev)
+                q_t = torch.from_numpy(qid[sel] - g0).to(dev)
+                first = torch.cumsum(ln_t, 0) - ln_t                    # where each list starts in the gathered run
+                idx = torch.repeat_interleave(st_t - first, ln_t, output_size=T) + torch.arange(T, device=dev)
+                d, w = self.gather(idx)
+                s.index_add_(0, torch.repeat_interleave(q_t, ln_t, output_size=T) * self.n + d, w)
+            v, i = torch.topk(s.view(g1 - g0, self.n), min(k, self.n), dim=1)
+            out_i[g0:g1], out_v[g0:g1] = i.cpu().numpy(), v.cpu().numpy()
+            g0 = g1
+        return out_i, out_v
 
     def passage(self, d):
         """The token ids of this part's passage d (its own numbering), without its <|endoftext|>."""
@@ -189,14 +215,9 @@ class Part:
 
     def top_gpu(self, q, max_df, k):
         """(local passage numbers, scores) of this part's top k for one query, on the GPU the part was moved to."""
-        import torch
-        sp = self.spans(q, max_df)
-        if not sp:
-            return None
-        d, w = self.gpu_lists(sp)
-        s = torch.zeros(self.n, device=d.device, dtype=torch.float32).index_add_(0, d, w)
-        v, i = torch.topk(s, min(k, self.n))
-        return i.cpu().numpy(), v.cpu().numpy()
+        i, v = self.top_gpu_batch([q], max_df, k)
+        keep = v[0] > 0
+        return (i[0][keep], v[0][keep]) if keep.any() else None
 
 
 class Index:
