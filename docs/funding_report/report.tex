@@ -91,7 +91,7 @@ We plan to release the weights, the code, the data and the library, each under i
 
 \paragraph{What is not shown yet.}
 Our largest finished models have 0.5B parameters, and the 3B pair is due to finish on the evening of 29 November 2026.
-On windows read alone, ExeaLM's lead shrinks with size, from 2.8\% at 0.1B to 0.6\% at 0.5B (1 seed at 0.5B).
+On windows read alone, ExeaLM's lead shrinks with size, from 2.8\% at 0.1B to 0.6\% at 0.5B, and with training length, to 0.6\% at 0.1B trained for 110 tokens per parameter (2 seeds). On long documents read as a stream it is 3.4\% to 5.3\% at every size and length tested.
 The library results are from 0.1B models only.
 With no library, the released Qwen3.5-9B-Base is far ahead of our 0.25B model (0.674 against 1.011 bits per byte, seed 0).
 So the 9B claim is for the model with its library, and every benchmark will be reported with and without the library.
@@ -190,16 +190,23 @@ The 3B ExeaLM switches to the mixed stream phase of Section~3 before its own str
 The control that a reviewer asks for first is ExeaLM with attention in place of its TONN layer, trained the same way.
 It matches ExeaLM within 0.1\% at 0.1B (3 seeds, Section~3).
 So the lead in Table~\ref{tab:main} belongs to the attention changes and the streams, which the Qwen3.5-style model does not have.
+Trained longer, the control is ahead: at step 24,000 of the long 0.1B run, before either stream phase, it scores 0.932 against ExeaLM's 0.936 on the in-run check (one seed, still training).
+Whether the 9B keeps its TONN layer waits on that run and on the 0.5B run below.
 
 \paragraph{Learning per token.}
 A second measure counts how many more training steps the Qwen3.5-style model needs to match ExeaLM's in-run score.
-The long 0.1B pair trains on 10.4B tokens, about 110 per parameter, close to the 9B run's 108.
-At step 27,500 of 39,735, before ExeaLM's stream phase, the Qwen3.5-style model needed 1.19 times ExeaLM's steps (\sect{12} summary, one seed).
-That multiplier peaked at 1.41 and was falling.
-Within 500 steps of the switch to streams at step 31,788, ExeaLM's in-run lead fell from 0.009 to 0.002 bits per byte (\texttt{docs/decisions.md}, 26 November).
-That run keeps the old stream phase, and the second seed uses the mixed one.
+The long 0.1B pair trains on 10.4B tokens, about 110 per parameter, close to the 9B run's 108, with two seeds of each model (\sect{25}).
+Through step 20,000 of 39,735 the multiplier rose in both seeds, from 1.18 and 1.21 at step 5,000 to 1.34 and 1.41 at step 20,000.
+Later matches fall inside the Qwen3.5-style model's own learning-rate decay, where the measure no longer compares like with like.
+At the end, neither finished Qwen3.5-style run reaches ExeaLM's final score.
 
-\pendbox{Long pair at about 110 tokens per parameter, final scores of both seeds (\texttt{exealm\_100m\_111x\_s0}, \texttt{\_s1} and their Qwen3.5-style pairs). It shows whether the lead holds at the 9B run's token ratio.}
+Finished, ExeaLM is ahead in both seeds on every reading: 0.958 against 0.963 bits per byte on windows alone (0.6\%), and 0.902 against 0.946 on long documents read as a stream (4.7\%).
+Training 27 times longer shrinks the lead on windows alone at 0.1B, from 0.034 to 0.006, as size does.
+The long-document lead shrinks less, from 0.061 to 0.044.
+Seed 0 kept the old stream phase, and its in-run lead fell from 0.009 to 0.001 within 1,500 steps of the switch at step 31,788.
+Seed 1 switched to the mixed stream phase before its own began and kept 0.006 to 0.008 through the decay; on windows alone it ends 0.008 ahead, against 0.003 for seed 0.
+
+A 0.5B run at 20 tokens per parameter (ExeaLM, its attention-only control and the Qwen3.5-style model; 10B tokens each, one seed) started on 27 November. It tests whether these trends hold at a larger size.
 
 \paragraph{Benchmarks at 0.5B.}
 On 7 zero-shot benchmarks (no worked examples in the prompt), the two 0.5B models are level at 0.424 and 0.422 mean accuracy (\sect{20}, one seed).
@@ -283,7 +290,7 @@ Tier & What & Size & State \\
 \midrule
 Written & entries by DeepSeek-V4-Flash on 150,000 research and 50,000 code topics, each with questions and adaptation tasks & about 200M tokens & writing on Expanse (job 56091937) \\
 Written & v1: 18,545 entries by Qwen3-30B-A3B & 8M tokens & done, public \\
-Human & passages of real text: 44\% research, 28\% Wikipedia, 21\% code from about 2M repositories, 4\% Q\&A, 2\% math (rounded) & 25.0B tokens, 36.8M passages & done \\
+Human & passages of real text: 44\% research, 28\% Wikipedia, 21\% code from about 2M repositories, 4\% Q\&A, 2\% math (rounded) & 25.0B tokens, 36.8M passages & done; 18.8B tokens public \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -292,8 +299,9 @@ The plan searches the two tiers apart, because in one ranking the human passages
 In one ranking the answer was in the top passage for 0.44 of v1's held-out questions, against 0.74 for the entries alone. Searched apart, the written tier keeps 0.72.
 
 The search has been timed over the whole library on one H100.
-A compressed index (common tokens dropped, 8-bit weights) answers a query in 3.5 to 7.5 ms, and about 525 queries a second in batches.
-It takes 24.6 GB, against 76 GB for the full index.
+A compressed index (common tokens dropped, 8-bit weights, each token's 100,000 best passages kept) merged into one table on the GPU answers a query in 2.0 ms (median; 2.8 ms at the 95th percentile) over all 36.8M passages.
+It takes 25.0 GB of GPU memory, against 76 GB for the full index on the CPU, which answers in 426 ms.
+Its top passage is the full index's for 86\% of queries.
 For comparison, \texttt{docs/library.md} estimates 50 to 100 ms for the 9B to read a prompt.
 
 \pendbox{Library v2 test. Library post-training on v2 for ExeaLM and the Qwen3.5-style model, with the same recipe, at 0.5B and on a mid-run 3B checkpoint (\texttt{docs/library.md}). Fills the 0.5B and 3B rows of a table like Table~\ref{tab:library}.}
@@ -423,9 +431,10 @@ Training and evaluation come to about 5,500 GPU-hours, and the teacher data to a
 \subsection{The library ships with the model}
 
 The plan in \texttt{docs/library.md} is one repository with the weights, the library text with each passage's source and license, and the search index.
+The shipped library holds only text that can be redistributed: the written tier and the 18.8B public tokens of the human tier, published on 27 November with a license and URL on every passage. Left out are arXiv papers under arXiv's default license (5.2B tokens) and Stack Exchange (1.0B), whose license needs each post's author.
 A core edition of about 10 GB fits a laptop, and the full edition holds the 25B-token human tier.
 The planned interface is one call that loads the model and its library, and one that searches both tiers and answers.
-In the planned hosted service, one GPU holds the compressed index and serves every copy of the 9B behind a router.
+In the planned hosted service, one GPU holds the merged index and serves every copy of the 9B behind a router; at 2.0 ms a query, search adds a few percent to the 9B's 50 to 100 ms of reading a prompt.
 
 \subsection{Memory layers, the next research bet}
 
@@ -477,7 +486,8 @@ When & Milestone & Paid by \\
 \midrule
 27 November 2026 & Library v2 research entries due; code entries and tasks follow & NAIRR \\
 29 November 2026 & 3B pair finishes in the evening; its scores and benchmarks fill Table~\ref{tab:main} & NAIRR \\
-Next, in the allocation & Library v2 post-training at 0.5B and 3B for both models; the long pair's second seed; a scaling fit and 9B projection; the small post-training tests & NAIRR \\
+28 November 2026 & The 0.5B run at 20 tokens per parameter finishes (ExeaLM, its attention-only control, the Qwen3.5-style model) & NAIRR \\
+Next, in the allocation & Library v2 post-training at 0.5B and 3B for both models; a scaling fit and 9B projection; the small post-training tests & NAIRR \\
 Month 1 & The 1T-token data build; weight splitting in the training code; a speed test at full cluster size & Tier 1 \\
 Months 2 and 3 & Pretraining, about 25 days on 128 H100s & Tier 1 \\
 Month 4 & Post-training stages A to E & Tier 1 \\
@@ -498,8 +508,8 @@ Risk & Response \\
 \midrule
 The 9B trains on far fewer tokens than Qwen3.5-9B (\sect{18}, \texttt{docs/post\_training.md}). With no library, Qwen3.5-9B-Base is far ahead of our 0.25B model (0.674 against 1.011, seed 0). &
 The claim is the system with its library. Every benchmark is reported with and without the library, side by side. Every baseline gets the same library and search. Passages that share a 13-token window with any of 14 benchmarks are never given (10 of v1's 18,545 entries). Results with the library are claimed only on benchmarks checked this way. \\
-The lead shrinks with size, and on the long 0.1B run it narrowed to 0.002 once the old stream phase began. &
-The mixed stream phase recovers about half its cost on windows alone. The 3B result, the long pair's two seeds and a scaling fit all come before any 9B run. \\
+The lead on windows alone shrinks with size and with training length: 0.6\% at 0.5B, and 0.6\% at 0.1B trained to 110 tokens per parameter (2 seeds). &
+The long-document lead holds better (4.7\% on the long pair), and the mixed stream phase kept the long pair's second seed 0.008 ahead on windows alone. The 3B result, the 0.5B run at 20 tokens per parameter and a scaling fit all come before any 9B run. \\
 ExeaLM's edge in using the library is measured only at 0.1B. &
 The library v2 test at 0.5B and 3B, both models with the same recipe. If the edge fades, the library still helps any model and ships as an open data set. \\
 The library's questions come from the model that wrote its entries, which suits retrieval. &
@@ -562,8 +572,10 @@ Long documents at 0.1B (1.096, 1.157); without streams 1.132, lead 0.025 & \sect
 0.5B (0.933, 0.939; 0.873, 0.904; 3.4\%); in-run lead 0.011 to 0.004 & \sect{20}, \texttt{text\_500m.json}, \texttt{stream8\_500m.json} \\
 0.5B benchmarks (0.424, 0.422) & \sect{20}, \texttt{bench\_exealm\_500m\_4.1x\_s0.json}, \texttt{bench\_qwen\_500m\_4.1x\_s0.json} \\
 3B in-run check at step 7,500 (0.850, 0.866, 0.016); 0.034 at step 3,000; finish on the evening of 29 November & \sect{23} \\
-Step multiplier 1.19 at step 27,500 of 39,735; peak 1.41 & \sect{12} summary row \\
-Long run's lead 0.009 to 0.002 after the switch; switch at step 31,788; second seed mixed from 28,400 & \texttt{docs/decisions.md}, 26 November (7 p.m.) \\
+Long pair, 2 seeds: step multiplier 1.18, 1.21 at step 5,000 and 1.34, 1.41 at step 20,000; finals 0.958, 0.963 and 0.902, 0.946; in-run leads 0.009 to 0.001 (seed 0) and 0.006 to 0.008 (seed 1) & \sect{25}, \texttt{text\_111x.json}, \texttt{stream8\_111x.json} \\
+Switch at step 31,788; second seed mixed from 28,400 & \texttt{docs/decisions.md}, 26 November (7 p.m.) \\
+Attention-only control at step 24,000 of the long run (0.932, 0.936) & \texttt{runs/strongllama\_100m\_111x\_s0/log.jsonl}, in-run check \\
+0.5B run at 20 tokens per parameter & \texttt{docs/decisions.md}, 27 November (1:45 a.m.) \\
 Long pair tokens (10.4B) and tokens per parameter (109.6, 108.9) & \texttt{docs/budget.md}, ``The runs'' \\
 16,384 tokens (1.0726, 1.1339, 0.9471, 0.9956; 5.4\%, 4.9\%; 0.043 to 0.048) & \sect{19}, \texttt{stream32\_100m.json} \\
 Library v1 (1.645, 0.590, 0.405; 1.633, 0.704, 0.529; 64\%, 21\%, 19\%; 0.110 to 0.116) & \sect{11}, \texttt{library\_rag\_100m\_s0.jsonl} to \texttt{\_s2} \\
