@@ -196,3 +196,29 @@ def test_end_to_end_parts_continue_and_the_pack_is_clean(world):
     assert d1["start"] == d0["end"] and d1["end"] == dict(file=2, row=0)
     assert not d0["exhausted"] and d1["exhausted"]
     assert not os.path.exists(os.path.join(world["root"], "human_pool", "part_002"))
+
+
+def test_a_source_resumes_from_the_last_part_that_read_it(tmp_path):
+    """Part 1 reads only English Wikipedia, which runs out there; part 2 then starts Japanese Wikipedia where part 0
+    left it (the bug: it looked for Japanese Wikipedia in part 1 and stopped)."""
+    root = str(tmp_path)
+    names = ["wikipedia_en", "wikipedia_ja"]
+
+    def done(part, name, tokens, end, exhausted=False):
+        ht.write_json(os.path.join(ht.part_dir(root, part), name, "done.json"),
+                      dict(tokens=tokens, end=end, exhausted=exhausted))
+
+    ht.write_json(os.path.join(ht.part_dir(root, 0), "targets.json"), {n: ht.SOURCES[n]["v0"] for n in names})
+    done(0, "wikipedia_en", int(ht.SOURCES["wikipedia_en"]["v0"]), dict(file=3, row=10))
+    done(0, "wikipedia_ja", int(ht.SOURCES["wikipedia_ja"]["v0"]), dict(file=1, row=7))
+    assert ht.part_targets(root, 1, 3e9, names) == {"wikipedia_en": 3e9}
+    assert ht.start_cursor(root, 1, "wikipedia_en") == dict(file=3, row=10)
+    done(1, "wikipedia_en", int(1.7e9), dict(file=41, row=0), exhausted=True)
+    t = ht.part_targets(root, 2, 3e9, names)
+    assert list(t) == ["wikipedia_ja"] and t["wikipedia_ja"] == ht.SOURCES["wikipedia_ja"]["full"] - \
+        ht.SOURCES["wikipedia_ja"]["v0"]
+    assert ht.start_cursor(root, 2, "wikipedia_ja") == dict(file=1, row=7)     # from part 0, past part 1
+    assert ht.start_cursor(root, 2, "arxiv") == dict(file=0, row=0)            # never read yet
+    ht.write_json(os.path.join(ht.part_dir(root, 3), "targets.json"), {"wikipedia_ja": 1})
+    with pytest.raises(SystemExit):                                           # part 3 lists it but never finished
+        ht.start_cursor(root, 4, "wikipedia_ja")

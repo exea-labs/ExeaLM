@@ -1106,13 +1106,16 @@ def part_dir(root, part):
 
 
 def start_cursor(root, part, name):
-    """Where this part reads `name` from: where the previous part stopped."""
-    if part == 0:
-        return dict(file=0, row=0)
-    prev = read_json(os.path.join(part_dir(root, part - 1), name, "done.json"))
-    if prev is None:
-        raise SystemExit(f"part {part - 1} has not finished {name}: run it first")
-    return prev["end"]
+    """Where this part reads `name` from: where the last earlier part that read it stopped (parts after 0 hold only
+    some sources), or the start."""
+    for p in range(part - 1, -1, -1):
+        targets = read_json(os.path.join(part_dir(root, p), "targets.json"))
+        done = read_json(os.path.join(part_dir(root, p), name, "done.json"))
+        if done is not None:
+            return done["end"]
+        if targets is not None and name in targets:
+            raise SystemExit(f"part {p} has not finished {name}: run it first")
+    return dict(file=0, row=0)
 
 
 def seen_hashes(root, part):
@@ -1431,11 +1434,30 @@ def cmd_pack(args):
     return meta
 
 
+def packed(args):
+    """The part's pack, if it is there and holds every source of the part as finished (so a rerun skips it)."""
+    work = part_dir(args.root, args.part)
+    out = args.out or os.path.join(args.root, "human_pool", f"part_{args.part:03d}")
+    meta = read_json(os.path.join(out, "meta.json"))
+    targets = read_json(os.path.join(work, "targets.json"))
+    if meta is None or not targets:
+        return None
+    dones = [read_json(os.path.join(work, n, "done.json")) for n in targets]
+    if any(d is None for d in dones) or sum(d["tokens"] for d in dones) != meta["n_tokens"]:
+        return None
+    return meta
+
+
 def cmd_run(args):
     """index, then passages and pack for --part; with --until_done, the parts after it too, until every source has
-    reached its full target or run out of documents."""
+    reached its full target or run out of documents. Parts already packed are skipped."""
     cmd_index(args)
     while True:
+        meta = packed(args)
+        if meta is not None:
+            log(f"part {args.part}: packed already ({meta['n_tokens'] / 1e9:.3f}B tokens)")
+            args.part += 1
+            continue
         if not cmd_passages(args):
             break
         meta = cmd_pack(args)
