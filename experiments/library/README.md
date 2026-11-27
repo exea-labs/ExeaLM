@@ -129,3 +129,42 @@ Details: rows are laid out so the prefix ends on a chunk boundary (RG searches o
 the query). The datastore is every chunk of every entry unless `--datastore_chunks` asks for a sample like
 pretraining's. Library document numbers are shifted past the scored rows', so a scored row never hides an entry from
 the search. `--split train` scores the training items, `--limit` a few items of each set.
+
+## The human tier (library v2): real text, packed
+
+`human_tier.py` builds the other half of library v2: passages of real, human-written text, cut from the recipe's
+sources (files the training slice did not read, so no ExeaLM model trained on them), all of English and Japanese
+Wikipedia, KAKEN grant summaries, and arXiv weighted to machine learning. Every passage starts with its document's
+title on its own line, like a v1 entry, and is about 512 to 1024 tokens, cut at paragraph boundaries. No difficulty
+scoring: the pool is the tier. The script's docstring has the details (sources, shares, filters, licenses).
+
+```bash
+# login node: network only (listings, downloads, benchmark exports); everything lands on Lustre
+M="python -m experiments.library.human_tier"
+$M plan                      # file orders, without the slice's files (Wikipedia: all files)
+$M fetch --scope v0          # part 0's files and the arXiv metadata; --scope full for the whole pool
+$M benchmarks                # the decontamination benchmarks (LiveCodeBench is exported in the job)
+
+# Slurm: index (clean windows, a sample of the slice's training windows), then part 0 = human_pool_v0
+sbatch -N 1 --ntasks-per-node=1 -A fli100 -p nairr-gpu-shared --gpus=h100:1 --cpus-per-task=16 --mem=128G \
+    -t 4:00:00 -J exealm-humanpool -o logs/expanse/%x-%j.out --wrap "source experiments/expanse/env.sh && \
+    HF_HUB_OFFLINE=1 $M run --part 0 --workers 15"
+# then the parts after it, each about 3B tokens, until every source reaches its full target or runs out
+sbatch ... --wrap "source experiments/expanse/env.sh && $M run --part 1 --until_done --workers 15"
+$M stats                     # tokens, passages and drops per part and source
+```
+
+Output, under `/expanse/lustre/projects/fli100/abhatia7/library_v2`:
+
+| Path | What |
+|---|---|
+| `human_pool/part_000`, `part_001`, ... | one TokenShards pack each (`tokens.bin`, `offsets.npy`, `meta.json`), `index.jsonl` (one line per passage, in pack order: id, source, file, doc in the file, title, license, URL, tokens, bytes, estimated overlap with the slice's training text), `passages.jsonl.gz` (the text), `stats.json` (per source: tokens, files, licenses, and every drop by reason) |
+| `human_pool_v0` | part 0, about 2B tokens from every source |
+| `manifest/` | pinned commits, file orders, arXiv metadata; `work/part_N/<source>/done.json` says where each part stopped |
+
+Part 0 takes a fixed amount from every source; later parts take what each source has left of its full target, in
+order: Wikipedia, arXiv, code, then the rest, so the most useful text is packed first. Every passage that shares a
+13-token window with a val split of the slice, with library v1's held-out `qa/` and `tasks/` packs, or with a
+decontamination benchmark is dropped (Wikipedia included); so is one whose sampled windows are mostly in the slice's
+training data (another file's copy of the same text; not applied to Wikipedia), an exact duplicate, a code file past
+its repository's first 10, and text that is mostly not text.
