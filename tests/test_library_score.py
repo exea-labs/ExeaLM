@@ -206,3 +206,24 @@ def test_rag_pack_puts_the_searched_entry_before_every_item(setup):
         a = int(pack.offsets[i])
         want = sc.entry_ids(lib, int(picked[i])) + list(sep) + items[i]["prefix"] + items[i]["target"] + [eot]
         assert [int(t) for t in pack.tokens[a:a + len(want)]] == want
+
+
+def test_deepseek_v4_chat_mode_prompt():
+    """DeepSeek-V4's tokenizer has no chat template; build.chat_text writes its chat mode as its encoding README does."""
+    class Tok:
+        chat_template = None
+
+        def get_vocab(self):
+            return {"<｜User｜>": 1, "<｜Assistant｜>": 2}
+    msgs = [dict(role="system", content="Be brief."), dict(role="user", content="What is 2+2?")]
+    assert lb.chat_text(Tok(), msgs) == "<｜begin▁of▁sentence｜>Be brief.<｜User｜>What is 2+2?<｜Assistant｜></think>"
+    two = msgs + [dict(role="assistant", content="4."), dict(role="user", content="And 3+3?")]
+    assert lb.chat_text(Tok(), two).endswith("</think>4.<｜end▁of▁sentence｜><｜User｜>And 3+3?<｜Assistant｜></think>")
+
+    class Plain:
+        chat_template = None
+
+        def get_vocab(self):
+            return {"a": 1}
+    with pytest.raises(SystemExit):
+        lb.chat_text(Plain(), msgs)

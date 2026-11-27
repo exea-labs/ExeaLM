@@ -777,10 +777,35 @@ def check_task(task, entry, max_copy=0.5, max_leak=24):
 # Generators. Use an open-weight model whose licence allows training on its outputs (Qwen3 models are Apache-2.0).
 # Closed APIs' terms of use generally forbid using their outputs to train other models, so they are not an option.
 
+DSV4 = dict(bos="<｜begin▁of▁sentence｜>", eos="<｜end▁of▁sentence｜>", user="<｜User｜>", assistant="<｜Assistant｜>",
+            no_think="</think>")
+
+
+def deepseek_v4_chat(messages):
+    """DeepSeek-V4's prompt in chat mode (no reasoning), as the model's encoding/encoding_dsv4.py and its README write
+    it: BOS, the system text, then <｜User｜>message<｜Assistant｜></think> and each earlier answer ended by EOS. V4
+    ships this as Python rather than a chat template in its tokenizer."""
+    p = DSV4["bos"]
+    for m in messages:
+        if m["role"] == "system":
+            p += m["content"] or ""
+        elif m["role"] == "user":
+            p += DSV4["user"] + (m["content"] or "") + DSV4["assistant"] + DSV4["no_think"]
+        elif m["role"] == "assistant":
+            p += (m["content"] or "") + DSV4["eos"]
+        else:
+            raise ValueError(f"role {m['role']!r} is not used here")
+    return p
+
+
 def chat_text(tok, messages):
     """The prompt as the model's own chat template writes it. enable_thinking=False turns off Qwen3's thinking mode (an
-    entry needs no long reasoning, and thinking tokens cost time); templates without that switch ignore it."""
+    entry needs no long reasoning, and thinking tokens cost time); templates without that switch ignore it. DeepSeek-V4
+    has no template in its tokenizer: its chat mode is written by deepseek_v4_chat."""
     if not getattr(tok, "chat_template", None):
+        vocab = tok.get_vocab() if hasattr(tok, "get_vocab") else {}
+        if DSV4["user"] in vocab and DSV4["assistant"] in vocab:
+            return deepseek_v4_chat(messages)
         raise SystemExit("the model's tokenizer has no chat template: use an instruct (chat) model")
     return tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True, enable_thinking=False)
 
