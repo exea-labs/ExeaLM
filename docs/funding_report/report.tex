@@ -188,7 +188,7 @@ At 3B the in-run lead has narrowed from 0.034 at step 3,000 to 0.016 at step 7,5
 The 3B ExeaLM switches to the mixed stream phase of Section~3 before its own stream phase, which costs less on windows alone.
 
 The control that a reviewer asks for first is ExeaLM with attention in place of its TONN layer, trained the same way.
-It matches ExeaLM within 0.1\% at 0.1B (3 seeds, Section~3).
+At 4.1 tokens per parameter ExeaLM is ahead of it by about 0.1\% at 0.1B and at 0.25B (3 seeds each): at 0.25B by 1.0141 against 1.0154 on windows alone, in all 3 seeds, and by 0.9545 against 0.9556 on long documents (\sect{19}).
 So the lead in Table~\ref{tab:main} belongs to the attention changes and the streams, which the Qwen3.5-style model does not have.
 Trained longer, the control is ahead. At 110 tokens per parameter, the 9B's ratio, it beats ExeaLM on every reading: 0.958 against 0.960 on windows alone and 0.898 against 0.902 on long documents, on all 18 sets (one seed each, \sect{24}).
 Both are far ahead of the Qwen3.5-style model on long documents (0.944), so the recipe's lead holds.

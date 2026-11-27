@@ -569,7 +569,19 @@ with the same recipe, streams included; 3 seeds each at 0.1B:
 
 The TONN layer is ahead by about 0.1%. What puts ExeaLM ahead of the Qwen3.5 design is the rest of it: the attention
 changes (gate, QK-norm, value residual, XSA) and the streams. At 111 tokens per parameter the control is ahead of
-ExeaLM on every reading (section 24). The 0.25B control (3 seeds) is being scored (eval job 56104720).
+ExeaLM on every reading (section 24).
+
+At 0.25B, 3 seeds each (eval job 56104720, `text_250m_strong.json`, `stream8_250m_strong.json`), ExeaLM is ahead of
+the control on all three readings:
+
+| 0.25B, 3 seeds | ExeaLM | Attention in its place | Where ExeaLM is ahead |
+|---|---|---|---|
+| Windows of 512 alone, 18 sets | **1.0141** | 1.0154 | 3 of 3 seeds; 48 of 54 set-and-seed pairs |
+| 4,096-token documents as a stream, windows 1-7 | **0.9545** | 0.9556 | 2 of 3 seeds; 37 of 54 pairs |
+| The same documents, every window alone | **1.0481** | 1.0493 | 3 of 3 seeds |
+
+The TONN layer's lead over attention in its place is about 0.1% at both 0.1B and 0.25B at 4.1 tokens per
+parameter, larger at 0.25B on windows alone (0.0013 against 0.0008). These runs train without the memory circuits.
 
 ## 20. The 0.5B pair, seed 0 (job 56090409, `text_500m.json`, `stream8_500m.json`)
 

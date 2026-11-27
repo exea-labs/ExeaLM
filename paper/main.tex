@@ -393,7 +393,7 @@ Table~\ref{tab:parts} collects the controls at 0.1B, each with 3 seeds.
 
 \begin{table}[t]
 \centering\small
-\caption{Controls at 0.1B, 3 seeds each, bits per byte (lower is better) on windows alone and on documents of 4,096 and 16,384 tokens read as a stream. Every ExeaLM variant trains with the same data, steps and learning rate, and the control with the same data, steps and recipe. Dashes mark readings not run.}
+\caption{Controls at 0.1B and 0.25B, 3 seeds each, bits per byte (lower is better) on windows alone and on documents of 4,096 and 16,384 tokens read as a stream. Every ExeaLM variant trains with the same data, steps and learning rate, and the control with the same data, steps and recipe. Dashes mark readings not run.}
 \label{tab:parts}
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}l ccc@{}}
@@ -409,7 +409,8 @@ ExeaLM, weights averaged & 1.2085 & 1.1523 & -- \\
 Qwen3.5-style & 1.1904 & 1.1566 & 1.1339 \\
 Plain Llama & 1.1995 & 1.584 & -- \\
 \midrule
-Attention-only control, 0.25B & \multicolumn{3}{l}{\pend{3 seeds, training}} \\
+ExeaLM, 0.25B & \textbf{1.0141} & \textbf{0.9545} & -- \\
+Attention-only control, 0.25B & 1.0154 & 0.9556 & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -423,12 +424,13 @@ The difference is about 0.1\%, and on windows alone it is inside the spread of E
 The control leads the Qwen3.5-style model by nearly as much as ExeaLM does.
 The lead over the Qwen3.5-style model therefore comes from ExeaLM's attention layers, with their four changes.
 On long documents the stream phase adds to it, and on windows alone it takes some away (Section~\ref{sec:recipe}).
+At 0.25B, ExeaLM is ahead of the attention-only control on every reading, 3 seeds each: 1.0141 against 1.0154 on windows alone (all 3 seeds, 48 of 54 set-and-seed pairs) and 0.9545 against 0.9556 on 4,096-token documents (2 of 3 seeds; \sect{19}).
 The control has attention where the Qwen3.5-style model has Gated DeltaNet, so these runs do not separate the four changes from that swap.
 Section~\ref{sec:layout} gives a short test that does.
 
 In longer training the control is ahead of ExeaLM.
 Trained to 110 tokens per parameter, it beats ExeaLM on all three readings, by 0.4\% on long documents (Section~\ref{sec:length}, one seed each).
-\pendbox{Attention-only control at 0.25B (3 seeds, eval job 56104720), all three readings. The 0.5B three-way run at 20 tokens per parameter is in the box of Section~\ref{sec:length}.}
+\pendbox{The 0.5B three-way run at 20 tokens per parameter is in the box of Section~\ref{sec:length}.}
 
 \subsection{Layouts and attention changes, at 49 million tokens}
 \label{sec:layout}
