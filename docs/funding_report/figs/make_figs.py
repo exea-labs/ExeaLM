@@ -63,11 +63,11 @@ def pct(ours, theirs):
 alone = {
     0.1: (load("text_100m.json")["means"]["exealm_midstream_100m_4.1x"], load("text_100m.json")["means"]["qwen_100m_4.1x"]),
     0.25: (load("text_250m.json")["means"]["exealm_250m_4.1x"], load("text_250m.json")["means"]["qwen_250m_4.1x"]),
-    0.5: (load("text_500m.json")["means"]["exealm_500m_4.1x"], load("text_500m.json")["means"]["qwen_500m_4.1x"]),
+    0.5: (load("text_500m_all.json")["means"]["exealm_500m_4.1x"], load("text_500m_all.json")["means"]["qwen_500m_4.1x"]),
 }
 s100 = stream_means("stream8_100m.json")
 s250 = stream_means("stream8_250m.json")
-s500 = stream_means("stream8_500m.json")
+s500 = stream_means("stream8_500m_all.json")
 longdoc = {
     0.1: (s100["exealm_midstream_100m_4.1x"]["mean"], s100["qwen_100m_4.1x"]["mean"]),
     0.25: (s250["exealm_250m_4.1x"]["mean"], s250["qwen_250m_4.1x"]["mean"]),
