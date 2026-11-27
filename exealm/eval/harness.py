@@ -56,7 +56,7 @@ class ExeaLMHarness(TemplateLM):
     """
 
     def __init__(self, ckpt, tokenizer='tokenizer', device='cpu', max_length=1024, max_gen_toks=128, library=None,
-                 rag_tokens=384, rag_max_df=0.1, stream_window=0):
+                 rag_tokens=384, rag_max_df=0.1, stream_window=0, rag_exclude=None):
         super().__init__()
         if max_length < 1 or max_gen_toks < 0:
             raise ValueError('positive max_length and nonnegative max_gen_toks required')
@@ -80,6 +80,11 @@ class ExeaLMHarness(TemplateLM):
         self.stream_window = int(stream_window)
         self.library, self.rag_tokens, self.rag_max_df = library, int(rag_tokens), float(rag_max_df)
         self.tiers, self._rag_cache = {}, {}
+        self.exclude = {}               # tier -> passage numbers never given (they share text with a benchmark)
+        for part in (rag_exclude or '').split(';'):
+            if part:
+                name, path = part.split('=', 1)
+                self.exclude[name] = {int(k) for k in json.load(open(path))['drop']}
         if library:
             ix = library_index_module()
             for part in library.split(';'):
@@ -105,7 +110,8 @@ class ExeaLMHarness(TemplateLM):
         return self.tokenizer.decode(tokens, skip_special_tokens=False)
 
     def get_model_info(self):
-        memory = (f'library {self.library}: top passage of each tier, {self.rag_tokens} tokens each'
+        memory = (f'library {self.library}: top passage of each tier, {self.rag_tokens} tokens each; excluded for '
+                  f'benchmark overlap: {dict((k, len(v)) for k, v in self.exclude.items())}'
                   if self.library else 'solo; no external datastore or board')
         return dict(checkpoint_sha256=self.checkpoint_hash, tokenizer_sha256=self.tokenizer_hash,
                     max_length=self.max_length, evaluation_memory=memory, stream_window=self.stream_window)
@@ -117,11 +123,12 @@ class ExeaLMHarness(TemplateLM):
         key = tuple(context_ids)
         if key not in self._rag_cache:
             head = [self._eot]
-            for idx in self.tiers.values():
+            for name, idx in self.tiers.items():
                 find = idx.search_gpu if self.device.type == 'cuda' else idx.search
-                d, _ = find(context_ids, k=1, max_df=self.rag_max_df, skip=self._skip)
-                if len(d):
-                    head += idx.passage(int(d[0]))[:self.rag_tokens] + self._sep
+                d, _ = find(context_ids, k=5, max_df=self.rag_max_df, skip=self._skip)
+                d = [int(x) for x in d if int(x) not in self.exclude.get(name, ())]
+                if d:
+                    head += idx.passage(d[0])[:self.rag_tokens] + self._sep
             self._rag_cache[key] = head
         return self._rag_cache[key] + list(context_ids)
 
@@ -227,10 +234,10 @@ class ExeaLMHarness(TemplateLM):
 
 
 def evaluate_checkpoint(ckpt, tokenizer, tasks, limit=None, include_path=None, max_length=1024, max_gen_toks=128,
-                        device='cpu', library=None, rag_tokens=384, stream_window=0):
+                        device='cpu', library=None, rag_tokens=384, stream_window=0, rag_exclude=None):
     """Run harness tasks on one checkpoint and return the harness's result dict (used by main and by eval/auto.py)."""
     model = ExeaLMHarness(ckpt, tokenizer, device, max_length, max_gen_toks, library=library, rag_tokens=rag_tokens,
-                          stream_window=stream_window)
+                          stream_window=stream_window, rag_exclude=rag_exclude)
     from lm_eval import simple_evaluate
     from lm_eval.tasks import TaskManager
     manager = TaskManager(include_path=include_path) if include_path else None
@@ -251,6 +258,8 @@ def main(argv=None):
     parser.add_argument('--library', default=None, help='open-book: "name=index[+index];name=index", e.g. '
                                                         '"written=data/library/v1/bm25;human=/path/bm25_pool_p100000"')
     parser.add_argument('--rag_tokens', type=int, default=384, help='tokens kept of each retrieved passage')
+    parser.add_argument('--rag_exclude', default=None, help='"tier=bench_hits.json;..." (experiments/library/'
+                                                            'bench_check.py): passages never given, the next best instead')
     parser.add_argument('--stream_window', type=int, default=0, help='read the input as windows of this many tokens '
                                                                      'with the state carried (0: one pass)')
     parser.add_argument('--threads', type=int, default=4)
@@ -263,7 +272,7 @@ def main(argv=None):
     torch.set_num_threads(args.threads)
     result = evaluate_checkpoint(args.ckpt, args.tokenizer, args.tasks.split(','), args.limit, args.include_path,
                                  args.max_length, args.max_gen_toks, args.device, args.library, args.rag_tokens,
-                                 args.stream_window)
+                                 args.stream_window, args.rag_exclude)
     encoded = json.dumps(result, default=handle_non_serializable, indent=2, ensure_ascii=False)
     if args.out:
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)

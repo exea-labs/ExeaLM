@@ -208,3 +208,20 @@ def test_stream_window_reads_long_input_in_windows(adapter):
     assert adapter.forward_logits(x).shape == adapter.model(x)[0].shape
     adapter.stream_window = 0
     assert torch.equal(adapter.forward_logits(x), adapter.model(x)[0])
+
+
+def test_open_book_skips_passages_that_overlap_a_benchmark(adapter, tmp_path):
+    from exealm.eval.harness import library_index_module
+    ix = library_index_module()
+    q = adapter.tok_encode('hello world')
+    other = [t for t in range(3, 40) if t not in q][:6]
+    written = write_pack(tmp_path / 'written', [q + other[:2], q + other[2:4]], adapter.model.cfg.vocab_size)
+    ix.main(['build', written, '--out', str(tmp_path / 'w_idx')])
+    adapter.tiers = {'written': ix.Index(str(tmp_path / 'w_idx'))}
+    adapter._sep, adapter.rag_tokens, adapter.rag_max_df = adapter.tok_encode('\n\n'), 50, 1.0
+    adapter._skip, adapter._rag_cache = (adapter.eot_token_id, *adapter._sep), {}
+    first = adapter.with_library(q)
+    top = 0 if first[1:1 + len(q) + 2] == q + other[:2] else 1
+    adapter.exclude, adapter._rag_cache = {'written': {top}}, {}
+    second = adapter.with_library(q)
+    assert second != first and second[1:1 + len(q)] == q                   # the other entry instead
