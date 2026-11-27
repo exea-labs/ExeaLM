@@ -16,8 +16,8 @@ tags:
 Exea Labs trains ExeaLM, a language model for research and code, on H100 hours from the National AI Research Resource
 (NAIRR) Pilot at the San Diego Supercomputer Center (Expanse). This repository holds the study's finished models:
 ExeaLM and the baselines it is compared with, trained on the same data, the same tokens and the same recipe, so the
-comparison is between designs. They are small research models (0.1B to 0.25B parameters so far, 0.4B to 10B training
-tokens), base language models that continue text. They are not chat assistants and not tuned for safety.
+comparison is between designs. They are small research models (0.1B to 0.5B parameters so far, 0.4B to 10B training
+tokens; the 3B pair is training), base language models that continue text. They are not chat assistants and not tuned for safety.
 
 Code, data recipe, every result and its caveats: [github.com/exea-labs/ExeaLM](https://github.com/exea-labs/ExeaLM/tree/nairr)
 (`results/expanse/README.md`). Training data: [exea-labs/exealm-pretrain](https://huggingface.co/datasets/exea-labs/exealm-pretrain).
@@ -29,6 +29,8 @@ Research notes: [blog.exealabs.org](https://blog.exealabs.org).
 |---|---|
 | `exealm_` | ExeaLM: attention layers with a gate, QK-norm, value residual and XSA, and one TONN layer (searched signal-processing circuits) at the middle layer; reads streams of four windows in the last 20% of training |
 | `exealm_nostream_` | the same, trained without the stream phase |
+| `exealm_mix20_`, `exealm_mix40_` | the stream phase mixing streams with windows alone, over the last 20% or 40% (the recipe from 26 November on) |
+| `distill_` | 30% of the pretraining tokens written by Qwen3.5-9B-Base (a test: no gain at 0.1B) |
 | `strongllama_` | the same attention everywhere and no TONN layer: what the TONN layer adds |
 | `qwen_` | our build of the Qwen3.5 design: Gated DeltaNet in 3 of every 4 layers, gated attention with QK-norm in the 4th |
 | `llama_` | a plain Llama |
