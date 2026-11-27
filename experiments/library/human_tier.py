@@ -1,11 +1,12 @@
-"""The human tier of library v2: real human-written passages that no ExeaLM model has trained on.
+"""The human tier of library v2: real human-written passages, packed for the library's search.
 
 Library v1 (data/library/v1) is written by a model. The human tier is cut from the recipe's own sources
-(experiments/recipe/exealm_recipe_v2.json), from files that the training slice did not read: the slice
-(data/exealm-pretrain/slice-30b-r2) took the first 10% of each source in a fixed shuffled file order, and its
-sources.json lists every file it read, so a file not in that list was never trained on. Each document is cut into
-passages of about 512 to 1024 tokens at paragraph boundaries; each passage starts with its document's title on its own
-line, as v1 entries start with their topic. The result is packed like exealm.data.pack output (TokenShards reads it).
+(experiments/recipe/exealm_recipe_v2.json) plus Wikipedia, KAKEN and arXiv metadata. Except for Wikipedia, only files
+that the training slice did not read are used: the slice (data/exealm-pretrain/slice-30b-r2) took the first 10% of each
+source in a fixed shuffled file order, and its sources.json lists every file it read. Wikipedia is taken whole (en and
+ja), the slice's articles included, as a reference library. Each document is cut into passages of about 512 to 1024
+tokens at paragraph boundaries; each passage starts with its document's title on its own line, as v1 entries start
+with their topic. The result is packed like exealm.data.pack output (TokenShards reads it).
 
 Steps (each skips what is done, so a step that dies is simply run again):
 
@@ -13,38 +14,43 @@ Steps (each skips what is done, so a step that dies is simply run again):
                 (<root>/manifest/order/<source>.json). The proof-pile-2 folders of allenai/olmo-mix-1124 (arxiv/,
                 algebraic-stack/, open-web-math/) each mix arXiv papers, OpenWebMath pages and code, so their files
                 are sorted by what their first document is, and every document is checked again when read
-    fetch       download the files the next parts need (login node: network only), and the arXiv metadata
-                (titles and per-paper licenses). Plain HTTP with resume and size/SHA-256 checks
+    fetch       download the files part 0 (--scope v0) or the whole pool (--scope full) needs, and the arXiv metadata
+                (titles, licenses, categories); login node, plain HTTP with resume and size/SHA-256 checks
     benchmarks  export the decontamination benchmarks (login node: network only), as the slice's build did
     index       window hashes of everything that must stay clean: every val split of the slice, library v1's held-out
                 qa/ and tasks/ packs, and the benchmarks; plus a 1-in-32 sample of the slice's training windows
-    passages    one part of the pool: each source from where the previous part stopped, until its share of
-                --part_tokens. Documents go through a light quality filter, passages through exact deduplication
-                and the 13-gram checks (Slurm job: this is the CPU work)
+    passages    one part of the pool, each source from where the previous part stopped. Part 0 (human_pool_v0) takes
+                every source's v0 tokens (2B in all); later parts take --part_tokens each from what the sources have
+                left of their full targets, Wikipedia first, then arXiv, then code (ORDER). Slurm job: the CPU work
     pack        the part's TokenShards pack: tokens.bin, offsets.npy, meta.json, index.jsonl (one line per passage,
                 in pack order) and passages.jsonl.gz (the text), plus stats.json
-    run         index (if missing), passages and pack for one part
+    run         index (if missing), passages and pack for one part; --until_done: every part until the pool is full
 
-Parts: <root>/human_pool/part_000, part_001, ... each its own pack; part_000 is human_pool_v0.
+Parts: <root>/human_pool/part_000, part_001, ... each its own pack with its own index.jsonl; part_000 is
+<root>/human_pool_v0. The pool is all parts together.
 
 What is dropped, per passage (counts in each part's stats.json):
     val, heldout   any 13-token window equal to one in a val split of the slice / library v1's held-out packs
     bench:<name>   a benchmark window, with the slice's rule (experiments/data_mix: only problem statements of code
                    benchmarks; boilerplate windows found in 2+ items and windows with fewer than 3 words ignored)
     train_overlap  half or more of its sampled windows are in the slice's training data: the same text reached
-                   training through another source (pes2o and arXiv share papers, StackExchange and web copies, ...)
+                   training through another source (pes2o and arXiv share papers, StackExchange and web copies, ...).
+                   Not applied to Wikipedia
     duplicate      the same text (whitespace and case ignored) as an earlier passage of this or an earlier part
+    repo cap       code: a repository's files after its first CODE_REPO_CAP (breadth over a few big projects)
     quality        mostly non-text, base64-like blobs, minified lines, repeated lines, special-token strings, short
 
-Licenses: only redistributable ones. arXiv papers by their own license in the arXiv metadata (CC BY, CC BY-SA, CC0,
-public domain; the default arXiv licence and NC/ND licences are dropped). Code with a recorded repository license
-must be permissive (PERMISSIVE); StarCoder files without one come from The Stack v1.2's permissive set. Every passage
-keeps its license and source in index.jsonl.
+Licenses: only redistributable ones, recorded per passage in index.jsonl with the source file and URL. arXiv: all
+machine-learning papers (ML_CATS) and OTHER_ARXIV of the rest; a paper's own CC BY / BY-SA / CC0 license when it has
+one, else the collection's ODC-BY (allenai/olmo-mix-1124); papers under NC or ND licenses are dropped. Code with a
+recorded repository license must be permissive (PERMISSIVE); StarCoder files without one come from The Stack v1.2's
+permissive set.
 
     python -m experiments.library.human_tier plan
-    python -m experiments.library.human_tier fetch --upto_tokens 2e9
+    python -m experiments.library.human_tier fetch --scope v0           # then --scope full
     python -m experiments.library.human_tier benchmarks
-    python -m experiments.library.human_tier run --part 0 --part_tokens 2e9 --workers 16
+    python -m experiments.library.human_tier run --part 0 --workers 16  # human_pool_v0
+    python -m experiments.library.human_tier run --part 1 --until_done --workers 16
 """
 import argparse
 import fnmatch
@@ -91,43 +97,57 @@ PERMISSIVE = {"MIT", "MIT-0", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "BSD
               "Zlib", "BSL-1.0", "CC0-1.0", "Unlicense", "CC-BY-4.0", "CC-BY-3.0", "CC-BY-SA-4.0", "CC-BY-SA-3.0",
               "PSF-2.0", "Python-2.0", "PostgreSQL", "NCSA", "X11", "Unicode-DFS-2016"}
 
-# share: of each part's tokens. bpt: bytes of text per token (the slice's measured values; guesses for new sources).
-# yield: share of a file's text that ends up in passages (licenses, filters, short documents), for planning downloads.
+# bpt: bytes of text per token (the slice's measured values; guesses for new sources). yield: share of a file's text
+# that ends up in passages (licenses, filters, short documents), for planning downloads. v0: tokens in part 0 (2B in
+# all, every source). full: tokens of the whole pool; parts after 0 fill up to it in PRIORITY order. max_per_doc:
+# passages per document (wikipedia: all of every article). include_slice: the slice's own files are read too (the user
+# wants all of Wikipedia as reference; the val check still applies). train_check: drop passages whose text the slice
+# trained on through another file (off for Wikipedia, where that is expected). repo_cap: at most CODE_REPO_CAP files
+# per repository across all code sources and parts.
+WIKI = dict(group="reference", repo="wikimedia/wikipedia", reader="titled", license="CC-BY-SA-3.0", kind="prose",
+            yield_=0.8, columns=["id", "url", "title", "text"], include_slice=True, train_check=False,
+            max_per_doc=100000, min_tokens=32)
+CODE = dict(group="code", repo=OLMO, reader="code", lang="code", kind="code", repo_cap=True, max_per_doc=6)
 SOURCES = {
-    "pes2o": dict(group="research", repo="allenai/peS2o", patterns=["data/v2/train-*.json.gz"], reader="pes2o",
-                  license="ODC-BY", bpt=4.39, lang="en", kind="prose", share=0.26, yield_=0.9),
+    "wikipedia_en": dict(WIKI, patterns=["20231101.en/*.parquet"], bpt=3.89, lang="en", v0=0.50e9, full=7e9),
+    "wikipedia_ja": dict(WIKI, patterns=["20231101.ja/*.parquet"], bpt=4.02, lang="ja", kind="ja", v0=0.15e9,
+                         full=3e9),
     "arxiv": dict(group="research", repo=OLMO, patterns=PROOF_PILE, file_kind="arxiv", reader="arxiv", bpt=3.67,
-                  lang="en", kind="latex", share=0.10, yield_=0.15),
+                  lang="en", kind="latex", yield_=0.4, v0=0.35e9, full=6e9),
+    "research_python": dict(CODE, patterns=STARCODER, langs=PYTHON, sci=True, bpt=3.35, yield_=0.3, v0=0.15e9,
+                            full=1.5e9),
+    "starcoder": dict(CODE, patterns=STARCODER, langs_not=NOT_CODE | DOCS | PYTHON, bpt=3.16, yield_=0.35, v0=0.2e9,
+                      full=2.5e9),
+    "algebraic_stack": dict(CODE, patterns=PROOF_PILE, file_kind="code", bpt=2.68, yield_=0.5, v0=0.08e9, full=1e9),
+    "code_docs": dict(CODE, patterns=STARCODER, langs=DOCS, bpt=3.6, lang="en", kind="docs", yield_=0.4, v0=0.07e9,
+                      full=0.8e9),
+    "pes2o": dict(group="research", repo="allenai/peS2o", patterns=["data/v2/train-0001*-of-00020.json.gz"],
+                  reader="pes2o", license="ODC-BY", bpt=4.39, lang="en", kind="prose", yield_=0.8, v0=0.2e9,
+                  full=3e9),                                       # train-00010..19: s2orc, full text
+    "pes2o_abstracts": dict(group="research", repo="allenai/peS2o", patterns=["data/v2/train-0000*-of-00020.json.gz"],
+                            reader="pes2o", license="ODC-BY", bpt=4.39, lang="en", kind="prose", yield_=0.8,
+                            v0=0.05e9, full=1e9, min_tokens=64),   # train-00000..09: s2ag, title and abstract
     "kaken": dict(group="research", repo="hpprc/llmjp-kaken", patterns=["data/train-*.parquet"], reader="titled",
-                  license="CC-BY-4.0", bpt=4.8, lang="ja", kind="ja", share=0.04, yield_=0.8,
-                  columns=["id", "url", "title", "text"]),
-    "starcoder": dict(group="code", repo=OLMO, patterns=STARCODER, langs_not=NOT_CODE | DOCS | PYTHON, reader="code",
-                      bpt=3.16, lang="code", kind="code", share=0.15, yield_=0.7),
-    "research_python": dict(group="code", repo=OLMO, patterns=STARCODER, langs=PYTHON, reader="code", sci=True,
-                            bpt=3.35, lang="code", kind="code", share=0.08, yield_=0.35),
-    "algebraic_stack": dict(group="code", repo=OLMO, patterns=PROOF_PILE, file_kind="code", reader="code", bpt=2.68,
-                            lang="code", kind="code", share=0.06, yield_=0.7),
-    "code_docs": dict(group="code", repo=OLMO, patterns=STARCODER, langs=DOCS, reader="code", bpt=3.6, lang="en",
-                      kind="docs", share=0.06, yield_=0.6),
+                  license="CC-BY-4.0", bpt=4.8, lang="ja", kind="ja", yield_=0.8, columns=["id", "url", "title", "text"],
+                  v0=0.05e9, full=1.2e9, max_per_doc=8),
     "stackexchange": dict(group="qa", repo=DOLMINO, patterns=["data/stackexchange/*.json.gz"], reader="stackexchange",
-                          bpt=3.6, lang="en", kind="prose", share=0.10, yield_=0.85),
-    "wikipedia_en": dict(group="reference", repo=DOLMINO, patterns=["data/wiki/*.json.gz"], reader="first_line",
-                         license="CC-BY-SA", bpt=3.89, lang="en", kind="prose", share=0.07, yield_=0.75),
-    "wikipedia_ja": dict(group="reference", repo="wikimedia/wikipedia", patterns=["20231101.ja/*.parquet"],
-                         reader="titled", license="CC-BY-SA-3.0", bpt=4.02, lang="ja", kind="ja", share=0.03,
-                         yield_=0.7, columns=["id", "url", "title", "text"]),
+                          bpt=3.6, lang="en", kind="prose", yield_=0.85, v0=0.12e9, full=1.5e9, max_per_doc=8),
     "open_web_math": dict(group="math", repo=OLMO, patterns=PROOF_PILE, file_kind="web", reader="web",
-                          license="ODC-BY", bpt=3.67, lang="en", kind="latex", share=0.03, yield_=0.8),
+                          license="ODC-BY", bpt=3.67, lang="en", kind="latex", yield_=0.8, v0=0.05e9, full=0.5e9,
+                          max_per_doc=8),
     "megamath": dict(group="math", repo="IFM/MegaMath", patterns=["megamath-web/*.parquet"], reader="web",
-                     license="ODC-BY", bpt=3.81, lang="en", kind="latex", share=0.02, yield_=0.7,
-                     columns=["id", "url", "text"]),
+                     license="ODC-BY", bpt=3.81, lang="en", kind="latex", yield_=0.7, columns=["id", "url", "text"],
+                     v0=0.03e9, full=0.3e9, max_per_doc=8),
 }
-ORDER = list(SOURCES)
+ORDER = list(SOURCES)                   # also the priority: Wikipedia, then arXiv, then code, then the rest
 SPECIAL = ["<|endoftext|>", "<|pad|>", "<|im_start|>", "<|im_end|>", "<|system|>", "<|user|>", "<|assistant|>",
            "<|tool|>", "<|retrieved|>", "<|board|>"]            # exealm.data.tokenizer.SPECIAL (checked in the test)
 
 # passages, in estimated tokens (bytes / bpt); the packed counts are exact
 TARGET, MAX, UNIT, MERGE_MAX, MIN_TOKENS, MAX_PER_DOC = 768, 1024, 512, 1280, 128, 24
+CODE_REPO_CAP = 10                      # files per repository: many projects rather than a few big ones
+ML_CATS = {"cs.LG", "cs.CL", "cs.AI", "cs.CV", "cs.NE", "stat.ML"}
+OTHER_ARXIV = 0.3                       # share of the other arXiv papers kept (all machine-learning papers are)
 ALPHA_MIN = dict(prose=0.6, docs=0.45, latex=0.4, ja=0.5, code=0.3)    # letters among non-space characters
 BLOB = re.compile(r"[A-Za-z0-9+/=_\-]{256,}")
 BIB = re.compile(r"\\begin\{thebibliography\}|\\bibliography\{|\\section\*?\{\s*(References|Bibliography)\s*\}|"
@@ -249,7 +269,8 @@ def cmd_plan(args):
         if os.path.exists(out) and not args.replan:
             continue
         rev = revision(args.root, s["repo"], slice_revs)
-        files = [f for f in listing(s["repo"], rev, s["patterns"]) if f["path"] not in used.get(s["repo"], set())]
+        used_here = set() if s.get("include_slice") else used.get(s["repo"], set())
+        files = [f for f in listing(s["repo"], rev, s["patterns"]) if f["path"] not in used_here]
         if s.get("langs"):
             files = [f for f in files if starcoder_lang(f["path"]) in s["langs"]]
         if s.get("langs_not"):
@@ -261,7 +282,7 @@ def cmd_plan(args):
                     write_json(kinds_path, kinds)
             files = [f for f in files if kinds[f["path"]] == s["file_kind"]]
         random.Random(f"{SEED}:{name}").shuffle(files)
-        skipped = sorted(p for p in used.get(s["repo"], set()) if any(fnmatch.fnmatchcase(p, q) for q in s["patterns"]))
+        skipped = sorted(p for p in used_here if any(fnmatch.fnmatchcase(p, q) for q in s["patterns"]))
         write_json(out, dict(source=name, repo=s["repo"], revision=rev, patterns=s["patterns"], seed=SEED,
                              slice_files_left_out=skipped, files=files))
         log(f"plan {name}: {len(files)} files, {sum(f['size'] for f in files) / 1e9:.1f} GB "
@@ -293,10 +314,10 @@ def text_ratio(path):
     return 2.8 if path.endswith(".parquet") else 3.2
 
 
-def files_needed(root, name, upto_tokens):
-    """The prefix of the source's file order that should cover its share of `upto_tokens` pool tokens."""
+def files_needed(root, name, scope):
+    """The prefix of the source's file order that should cover its v0 or full target."""
     s, o = SOURCES[name], order(root, name)
-    need = s["share"] * upto_tokens * 1.3 / s["yield_"]
+    need = s[scope] * 1.3 / s["yield_"]
     out, have = [], 0.0
     for f in o["files"]:
         if have >= need:
@@ -309,7 +330,7 @@ def files_needed(root, name, upto_tokens):
 def cmd_fetch(args):
     jobs = []
     for name in args.sources or ORDER:
-        o, files, have = files_needed(args.root, name, args.upto_tokens)
+        o, files, have = files_needed(args.root, name, args.scope)
         log(f"fetch {name}: {len(files)} of {len(o['files'])} files, {sum(f['size'] for f in files) / 1e9:.1f} GB "
             f"(about {have / 1e9:.2f}B tokens of documents)")
         for f in files:
@@ -358,29 +379,53 @@ def arxiv_id_key(aid):
     return (aid or "").strip().replace("/", "").lower()
 
 
+def id_key(aid):
+    return int.from_bytes(hashlib.blake2b(arxiv_id_key(aid).encode(), digest_size=8).digest(), "little")
+
+
 def build_arxiv_meta(root):
-    """manifest/arxiv_meta.parquet: id, title and license of every arXiv paper whose license allows redistribution."""
-    out = os.path.join(root, "manifest", "arxiv_meta.parquet")
+    """manifest/arxiv_meta.arrow: key (hash of the id), title, license, categories of every arXiv paper, sorted by key,
+    as one Arrow IPC record batch that every worker memory-maps."""
+    out = os.path.join(root, "manifest", "arxiv_meta.arrow")
     if os.path.exists(out):
         return
     import pyarrow as pa
     import pyarrow.parquet as pq
     meta = read_json(os.path.join(root, "manifest", "arxiv_meta_files.json"))
-    ids, titles, lics, counts = [], [], [], Counter()
+    cols = dict(key=[], title=[], license=[], categories=[])
+    counts = Counter()
     for f in meta["files"]:
-        t = pq.read_table(raw_path(root, meta["repo"], f["path"]), columns=["id", "title", "license"])
-        for aid, title, lic in zip(*(t.column(c).to_pylist() for c in ("id", "title", "license"))):
-            name = arxiv_license(lic)
-            counts[name or (lic or "none")] += 1
-            if name and title:
-                ids.append(arxiv_id_key(aid))
-                titles.append(" ".join(title.split()))
-                lics.append(name)
-    pq.write_table(pa.table(dict(id=ids, title=titles, license=lics)), out + ".tmp", compression="zstd")
+        t = pq.read_table(raw_path(root, meta["repo"], f["path"]), columns=["id", "title", "license", "categories"])
+        for aid, title, lic, cats in zip(*(t.column(c).to_pylist() for c in ("id", "title", "license", "categories"))):
+            counts[arxiv_license(lic) or (lic or "none")] += 1
+            cols["key"].append(id_key(aid))
+            cols["title"].append(" ".join((title or "").split()))
+            cols["license"].append(lic or "")
+            cols["categories"].append(cats or "")
+    o = np.argsort(np.array(cols["key"], dtype=np.uint64), kind="stable")
+    table = pa.table({k: pa.array([v[i] for i in o], type=pa.uint64() if k == "key" else pa.large_string())
+                      for k, v in cols.items()})
+    with pa.OSFile(out + ".tmp", "wb") as sink, pa.ipc.new_file(sink, table.schema) as w:
+        w.write_table(table.combine_chunks(), max_chunksize=len(o) + 1)
     os.replace(out + ".tmp", out)
     write_json(os.path.join(root, "manifest", "arxiv_licenses.json"),
-               dict(revision=meta["revision"], kept=len(ids), counts=dict(counts.most_common())))
-    log(f"arXiv metadata: {len(ids)} of {sum(counts.values())} papers have a redistributable license")
+               dict(revision=meta["revision"], papers=len(o), counts=dict(counts.most_common())))
+    log(f"arXiv metadata: {len(o)} papers")
+
+
+def arxiv_paper_license(url):
+    """The license a passage records for an arXiv paper of the ODC-BY olmo-mix collection, or None to drop it: the
+    paper's own CC BY / BY-SA / CC0 / public domain license, else (arXiv's default licence, or none recorded) the
+    collection's ODC-BY. A paper under an NC or ND license is dropped."""
+    own = arxiv_license(url)
+    if own:
+        return own
+    u = (url or "").lower()
+    if "-nc" in u or "-nd" in u:
+        return None
+    what = "arXiv non-exclusive licence" if "nonexclusive" in u else ("arXiv assumed licence" if "assumed" in u
+                                                                       else "no license recorded")
+    return f"ODC-BY (allenai/olmo-mix-1124 arXiv; paper: {what})"
 
 
 def bench_work(root):
@@ -571,15 +616,35 @@ def read_arxiv(rec, s, ctx):
     if doc_kind(rec) != "arxiv":
         raise Skip("not an arXiv paper")
     aid = d.get("arxiv_id")
-    hit = ctx["arxiv"].get(arxiv_id_key(aid))
-    if hit is None:
-        raise Skip("arXiv license not CC BY/BY-SA/CC0/public domain")
-    title, lic = hit
+    key = id_key(aid)
+    keys = ctx["arxiv_keys"]
+    i = int(np.searchsorted(keys, np.uint64(key)))
+    if i >= len(keys) or int(keys[i]) != key:
+        raise Skip("arXiv paper not in the metadata")
+    t = ctx["arxiv"]
+    title, url_lic, cats = (t.column(c)[i].as_py() for c in ("title", "license", "categories"))
+    ml = bool(set((cats or "").split()) & ML_CATS)
+    if not ml and key % 1000 >= OTHER_ARXIV * 1000:
+        raise Skip("arXiv paper outside machine learning, not sampled")
+    lic = arxiv_paper_license(url_lic)
+    if lic is None:
+        raise Skip("arXiv paper under an NC or ND license")
     body = rec["text"]
     m = BIB.search(body)
     if m:
         body = body[:m.start()]
-    return title, body, dict(doc_key=aid, url=d.get("url") or f"https://arxiv.org/abs/{aid}", license=lic)
+    return title, body, dict(doc_key=aid, url=d.get("url") or f"https://arxiv.org/abs/{aid}", license=lic,
+                             subset=(cats or "").split(" ")[0], ml=ml)
+
+
+def url_title(url):
+    u = re.sub(r"^https?://(www\.)?", "", url or "")
+    host, _, path = u.partition("/")
+    segs = [x for x in re.split(r"[/?#&=]", path) if x]
+    last = re.sub(r"\.(html?|php|aspx?|jsp)$", "", segs[-1]) if segs else ""
+    last = re.sub(r"^\d+[-_]", "", last)
+    words_ = re.sub(r"[-_+]+", " ", last).strip()
+    return f"{words_} ({host})" if words_ else host
 
 
 def read_web(rec, s, ctx):
@@ -588,8 +653,11 @@ def read_web(rec, s, ctx):
     url = (rec.get("doc") or {}).get("url") if isinstance(rec.get("doc"), dict) else rec.get("url")
     text = rec["text"]
     title, body = first_line(text)
-    if len(title) > 200 or not title.strip("# "):
-        title, body = re.sub(r"^https?://(www\.)?", "", url or "")[:200], text
+    t = title.lstrip("#").strip()
+    heading = title.startswith("#") and 0 < len(t) <= 200
+    plain = 3 <= len(t) <= 150 and len(t.split()) >= 2 and not t.endswith((",", ":", ";")) and t[0] not in "•*-|>["
+    if not (heading or plain):
+        title, body = url_title(url), text
     return title, body, dict(doc_key=str(rec.get("id")), url=url, license=s["license"])
 
 
@@ -633,7 +701,7 @@ def read_code(rec, s, ctx):
         if not imported(text) & SCI_IMPORTS:
             raise Skip("Python not importing a scientific or ML library")
     title = f"{repo}/{path}" if repo else (path or "untitled")
-    return title, text, dict(doc_key=str(info.get("hexsha") or rec.get("id")), license=license_,
+    return title, text, dict(doc_key=str(info.get("hexsha") or rec.get("id")), license=license_, repo=repo,
                              url=f"https://github.com/{repo}" if repo else None,
                              code_lang=info.get("lang") or info.get("extension") or info.get("ext"))
 
@@ -765,11 +833,11 @@ def _init(tok_path, index_dir, name, root, train_threshold):
     meta = read_json(os.path.join(index_dir, "meta.json"), {})
     _G["bench_names"] = meta.get("benchmarks") or []
     ctx = {}
-    if SOURCES[name]["reader"] == "arxiv":
-        import pyarrow.parquet as pq
-        t = pq.read_table(os.path.join(root, "manifest", "arxiv_meta.parquet"))
-        ctx["arxiv"] = dict(zip(t.column("id").to_pylist(), zip(t.column("title").to_pylist(),
-                                                                 t.column("license").to_pylist())))
+    if SOURCES[name]["reader"] == "arxiv":                         # memory-mapped: shared by the workers
+        import pyarrow as pa
+        t = pa.ipc.open_file(pa.memory_map(os.path.join(root, "manifest", "arxiv_meta.arrow"))).read_all()
+        ctx["arxiv"] = t
+        ctx["arxiv_keys"] = t.column("key").chunk(0).to_numpy()
     _G["ctx"] = ctx
 
 
@@ -820,7 +888,7 @@ def check(ids_list):
     got = np.bincount(sp[found], minlength=n)
     overlap = np.where(tot > 0, got / np.maximum(tot, 1), 0.0)
     for p in range(n):
-        if reasons[p] is None and tot[p] >= 3 and overlap[p] >= _G["threshold"]:
+        if _G["src"].get("train_check", True) and reasons[p] is None and tot[p] >= 3 and overlap[p] >= _G["threshold"]:
             reasons[p] = "train_overlap"
     return reasons, overlap
 
@@ -849,7 +917,7 @@ def process(batch):
             stats["doc skipped: no title or empty"] += 1
             continue
         stats["docs used"] += 1
-        for k, part in enumerate(chunk(body, title, s["bpt"])):
+        for k, part in enumerate(chunk(body, title, s["bpt"], s.get("max_per_doc", MAX_PER_DOC))):
             why = quality(part, s["kind"])
             if why:
                 stats[f"quality: {why}"] += 1
@@ -859,7 +927,7 @@ def process(batch):
         return [], stats
     texts = [f"{t}\n{b}" for _, _, t, b, _ in cands]
     ids = [e.ids for e in _G["tok"].encode_batch(texts)]
-    keep = [j for j, x in enumerate(ids) if len(x) >= MIN_TOKENS]
+    keep = [j for j, x in enumerate(ids) if len(x) >= s.get("min_tokens", MIN_TOKENS)]
     stats["quality: short"] += len(ids) - len(keep)
     reasons, overlap = check([ids[j] for j in keep])
     out = []
@@ -869,7 +937,7 @@ def process(batch):
             stats[f"dropped tokens: {why.split(':')[0]}"] += len(ids[j])
             continue
         row, k, title, body, info = cands[j]
-        out.append(dict(ids=np.asarray(ids[j], dtype=np.uint16), text=texts[j], hash=norm_hash(body), row=row,
+        out.append(dict(ids=np.asarray(ids[j], dtype=np.uint16), text=texts[j], hash=norm_hash(body), row=row, rank=rank,
                         chunk=k, title=title, info=info, overlap=round(float(ov), 3)))
     return out, stats
 
@@ -943,6 +1011,19 @@ def seen_hashes(root, part):
     return seen
 
 
+def load_repo_counts(root, part, name):
+    """Files taken per repository by every finished code source of this and earlier parts (not `name` in this part)."""
+    counts = Counter()
+    for p in range(part + 1):
+        for n in ORDER:
+            if not SOURCES[n].get("repo_cap") or (p == part and n == name):
+                continue
+            f = os.path.join(part_dir(root, p), n, "repos.json")
+            if os.path.exists(os.path.join(part_dir(root, p), n, "done.json")) and os.path.exists(f):
+                counts.update(read_json(f))
+    return counts
+
+
 def run_source(args, name, target, seen, index_dir):
     s = SOURCES[name]
     o = order(args.root, name)
@@ -959,6 +1040,8 @@ def run_source(args, name, target, seen, index_dir):
     tok_path = os.path.join(args.slice, "tokenizer", "tokenizer.json")
     stats, lens, hashes = Counter(), [], []
     tokens = passages = 0
+    repo_counts = load_repo_counts(args.root, args.part, name) if s.get("repo_cap") else None
+    added_repos, cur_doc, doc_ok = Counter(), None, True
     end = dict(cur)
     files_used = []
     t0 = time.time()
@@ -971,8 +1054,8 @@ def run_source(args, name, target, seen, index_dir):
             f = o["files"][rank]
             path = raw_path(args.root, o["repo"], f["path"])
             if not (os.path.exists(path) and os.path.getsize(path) == f["size"]):
-                raise FileNotFoundError(f"{name}: file {rank} ({f['path']}) is not downloaded: run fetch with a "
-                                        f"larger --upto_tokens, then run this part again")
+                raise FileNotFoundError(f"{name}: file {rank} ({f['path']}) is not downloaded: run fetch "
+                                        f"(--scope full), then run this part again")
             for row0, recs in iter_records(path, cur["row"] if rank == cur["file"] else 0, s.get("columns")):
                 yield rank, path, row0, recs
             yield rank, path, None, None                    # end of file marker
@@ -1017,6 +1100,17 @@ def run_source(args, name, target, seen, index_dir):
                 files_used.append(dict(path=rel, rank=rank, first_row=row0, docs=0))
             files_used[-1]["docs"] += len(recs)
             for p in res:
+                if repo_counts is not None:                  # at most CODE_REPO_CAP files per repository
+                    if (p["rank"], p["row"]) != cur_doc:
+                        cur_doc = (p["rank"], p["row"])
+                        repo = p["info"].get("repo")
+                        doc_ok = not repo or repo_counts[repo] < CODE_REPO_CAP
+                        if doc_ok and repo:
+                            repo_counts[repo] += 1
+                            added_repos[repo] += 1
+                    if not doc_ok:
+                        stats["dropped: repo cap"] += 1
+                        continue
                 if p["hash"] in seen:
                     stats["dropped: duplicate"] += 1
                     continue
@@ -1063,8 +1157,12 @@ def run_source(args, name, target, seen, index_dir):
             raise SystemExit(missing)
     np.save(os.path.join(out, "lengths.npy"), np.array(lens, dtype=np.int64))
     np.save(os.path.join(out, "hashes.npy"), np.array(hashes, dtype=np.int64))
+    if repo_counts is not None:
+        write_json(os.path.join(out, "repos.json"), dict(added_repos))
     done = dict(source=name, part=args.part, target=int(target), tokens=int(tokens), passages=passages,
-                start=cur, end=end, short=not stopped, files=files_used, repo=o["repo"], revision=o["revision"],
+                start=cur, end=end, short=not stopped, exhausted=not stopped and not missing, missing=missing,
+                repos=len(added_repos) if repo_counts is not None else None,
+                files=files_used, repo=o["repo"], revision=o["revision"],
                 stats=dict(sorted(stats.items())), seconds=round(time.time() - t0))
     write_json(os.path.join(out, "done.json"), done)
     log(f"{name}: {tokens / 1e6:.0f}M tokens in {passages} passages ({time.time() - t0:.0f} s); "
@@ -1072,27 +1170,67 @@ def run_source(args, name, target, seen, index_dir):
     return done
 
 
+def part_targets(root, part, part_tokens, names=None):
+    """Tokens per source for a part: part 0 takes every source's v0; later parts fill up to part_tokens with what each
+    source has left of its full target, in ORDER (Wikipedia first), skipping sources that ran out of documents.
+    Fixed in <work>/part_N/targets.json the first time."""
+    path = os.path.join(part_dir(root, part), "targets.json")
+    saved = read_json(path)
+    if saved is not None:
+        return saved
+    names = names or ORDER
+    if part == 0:
+        t = {n: SOURCES[n]["v0"] for n in ORDER if n in names}
+    else:
+        used, done_with = Counter(), set()
+        for p in range(part):
+            prev = read_json(os.path.join(part_dir(root, p), "targets.json"), {})
+            for n in prev:
+                d = read_json(os.path.join(part_dir(root, p), n, "done.json"))
+                if d is None:
+                    raise SystemExit(f"part {p} has not finished {n}: run it first")
+                used[n] += d["tokens"]
+                if d.get("exhausted"):
+                    done_with.add(n)
+        t, left = {}, part_tokens
+        for n in (n for n in ORDER if n in names):
+            r = SOURCES[n]["full"] - used[n]
+            if n in done_with or r < 1e7 or left <= 0:
+                continue
+            t[n] = min(r, left)
+            left -= t[n]
+    if t:
+        write_json(path, t)
+    return t
+
+
 def cmd_passages(args):
     index_dir = args.index_dir or os.path.join(args.root, "index")
     for f in ("clean_hash.npy", "clean_kind.npy", "train_s32.npy"):
         if not os.path.exists(os.path.join(index_dir, f)):
             raise SystemExit(f"no {f} in {index_dir}: run index first")
+    targets = part_targets(args.root, args.part, args.part_tokens, args.sources)
+    if not targets:
+        log(f"part {args.part}: every source has reached its full target or run out")
+        return False
+    log(f"part {args.part}: " + ", ".join(f"{n} {t / 1e6:.0f}M" for n, t in targets.items()))
     seen = seen_hashes(args.root, args.part)
-    names = args.sources or ORDER
-    for name in names:
-        target = SOURCES[name]["share"] * args.part_tokens
-        run_source(args, name, target, seen, index_dir)
+    for name in ORDER:
+        if name in targets:
+            run_source(args, name, targets[name], seen, index_dir)
+    return True
 
 
 def cmd_pack(args):
     """Concatenate the part's sources (in ORDER) into one TokenShards pack with index.jsonl and passages.jsonl.gz."""
     work = part_dir(args.root, args.part)
     out = args.out or os.path.join(args.root, "human_pool", f"part_{args.part:03d}")
-    dones = {n: read_json(os.path.join(work, n, "done.json")) for n in ORDER}
+    targets = read_json(os.path.join(work, "targets.json"), {})
+    dones = {n: read_json(os.path.join(work, n, "done.json")) for n in ORDER if n in targets}
     missing = [n for n, d in dones.items() if d is None]
     if missing and not args.allow_short:
         raise SystemExit(f"sources not done in part {args.part}: {missing}")
-    names = [n for n in ORDER if dones[n] is not None]
+    names = [n for n in ORDER if dones.get(n) is not None]
     tmp = out + ".tmp"
     if os.path.exists(tmp):
         shutil.rmtree(tmp)
@@ -1124,7 +1262,7 @@ def cmd_pack(args):
             n_bytes += src_bytes
             d = dones[n]
             per[n] = dict(group=SOURCES[n]["group"], passages=d["passages"], tokens=d["tokens"], target=d["target"],
-                          short=d["short"], bytes=src_bytes, repo=d["repo"], revision=d["revision"],
+                          short=d["short"], exhausted=d.get("exhausted"), repos=d.get("repos"), bytes=src_bytes, repo=d["repo"], revision=d["revision"],
                           start=d["start"], end=d["end"], files=[f["path"] for f in d["files"]],
                           licenses=dict(licenses.most_common()), stats=d["stats"])
     offsets = np.concatenate(offsets).astype(np.int64)
@@ -1160,9 +1298,16 @@ def cmd_pack(args):
 
 
 def cmd_run(args):
+    """index, then passages and pack for --part; with --until_done, the parts after it too, until every source has
+    reached its full target or run out of documents."""
     cmd_index(args)
-    cmd_passages(args)
-    cmd_pack(args)
+    while True:
+        if not cmd_passages(args):
+            break
+        cmd_pack(args)
+        if not args.until_done:
+            break
+        args.part += 1
 
 
 def cmd_stats(args):
@@ -1188,8 +1333,9 @@ def main(argv=None):
     ap.add_argument("--libv1", default=LIBV1)
     ap.add_argument("--sources", nargs="*", choices=ORDER)
     ap.add_argument("--part", type=int, default=0)
-    ap.add_argument("--part_tokens", type=float, default=2e9)
-    ap.add_argument("--upto_tokens", type=float, default=2e9, help="fetch: files for this many pool tokens in all")
+    ap.add_argument("--part_tokens", type=float, default=3e9, help="tokens of each part after part 0")
+    ap.add_argument("--scope", choices=["v0", "full"], default="full", help="fetch: files for part 0, or for all")
+    ap.add_argument("--until_done", action="store_true", help="run: keep making parts until the pool is full")
     ap.add_argument("--threads", type=int, default=4)
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 1))
     ap.add_argument("--index_dir", default=None, help="a copy of <root>/index (e.g. on node-local disk)")

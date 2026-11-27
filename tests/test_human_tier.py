@@ -141,15 +141,18 @@ def run(world, step, *extra):
 def test_end_to_end_parts_continue_and_the_pack_is_clean(world):
     from exealm.data.loader import TokenShards
     from tokenizers import Tokenizer
-    ht.SOURCES["stackexchange"]["share"] = 1.0                  # the whole part from this source
+    se = dict(ht.SOURCES["stackexchange"])
+    ht.SOURCES["stackexchange"].update(v0=20000, full=1e9)       # part 0: 20k tokens; part 1: the rest
     try:
         run(world, "index")
-        run(world, "passages", "--part", "0", "--part_tokens", "20000")
-        run(world, "pack", "--part", "0", "--allow_short")
-        run(world, "passages", "--part", "1", "--part_tokens", "1e9", "--allow_short")
-        run(world, "pack", "--part", "1", "--allow_short")
+        run(world, "passages", "--part", "0")
+        run(world, "pack", "--part", "0")
+        run(world, "passages", "--part", "1", "--part_tokens", "1e9")
+        run(world, "pack", "--part", "1")
+        run(world, "passages", "--part", "2")                      # nothing left: no part 2
     finally:
-        ht.SOURCES["stackexchange"]["share"] = 0.10
+        ht.SOURCES["stackexchange"].clear()
+        ht.SOURCES["stackexchange"].update(se)
     tok = Tokenizer.from_file(os.path.join(world["slice"], "tokenizer", "tokenizer.json"))
     seen_text = []
     for part in (0, 1):
@@ -181,3 +184,5 @@ def test_end_to_end_parts_continue_and_the_pack_is_clean(world):
     d0 = json.load(open(os.path.join(world["root"], "work", "part_000", "stackexchange", "done.json")))
     d1 = json.load(open(os.path.join(world["root"], "work", "part_001", "stackexchange", "done.json")))
     assert d1["start"] == d0["end"] and d1["end"] == dict(file=2, row=0)
+    assert not d0["exhausted"] and d1["exhausted"]
+    assert not os.path.exists(os.path.join(world["root"], "human_pool", "part_002"))
