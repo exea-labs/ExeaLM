@@ -562,7 +562,7 @@ def read_stackexchange(rec, s, ctx):
     md = rec.get("metadata") or {}
     title, body = first_line(rec["text"])
     site = (md.get("forum") or "").replace("_", ".")
-    url = f"https://{site}/questions/{md.get('question_id')}" if site and md.get("question_id") else None
+    url = f"https://{site}/questions/{md['question_id']}" if site and md.get("question_id") is not None else None
     return title, body, dict(doc_key=str(rec.get("id")), url=url, license=se_license(md), site=site)
 
 
