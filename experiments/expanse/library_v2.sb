@@ -42,7 +42,9 @@ eval "$(conda shell.bash hook)" && conda activate vllm || { echo "no conda envir
 CU=$(python -c "import nvidia, os; print(os.path.join(list(nvidia.__path__)[0], 'cu13'))")
 export CUDA_HOME="$CU" CUDA_PATH="$CU" PATH="$CU/bin:$PATH" LD_LIBRARY_PATH="$CU/lib:${LD_LIBRARY_PATH:-}"
 GXX=$(module load gcc/10.2.0 > /dev/null 2>&1; which g++)
-export NVCC_PREPEND_FLAGS="-ccbin $GXX" NVCC_APPEND_FLAGS="-DCCCL_DISABLE_CTK_COMPATIBILITY_CHECK"
+# Appended, not prepended: TileLang (DeepSeek-V4's attention kernels) passes its own -ccbin, and nvcc keeps the last
+export NVCC_APPEND_FLAGS="-ccbin $GXX -DCCCL_DISABLE_CTK_COMPATIBILITY_CHECK"
+export CXX="$GXX" CC="$(dirname "$GXX")/gcc" PATH="$(dirname "$GXX"):$PATH"   # host-side builds too
 [ -x "$CUDA_HOME/bin/nvcc" ] && [[ $GXX == *gcc-10* ]] || { echo "no CUDA toolkit or no GCC 10 ($CUDA_HOME, $GXX)"; exit 1; }
 B="python experiments/library/build.py"
 step() { echo "== $(date '+%F %T') $*"; }
