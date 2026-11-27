@@ -72,10 +72,22 @@ class Part:
         self.df = np.load(os.path.join(folder, "df.npy"))
         self.meta = json.load(open(os.path.join(folder, "meta.json")))
         self.n, self.base = self.meta["n_docs"], self.meta.get("base", 0)
+        self._lib = None
 
-    def scores(self, q, max_df):
-        """BM25 of every passage of this part for one query's unique token ids, and the tokens it used."""
+    def passage(self, d):
+        """The token ids of this part's passage d (its own numbering), without its <|endoftext|>."""
+        if self._lib is None:
+            self._lib = TokenShards(self.meta["library"])
+        a = int(self._lib.offsets[d])
+        e = int(self._lib.offsets[d + 1]) if d + 1 < len(self._lib.offsets) else len(self._lib.tokens)
+        return [int(t) for t in self._lib.tokens[a:e - 1]]
+
+    def scores(self, q, max_df, max_terms=0):
+        """BM25 of every passage of this part for one query's unique token ids. max_terms > 0: only that many of the
+        query's rarest tokens, which carry most of the weight and have the shortest lists."""
         q = [t for t in q if 0 <= t < len(self.df) and 0 < self.df[t] <= max_df * self.n]
+        if max_terms and len(q) > max_terms:
+            q = sorted(q, key=lambda t: self.df[t])[:max_terms]
         if not q:
             return None
         lists = [(int(self.ptr[t]), int(self.ptr[t + 1])) for t in q]
@@ -96,12 +108,12 @@ class Index:
             self.parts += [Part(s, mmap) for s in sub]
         self.n = sum(p.n for p in self.parts)
 
-    def search(self, query_ids, k=5, max_df=1.0, skip=(0,)):
+    def search(self, query_ids, k=5, max_df=1.0, skip=(0,), max_terms=0):
         """(passage numbers, scores) of the top k passages for one query (a list of token ids), best first."""
         q = sorted(set(int(t) for t in query_ids) - set(skip))
         best_d, best_s = [], []
         for p in self.parts:
-            s = p.scores(q, max_df)
+            s = p.scores(q, max_df, max_terms)
             if s is None:
                 continue
             top = np.argpartition(-s, min(k, len(s) - 1))[:k] if len(s) > k else np.arange(len(s))
@@ -112,6 +124,27 @@ class Index:
         d, s = np.concatenate(best_d), np.concatenate(best_s)
         o = np.argsort(-s, kind="stable")[:k]
         return d[o], s[o]
+
+    def passage(self, d):
+        """The token ids of passage d (the library's numbering)."""
+        for p in self.parts:
+            if p.base <= d < p.base + p.n:
+                return p.passage(int(d) - p.base)
+        raise IndexError(d)
+
+
+def contains(seq, sub):
+    """Whether the token list sub appears in seq as a run."""
+    if not sub:
+        return False
+    first, n = sub[0], len(sub)
+    return any(seq[i:i + n] == sub for i in range(len(seq) - n + 1) if seq[i] == first)
+
+
+def answer_tokens(target):
+    """The answer's tokens to look for in a passage: without its first token, whose leading space can merge
+    differently inside a passage, when the answer has more than one."""
+    return target[1:] if len(target) > 1 else target
 
 
 def save(folder, ptr, doc, w, df, meta):
@@ -140,19 +173,24 @@ def cmd_bench(a):
     idx = Index(a.index)
     items, eot, sep = load_items(a.library, ["qa"], "heldout", a.limit)
     skip = (eot, *sep)
-    for max_df in [float(x) for x in a.max_df.split(",")]:
-        hit1 = hit5 = 0
+    for max_df, max_terms in [(float(x), int(m)) for x in a.max_df.split(",") for m in a.max_terms.split(",")]:
+        hit1 = hit5 = ans1 = ans5 = 0
         times = []
         for it in items:
             t0 = time.perf_counter()
-            d, _ = idx.search(it["prefix"], k=5, max_df=max_df, skip=skip)
+            d, _ = idx.search(it["prefix"], k=5, max_df=max_df, skip=skip, max_terms=max_terms)
             times.append(time.perf_counter() - t0)
             hit1 += int(len(d) and d[0] == it["source_doc"])
             hit5 += int(it["source_doc"] in set(d.tolist()))
+            want = answer_tokens(it["target"])                       # does a found passage hold the answer itself?
+            found = [contains(idx.passage(int(x)), want) for x in d]
+            ans1 += int(bool(found) and found[0])
+            ans5 += int(any(found))
         t = np.array(times) * 1000
-        print(f"max_df {max_df}: {len(items):,} queries over {idx.n:,} passages; the question's own entry first "
-              f"{hit1 / len(items):.3f}, in the top 5 {hit5 / len(items):.3f}; ms per query: median {np.median(t):.2f}, "
-              f"p95 {np.percentile(t, 95):.2f}", flush=True)
+        n = len(items)
+        print(f"max_df {max_df}, max_terms {max_terms or 'all'}: {n:,} queries over {idx.n:,} passages; the question's own entry first "
+              f"{hit1 / n:.3f}, in the top 5 {hit5 / n:.3f}; the answer in the first passage {ans1 / n:.3f}, in the top "
+              f"5 {ans5 / n:.3f}; ms per query: median {np.median(t):.2f}, p95 {np.percentile(t, 95):.2f}", flush=True)
 
 
 def main(argv=None):
@@ -171,6 +209,7 @@ def main(argv=None):
     q.add_argument("--library", required=True, help="the packed library the questions come from (qa/heldout)")
     q.add_argument("--limit", type=int, default=2000)
     q.add_argument("--max_df", default="1.0,0.1,0.02")
+    q.add_argument("--max_terms", default="0", help="comma list; 0: every token of the query")
     a = ap.parse_args(argv)
     {"build": cmd_build, "bench": cmd_bench}[a.cmd](a)
 
