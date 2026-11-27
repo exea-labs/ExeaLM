@@ -507,8 +507,29 @@ def _train_sample(job):
     return np.unique(h[(h >> np.uint64(TRAIN_SAMPLE_SHIFT)) == 0])
 
 
-def _init_clean(path):
-    _G["clean"] = np.load(path, mmap_mode="r")
+TABLE_BITS = 30                         # clean_table.npy: one byte per low-30-bit value of a clean window's hash
+
+
+def build_table(H):
+    t = np.zeros(1 << TABLE_BITS, dtype=bool)
+    t[(H & np.uint64((1 << TABLE_BITS) - 1)).astype(np.int64)] = True
+    return t
+
+
+def member_clean(q):
+    """member(clean_hash, q), with the table ruling out most windows in one lookup each (a binary search over 88M
+    hashes per window was most of the time of a check)."""
+    out = np.full(len(q), -1, np.int64)
+    table = _G["table"]
+    near = np.flatnonzero(table[(q & np.uint64(len(table) - 1)).astype(np.int64)])
+    if len(near):
+        out[near] = member(_G["clean"], q[near])
+    return out
+
+
+def _init_clean(path, table):
+    _G["clean"] = np.load(path)                                      # in memory: index files are on Lustre here
+    _G["table"] = np.load(table)
 
 
 def _clean_in_train(job):
@@ -517,7 +538,7 @@ def _clean_in_train(job):
     dt = np.dtype(read_json(os.path.join(path, "meta.json"))["dtype"])
     t = np.fromfile(os.path.join(path, "tokens.bin"), dtype=dt, count=b - a, offset=a * dt.itemsize)
     hs = np.unique(clean_windows(t))
-    i = member(_G["clean"], hs)
+    i = member_clean(hs)
     return np.unique(i[i >= 0])
 
 
@@ -565,6 +586,8 @@ def cmd_index(args):
             os.path.join(bench_work(args.root), "reports", "benchmarks.json"), {}).get("failed"))
         write_json(os.path.join(idx, "meta.json"), meta)
         log(f"index: {len(H)} windows that must stay clean ({len(names)} benchmarks)")
+    if not os.path.exists(os.path.join(idx, "clean_table.npy")) or args.reindex:
+        np.save(os.path.join(idx, "clean_table.npy"), build_table(np.load(os.path.join(idx, "clean_hash.npy"))))
     if not os.path.exists(os.path.join(idx, "train_s32.npy")) or args.reindex:
         jobs = train_chunks(packed, buckets)
         log(f"index: sampling training windows from {len(jobs)} chunks")
@@ -586,7 +609,8 @@ def cmd_index(args):
         t0 = time.time()
         hpath = os.path.join(idx, "clean_hash.npy")
         mark = np.zeros(len(np.load(hpath, mmap_mode="r")), dtype=bool)
-        with ProcessPoolExecutor(args.workers, initializer=_init_clean, initargs=(hpath,)) as ex:
+        with ProcessPoolExecutor(args.workers, initializer=_init_clean,
+                                 initargs=(hpath, os.path.join(idx, "clean_table.npy"))) as ex:
             for found in ex.map(_clean_in_train, jobs):
                 mark[found] = True
         np.save(os.path.join(idx, "clean_in_train.npy"), mark)
@@ -899,6 +923,7 @@ def _init(tok_path, index_dir, name, root, train_threshold, clean_rule="specific
     _G["threshold"] = train_threshold
     _G["clean"] = np.load(os.path.join(index_dir, "clean_hash.npy"), mmap_mode="r")
     _G["kind"] = np.load(os.path.join(index_dir, "clean_kind.npy"), mmap_mode="r")
+    _G["table"] = np.load(os.path.join(index_dir, "clean_table.npy"), mmap_mode="r")
     _G["train"] = np.load(os.path.join(index_dir, "train_s32.npy"), mmap_mode="r")
     _G["in_train"] = (np.load(os.path.join(index_dir, "clean_in_train.npy"), mmap_mode="r")
                       if clean_rule == "specific" else None)
@@ -952,7 +977,7 @@ def check(ids_list):
     ok = np.flatnonzero((z[NGRAM:] - z[:-NGRAM]) == 0)
     hv = h[ok]
     pid = np.searchsorted(starts, ok, side="right") - 1
-    hit = member(_G["clean"], hv)
+    hit = member_clean(hv)
     in_train = _G["in_train"]
     for w in np.flatnonzero(hit >= 0):
         p = pid[w]
@@ -1312,7 +1337,7 @@ def part_targets(root, part, part_tokens, names=None):
 
 def cmd_passages(args):
     index_dir = args.index_dir or os.path.join(args.root, "index")
-    for f in ("clean_hash.npy", "clean_kind.npy", "train_s32.npy") + (("clean_in_train.npy",)
+    for f in ("clean_hash.npy", "clean_kind.npy", "clean_table.npy", "train_s32.npy") + (("clean_in_train.npy",)
                                                                        if args.clean_rule == "specific" else ()):
         if not os.path.exists(os.path.join(index_dir, f)):
             raise SystemExit(f"no {f} in {index_dir}: run index first")

@@ -146,6 +146,7 @@ def run(world, step, *extra):
 def test_end_to_end_parts_continue_and_the_pack_is_clean(world):
     from exealm.data.loader import TokenShards
     from tokenizers import Tokenizer
+    ht.TABLE_BITS = 16                                          # a small lookup table for a small index
     se = dict(ht.SOURCES["stackexchange"])
     ht.SOURCES["stackexchange"].update(v0=20000, full=1e9)       # part 0: 20k tokens; part 1: the rest
     try:
