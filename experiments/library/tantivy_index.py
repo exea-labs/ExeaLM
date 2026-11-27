@@ -40,7 +40,7 @@ def cmd_build(a):
     import tantivy
     lib = TokenShards(a.library)
     os.makedirs(a.out, exist_ok=True)
-    index = tantivy.Index(schema(), path=a.out)
+    index = tantivy.Index(schema(), path=a.out)                  # build on a local disk: Lustre made it ~50x slower
     writer = index.writer(heap_size=a.heap_mb * 1024 * 1024, num_threads=a.threads)
     n = len(lib.offsets)
     ends = np.append(np.asarray(lib.offsets[1:]), len(lib.tokens))

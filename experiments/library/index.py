@@ -61,16 +61,22 @@ def build(lib, k1=1.2, b=0.75, chunk_docs=200_000, eot=0):
     return ptr, doc[order], w[order].astype(np.float32), df
 
 
-def compact(src, dst, max_df=0.1):
+def compact(src, dst, max_df=0.1, max_postings=0):
     """A smaller copy of one index part, for shipping: the lists of tokens in more than max_df of the passages are
     dropped (searches skip them anyway: their weight is near zero and their lists are the longest, 35% of all postings
     at 0.1), weights are 8-bit (each part's largest weight / 255 per step, as search engines store impacts) and passage
-    numbers 3 bytes (a part has fewer than 16.7M passages). 3 + 1 bytes a posting instead of 4 + 4."""
+    numbers 3 bytes (a part has fewer than 16.7M passages). 3 + 1 bytes a posting instead of 4 + 4.
+
+    max_postings N > 0 also keeps only each token's N highest-weighted passages (static pruning, Carmel et al. 2001):
+    the rest cannot reach a query's top results unless several of its tokens add up there, and a query then reads at
+    most N postings a token instead of up to a tenth of the library."""
     p = Part(src)
     if p.n >= 1 << 24:
         raise SystemExit(f"{src}: {p.n:,} passages do not fit 3-byte numbers")
     keep = (p.df > 0) & (p.df <= max_df * p.n)
     lens = np.diff(np.asarray(p.ptr)) * keep
+    if max_postings:
+        lens = np.minimum(lens, max_postings)
     ptr = np.zeros(len(p.ptr), dtype=np.int64)
     ptr[1:] = np.cumsum(lens)
     total = int(ptr[-1])
@@ -80,14 +86,19 @@ def compact(src, dst, max_df=0.1):
     wq = np.lib.format.open_memmap(os.path.join(dst, "wq.npy"), mode="w+", dtype=np.uint8, shape=(total,))
     for t in np.nonzero(keep)[0]:
         a, e, o = int(p.ptr[t]), int(p.ptr[t + 1]), int(ptr[t])
-        d = np.asarray(p.doc[a:e], dtype=np.uint32)
-        doc3[o:o + e - a, 0], doc3[o:o + e - a, 1], doc3[o:o + e - a, 2] = d & 255, (d >> 8) & 255, d >> 16
-        wq[o:o + e - a] = np.clip(np.rint(np.asarray(p.w[a:e]) / scale), 1, 255).astype(np.uint8)
+        d, w = np.asarray(p.doc[a:e], dtype=np.uint32), np.asarray(p.w[a:e])
+        if max_postings and e - a > max_postings:
+            sel = np.sort(np.argpartition(-w, max_postings - 1)[:max_postings])    # the best, kept in passage order
+            d, w = d[sel], w[sel]
+        m = len(d)
+        doc3[o:o + m, 0], doc3[o:o + m, 1], doc3[o:o + m, 2] = d & 255, (d >> 8) & 255, d >> 16
+        wq[o:o + m] = np.clip(np.rint(w / scale), 1, 255).astype(np.uint8)
     doc3.flush()
     wq.flush()
     np.save(os.path.join(dst, "ptr.npy"), ptr)
     np.save(os.path.join(dst, "df.npy"), np.asarray(p.df))
-    json.dump(dict(p.meta, format="compact", w_scale=scale, max_df_kept=max_df, n_postings=total),
+    json.dump(dict(p.meta, format="compact", w_scale=scale, max_df_kept=max_df, max_postings=max_postings,
+                   n_postings=total),
               open(os.path.join(dst, "meta.json"), "w"), indent=1)
     return total
 
@@ -340,7 +351,7 @@ def cmd_compact(a):
         t0 = time.time()
         s, d = os.path.join(src, name), os.path.join(a.out, name)
         n_before = Part(s).meta["n_postings"]
-        n_after = compact(s, d, a.max_df)
+        n_after = compact(s, d, a.max_df, a.max_postings)
         before, after = before + n_before, after + n_after
         print(f"{s}: {n_before:,} postings -> {n_after:,}, {time.time() - t0:.0f}s -> {d}", flush=True)
     print(f"{before:,} postings ({before * 8 / 1e9:.1f} GB) -> {after:,} ({after * 4 / 1e9:.1f} GB)", flush=True)
@@ -377,6 +388,28 @@ def cmd_gpubench(a):
         dt = time.perf_counter() - t0
         print(f"batches of {b}: {n / dt:,.0f} queries a second, {1000 * dt / max(1, n // b):.1f} ms a batch, peak "
               f"{torch.cuda.max_memory_allocated() / 1e9:.1f} GB", flush=True)
+
+
+def cmd_agree(a):
+    """How often a smaller or faster index finds what the reference finds: the same top passage, and the overlap of the
+    top 5, on the library's held-out questions; and its speed on the GPU."""
+    from score import load_items
+    import torch
+    ref, other = Index(a.reference.split("+")).to("cuda"), Index(a.index.split("+")).to("cuda")
+    items, eot, sep = load_items(a.questions, ["qa"], "heldout", a.limit)
+    skip, same, overlap, times = (eot, *sep), 0, 0.0, []
+    for it in items:
+        r, _ = ref.search_gpu(it["prefix"], k=5, max_df=a.max_df, skip=skip)
+        torch.cuda.synchronize()
+        t0 = time.perf_counter()
+        o, _ = other.search_gpu(it["prefix"], k=5, max_df=a.max_df, skip=skip)
+        times.append(time.perf_counter() - t0)
+        same += int(len(r) and len(o) and r[0] == o[0])
+        overlap += len(set(r.tolist()) & set(o.tolist())) / max(1, len(r))
+    n, t = len(items), np.array(times) * 1000
+    print(f"{a.index}: same top passage as {a.reference} for {same / n:.3f}, top-5 overlap {overlap / n:.3f}; GPU ms "
+          f"per query: median {np.median(t):.2f}, p95 {np.percentile(t, 95):.2f}; "
+          f"{sum(p.meta['n_postings'] for p in other.parts) * 4 / 1e9:.1f} GB", flush=True)
 
 
 def cmd_tiers(a):
@@ -466,12 +499,20 @@ def main(argv=None):
     g.add_argument("--limit", type=int, default=2000)
     g.add_argument("--max_df", type=float, default=0.1)
     g.add_argument("--batches", default="16,64,256")
+    ag = sub.add_parser("agree", help="a smaller index against a reference: same top passage, top-5 overlap, speed")
+    ag.add_argument("index")
+    ag.add_argument("--reference", required=True)
+    ag.add_argument("--questions", required=True)
+    ag.add_argument("--limit", type=int, default=1000)
+    ag.add_argument("--max_df", type=float, default=0.1)
     c = sub.add_parser("compact", help="a smaller copy for shipping: common tokens dropped, 8-bit weights, 3-byte numbers")
     c.add_argument("index")
     c.add_argument("--out", required=True)
     c.add_argument("--max_df", type=float, default=0.1)
+    c.add_argument("--max_postings", type=int, default=0, help="keep only each token's N best passages (0: all)")
     a = ap.parse_args(argv)
-    {"build": cmd_build, "bench": cmd_bench, "tiers": cmd_tiers, "compact": cmd_compact, "gpubench": cmd_gpubench}[a.cmd](a)
+    {"build": cmd_build, "bench": cmd_bench, "tiers": cmd_tiers, "compact": cmd_compact, "gpubench": cmd_gpubench,
+     "agree": cmd_agree}[a.cmd](a)
 
 
 if __name__ == "__main__":

@@ -307,3 +307,16 @@ def test_gpu_search_paths_rank_as_the_cpu_search(setup, tmp_path):
             g, gs = dev.search_gpu(it["prefix"], k=3, max_df=0.5, skip=skip)
             if len(d):
                 assert abs(gs[0] - s[0]) < 1e-3 * max(1, s[0]) and abs(bs[0] - s[0]) < 1e-3 * max(1, s[0])
+
+
+def test_static_pruning_keeps_each_tokens_best_passages(setup, tmp_path):
+    import numpy as np
+    ix = load("index")
+    ix.main(["build", setup["lib"], "--out", str(tmp_path / "full")])
+    ix.main(["compact", str(tmp_path / "full"), "--out", str(tmp_path / "p"), "--max_df", "1.0", "--max_postings", "2"])
+    full, pr = ix.Index(str(tmp_path / "full")).parts[0], ix.Index(str(tmp_path / "p")).parts[0]
+    for t in np.nonzero(full.df)[0][:50]:
+        d, w = full.lists(int(full.ptr[t]), int(full.ptr[t + 1]))
+        pd, pw = pr.lists(int(pr.ptr[t]), int(pr.ptr[t + 1]))
+        assert len(pd) == min(2, len(d)) and list(pd) == sorted(pd)
+        assert set(pd) <= set(d) and pw.min() >= np.sort(w)[-len(pd)] - pr.scale     # the best ones, to 8 bits
