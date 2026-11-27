@@ -45,7 +45,8 @@ laptops and CPU servers.
 
 ## How it ships
 
-- **One repository** with the weights, the library text as token ids (zstd: 50 GB to about 21 GB to download,
+- **One repository** with the weights, the library text as token ids (zstd -19: 50 GB to 22.9 GB to download, measured
+  on a 200M-token sample; as UTF-8 text it would be 23.7 GB, `results/expanse/library_compress.json`;
   unpacked once and memory-mapped), the passage index (titles, sources, licenses, URLs) and the search index (Tantivy
   for CPU, the compact index for GPU).
 - **Two editions**: core (the written tier, Wikipedia, machine-learning arXiv: about 10 GB, fits a laptop) and full

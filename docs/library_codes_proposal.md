@@ -1,6 +1,6 @@
 # Proposal: a library the model reads as learned codes, not text
 
-Status: ideas for approval, 27 November 2026. Nothing here has run. Sizes are arithmetic from the numbers in
+Status: approved 27 November 2026; tests T0 to T2 run that day (results at the end). Sizes are arithmetic from the numbers in
 `docs/library.md` and the 9B preset (`exealm/config.py`: width 4096, 42 layers, 41 of them attention). The cited
 papers need checking before any of this goes into the paper.
 
@@ -17,7 +17,7 @@ Ordinary embeddings make the library larger, not smaller. The detail is below.
 
 | Part | Size | Source |
 |---|---|---|
-| Passage text, token ids (25.0B tokens, 36.8M human passages, about 680 tokens each) | 50 GB, 21 GB with zstd | docs/library.md |
+| Passage text, token ids (25.0B tokens, 36.8M human passages, about 680 tokens each) | 50 GB, 22.9 GB with zstd -19 | T0 |
 | BM25 index, GPU (merged, 2.0 ms a query) | 25.0 GB | docs/library.md |
 | BM25 index, CPU (Tantivy, extrapolated) | about 17 GB | docs/library.md |
 | Reading at 9B: 2 passages x 384 tokens = 768 positions, about 2 x 9.3B FLOP each | about 14 TFLOP a question | arithmetic |
@@ -37,7 +37,8 @@ The search index is about as large as the text. Any plan that only shrinks the t
 
 | Stored form of the human tier (36.8M passages) | Per passage | Total |
 |---|---|---|
-| Token ids, zstd (measured) | about 570 B | 21 GB |
+| Token ids, zstd -19 (measured, T0) | about 620 B | 22.9 GB |
+| UTF-8 text, zstd -19 (measured, T0) | about 640 B | 23.7 GB |
 | Arithmetic coding under the 0.1B model (about 0.96 bits per byte, assuming about 4 bytes a token) | about 330 B | about 12 GB |
 | One 4096-wide vector, bf16 | 8 KB | 301 GB |
 | 16 vectors of width 4096, bf16 | 128 KB | 4.8 TB |
@@ -70,8 +71,8 @@ up its codes. This is your byte-compressed embedding: the stored form is bytes, 
 
 What it buys at 9B:
 
-- **Shipping.** 4.7 to 9.4 GB for the human tier against 21 GB of text, and the codes double as the search index
-  (idea B), which removes the 17 to 25 GB index. With the written tier's text, about 5 to 10 GB against 38 to 46 GB.
+- **Shipping.** 4.7 to 9.4 GB for the human tier against 22.9 GB of text, and the codes double as the search index
+  (idea B), which removes the 17 to 25 GB index. With the written tier's text, about 5 to 10 GB against 40 to 48 GB.
 - **Reading.** 8 codes a passage means 16 passages cost 128 positions, against 768 for 2 passages now: 8 times the
   sources for a sixth of the reading. Generating a long answer costs more than reading the passages, so the larger
   gain is how many sources one answer can use, not the time saved.
@@ -90,7 +91,7 @@ it is needed.
 
 The model reads the codes of many passages, then fetches the exact text of the one or two it needs. A special token
 asks for the text, as a tool call would. The core edition ships codes and the written tier's text (about 0.4 GB). The
-full edition adds the human tier's text (21 GB) for exact reads. This keeps code and citations exact while most of
+full edition adds the human tier's text (22.9 GB) for exact reads. This keeps code and citations exact while most of
 the reading happens in codes.
 
 ## Ideas considered and set aside
@@ -127,3 +128,17 @@ xRAG (Cheng et al., NeurIPS 2024), CEPE (Yen et al., ACL 2024), RETRO (Borgeaud 
 product quantization (Jégou et al., TPAMI 2011), memory layers (Berges et al., ICML 2025), Byte Latent Transformer
 (Pagnoni et al., 2024). What would be new: the codes as both the stored library and the search index, read through
 ExeaLM's stream training, with a skim-then-read path for exact text.
+
+## Results
+
+**T0** (job 56105159, `results/expanse/library_compress.json`): 296,468 passages (200M tokens) drawn evenly from the
+10 parts of the human tier, 3.67 UTF-8 bytes a token.
+
+| Form | zstd -3 | zstd -19 | Bits a UTF-8 byte (-19) | Whole human tier (-19) |
+|---|---|---|---|---|
+| Token ids (uint16) | 241 MB | **183 MB** | **2.00** | **22.9 GB** |
+| UTF-8 text | 254 MB | 189 MB | 2.07 | 23.7 GB |
+
+Token ids are 3% smaller than UTF-8 text after compression, so storing bytes saves nothing; it only buys independence
+from the tokenizer. Compressed text costs about 2.0 bits a byte. A model that scores about 1 bit a byte would halve it,
+which is the arithmetic-coding row above, and the codes must beat 620 bytes a passage to ship smaller.
