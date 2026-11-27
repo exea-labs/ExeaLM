@@ -320,3 +320,21 @@ def test_static_pruning_keeps_each_tokens_best_passages(setup, tmp_path):
         pd, pw = pr.lists(int(pr.ptr[t]), int(pr.ptr[t + 1]))
         assert len(pd) == min(2, len(d)) and list(pd) == sorted(pd)
         assert set(pd) <= set(d) and pw.min() >= np.sort(w)[-len(pd)] - pr.scale     # the best ones, to 8 bits
+
+
+def test_rag_pack_two_tiers_puts_the_human_passage_after_the_entry(setup, tmp_path):
+    rag_pack, ix = load("rag_pack"), load("index")
+    human_lib = setup["lib"]                                       # any packed library serves as a second tier here
+    ix.main(["build", human_lib, "--out", str(tmp_path / "h_idx"), "--base", "0"])
+    out = tmp_path / "rag2"
+    rag_pack.main(["--library", setup["lib"], "--split", "heldout", "--device", "cpu", "--human", str(tmp_path / "h_idx"),
+                   "--human_tokens", "5", "--out", str(out)])
+    pack, lib = TokenShards(str(out)), TokenShards(setup["lib"])
+    items, eot, sep = sc.load_items(setup["lib"], ["qa", "tasks"], "heldout")
+    picked, _, _ = sc.bm25_pick(lib, items, eot, sep)
+    hidx = ix.Index(str(tmp_path / "h_idx"))
+    d, _ = hidx.search(items[0]["prefix"], k=1, max_df=0.1, skip=(eot, *sep))
+    want = (sc.entry_ids(lib, int(picked[0])) + list(sep) + (hidx.passage(int(d[0]))[:5] + list(sep) if len(d) else [])
+            + items[0]["prefix"] + items[0]["target"] + [eot])
+    assert [int(t) for t in pack.tokens[:len(want)]] == want
+    assert "second tier" in pack.meta["source"]["kind"]
