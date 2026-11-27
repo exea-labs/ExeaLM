@@ -16,7 +16,7 @@ the same size, data, tokens and recipe; bits per byte on held-out text, lower is
 |---|---|---|---|
 | Ahead of the Qwen3.5 design | 0.1B: 1.157 against 1.190; 0.25B: 1.014 against 1.026 (plain Llama 1.200, 1.041); 0.5B: 0.933 against 0.939 (Llama 0.958) on windows alone, 0.873 against 0.906 on long documents | 0.1B and 0.25B: 3 seeds, all 54 set-and-seed pairs at each size; 0.5B: 2 seeds, all 36 pairs | 9, 13, 20 |
 | Long documents | 4,096 tokens read as a stream: 0.1B 1.096 against 1.157; 0.25B 0.955 against 0.997. 16,384 tokens (8 times the streams it trained on): 0.1B 1.073 against 1.134; 0.25B 0.947 against 0.996, the lead growing along the document | 4,096: 3 seeds, all 54 pairs at each size. 16,384: 3 seeds at 0.1B, 1 at 0.25B | 10, 15, 19 |
-| Learns more per token | at 111 tokens per parameter (the 9B's), the Qwen3.5-style model needs 1.34 and 1.41 times ExeaLM's steps to match it at step 20,000, rising through training, and never reaches its final score. Finished: 0.958 against 0.963 on windows alone, 0.902 against 0.946 on long documents | 2 seeds, 0.1B, both ahead on every reading | 12, 25 |
+| Learns more per token | at 111 tokens per parameter (the 9B's), the Qwen3.5-style model needs 1.34 and 1.41 times ExeaLM's steps to match it at step 20,000, rising through training, and never reaches its final score. Finished: 0.958 against 0.963 on windows alone, 0.902 against 0.946 on long documents | 2 seeds, 0.1B, both ahead on every reading | 12, 24 |
 | A library distilled from a larger model | held-out research questions 1.645 to 0.590 with the library and a BM25 search; 0.110 to 0.116 ahead of the Qwen3.5-style model with the same library | 3 seeds, 0.1B | 7, 8, 11 |
 | Against the released Qwen3.5-9B | 0.1B ExeaLM with its library 0.590 against Qwen3.5-9B without one 1.031 on held-out research questions (a system against a model; with the same library Qwen3.5-9B scores 0.313). On text alone Qwen3.5-9B is far ahead (0.674 against 1.011 for ExeaLM 0.25B) | 1 seed | 18 |
 | Where the TONN layer goes | one TONN layer at the middle layer beats one in every fourth layer (1.348 against 1.376, 54 of 54 pairs); one at layer 0 costs 0.038 | 12 layouts, 0.1B | 4, 5 |
@@ -24,7 +24,7 @@ the same size, data, tokens and recipe; bits per byte on held-out text, lower is
 | The 9B, priced | 206 effective TFLOP/s per H100 on one node; about 75,000 GPU-hours for 1T tokens | 1 node; 2 and 4 nodes measured, being written up | 16 |
 | Streams without most of their cost | mixing windows alone into the stream phase gives back half of what it cost on windows alone (1.1532 against 1.1566; none 1.1496) for 0.0014 of its long-document gain (1.0969 against 1.0955); now the recipe | 3 seeds, 0.1B | 21 |
 | Distillation into the weights | 30% teacher text (Qwen3.5-9B) in pretraining: worse, 1.1592 against 1.1549 | 1 seed, 0.1B | 22 |
-| Benchmarks at 0.5B | level: mean of 7 zero-shot tasks 0.424 against 0.422 | 1 seed | 20 |
+| Benchmarks at 0.5B | level: mean of 7 zero-shot tasks 0.424 against 0.421 | 1 seed | 20 |
 | Did not work | ExeaLM's own retrieval circuit (0.1% of questions find their entry); three 0.1B agents sharing a board lose to one model reading as a stream | | 7, 14 |
 | Void | the first 0.5B runs and the 3B pair's first 1,100 steps: a multi-GPU bug skipped gradient averaging; rerun with the fix | | 17 |
 
@@ -606,7 +606,7 @@ accuracy, normalized where the task has it):
 | | HellaSwag | ARC-Easy | ARC-Challenge | PIQA | WinoGrande | SciQ | LAMBADA | Mean |
 |---|---|---|---|---|---|---|---|---|
 | ExeaLM 0.5B | **0.309** | 0.396 | 0.233 | 0.585 | **0.489** | **0.685** | **0.269** | **0.424** |
-| Qwen3.5-style 0.5B | 0.303 | **0.409** | 0.233 | **0.596** | 0.484 | 0.677 | 0.249 | 0.422 |
+| Qwen3.5-style 0.5B | 0.303 | **0.409** | 0.233 | **0.596** | 0.484 | 0.677 | 0.249 | 0.421 |
 
 At 2B training tokens both models are near chance on ARC-Challenge and WinoGrande; the means differ by 0.002, within
 what one seed can tell apart. Benchmarks start to separate models later in the curve (the 3B pair).
@@ -666,7 +666,7 @@ The lead narrows as training goes on, more slowly at each step: early leads shri
 study, and the finished models settle it. ExeaLM's stream phase starts near step 36,550 (early on 29 November) with the
 mixed recipe of section 21; both runs end near the evening of 29 November.
 
-## 25. The long pair at 111 tokens per parameter, finished (2 seeds; eval job 56094555, `text_111x.json`, `stream8_111x.json`)
+## 24. The long pair at 111 tokens per parameter, finished (2 seeds; eval job 56094555, `text_111x.json`, `stream8_111x.json`)
 
 The 0.1B pair of section 12, trained for 39,735 steps (10.4B tokens, 111 tokens per parameter, the 9B plan's ratio),
 two seeds of each. ExeaLM seed 0 has the study's stream phase; seed 1 switched to the mixed stream phase of section 21
@@ -682,7 +682,7 @@ at step 28,400, before its stream phase began at step 31,788. Bits per byte, rea
   0.003 with the study's stream phase, 0.008 with the mixed one, one seed each.
 - On long documents read as a stream it is 0.044 ahead (0.902 against 0.946, 4.7%), in both seeds.
 - Against section 9 at the same size and 4.1 tokens per parameter (1.157 against 1.190), the lead on windows alone
-  falls from 0.033 to 0.006 when the same model trains 27 times longer, as it falls with size (section 20). The
+  falls from 0.034 to 0.006 when the same model trains 27 times longer, as it falls with size (section 20). The
   long-document lead falls less, from 0.061 to 0.044.
 
 The training log's 512 held-out windows (the in-run check; lead = Qwen3.5-style minus ExeaLM) and section 12's step
@@ -708,7 +708,7 @@ multiplier (how many times ExeaLM's steps the Qwen3.5-style run needs to reach t
 - The plain Llama with ExeaLM's attention changes (gate, QK-norm, value residual, XSA) at the same ratio is still
   training (job 56087569); it separates the attention changes from the TONN layer and the streams at this length.
 
-## 26. Next
+## 25. Next
 
 The 0.5B curve with two seeds and the plain Llama (being scored), the 3B pair (Sunday evening), the strong Llama at 111
 tokens per parameter, open-book benchmarks with the library (running), library v2 (the human tier and the DeepSeek-V4-Flash entries, being built) and training on it at

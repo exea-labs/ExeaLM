@@ -195,7 +195,7 @@ Whether the 9B keeps its TONN layer waits on that run and on the 0.5B run below.
 
 \paragraph{Learning per token.}
 A second measure counts how many more training steps the Qwen3.5-style model needs to match ExeaLM's in-run score.
-The long 0.1B pair trains on 10.4B tokens, about 110 per parameter, close to the 9B run's 108, with two seeds of each model (\sect{25}).
+The long 0.1B pair trains on 10.4B tokens, about 110 per parameter, close to the 9B run's 108, with two seeds of each model (\sect{24}).
 Through step 20,000 of 39,735 the multiplier rose in both seeds, from 1.18 and 1.21 at step 5,000 to 1.34 and 1.41 at step 20,000.
 Later matches fall inside the Qwen3.5-style model's own learning-rate decay, where the measure no longer compares like with like.
 At the end, neither finished Qwen3.5-style run reaches ExeaLM's final score.
@@ -209,7 +209,7 @@ Seed 1 switched to the mixed stream phase before its own began and kept 0.006 to
 A 0.5B run at 20 tokens per parameter (ExeaLM, its attention-only control and the Qwen3.5-style model; 10B tokens each, one seed) started on 27 November. It tests whether these trends hold at a larger size.
 
 \paragraph{Benchmarks at 0.5B.}
-On 7 zero-shot benchmarks (no worked examples in the prompt), the two 0.5B models are level at 0.424 and 0.422 mean accuracy (\sect{20}, one seed).
+On 7 zero-shot benchmarks (no worked examples in the prompt), the two 0.5B models are level at 0.424 and 0.421 mean accuracy (\sect{20}, one seed).
 At 2B training tokens both are near chance on two of the tasks.
 
 \subsection{Long documents}
@@ -570,9 +570,9 @@ Number & Source \\
 Long documents at 0.1B (1.096, 1.157); without streams 1.132, lead 0.025 & \sect{10}, \texttt{stream8\_100m.json} \\
 0.25B windows alone (1.014, 1.026, 1.041; range 0.007 to 0.026) and long documents (0.955, 0.997) & \sect{13}, \sect{15}, \texttt{text\_250m.json}, \texttt{stream8\_250m.json} \\
 0.5B, 2 seeds (0.933, 0.939, 0.958; 0.873, 0.906; 3.6\%; 36 of 36 pairs); seed 0's in-run lead 0.011 to 0.004 & \sect{20}, \texttt{text\_500m\_all.json}, \texttt{stream8\_500m\_all.json} \\
-0.5B benchmarks (0.424, 0.422) & \sect{20}, \texttt{bench\_exealm\_500m\_4.1x\_s0.json}, \texttt{bench\_qwen\_500m\_4.1x\_s0.json} \\
+0.5B benchmarks (0.424, 0.421) & \sect{20}, \texttt{bench\_exealm\_500m\_4.1x\_s0.json}, \texttt{bench\_qwen\_500m\_4.1x\_s0.json} \\
 3B in-run check at step 7,500 (0.850, 0.866, 0.016); 0.034 at step 3,000; finish on the evening of 29 November & \sect{23} \\
-Long pair, 2 seeds: step multiplier 1.18, 1.21 at step 5,000 and 1.34, 1.41 at step 20,000; finals 0.958, 0.963 and 0.902, 0.946; in-run leads 0.009 to 0.001 (seed 0) and 0.006 to 0.008 (seed 1) & \sect{25}, \texttt{text\_111x.json}, \texttt{stream8\_111x.json} \\
+Long pair, 2 seeds: step multiplier 1.18, 1.21 at step 5,000 and 1.34, 1.41 at step 20,000; finals 0.958, 0.963 and 0.902, 0.946; in-run leads 0.009 to 0.001 (seed 0) and 0.006 to 0.008 (seed 1) & \sect{24}, \texttt{text\_111x.json}, \texttt{stream8\_111x.json} \\
 Switch at step 31,788; second seed mixed from 28,400 & \texttt{docs/decisions.md}, 26 November (7 p.m.) \\
 Attention-only control at step 24,000 of the long run (0.932, 0.936) & \texttt{runs/strongllama\_100m\_111x\_s0/log.jsonl}, in-run check \\
 0.5B run at 20 tokens per parameter & \texttt{docs/decisions.md}, 27 November (1:45 a.m.) \\

@@ -5,7 +5,7 @@ entry that says what replaced it.
 
 ## 27 November 2026 (1:45 a.m.): a 0.5B three-way run at 20 tokens per parameter
 
-The finished long pair (results section 25) answers "does the lead hold when a small model trains as long as the 9B
+The finished long pair (results section 24) answers "does the lead hold when a small model trains as long as the 9B
 would?": yes, in both seeds, and the Qwen3.5-style model needs a growing number of ExeaLM's steps (1.18 to 1.41 times
 through step 20,000). Two questions are left before the 9B: does that hold at a larger size, and does the TONN layer
 earn its place when training is long? (The strong-attention Llama, ExeaLM with its TONN layer made attention, is 0.003
