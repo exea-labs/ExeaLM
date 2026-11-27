@@ -3,6 +3,21 @@
 What ExeaLM is trained as, decided by Avneh Bhatia, and why. Newest first. Change an entry only with a new dated
 entry that says what replaced it.
 
+## 27 November 2026 (1:45 a.m.): a 0.5B three-way run at 20 tokens per parameter
+
+The finished long pair (results section 25) answers "does the lead hold when a small model trains as long as the 9B
+would?": yes, in both seeds, and the Qwen3.5-style model needs a growing number of ExeaLM's steps (1.18 to 1.41 times
+through step 20,000). Two questions are left before the 9B: does that hold at a larger size, and does the TONN layer
+earn its place when training is long? (The strong-attention Llama, ExeaLM with its TONN layer made attention, is 0.003
+ahead of ExeaLM at step 24,000 of the long 0.1B run, before either stream phase; one seed, still training.)
+
+So three 0.5B runs train to 20 tokens per parameter (38,173 steps, 10.0B tokens, the Chinchilla ratio, five times the
+curve's), seed 0: `exealm_500m_20x_s0` (mixed stream phase), `strongllama_500m_20x_s0` (the same recipe, the TONN layer
+made attention) and `qwen_500m_20x_s0`. About 240 GPU-hours (jobs 56095208, 56095210-1); the forecast goes from about
+1,260 to about 1,500 of the 2,000, which leaves the 3B pair, its RAG test and evaluations covered. The shared
+partition allows 3 GPUs a job, so ExeaLM and the strong Llama run on 2 GPUs each (`--accum 8`, the same tokens a step);
+the Qwen3.5-style model runs on a full node. Taken under Avneh's standing instruction to adjust the runs as needed.
+
 ## 26 November 2026 (midnight): open-book benchmarks, and the same RAG post-training for every model
 
 Avneh's decision: the paper's benchmarks run with the library, since ExeaLM is trained to use it. So that the numbers
