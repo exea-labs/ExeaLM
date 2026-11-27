@@ -495,7 +495,8 @@ def pack_tokens(path):
 
 def _train_sample(job):
     path, a, b = job
-    t = np.asarray(pack_tokens(path)[a:b])
+    dt = np.dtype(read_json(os.path.join(path, "meta.json"))["dtype"])
+    t = np.fromfile(os.path.join(path, "tokens.bin"), dtype=dt, count=b - a, offset=a * dt.itemsize)
     h = clean_windows(t)
     return np.unique(h[(h >> np.uint64(TRAIN_SAMPLE_SHIFT)) == 0])
 
@@ -539,7 +540,7 @@ def cmd_index(args):
         jobs, chunk = [], 32_000_000
         for b in buckets:
             p = os.path.join(packed, b, "train")
-            n = len(pack_tokens(p))
+            n = read_json(os.path.join(p, "meta.json"))["n_tokens"]
             jobs += [(p, a, min(n, a + chunk + NGRAM - 1)) for a in range(0, n, chunk)]
         log(f"index: sampling training windows from {len(jobs)} chunks")
         t0 = time.time()
