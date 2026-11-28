@@ -17,7 +17,7 @@ tier's 25.0B tokens, with a license and URL on every passage
 ([exea-labs/exealm-library](https://huggingface.co/datasets/exea-labs/exealm-library), `v2/human`). Left out: arXiv
 papers under arXiv's default license (5.2B tokens, not redistributable) and Stack Exchange (1.0B, CC-BY-SA needs each
 post's author, which the source files lack). The library that ships with the model is the published part and the
-written tier; the study's tests search all 25.0B.
+written tier; the study's tests search all 25.0B. The v2 written tier was published the same day (`v2/written`): 144,042 research and 48,931 code entries and 728,527 tasks by DeepSeek-V4-Flash, leaving out the 268 entries that overlap a benchmark, 1,071 research entries more than 25% of which repeats the topic's source excerpt, and those topics' tasks (`experiments/library/publish_written_v2.py`).
 
 ## How it is searched
 
