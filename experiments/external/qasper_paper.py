@@ -3,7 +3,8 @@ for the question, and its top paragraphs before the question. QASPER's own setti
 the parts a search picks, so every model reads the same text in a short context.
 
 Writes items in indep_build.py's format (set "qasper_paper"): "bm25" holds the paragraphs the in-paper search picks
-(the top 3, at most 2,500 characters, best first), "pasted" the annotator's evidence (an upper bound). Score our
+(the top 3, at most 2,500 characters, best first), "pasted" the annotator's evidence (an upper bound). The best paragraph comes last, next to the question: our models read
+a long input as 512-token windows and keep little from two or more windows back (results/expanse/README.md, 26-27). Score our
 checkpoints with indep_build.py --texts and released models with score_hf.py --texts.
 
     python experiments/external/qasper_paper.py --out /expanse/.../external/indep_qasper_paper.jsonl
@@ -52,13 +53,14 @@ def main(argv=None):
             paras = [p for p in it.pop("source").split("\n")[1:] if len(p) > 40]     # abstract and paragraphs
             q = it["prefix"].split("\n")[1][len("Question: "):]
             top = bm25_top(q, paras, a.k)
-            text = ""
-            for p in top:
-                if len(text) + len(p) > a.chars:
-                    p = p[:max(0, a.chars - len(text))]
-                text += p + "\n\n"
-                if len(text) >= a.chars:
+            kept, used = [], 0
+            for p in top:                                       # best first, within the budget
+                p = p[:max(0, a.chars - used)]
+                if not p:
                     break
+                kept.append(p)
+                used += len(p) + 2
+            text = "".join(p + "\n\n" for p in reversed(kept))  # best last
             ev = it.get("pasted") or ""
             hit += bool(ev) and any(e[:200] in text for e in ev.split("\n") if e)
             it.update(set="qasper_paper", type="qasper_paper", bm25=text, kind="item", sep="",
