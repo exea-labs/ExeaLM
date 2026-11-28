@@ -54,7 +54,7 @@ and a keyword search, the 0.1B ExeaLM's bits per byte on held-out research quest
 GitHub results page has the controls, the failures and what these numbers do not show (among them: the strong-attention
 baseline, which matches ExeaLM closely on windows read alone).
 
-Since then (one seed unless stated; the GitHub results page, sections 26 to 30, has every number and its caveats):
+Since then (one seed unless stated; the GitHub results page, sections 26 to 31, has every number and its caveats):
 
 - On held-out documents read as a stream, ExeaLM recalls 14%, 12% and 12% more text last seen more than a window back
   than the Qwen3.5-style model at 0.1B, 0.25B and 0.5B (2 to 3 seeds, p below 1e-40 at each size).

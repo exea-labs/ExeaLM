@@ -383,7 +383,8 @@ The Qwen3.5-style model gains about as much from the same post-training, so this
 Because the library's own questions were written by the model that wrote its entries, we also scored questions people wrote: QASPER (questions researchers asked about NLP papers), PubMedQA, BigCodeBench and DS-1000, with Qwen3.5-9B-Base on the same text (\sect{30}).
 On equal terms the 9B is well ahead; our 3B checkpoint's bits per byte are 1.2 to 1.8 times its own.
 With the paper in hand and a keyword search inside it, the 3B ExeaLM answers QASPER at 0.904 bits per byte, below the 9B without the paper (0.945); with the same paragraphs the 9B reaches 0.738.
-The Qwen3.5-style 3B given the same paragraphs is only even with the 9B (0.937), so at 3B the win over the 9B belongs to ExeaLM.
+The Qwen3.5-style 3B given the same paragraphs is only even with the 9B (0.937).
+A better search inside the paper raises that margin. A released 335M-parameter embedding model (E5-large-v2) in place of the keyword search puts an evidence paragraph in the text for 54\% of questions instead of 36\%. With its picks the 3B ExeaLM answers at 0.791 bits per byte, 16\% below the 9B without the paper, and the 0.5B ExeaLM at 0.854, 10\% below it with 18 times fewer parameters (\sect{31}). Given the same paragraphs the 9B still leads (0.640), and the Qwen3.5-style 3B also beats the 9B without the paper (0.818), with ExeaLM 3.3\% below it.
 Trained on the same data, ExeaLM beats the Qwen3.5-style model at 0.5B on all four sets, most on code (7\% to 9\% on BigCodeBench, 958 of 1,140 functions).
 At 3B and equal compute it is lower on 11 of 12 set-and-condition rows, again most on code: 6.5\% to 8.5\% on BigCodeBench and 4.5\% to 5.1\% on DS-1000. The one exception is PubMedQA with no help (1.7\% behind).
 The weak link is search: ours finds the asked-about paper for 31\% of QASPER questions in one step and 53\% in two (title, then passage), which cuts the 3B's bits per byte by 12\%, while the evidence paragraphs themselves would cut them by 62\%.
@@ -672,6 +673,8 @@ Long documents at 0.1B (1.096, 1.157); without streams 1.132, lead 0.025 & \sect
 Released models on the same questions (0.455, 0.646, 0.588, 0.765); 38 H100-hours to write library v2 & \sect{29}, \texttt{public\_bench\_<model>.json}; job 56091937 \\
 Checkpoints at matched tokens (Pythia-410M 0.299 at 2.1B, 0.410 at 16.8B; OLMo-2-1B 0.493 at 21B) & \sect{29}, \texttt{openbook\_paired\_matched\_tokens.json} \\
 Questions written by people (0.904, 0.945, 0.738; 31\%, 53\%, 12\%, 62\%) & \sect{30}, \texttt{indep\_tests.json} \\
+The 3B pair with library post-training (0.239, 0.258; 11 of 12 rows) & \sect{28}, \sect{30}, \texttt{library\_rag\_3b\_v2\_qwen.jsonl} \\
+Search inside the paper (54\%, 36\%; 0.791, 0.854, 0.640) & \sect{31}, \texttt{results/studio/qasper\_select2.json} \\
 3B in-run check at step 14,500 (0.806, 0.813, 0.007); 0.016 at step 7,500, 0.034 at step 3,000; finish on the evening of 29 November & \sect{23} \\
 Long pair, 2 seeds: step multiplier 1.18, 1.21 at step 5,000 and 1.34, 1.41 at step 20,000; finals 0.958, 0.963 and 0.902, 0.946; in-run leads 0.009 to 0.001 (seed 0) and 0.006 to 0.008 (seed 1) & \sect{24}, \texttt{text\_111x.json}, \texttt{stream8\_111x.json} \\
 Switch at step 31,788; second seed mixed from 28,400 & \texttt{docs/decisions.md}, 26 November (7 p.m.) \\

@@ -645,10 +645,12 @@ The library's own questions were written by the model that wrote its entries.
 We also scored research and code questions written by people (\sect{30}): QASPER (1,372 questions researchers asked about NLP papers, \citealp{dasigi2021qasper}), PubMedQA (1,000 expert-labelled, \citealp{jin2019pubmedqa}), BigCodeBench (1,140 functions, \citealp{zhuo2024bigcodebench}) and DS-1000 (1,000 data-science problems, \citealp{lai2023ds1000}), in bits per byte on the reference answer, with Qwen3.5-9B-Base on the same text.
 On equal terms the 9B is well ahead: our 3B checkpoint's bits per byte are 1.2 to 1.8 times its own on every set.
 With the paper in hand, as QASPER's own setting gives it, and the three paragraphs a keyword search inside the paper ranks first, the 3B ExeaLM scores 0.904 against 0.945 for the 9B without the paper (95\% interval of the ratio 0.93 to 0.99); given the same paragraphs the 9B scores 0.738.
-The Qwen3.5-style 3B with the same post-training is even with the 9B there (0.937, interval 0.96 to 1.02), so at 3B only ExeaLM beats it.
+The Qwen3.5-style 3B with the same post-training is even with the 9B there (0.937, interval 0.96 to 1.02).
+A better search inside the paper, a released 335M-parameter embedding model (E5-large-v2) in place of the keyword search, picks a paragraph the annotators marked as evidence for 54\% of questions instead of 36\% (\sect{31}).
+With its picks the 3B ExeaLM scores 0.791, 16\% below the 9B without the paper (interval of the ratio 0.80 to 0.87), and the 0.5B ExeaLM 0.854, 10\% below it; the Qwen3.5-style 3B also beats it (0.818), the 9B given the same paragraphs reaches 0.640, and ExeaLM stays 3.3\% below the Qwen3.5-style 3B.
 Same data and training, ExeaLM is ahead of the Qwen3.5-style model at 0.5B on all four sets, by 7\% to 9\% on BigCodeBench (958 of 1,140 functions) and 3\% to 5\% on DS-1000.
 At 3B, at equal compute, it is lower on 11 of 12 set-and-condition rows: BigCodeBench by 6.5\% and 8.5\% without and with the library, DS-1000 by 4.5\% and 5.1\%, QASPER by 1.7\% to 3.8\%; the exception is PubMedQA with no help, where the Qwen3.5-style 3B is 1.7\% lower.
-The search is the weak link: our one-step search finds the asked-about paper for 31\% of QASPER questions and barely helps any model, a two-step search (the paper by its title, then its passage for the question) finds it for 53\% and cuts the 3B's bits per byte by 12\% and the 9B's by 11\%, and given the evidence paragraphs the 0.5B's fall 62\%.
+The search is the weak link: our one-step search finds the asked-about paper for 31\% of QASPER questions and barely helps any model, a two-step search (the paper by its title, then its passage for the question) finds it for 53\% and cuts the 3B's bits per byte by 12\% and the 9B's by 11\%, and given the evidence paragraphs the 0.5B's fall 62\%. The embedding model's picks close a quarter of the distance from the keyword search's paragraphs to the evidence.
 Library post-training on one writer's question format made the 0.5B models slightly worse on these questions (QASPER 1.228 to 1.283 with the library), while it helps on the library's own questions and on SciQ and ARC; the 9B's post-training needs questions from many sources.
 
 \pendbox{The finished 3B pair on the same questions (due around midnight of 29 to 30 November 2026).}
@@ -846,6 +848,8 @@ Benchmarks at 0.5B, paired tests; 9 of 4,548 questions overlapping; 1.4 H100-hou
 Released models (Table~\ref{tab:public}); 13 and 38 H100-hours & \sect{29}, \texttt{public\_bench\_<model>.json}; job 56091937 \\
 Checkpoints at matched tokens (2.1B: 0.299; 16.8B: 0.410; OLMo-2-1B 21B: 0.493) & \sect{29}, \texttt{openbook\_paired\_matched\_tokens.json} \\
 Questions written by people: 0.904, 0.945, 0.738; 31\%, 53\%, 62\% & \sect{30}, \texttt{indep\_tests.json}, \texttt{qasper\_search\_check.json} \\
+The 3B pair with library post-training: 0.239, 0.258; 11 of 12 rows & \sect{28}, \sect{30}, \texttt{library\_rag\_3b\_v2\_qwen.jsonl}, \texttt{indep\_tests.json} \\
+Search inside the paper: 54\%, 36\%; 0.791, 0.854, 0.640 & \sect{31}, \texttt{results/studio/qasper\_select2.json}, \texttt{indep\_tests.json} \\
 0.5B run at 20 tokens per parameter: 38,173 steps, 10.0B tokens & \texttt{docs/decisions.md} (27 November, 1:45 a.m.) \\
 Speeds of the study's models (Table~\ref{tab:speed}); within 16\% & \texttt{throughput\_speed\_0.5B\_512\_c0.json}, \texttt{\_c1.json}, \texttt{throughput\_speed\_3B\_512\_c0.json}, \texttt{\_c1.json} (not yet written up in the record) \\
 Other speeds and compute (Appendix~\ref{app:compute}) & \sect{1}, \sect{2}, \sect{16}, \texttt{throughput\_h100.json}, \texttt{scaling\_500m.json}, \texttt{nine\_b.json}, \texttt{docs/decisions.md} \\

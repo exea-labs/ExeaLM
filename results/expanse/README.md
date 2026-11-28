@@ -1103,8 +1103,9 @@ item's bits, without the benchmarks' text; `qasper_search_check.json`.)
   and 3.8% with the evidence. On PubMedQA it is ahead with the library (1.9%) and the abstract (0.6%), and behind with
   nothing (0.871 against 0.857, ratio 1.017, 95% interval 1.014 to 1.020). Every other interval excludes equality
   (`indep_tests.json`).
-- **Only ExeaLM's 3B beats Qwen3.5-9B with the paper in hand.** The Qwen3.5-style 3B reads 0.937 against the 9B's 0.945
-  without the paper (ratio 0.992, 95% interval 0.961 to 1.021: even); ExeaLM's 3B reads 0.904 (0.957, 0.928 to 0.985).
+- **With the keyword search's paragraphs, only ExeaLM's 3B beats Qwen3.5-9B without the paper.** The Qwen3.5-style 3B
+  reads 0.937 against the 9B's 0.945 (ratio 0.992, 95% interval 0.961 to 1.021: even); ExeaLM's 3B reads 0.904
+  (0.957, 0.928 to 0.985). With a better search inside the paper (section 31) both 3B models beat it.
 - **The one-step library search barely helps on these questions** (QASPER 1.211 to 1.176 at 3B; code not at all, for
   any model). It was built for the library's own questions, where it puts the right entry first for 70% of them. For
   QASPER it puts a passage of the asked-about paper first for 31% of questions; searching the title alone, 49% (77% in
@@ -1121,9 +1122,57 @@ item's bits, without the benchmarks' text; `qasper_search_check.json`.)
   16,265 and 15,717 of 45,688); the 0.5B pretrained models had no library post-training,
   so their "library" rows read passages they were never trained to read.
 
-## 31. Next
+## 31. A better search inside the paper (Mac Studio, `results/studio/`; jobs 56109412, 56109423)
+
+Section 30 found search to be the weak link. `experiments/external/qasper_select.py` (Mac Studio, MPS) measures how
+often a method's picks hold one of the annotators' evidence paragraphs, on the 1,240 QASPER test questions whose
+evidence is among the paper's paragraphs (median 44 a paper). "Kept" is the text the models read: the top 3
+paragraphs, at most 2,500 characters, best last, as `qasper_paper.py` gives them.
+
+| How the paragraphs are picked (`qasper_select.json`, `qasper_select2.json`) | Evidence first | In the top 3 | Kept |
+|---|---|---|---|
+| Keyword search, BM25 (section 30's "paper in hand") | 0.151 | 0.360 | 0.355 |
+| E5-large-v2 (335M parameters) | 0.319 | 0.549 | 0.541 |
+| Snowflake Arctic-embed-L v2.0 (568M) | 0.323 | 0.549 | 0.546 |
+| BGE-M3 (568M) | 0.302 | 0.536 | 0.535 |
+| BGE-base-en-v1.5 (110M) | 0.289 | 0.520 | 0.519 |
+| BGE-large-en-v1.5 (335M) | 0.281 | 0.490 | 0.487 |
+| mxbai-embed-large-v1 (335M) | 0.248 | 0.447 | 0.444 |
+| BM25 fused with one embedding model (reciprocal ranks) | 0.240 to 0.267 | 0.455 to 0.510 | 0.452 to 0.498 |
+| Our 0.5B ExeaLM reranking the top 20 by the bits of the question after each paragraph | 0.184 | 0.424 | 0.422 |
+| All five embedding models fused | 0.321 | 0.564 | **0.556** |
+
+Released embedding models find the evidence half again as often as the keyword search. Adding BM25 to them makes it
+worse, and our 0.5B is too small to rerank well. Every model was then scored with E5's picks and with the five-model
+fusion's, on the same items, text and bytes as section 30 (`indep_tests.json`, sets `qasper_e5` and `qasper_fuse`):
+
+| QASPER, bits per byte on the answer (lower is better) | Keyword search (section 30) | E5-large-v2 | Five fused |
+|---|---|---|---|
+| ExeaLM 0.5B, library post-training | 0.978 | 0.854 | 0.838 |
+| Qwen3.5-style 0.5B, library post-training | 1.011 | 0.890 | 0.875 |
+| ExeaLM 3B (step 16,265), library post-training | 0.904 | **0.791** | **0.776** |
+| Qwen3.5-style 3B (step 15,717), library post-training | 0.937 | 0.818 | 0.804 |
+| Qwen3.5-9B-Base, the same paragraphs | 0.738 | 0.640 | 0.622 |
+| Qwen3.5-9B-Base, no paper | 0.945 | 0.945 | 0.945 |
+
+- **The 3B ExeaLM with the paper in hand is now 16% below Qwen3.5-9B without it** (0.791 against 0.945, ratio 0.838,
+  95% interval 0.805 to 0.869; better on 696 of 1,372 questions), from 4% with the keyword search. The 0.5B ExeaLM,
+  18 times smaller, now beats it too (0.854, ratio 0.904, 0.870 to 0.938).
+- The better search helps every model about equally: 12% to 13% lower bits per byte for ours, 13% for the 9B. Given
+  the same paragraphs the 9B stays ahead (0.640 against 0.791, ratio 1.24). So the Qwen3.5-style models also beat the
+  9B without the paper with these picks (3B 0.818, ratio 0.866).
+- ExeaLM stays ahead of the Qwen3.5-style model given the same paragraphs: 3.3% lower at 3B (877 of 1,372, ratio
+  0.967, 0.962 to 0.973) and 4.0% at 0.5B (955 of 1,372).
+- Search still leaves most of the gap. With the evidence paragraphs the 3B reads 0.454, so E5's picks close a quarter
+  of the distance from the keyword search's 0.904.
+- Cost: E5-large-v2 reads each paragraph of a paper once (about 44 of them), about the compute the 3B spends reading
+  its three, and a paper is embedded once for all its questions. The fusion runs five models (1.9B parameters) for
+  0.015 fewer bits per byte at 3B; E5 alone is the setting we use.
+- We have not checked the embedding models' training data for QASPER's test questions. One seed per model; the 3B
+  models are the mid-pretraining checkpoints of section 28.
+
+## 32. Next
 
 The 0.5B three-way run at 20 tokens per parameter (Saturday morning), the 3B pair (around midnight, Sunday 29
-November), the Qwen3.5-style 3B with library post-training (scoring), then a scaling fit and the 9B projection. The
-two-step search goes into the library's search for questions that name a paper; library post-training data from
-many sources.
+November), then a scaling fit and the 9B projection. E5 goes into the library's search for questions that name a
+paper (with the two-step search's title lookup); library post-training data from many sources.
