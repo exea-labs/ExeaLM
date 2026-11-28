@@ -217,8 +217,9 @@ def main(argv=None):
     for ck in a.ckpts:
         name = os.path.basename(ck.rstrip("/"))
         path = os.path.join(ck, "model.pt") if os.path.isdir(ck) else ck
-        model, _ = load_model(path, dev)
-        model.eval()
+        model, ck_ = load_model(path, "cpu")               # to CPU first: a full checkpoint can hold optimizer state
+        del ck_
+        model = model.to(dev).eval()
         amp = torch.autocast("cuda", dtype=torch.bfloat16) if dev.type == "cuda" else torch.autocast("cpu", enabled=False)
         with amp:
             for it in items:
@@ -231,6 +232,8 @@ def main(argv=None):
                     row[cond] = bits_ours(model, tok, eot, text, len(head) + len(it["prefix"]), dev)
                 it["bits"][name] = row
         del model
+        if dev.type == "cuda":
+            torch.cuda.empty_cache()
         print(f"{name} scored ({time.time() - t0:.0f}s)", flush=True)
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
     tmp = a.out + ".tmp"

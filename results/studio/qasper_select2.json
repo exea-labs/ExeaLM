@@ -1,0 +1,66 @@
+{
+ "items": 1372,
+ "with_evidence_paragraph": 1240,
+ "methods": {
+  "bm25": {
+   "hit1": 0.1508,
+   "hit3": 0.3605,
+   "kept": 0.3548
+  },
+  "dense:intfloat/e5-large-v2": {
+   "hit1": 0.3194,
+   "hit3": 0.5492,
+   "kept": 0.5411
+  },
+  "hybrid:intfloat/e5-large-v2": {
+   "hit1": 0.2573,
+   "hit3": 0.5097,
+   "kept": 0.4976
+  },
+  "dense:BAAI/bge-base-en-v1.5": {
+   "hit1": 0.2887,
+   "hit3": 0.5202,
+   "kept": 0.5185
+  },
+  "hybrid:BAAI/bge-base-en-v1.5": {
+   "hit1": 0.2565,
+   "hit3": 0.4782,
+   "kept": 0.4726
+  },
+  "dense:BAAI/bge-m3": {
+   "hit1": 0.3016,
+   "hit3": 0.5363,
+   "kept": 0.5347
+  },
+  "hybrid:BAAI/bge-m3": {
+   "hit1": 0.2581,
+   "hit3": 0.5065,
+   "kept": 0.4952
+  },
+  "dense:mixedbread-ai/mxbai-embed-large-v1": {
+   "hit1": 0.2484,
+   "hit3": 0.4468,
+   "kept": 0.4435
+  },
+  "hybrid:mixedbread-ai/mxbai-embed-large-v1": {
+   "hit1": 0.2395,
+   "hit3": 0.4548,
+   "kept": 0.4524
+  },
+  "dense:Snowflake/snowflake-arctic-embed-l-v2.0": {
+   "hit1": 0.3234,
+   "hit3": 0.5492,
+   "kept": 0.546
+  },
+  "hybrid:Snowflake/snowflake-arctic-embed-l-v2.0": {
+   "hit1": 0.2669,
+   "hit3": 0.5,
+   "kept": 0.496
+  },
+  "fuse:dense": {
+   "hit1": 0.321,
+   "hit3": 0.5637,
+   "kept": 0.5565
+  }
+ }
+}

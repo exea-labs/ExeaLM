@@ -1,0 +1,46 @@
+{
+ "items": 1372,
+ "with_evidence_paragraph": 1240,
+ "methods": {
+  "bm25": {
+   "hit1": 0.1508,
+   "hit3": 0.3605,
+   "kept": 0.3548
+  },
+  "dense:BAAI/bge-large-en-v1.5": {
+   "hit1": 0.2806,
+   "hit3": 0.4895,
+   "kept": 0.4871
+  },
+  "hybrid:BAAI/bge-large-en-v1.5": {
+   "hit1": 0.25,
+   "hit3": 0.475,
+   "kept": 0.4702
+  },
+  "dense:BAAI/bge-base-en-v1.5": {
+   "hit1": 0.2887,
+   "hit3": 0.5202,
+   "kept": 0.5185
+  },
+  "hybrid:BAAI/bge-base-en-v1.5": {
+   "hit1": 0.2565,
+   "hit3": 0.4782,
+   "kept": 0.4726
+  },
+  "dense:intfloat/e5-large-v2": {
+   "hit1": 0.3194,
+   "hit3": 0.5492,
+   "kept": 0.5411
+  },
+  "hybrid:intfloat/e5-large-v2": {
+   "hit1": 0.2573,
+   "hit3": 0.5097,
+   "kept": 0.4976
+  },
+  "upr:hf:ragpost_exealm_500m_v2": {
+   "hit1": 0.1839,
+   "hit3": 0.4242,
+   "kept": 0.4218
+  }
+ }
+}
