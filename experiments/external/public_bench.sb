@@ -1,0 +1,36 @@
+#!/bin/bash
+# Released models on the benchmarks our models are scored on (SciQ, ARC-Easy, ARC-Challenge, MMLU; zero-shot, the
+# same lm-eval version 0.4.13), with each question's result kept for paired tests. A yardstick for the 0.5B results:
+# Pythia-410M (300B tokens), SmolLM2-360M (4T), Qwen2.5-0.5B (18T), and Qwen3.5-9B-Base, the bar for the 9B.
+# One H100 of the shared partition; the lm-eval venv sits on top of the vllm environment (transformers 5):
+#
+#     sbatch -A fli100 experiments/external/public_bench.sb
+#
+#SBATCH --job-name=exealm-public-bench
+#SBATCH --partition=nairr-gpu-shared
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=120G
+#SBATCH --gpus=h100:1
+#SBATCH --time=03:00:00
+#SBATCH --output=logs/expanse/%x-%j.out
+set -uo pipefail
+cd "$SLURM_SUBMIT_DIR"
+export PYTHONUNBUFFERED=1 OPENBLAS_NUM_THREADS=1 TOKENIZERS_PARALLELISM=false
+HF=/expanse/lustre/projects/fli100/abhatia7/hf
+MODELS=${MODELS:-"pythia-410m SmolLM2-360M Qwen2.5-0.5B Qwen3.5-9B-Base"}
+TASKS=${TASKS:-sciq,arc_easy,arc_challenge,mmlu}
+OUT=results/expanse/public_bench
+set +u
+module load anaconda3/2021.05/q4munrg > /dev/null 2>&1
+eval "$(conda shell.bash hook)" && conda activate vllm
+source /expanse/lustre/projects/fli100/abhatia7/envs/lmeval_hf/bin/activate
+set -u
+for m in $MODELS; do
+  [ -d "$OUT/$m" ] && { echo "$m: done before"; continue; }
+  echo "== $(date '+%F %T') $m"
+  lm_eval --model hf --model_args "pretrained=$HF/$m,dtype=bfloat16" --tasks "$TASKS" --num_fewshot 0 \
+    --batch_size 16 --device cuda --log_samples --output_path "$OUT/$m" || echo "$m failed"
+done
+echo "== $(date '+%F %T') done"
