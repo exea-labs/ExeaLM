@@ -1006,6 +1006,38 @@ zero-shot, the same version and tasks, every question kept; `public_bench_<model
   By the usual 6 x parameters x tokens, Pythia-410M's pretraining is about 7e20 operations and the 0.5B ExeaLM's
   about 7e18, a hundredth.
 
+**Released checkpoints at matched training tokens** (job 56108256, `experiments/external/public_ckpts.sb`, one lm-eval
+process, `public_bench_<checkpoint>.json`, `openbook_paired_matched_tokens.json`). Pythia-410M's checkpoints every
+2.1B tokens are public, and OLMo-2-0425-1B's (1.5B parameters, a 2025 data recipe) every 2.1B of its first stage.
+Pooled accuracy on the 4,548 SciQ and ARC questions:
+
+| Training tokens | Pythia-410M | OLMo-2-1B | Ours (0.5B) |
+|---|---|---|---|
+| 1B | | 0.247 | |
+| 2.1B | 0.299 | | ExeaLM 0.418, Qwen3.5-style 0.423 |
+| 2.3B (with library post-training, open book) | | | ExeaLM **0.495** |
+| 4.2B | 0.345 | | |
+| 8.4B | 0.405 | | |
+| 16.8B | 0.410 | | |
+| 21B | | 0.493 | |
+| 33.6B | 0.430 | | |
+| 42B | | 0.528 | |
+| 67B | 0.449 | | |
+| 105B | | 0.564 | |
+| 134B | 0.452 | | |
+| 210B | | 0.596 | |
+| 300B (released) | 0.455 | | |
+| 4T (released) | | 0.703 | |
+
+- At the same 2.1B tokens our 0.5B models are 12 points ahead of Pythia-410M (ExeaLM 801 questions only it gets
+  against 264, p = 2e-63). ExeaLM is even with Pythia at 16.8B tokens (p = 0.19) and behind it at 33.6B (0.430,
+  p = 0.04): our recipe reaches that score on about 8 times fewer tokens. This is our data and schedule, not
+  ExeaLM's architecture (the Qwen3.5-style model does as well), and Pythia's checkpoints before 300B have not had their
+  learning rate decayed, as ours have, which flatters ours.
+- With its library post-training and library, the 0.5B ExeaLM (2.3B tokens) is even with OLMo-2-1B, three times its
+  parameters and a modern recipe, after 21B tokens (0.495 against 0.493, p = 0.83), and behind it after 42B (0.528,
+  p = 4e-6). OLMo-2-1B as released, after 4T tokens, scores 0.703.
+
 ## 30. Next
 
 The 0.5B three-way run at 20 tokens per parameter (Saturday morning), the 3B pair (around midnight, Sunday 29 November), library v2's check

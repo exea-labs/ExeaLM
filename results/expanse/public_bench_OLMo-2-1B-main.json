@@ -1,0 +1,44 @@
+{
+ "results": {
+  "sciq": {
+   "name": "sciq",
+   "alias": "sciq",
+   "sample_len": 1000,
+   "acc,none": 0.954,
+   "acc_stderr,none": "N/A",
+   "acc_norm,none": 0.952,
+   "acc_norm_stderr,none": "N/A"
+  },
+  "arc_easy": {
+   "name": "arc_easy",
+   "alias": "arc_easy",
+   "sample_len": 2376,
+   "acc,none": 0.7251683501683501,
+   "acc_stderr,none": "N/A",
+   "acc_norm,none": 0.7361111111111112,
+   "acc_norm_stderr,none": "N/A"
+  },
+  "arc_challenge": {
+   "name": "arc_challenge",
+   "alias": "arc_challenge",
+   "sample_len": 1172,
+   "acc,none": 0.3822525597269625,
+   "acc_stderr,none": "N/A",
+   "acc_norm,none": 0.42150170648464164,
+   "acc_norm_stderr,none": "N/A"
+  }
+ },
+ "n-shot": {
+  "arc_challenge": 0,
+  "arc_easy": 0,
+  "sciq": 0
+ },
+ "versions": {
+  "arc_challenge": 1.0,
+  "arc_easy": 1.0,
+  "sciq": 1.0
+ },
+ "lm_eval_version": "0.4.13",
+ "date": 1795848196.836084,
+ "model_path": "/expanse/lustre/projects/fli100/abhatia7/hf/OLMo-2-1B-main"
+}

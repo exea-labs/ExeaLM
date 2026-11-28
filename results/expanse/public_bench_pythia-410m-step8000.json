@@ -1,0 +1,44 @@
+{
+ "results": {
+  "sciq": {
+   "name": "sciq",
+   "alias": "sciq",
+   "sample_len": 1000,
+   "acc,none": 0.736,
+   "acc_stderr,none": "N/A",
+   "acc_norm,none": 0.642,
+   "acc_norm_stderr,none": "N/A"
+  },
+  "arc_easy": {
+   "name": "arc_easy",
+   "alias": "arc_easy",
+   "sample_len": 2376,
+   "acc,none": 0.44823232323232326,
+   "acc_stderr,none": "N/A",
+   "acc_norm,none": 0.4027777777777778,
+   "acc_norm_stderr,none": "N/A"
+  },
+  "arc_challenge": {
+   "name": "arc_challenge",
+   "alias": "arc_challenge",
+   "sample_len": 1172,
+   "acc,none": 0.1962457337883959,
+   "acc_stderr,none": "N/A",
+   "acc_norm,none": 0.22525597269624573,
+   "acc_norm_stderr,none": "N/A"
+  }
+ },
+ "n-shot": {
+  "arc_challenge": 0,
+  "arc_easy": 0,
+  "sciq": 0
+ },
+ "versions": {
+  "arc_challenge": 1.0,
+  "arc_easy": 1.0,
+  "sciq": 1.0
+ },
+ "lm_eval_version": "0.4.13",
+ "date": 1795847675.4395347,
+ "model_path": "/expanse/lustre/projects/fli100/abhatia7/hf/pythia-410m-step8000"
+}

@@ -301,6 +301,9 @@ We scored released models on the same questions with the same harness version an
 With its library post-training and library, the 0.5B ExeaLM, trained on 2.3B tokens in all, is ahead of Pythia-410M \citep{biderman2023pythia}, trained on 300B: 0.495 against 0.455 pooled (601 questions only ExeaLM gets against 418, $p = 10^{-8}$), most of it on SciQ.
 By six times parameters times tokens that is a hundredth of Pythia-410M's training compute, plus 38 H100-hours to write the library once for every model that reads it; the entries carry knowledge from DeepSeek-V4-Flash, whose own training we do not count.
 Models trained on 4T and 18T tokens of curated data, SmolLM2-360M \citep{allal2025smollm2} and Qwen2.5-0.5B \citep{qwen2024qwen25}, are well ahead (0.646 and 0.588), and Qwen3.5-9B-Base, the bar for our 9B, scores 0.765 (\sect{29}).
+Their public training checkpoints put this in proportion.
+At the same 2.1B tokens our 0.5B models are 12 points ahead of Pythia-410M (0.418 against 0.299, $p = 2\times10^{-63}$), and ExeaLM matches Pythia's score after 16.8B tokens: our data and schedule reach it on about 8 times fewer tokens (the Qwen3.5-style model does as well, so this is the recipe, and Pythia's checkpoints before the end have not had their learning rate decayed).
+With its library, the 0.5B ExeaLM is even with OLMo-2-1B \citep{olmo2025olmo2}, three times its parameters and a 2025 data recipe, after 21B tokens (0.495 against 0.493, $p = 0.83$), nine times its own; OLMo-2-1B reaches 0.703 after 4T.
 
 \begin{table*}[t]
 \centering
@@ -317,6 +320,11 @@ Pythia-410M & 300B & 0.707 & 0.455 & 0.240 & 0.455 & 0.233 \\
 SmolLM2-360M & 4T & 0.865 & 0.682 & 0.385 & 0.646 & 0.254 \\
 Qwen2.5-0.5B & 18T & 0.908 & 0.584 & 0.323 & 0.588 & 0.472 \\
 Qwen3.5-9B-Base & & 0.954 & 0.782 & 0.569 & 0.765 & 0.774 \\
+\midrule
+Pythia-410M, checkpoint & 2.1B & 0.411 & 0.290 & 0.224 & 0.299 & \\
+Pythia-410M, checkpoint & 16.8B & 0.642 & 0.403 & 0.225 & 0.410 & \\
+OLMo-2-1B, checkpoint & 21B & 0.741 & 0.499 & 0.270 & 0.493 & \\
+OLMo-2-1B & 4T & 0.952 & 0.736 & 0.422 & 0.703 & \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -824,6 +832,7 @@ Learning-rate checks and picks & \sect{17}, \texttt{experiments/expanse/plan.py}
 Open-book rules: 13-token window, 14 benchmarks, 10 entries & \texttt{docs/decisions.md} (26 November, midnight) \\
 Benchmarks at 0.5B, paired tests; 9 of 4,548 questions overlapping; 1.4 H100-hours & \sect{29}, \texttt{openbook\_paired\_500m.json}, \texttt{bench\_questions\_v2.json} \\
 Released models (Table~\ref{tab:public}); 13 and 38 H100-hours & \sect{29}, \texttt{public\_bench\_<model>.json}; job 56091937 \\
+Checkpoints at matched tokens (2.1B: 0.299; 16.8B: 0.410; OLMo-2-1B 21B: 0.493) & \sect{29}, \texttt{openbook\_paired\_matched\_tokens.json} \\
 0.5B run at 20 tokens per parameter: 38,173 steps, 10.0B tokens & \texttt{docs/decisions.md} (27 November, 1:45 a.m.) \\
 Speeds of the study's models (Table~\ref{tab:speed}); within 16\% & \texttt{throughput\_speed\_0.5B\_512\_c0.json}, \texttt{\_c1.json}, \texttt{throughput\_speed\_3B\_512\_c0.json}, \texttt{\_c1.json} (not yet written up in the record) \\
 Other speeds and compute (Appendix~\ref{app:compute}) & \sect{1}, \sect{2}, \sect{16}, \texttt{throughput\_h100.json}, \texttt{scaling\_500m.json}, \texttt{nine\_b.json}, \texttt{docs/decisions.md} \\

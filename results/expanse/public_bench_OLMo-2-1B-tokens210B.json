@@ -1,0 +1,44 @@
+{
+ "results": {
+  "sciq": {
+   "name": "sciq",
+   "alias": "sciq",
+   "sample_len": 1000,
+   "acc,none": 0.888,
+   "acc_stderr,none": "N/A",
+   "acc_norm,none": 0.85,
+   "acc_norm_stderr,none": "N/A"
+  },
+  "arc_easy": {
+   "name": "arc_easy",
+   "alias": "arc_easy",
+   "sample_len": 2376,
+   "acc,none": 0.6658249158249159,
+   "acc_stderr,none": "N/A",
+   "acc_norm,none": 0.6212121212121212,
+   "acc_norm_stderr,none": "N/A"
+  },
+  "arc_challenge": {
+   "name": "arc_challenge",
+   "alias": "arc_challenge",
+   "sample_len": 1172,
+   "acc,none": 0.2986348122866894,
+   "acc_stderr,none": "N/A",
+   "acc_norm,none": 0.32849829351535836,
+   "acc_norm_stderr,none": "N/A"
+  }
+ },
+ "n-shot": {
+  "arc_challenge": 0,
+  "arc_easy": 0,
+  "sciq": 0
+ },
+ "versions": {
+  "arc_challenge": 1.0,
+  "arc_easy": 1.0,
+  "sciq": 1.0
+ },
+ "lm_eval_version": "0.4.13",
+ "date": 1795848134.9898026,
+ "model_path": "/expanse/lustre/projects/fli100/abhatia7/hf/OLMo-2-1B-tokens210B"
+}
