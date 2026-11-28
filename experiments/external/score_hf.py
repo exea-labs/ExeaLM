@@ -75,8 +75,9 @@ def main(argv=None):
         for k in ours:
             row[k] = round(sum(r["bits"][k] for r in rs) / sum(r["bytes"] for r in rs), 4)
         res["sets"][s] = row
-    res["mean_of_sets"] = {k: round(sum(v[k] for v in res["sets"].values()) / len(res["sets"]), 4)
-                           for k in [name] + ours}
+    if res["sets"]:                                          # none when the texts hold library items only
+        res["mean_of_sets"] = {k: round(sum(v[k] for v in res["sets"].values()) / len(res["sets"]), 4)
+                               for k in [name] + ours}
     groups = defaultdict(list)
     for r in items:
         groups[(r["set"], "all")].append(r)
