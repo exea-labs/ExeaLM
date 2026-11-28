@@ -1,0 +1,31 @@
+#!/bin/bash
+# Released checkpoints at matched training tokens on SciQ and ARC (experiments/external/public_bench.py, one process):
+# Pythia-410M after 2.1B, 4.2B, 8.4B, 16.8B, 33.6B, 67B and 134B tokens, and OLMo-2-0425-1B after 1B, 21B, 42B,
+# 105B and 210B tokens of its first stage and as released. Checkpoints in the middle of a run are not annealed, so they
+# read lower than a model trained to that many tokens would.
+#
+#     sbatch -A fli100 experiments/external/public_ckpts.sb
+#
+#SBATCH --job-name=exealm-public-ckpts
+#SBATCH --partition=nairr-gpu-shared
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=120G
+#SBATCH --gpus=h100:1
+#SBATCH --time=03:00:00
+#SBATCH --output=logs/expanse/%x-%j.out
+set -uo pipefail
+cd "$SLURM_SUBMIT_DIR"
+export PYTHONUNBUFFERED=1 OPENBLAS_NUM_THREADS=1 TOKENIZERS_PARALLELISM=false
+HF=/expanse/lustre/projects/fli100/abhatia7/hf
+for i in $(seq 1 60); do grep -q "all done" $HF/download_ckpts.log 2>/dev/null && break; sleep 30; done
+M=""
+for s in 1000 2000 4000 8000 16000 32000 64000; do M="$M $HF/pythia-410m-step$s"; done
+for t in tokens1B tokens21B tokens42B tokens105B tokens210B main; do M="$M $HF/OLMo-2-1B-$t"; done
+set +u
+module load anaconda3/2021.05/q4munrg > /dev/null 2>&1
+eval "$(conda shell.bash hook)" && conda activate vllm
+source /expanse/lustre/projects/fli100/abhatia7/envs/lmeval_hf/bin/activate
+set -u
+python experiments/external/public_bench.py $M
