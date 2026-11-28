@@ -25,7 +25,7 @@
 % A section of the study's results record, results/expanse/README.md.
 \newcommand{\sect}[1]{\S#1}
 
-\title{ExeaLM Leads a Qwen3.5-Style Hybrid up to 0.5B, Most on Long Documents}
+\title{ExeaLM: Long Memory and a Library for Research and Code}
 \author{Avneh Bhatia (Exea Labs)\\ \pend{further authors to be decided}}
 \date{Draft of 27 November 2026}
 
@@ -33,13 +33,15 @@
 \maketitle
 
 \begin{abstract}
-Models for research and code read long documents, but a lead found on short text at one size may not hold.
-We train ExeaLM, a transformer with published attention changes, one layer of small signal circuits and a last phase reading consecutive windows.
-We compare it with our Qwen3.5-style model, which mixes attention and recurrent layers, at equal size and data.
-From 0.1 to 0.5 billion parameters, its lead on held-out text falls from 2.8 to 0.6 percent on short windows and 5.3 to 3.6 percent on long documents.
-On long-context tasks scored as exact match it does not fall: ExeaLM recalls 12 to 14 percent more text last seen over a window back at every size, completes 7 to 10 percent more lines of code that depend on distant definitions, and finds a planted pass key four to fifty times as often.
-Swapping the circuit layer for attention changes the text results by about 0.1 percent, but cuts retrieval of a pass key one window back from 28 to 9 percent.
-The lead on text comes from the attention layers and the last phase; the circuit layer carries exact facts across windows.
+ExeaLM is a language model for research and code.
+It is built for inputs longer than the window it reads at once, and for facts its weights cannot hold: it carries a memory from one 512-token window to the next, and it reads entries from a library it ships with.
+We trained it against our implementation of the Qwen3.5 layer design at 0.1B, 0.25B and 0.5B parameters, with the same data and tokens, on a 2,000 GPU-hour allocation from the National AI Research Resource Pilot.
+On long-context tasks scored as exact match, ExeaLM recalls 12 to 14 percent more text from beyond its window at every size, completes 7 to 10 percent more lines of code that depend on distant definitions, and finds a planted pass key 4 to 50 times as often.
+Unlike its lead on short text, which shrinks from 2.8 to 0.6 percent in bits per byte, its recall lead does not shrink with size.
+Its memory layer triples retrieval of a pass key from the previous window over the same model with attention in its place.
+With its library, a 0.1B ExeaLM scores better on held-out research questions than the released Qwen3.5-9B without one, at about a sixth of the compute per answer.
+Trained as long per parameter as the planned 9B, it reaches the Qwen3.5-style model's quality in 25 to 29 percent fewer steps.
+A 3B pair finishes after this draft.
 \end{abstract}
 
 \begin{figure*}[t]
@@ -52,46 +54,36 @@ The lead on text comes from the attention layers and the last phase; the circuit
 %=====================================================================================================
 \section{Introduction}
 
-Language models for research and code must read long inputs.
-A research paper or a code repository is often many times longer than the window of text a small model reads at once.
-A design for such a model should therefore be tested on long documents as well as on short windows.
+A model that helps with research and code meets two problems that size alone handles poorly.
+Its inputs are long: a paper runs 4,000 to 10,000 tokens, and code that spans a repository 8,000 to 32,000, many times the window a small model reads at once.
+Its answers also depend on more facts than its weights can hold; plain weights store about 2 bits of knowledge per parameter \citep{allenzhu2024physics}.
+A model that is to be the best of its size for research and code, and the cheapest per answer, has to meet both problems with something other than more parameters.
 
-A lead measured in one setting can come from several places.
-It can come from a new layer type, from published changes to attention, or from a training recipe the baselines did not get.
-It can also shrink as models grow or train longer.
-Recent hybrid designs mix recurrent layers with attention, as Qwen3.5 does \citep{qwen35}.
-This paper asks which parts of a design cause its lead over such a hybrid, and how the lead changes with size, training length and text length.
+ExeaLM, Exea Labs' language model for research and code, meets them with two parts that do not grow with the model.
+For long inputs it reads a document as a \emph{stream}: each 512-token window is read with the attention keys and values of the window before and the state of a memory layer carried in.
+That layer, a \emph{TONN layer}, sits at the middle of the network and holds small signal circuits such as short convolutions, running sums and state-space memories.
+For facts it reads a \emph{library}: a keyword search picks the best written entry and the best passage of real text for the question, and the model reads them before it answers.
+The rest of ExeaLM is a transformer with four published changes to attention.
 
-We answer with a scaling study of ExeaLM, Exea Labs' language model for research and code.
-The study had an allocation of 2,000 hours of NVIDIA H100 GPUs (GPU-hours) from the National AI Research Resource Pilot.
-ExeaLM is a transformer with four published changes to attention and one layer of our own design at its middle layer.
-That layer, which we call a \emph{TONN layer}, is a row of small signal circuits, such as short convolutions, running sums and state-space memories.
-In its last 20\% of training, ExeaLM reads rows of four consecutive windows of one document and carries its memory from window to window.
-Reading a document this way is reading it as a \emph{stream}.
-We compare ExeaLM with a Qwen3.5-style model, our own implementation of Qwen3.5's mix of attention layers and Gated DeltaNet layers.
-Gated DeltaNet is a recurrent layer with a matrix memory.
-Both models train at equal size, data and tokens, where tokens are the word pieces a model reads.
-A plain Llama, the standard transformer, trains beside them.
-We finished three sizes, 0.1B, 0.25B and 0.5B parameters (B for billion), with 3, 3 and 2 seeds, or independent runs.
-A 3B pair is training, and the 0.1B pair also trained 27 times longer.
-We score models in \emph{bits per byte} on 18 held-out sets, text that no model trained on.
-It is the information a model needs to predict each byte, so lower is better.
-Controls separate the TONN layer, the attention changes and the last phase of training.
+This report gives the evidence that these parts work, from a scaling study on 2,000 hours of NVIDIA H100 GPUs (GPU-hours) from the National AI Research Resource Pilot.
+We compare ExeaLM with a Qwen3.5-style model, our implementation of Qwen3.5's mix of attention and Gated DeltaNet layers \citep{qwen35}, a recurrent design with a matrix memory, and with a plain Llama.
+Every model trains at equal size, data and tokens.
+We finished 0.1B, 0.25B and 0.5B parameters (B for billion) with 3, 3 and 2 seeds, or independent runs; the 0.1B pair also trained 27 times longer, to the 9B's ratio of tokens to parameters, and a 3B pair is training.
+We score models on long-context tasks as exact match, in \emph{bits per byte} on 18 held-out sets (text no model trained on; lower is better), and on benchmarks.
 
-The study's findings are these.
+What the study shows:
 \begin{itemize}
-\item ExeaLM is ahead of the Qwen3.5-style model on every held-out set with every seed at the three finished sizes. That is 54 of 54 pairs of a set and a seed at 0.1B and 0.25B, and 36 of 36 at 0.5B (Section~\ref{sec:size}).
-\item On 512-token windows read alone, the lead shrinks with size, from 2.8\% to 0.6\%, and with training length. On long documents read as a stream it shrinks less, from 5.3\% to 3.6\% across sizes and to 4.7\% after long training (Sections~\ref{sec:size} to~\ref{sec:long}).
-\item At 0.1B, with attention in place of the TONN layer, results change by about 0.1\% (3 seeds), and in longer training this control is ahead so far. The lead over the Qwen3.5-style model comes from ExeaLM's attention layers, and on long documents also from the last training phase, which only ExeaLM had (Section~\ref{sec:parts}).
-\item A 0.1B model reads entries that a keyword search finds in a library of 18,545 written entries. Its bits per byte on 6,253 held-out research questions fall from 1.645 to 0.590 (3 seeds, Section~\ref{sec:library}).
-\item Five things did not work, including a gradient-averaging bug that voided our first multi-GPU runs (Section~\ref{sec:negative}).
+\item \textbf{ExeaLM remembers more of a long document.} On held-out documents read as a stream, it recalls 14\%, 12\% and 12\% more text last seen beyond its window than the Qwen3.5-style model at 0.1B, 0.25B and 0.5B, completes 10\%, 9\% and 7\% more lines of code that depend on a distant definition, and finds a planted pass key 4 to 50 times as often. Every difference holds target by target ($p \le 0.002$), and the recall lead does not shrink with size (Section~\ref{sec:long}).
+\item \textbf{Its memory layer carries exact facts across windows.} With attention in place of the TONN layer, the model finds a pass key one window back 9\% of the time against ExeaLM's 28\% (0.25B, 3 seeds, $p = 3\times10^{-8}$) (Section~\ref{sec:parts}).
+\item \textbf{Its library turns a small model into a strong one on research questions.} A 0.1B ExeaLM that reads library entries found by a keyword search cuts its bits per byte on held-out research questions by 64\% (3 seeds), and with the second library, written by DeepSeek-V4-Flash, by 74\%. It then scores better than the released Qwen3.5-9B without a library, at about a sixth of the compute per answer (Sections~\ref{sec:library} and~\ref{sec:cost}).
+\item \textbf{It learns more per token.} Trained to 111 tokens per parameter, the Qwen3.5-style model needs 34\% to 41\% more steps to match ExeaLM through step 20,000 (2 seeds), and never reaches its final score (Section~\ref{sec:length}).
+\item \textbf{It is ahead on every held-out set.} ExeaLM is ahead of the Qwen3.5-style model on all 54 set-and-seed pairs at 0.1B and 0.25B and all 36 at 0.5B, by 5.3\% to 3.6\% on long documents and 2.8\% to 0.6\% on short windows (Section~\ref{sec:size}).
+\item \textbf{The 9B is priced.} At the speed we measured for the 9B on one node, pretraining on 1T tokens takes about 75,000 GPU-hours, \$202,000 to \$299,000 at public prices (Section~\ref{sec:cost}).
 \end{itemize}
-ExeaLM's lead held at every size and training length we finished, and it held best on long documents.
+We also report what did not work, including a retrieval circuit inside the model and a gradient-averaging bug that voided our first multi-GPU runs (Section~\ref{sec:negative}).
 
-This paper does not show results above 0.5B parameters.
-The 3B pair finishes after this draft, and its results are marked as pending.
-The library results come from 0.1B models and are scored in bits per byte, not answer accuracy.
-On seven zero-shot benchmarks, meaning tasks given without worked examples, the 0.5B models differ by less than 0.01 in mean accuracy (2 seeds), and all three are near chance on two.
+What this report does not show yet: results above 0.5B parameters (the 3B pair finishes after this draft and its results are marked pending), library results beyond bits per byte at 0.1B, and retrieval of exact facts from two or more windows back, which no model we trained can do.
+On short windows read alone the lead shrinks with size, and on seven zero-shot benchmarks the 0.5B models differ by less than 0.01 in mean accuracy.
 
 %=====================================================================================================
 \section{Model and training}
@@ -590,6 +582,39 @@ On one H100, a pruned GPU index that keeps each token's 100,000 best passages, m
 Its top passage matches the full index's for 86\% of queries (Table~\ref{tab:search} in Appendix~\ref{app:extra}).
 
 \pendbox{Library v2 test: RAG post-training on v2 for ExeaLM and the Qwen3.5-style model with the same recipe, streams included for both, at 0.5B and on a mid-run 3B checkpoint. Fills 0.5B and 3B rows of a table like Table~\ref{tab:library}, and adds held-out documents and questions from which no entry was written.}
+
+%=====================================================================================================
+\section{What a result costs}
+\label{sec:cost}
+
+A model that is to win on price has to win per unit of compute, not only per parameter.
+Four measurements from the study bear on that.
+
+\paragraph{Training steps to a given quality.}
+At 0.1B trained to 111 tokens per parameter, the Qwen3.5-style model needs 1.34 and 1.41 times ExeaLM's steps to reach ExeaLM's in-run score at step 20,000 (2 seeds, \sect{24}).
+A step is the same tokens for both, and the two have the same parameters within 1\%.
+ExeaLM therefore reaches that quality with 25\% to 29\% fewer training tokens and about as much less compute.
+After step 20,000 the matching step falls inside the Qwen3.5-style run's learning-rate decay, so we stop the comparison there; the finished Qwen3.5-style runs never reach ExeaLM's final score.
+
+\paragraph{Long-context tasks per parameter.}
+At 0.25B ExeaLM finds a pass key in the window it is reading 0.766 of the time, against 0.188 for the Qwen3.5-style model at 0.5B, twice its size, and 0.281 against 0 one window back (both at 4.1 tokens per parameter, \sect{26}).
+On recall the larger Qwen3.5-style model is slightly ahead (0.252 against 0.241), and on code next line more so (0.042 against 0.035).
+Half the parameters buys most of the recall and four times the retrieval.
+
+\paragraph{An answer with the library.}
+On 6,253 held-out research questions, the 0.1B ExeaLM with its library scores 0.590 bits per byte on the answers, and the released Qwen3.5-9B-Base with no library 1.031 (\sect{18}).
+A forward pass costs about twice the parameters in operations per token read.
+The 0.1B model reads the entry (426 tokens on average) and the question and answer (30), about $2 \times 95\textrm{M} \times 457 \approx 8.7\times10^{10}$ operations; Qwen3.5-9B reads only the question and answer, about $2 \times 9\textrm{B} \times 31 \approx 5.6\times10^{11}$.
+The small model with its library is ahead at about a sixth of the compute per answer, plus a keyword search that takes 0.4 ms on a CPU for this library.
+This is a system against a model on questions about topics the library covers, and the questions were written by the model that wrote the entries.
+Given the same library, Qwen3.5-9B scores 0.313.
+
+\paragraph{The 9B.}
+We timed the 9B ExeaLM's full training step on one node of four H100s (\sect{16}).
+At that speed, pretraining on 1T tokens takes about 75,000 GPU-hours, \$202,000 to \$299,000 at public on-demand prices of \$2.69 to \$3.99 per GPU-hour.
+Qwen3 was pretrained on about 36T tokens \citep{yang2025qwen3}; a 9B run that long at our measured speed would need about 36 times as much.
+We do not claim the 9B will match such models token for token.
+The bet is that a model which learns more per token, remembers more of a long input and reads a library closes much of that gap on research and code for a small share of the cost; the 3B pair and a scaling fit are the next tests of it.
 
 %=====================================================================================================
 \section{What did not work}

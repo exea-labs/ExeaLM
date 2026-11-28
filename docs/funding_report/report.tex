@@ -358,6 +358,16 @@ Searched as one written tier with v1, the answer to a held-out v2 question is in
 
 \pendbox{Library v2 test. Library post-training on v2 for ExeaLM and the Qwen3.5-style model, with the same recipe, at 0.5B (jobs 56104636--9, running since 27 November) and on a mid-run 3B checkpoint (\texttt{docs/library.md}). Fills the 0.5B and 3B rows of a table like Table~\ref{tab:library}.}
 
+\subsection{What a result costs}
+
+Four measurements bear on intelligence per dollar.
+\begin{itemize}
+\item \textbf{Fewer training steps for the same quality.} At 0.1B trained to 111 tokens per parameter, the Qwen3.5-style model needs 1.34 and 1.41 times ExeaLM's steps to reach ExeaLM's score at step 20,000 (2 seeds, \sect{24}): ExeaLM gets there on 25\% to 29\% fewer tokens.
+\item \textbf{More retrieval per parameter.} ExeaLM at 0.25B finds a pass key in its window 0.766 of the time, against 0.188 for the Qwen3.5-style model at 0.5B, twice its size; the larger model is slightly ahead on recall (0.252 against 0.241, \sect{26}).
+\item \textbf{A cheaper answer with the library.} On held-out research questions, the 0.1B ExeaLM with its library scores 0.590 bits per byte and the released Qwen3.5-9B-Base without one 1.031. Counting about two operations per parameter per token read, the small model reading its entry uses about a sixth of the compute per answer ($8.7\times10^{10}$ against $5.6\times10^{11}$), plus a 0.4 ms keyword search. It is a system against a model, on topics the library covers; with the same library Qwen3.5-9B scores 0.313.
+\item \textbf{A 9B for a few hundred thousand dollars.} The 9B's measured speed puts 1T tokens of pretraining at \$202,000 to \$299,000. Qwen3 was pretrained on about 36T tokens; the bet is that a model that learns more per token, remembers more of a long input and reads a library closes much of that gap on research and code.
+\end{itemize}
+
 \subsection{The 9B is priced from its measured speed}
 
 We built the 9B ExeaLM and timed its full training step on one Expanse node of four H100s (\sect{16}).
