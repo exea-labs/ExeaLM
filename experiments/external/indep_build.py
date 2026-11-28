@@ -177,6 +177,8 @@ def main(argv=None):
     ap.add_argument("--tokenizer", default="data/exealm-pretrain/slice-30b-r2/tokenizer")
     ap.add_argument("--ckpts", nargs="*", default=[])
     ap.add_argument("--device", default="auto")
+    ap.add_argument("--texts", default=None, help="read the searched items from this file (a run of this script) "
+                    "instead of building them; --out gets them with these checkpoints' bits added")
     ap.add_argument("--out", required=True)
     a = ap.parse_args(argv)
     t0 = time.time()
@@ -185,9 +187,10 @@ def main(argv=None):
     tok.no_truncation()
     tok.no_padding()
     eot = tok.token_to_id("<|endoftext|>")
-    if os.path.exists(a.out):
-        items = [json.loads(line) for line in open(a.out, encoding="utf-8")]
-        print(f"{len(items)} items read from {a.out}", flush=True)
+    src = a.texts or (a.out if os.path.exists(a.out) else None)
+    if src:
+        items = [json.loads(line) for line in open(src, encoding="utf-8")]
+        print(f"{len(items)} items read from {src}", flush=True)
     else:
         items = []
         for s in a.sets.split(","):
