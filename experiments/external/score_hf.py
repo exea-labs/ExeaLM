@@ -27,6 +27,9 @@ def main(argv=None):
     ap.add_argument("--max_len", type=int, default=8192)
     ap.add_argument("--gpu_mem", type=float, default=0.85)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--shots", type=int, default=0, help="worked examples before each library item, in the same "
+                    "condition (each with its own entry): the format shown, as our post-trained models learned it")
+    ap.add_argument("--shots_from", default=None, help="build_texts.py --split train output: the examples")
     ap.add_argument("--rows_out", default=None, help="also write every item row with its bits under bits[<name>]")
     a = ap.parse_args(argv)
     from transformers import AutoTokenizer
@@ -44,11 +47,20 @@ def main(argv=None):
         r["hf_bytes"] = len(r["text"].encode("utf-8")) - len(tok.decode(ids[:1]).encode("utf-8"))
         jobs.append((ids, list(range(1, len(ids))), ("window", r)))
     items = [r for r in rows if r["kind"] == "item"]
+    shots = {}
+    if a.shots:
+        ex = [json.loads(line) for line in open(a.shots_from, encoding="utf-8")]
+        for s_ in {r["set"] for r in items}:
+            pool = [e for e in ex if e["kind"] == "item" and e["set"] == s_][:a.shots]
+            for cond in ("none", "pasted", "bm25"):
+                shots[(s_, cond)] = "".join(("" if cond == "none" else e[cond] + e["sep"]) + e["prefix"] + e["target"]
+                                            + "\n\n" for e in pool)
+        name += f"_{a.shots}shot"
     for r in items:
         for cond in ("none", "pasted", "bm25"):
             if cond != "none" and not r.get(cond):              # sets without an oracle passage (code)
                 continue
-            head = "" if cond == "none" else r[cond] + r["sep"]
+            head = shots.get((r["set"], cond), "") + ("" if cond == "none" else r[cond] + r["sep"])
             full = head + r["prefix"] + r["target"]
             enc = tok(full, add_special_tokens=False, return_offsets_mapping=True)
             ids, offs = enc["input_ids"], enc["offset_mapping"]

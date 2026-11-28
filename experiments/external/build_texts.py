@@ -63,6 +63,8 @@ def main(argv=None):
     ap.add_argument("--device", default="auto")
     ap.add_argument("--limit", type=int, default=0, help="library items of each set (score.py's --limit; 0: all)")
     ap.add_argument("--windows", type=int, default=1, help="0: library items only")
+    ap.add_argument("--split", default="heldout", choices=["heldout", "train"],
+                    help="train: worked examples for score_hf.py --shots_from")
     ap.add_argument("--out", required=True)
     a = ap.parse_args(argv)
     from tokenizers import Tokenizer
@@ -92,7 +94,7 @@ def main(argv=None):
     lib = TokenShards(a.library)
     items, eot, sep = [], None, None
     for s_ in ("qa", "tasks"):                                # first --limit of each, as score.py --limit takes them
-        it, eot, sep = load_items(a.library, [s_], "heldout", a.limit)
+        it, eot, sep = load_items(a.library, [s_], a.split, a.limit)
         items += it
     picked, top1, _ = bm25_pick(lib, items, eot, sep, dev=dev)
     for it, d, hit in zip(items, picked, top1):
