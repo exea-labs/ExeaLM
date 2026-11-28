@@ -5,12 +5,15 @@
 # searched as one (v2's entry numbers follow v1's 18,545), the human tier the public pool.
 #
 #     TAG=500m_v2 bash experiments/library/openbook.sh runs/ragpost_exealm_500m_v2 runs/exealm_500m_4.1x_s0
+#
+# SAMPLES=1 also writes each question's result (<out>.jsonl), for paired tests and for scoring apart the questions
+# that share text with training data (bench_questions.py); OUT sets the directory.
 set -uo pipefail
 source experiments/expanse/env.sh
 export PYTHONUNBUFFERED=1 TOKENIZERS_PARALLELISM=false
 TASKS=${TASKS:-sciq,arc_easy,arc_challenge,mmlu}   # pubmedqa: lm-eval loads it through a dataset script, which datasets no longer runs
 HUMAN=${HUMAN:-/expanse/lustre/projects/fli100/abhatia7/library_v2/bm25_pool_p100000}
-OUT=results/expanse/openbook
+OUT=${OUT:-results/expanse/openbook}
 mkdir -p "$OUT"
 EX=data/library_v2/written_bench_hits.json        # v1's and v2's overlapping entries, in the combined numbering
 python - <<'EOF'
@@ -31,6 +34,7 @@ for r in "$@"; do
     [ -s "$f" ] && continue
     L=""
     [ $m = open ] && L="--library $LIB --rag_exclude written=$EX"
+    [ -n "${SAMPLES:-}" ] && L="$L --samples $OUT/${name}_$m.jsonl"
     python -m exealm.eval.harness --ckpt "$r/model.pt" --tokenizer data/exealm-pretrain/slice-30b-r2/tokenizer \
       --tasks "$TASKS" --device cuda --max_length 2048 --stream_window 512 $L --out "$f" || echo "$m failed for $r"
   done

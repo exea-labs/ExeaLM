@@ -234,15 +234,31 @@ class ExeaLMHarness(TemplateLM):
 
 
 def evaluate_checkpoint(ckpt, tokenizer, tasks, limit=None, include_path=None, max_length=1024, max_gen_toks=128,
-                        device='cpu', library=None, rag_tokens=384, stream_window=0, rag_exclude=None):
+                        device='cpu', library=None, rag_tokens=384, stream_window=0, rag_exclude=None,
+                        log_samples=False):
     """Run harness tasks on one checkpoint and return the harness's result dict (used by main and by eval/auto.py)."""
     model = ExeaLMHarness(ckpt, tokenizer, device, max_length, max_gen_toks, library=library, rag_tokens=rag_tokens,
                           stream_window=stream_window, rag_exclude=rag_exclude)
     from lm_eval import simple_evaluate
     from lm_eval.tasks import TaskManager
     manager = TaskManager(include_path=include_path) if include_path else None
-    return simple_evaluate(model=model, tasks=list(tasks), limit=limit, num_fewshot=0, log_samples=False,
+    return simple_evaluate(model=model, tasks=list(tasks), limit=limit, num_fewshot=0, log_samples=log_samples,
                            bootstrap_iters=0, task_manager=manager, device=str(model.device))
+
+
+def write_samples(result, path):
+    """One line per question: task, doc_id, the question's text and whether each metric scored it right. For paired
+    tests between runs, and for scoring apart the questions that share text with training data."""
+    with open(path, 'x', encoding="utf-8", newline="\n") as f:
+        for task, rows in result.pop('samples', {}).items():
+            for r in rows:
+                doc = r.get('doc', {})
+                q = doc.get('question') or doc.get('query') or doc.get('ctx') or ''
+                line = dict(task=task, doc_id=r.get('doc_id'), question=q if isinstance(q, str) else str(q))
+                for k in ('acc', 'acc_norm'):
+                    if k in r:
+                        line[k] = float(r[k])
+                f.write(json.dumps(line, ensure_ascii=False) + '\n')
 
 
 def main(argv=None):
@@ -264,15 +280,20 @@ def main(argv=None):
                                                                      'with the state carried (0: one pass)')
     parser.add_argument('--threads', type=int, default=4)
     parser.add_argument('--out', default=None, help='new JSON results file')
+    parser.add_argument('--samples', default=None, help='new JSONL file: per-question results (write_samples)')
     args = parser.parse_args(argv)
     if args.threads < 1 or (args.limit is not None and args.limit < 1):
         parser.error('threads and limit must be positive')
-    if args.out and Path(args.out).exists():
-        parser.error('--out must be a new file')
+    for p in (args.out, args.samples):
+        if p and Path(p).exists():
+            parser.error(f'{p} exists: --out and --samples must be new files')
     torch.set_num_threads(args.threads)
     result = evaluate_checkpoint(args.ckpt, args.tokenizer, args.tasks.split(','), args.limit, args.include_path,
                                  args.max_length, args.max_gen_toks, args.device, args.library, args.rag_tokens,
-                                 args.stream_window, args.rag_exclude)
+                                 args.stream_window, args.rag_exclude, log_samples=bool(args.samples))
+    if args.samples:
+        Path(args.samples).parent.mkdir(parents=True, exist_ok=True)
+        write_samples(result, args.samples)
     encoded = json.dumps(result, default=handle_non_serializable, indent=2, ensure_ascii=False)
     if args.out:
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
