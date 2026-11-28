@@ -697,7 +697,7 @@ at every size in the study, and the finished models settle it: at 0.5B the in-ru
 lead at 0.005 (section 20). If the 3B lead keeps shrinking at this rate, ExeaLM and the Qwen3.5-style model will be
 about even on windows read alone before the stream phase. Long documents, where the lead held at every finished size
 (3.6% to 5.4%), are read on the finished models. ExeaLM's stream phase starts near step 36,550 (early on 29 November) with the
-mixed recipe of section 21; both runs end near the evening of 29 November.
+mixed recipe of section 21; both runs end around midnight of 29 to 30 November (measured rates on 27 November, 9:45 p.m.).
 
 ## 24. The long pair at 111 tokens per parameter, finished (2 seeds; eval job 56094555, `text_111x.json`, `stream8_111x.json`)
 
@@ -1000,6 +1000,6 @@ zero-shot, the same version and tasks, every question kept; `public_bench_<model
 
 ## 30. Next
 
-The 0.5B three-way run at 20 tokens per parameter (Saturday morning), the 3B pair (Sunday evening), library v2's check
+The 0.5B three-way run at 20 tokens per parameter (Saturday morning), the 3B pair (around midnight, Sunday 29 November), library v2's check
 against the benchmarks and RAG post-training on it at 0.5B (jobs 56104634-9, running) and on a mid-run 3B checkpoint,
 then a scaling fit and the 9B projection against section 18's bar.

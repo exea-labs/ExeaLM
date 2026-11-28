@@ -128,7 +128,7 @@ Size, tokens per parameter & Seeds & ExeaLM & Qwen3.5-style & Llama & Lead & Exe
 0.5B, 4 & 2 & \textbf{0.933} & 0.939 & 0.958 & 0.6\% & \textbf{0.873} & 0.906 & 3.6\% & 36 of 36 & \sect{20} \\
 0.1B, 110 (long runs) & 2 & \textbf{0.958} & 0.963 & not trained & 0.6\% & \textbf{0.902} & 0.946 & 4.7\% & 33 of 36 & \sect{24} \\
 3B, 4, step 7,500$^{*}$ & 1 & \textbf{0.850} & 0.866 & not trained & 1.9\% & \multicolumn{3}{c}{after training} & & \sect{23} \\
-3B, 4, final & 1 & \multicolumn{9}{l}{\pend{3B final, both readings, from the 3B pair due on the evening of 29 November 2026}} \\
+3B, 4, final & 1 & \multicolumn{9}{l}{\pend{3B final, both readings, from the 3B pair due around midnight of 29 to 30 November 2026}} \\
 \bottomrule
 \end{tabular}
 \par\smallskip\raggedright\footnotesize $^{*}$In-run check at step 7,500 of 45,688, before the stream phase and the anneal mix. It reads 512 fixed held-out windows alone, a different reading from the 18-set mean of the other rows.
@@ -265,7 +265,7 @@ That lead has narrowed from 0.034 at step 3,000 to 0.016 at step 7,500 and 0.007
 At that rate the two models will be about even on windows alone before the stream phase.
 Early leads narrowed in this way at every size in the study; the long-document reading, where the lead held at every finished size, is read on the finished models.
 The 3B ExeaLM uses the mixed stream phase, which begins near step 36,550.
-\pendbox{3B pair (\texttt{exealm\_3b\_4.1x\_s0}, \texttt{qwen\_3b\_4.1x\_s0}): final windows-alone and long-document scores, set-and-seed pairs, and a 3B point in Figure~\ref{fig:trends}a. Due on the evening of 29 November 2026.}
+\pendbox{3B pair (\texttt{exealm\_3b\_4.1x\_s0}, \texttt{qwen\_3b\_4.1x\_s0}): final windows-alone and long-document scores, set-and-seed pairs, and a 3B point in Figure~\ref{fig:trends}a. Due around midnight of 29 to 30 November 2026.}
 
 \paragraph{Benchmarks at 0.5B.}
 We score the three 0.5B models (2 seeds each) on seven zero-shot benchmarks, meaning the prompt has no worked examples, with the lm-eval toolkit \citep{gao2024eval}.

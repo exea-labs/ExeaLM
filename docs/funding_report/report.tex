@@ -91,7 +91,7 @@ Tier~2 adds a year of the library's search service on one GPU and support for th
 We plan to release the weights, the code, the data and the library, each under its sources' licenses.
 
 \paragraph{What is not shown yet.}
-Our largest finished models have 0.5B parameters, and the 3B pair is due to finish on the evening of 29 November 2026.
+Our largest finished models have 0.5B parameters, and the 3B pair is due to finish around midnight of 29 to 30 November 2026.
 On windows read alone, ExeaLM's lead shrinks with size, from 2.8\% at 0.1B to 0.6\% at 0.5B, and with training length, to 0.6\% at 0.1B trained for 110 tokens per parameter (2 seeds). On long documents read as a stream it is 3.6\% to 5.3\% at every size and length tested.
 The library results are from 0.1B models only.
 No model we trained finds a pass key two or more windows back: exact retrieval from far back is not solved at these sizes.
@@ -179,7 +179,7 @@ Size & Seeds & ExeaLM & Qwen3.5-style & Llama & Lead & ExeaLM & Qwen3.5-style & 
 0.25B & 3 & \textbf{1.014} & 1.026 & 1.041 & 0.011 & \textbf{0.955} & 0.997 & 0.042 & \sect{13}, \sect{15} \\
 0.5B & 2 & \textbf{0.933} & 0.939 & 0.958 & 0.005 & \textbf{0.873} & 0.906 & 0.033 & \sect{20} \\
 3B, step 14,500$^{*}$ & 1 & \textbf{0.806} & 0.813 & not trained & 0.007 & \multicolumn{3}{c}{after training} & \sect{23} \\
-3B, final & 1 & \multicolumn{8}{l}{\pend{3B final, both readings, from the 3B pair due on the evening of 29 November 2026}} \\
+3B, final & 1 & \multicolumn{8}{l}{\pend{3B final, both readings, from the 3B pair due around midnight of 29 to 30 November 2026}} \\
 \bottomrule
 \end{tabularx}
 \par\smallskip\raggedright\footnotesize $^{*}$In-run check during training, step 14,500 of 45,688: fixed held-out windows read alone, before the stream phase and the anneal. A different reading from the 18-set mean of the other rows.
@@ -571,7 +571,7 @@ Tier~2 adds a public search service for the library and paid time for the team.
 When & Milestone & Paid by \\
 \midrule
 27 November 2026 & Library v2 research entries due; code entries and tasks follow & NAIRR \\
-29 November 2026 & 3B pair finishes in the evening; its scores and benchmarks fill Table~\ref{tab:main} & NAIRR \\
+29 November 2026 & 3B pair finishes around midnight; its scores and benchmarks fill Table~\ref{tab:main} & NAIRR \\
 28 November 2026 & The 0.5B run at 20 tokens per parameter finishes (ExeaLM, its attention-only control, the Qwen3.5-style model) & NAIRR \\
 Next, in the allocation & Library v2 post-training at 0.5B and 3B for both models; a scaling fit and 9B projection; the small post-training tests & NAIRR \\
 Month 1 & The 1T-token data build; weight splitting in the training code; a speed test at full cluster size & Tier 1 \\
