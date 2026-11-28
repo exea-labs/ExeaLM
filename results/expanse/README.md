@@ -973,6 +973,31 @@ first runs, `openbook/`, to every digit), so every comparison below is paired, q
 - MMLU stays near chance (0.24 to 0.25, 4 choices) for every model, open or closed.
 - One seed, at 0.5B trained to 4.1 tokens per parameter (2.1B tokens).
 
+**Released models on the same questions** (job 56107699, `experiments/external/public_bench.sb`: lm-eval 0.4.13
+zero-shot, the same version and tasks, every question kept; `public_bench_<model>.json`,
+`openbook_samples/public_<model>_closed.jsonl`). Closed book, accuracy normalized:
+
+| Model | Parameters | Training tokens | SciQ | ARC-Easy | ARC-Challenge | Pooled | MMLU |
+|---|---|---|---|---|---|---|---|
+| ExeaLM 0.5B, pretrained | 508M | 2.1B | 0.685 | 0.396 | 0.233 | 0.418 | 0.249 |
+| ExeaLM 0.5B, library post-training, open book | 508M | 2.3B | 0.838 | 0.464 | 0.265 | 0.495 | 0.248 |
+| Pythia-410M | 405M | 300B | 0.707 | 0.455 | 0.240 | 0.455 | 0.233 |
+| SmolLM2-360M | 362M | 4T | 0.865 | 0.682 | 0.385 | 0.646 | 0.254 |
+| Qwen2.5-0.5B | 494M | 18T | 0.908 | 0.584 | 0.323 | 0.588 | 0.472 |
+| Qwen3.5-9B-Base | 9B | | 0.954 | 0.782 | 0.569 | 0.765 | 0.774 |
+
+- With its library post-training and library, the 0.5B ExeaLM is ahead of Pythia-410M, trained on 130 times as many
+  tokens: 601 questions only ExeaLM gets against 418 (0.495 against 0.455, p = 1e-8), and ahead closed book too (0.486,
+  p = 8e-6). Most of it is SciQ (0.838 against 0.707); on ARC-Easy and ARC-Challenge the two are close (0.464 against
+  0.455, 0.265 against 0.240).
+- It is well behind the small models trained on 4T and 18T tokens of curated data (by 0.15 and 0.09 pooled, p below
+  1e-38), and far behind Qwen3.5-9B-Base (0.765). These are the bars for the 9B, which is to train on 1T tokens.
+- Compute: the 0.5B ExeaLM's pretraining took about 13 H100-hours (job records) and its library post-training 1.4.
+  Writing library v2's entries took 38 H100-hours (job 56091937, 4 GPUs for 9.4 hours), once, for every model that
+  reads it; the entries carry knowledge from DeepSeek-V4-Flash, whose own training cost is not ours and not counted.
+  By the usual 6 x parameters x tokens, Pythia-410M's pretraining is about 7e20 operations and the 0.5B ExeaLM's
+  about 7e18, a hundredth.
+
 ## 30. Next
 
 The 0.5B three-way run at 20 tokens per parameter (Saturday morning), the 3B pair (Sunday evening), library v2's check

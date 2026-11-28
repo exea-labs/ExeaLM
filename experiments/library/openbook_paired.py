@@ -127,8 +127,8 @@ def main(argv=None):
         pairs = [(f"{E}_open", f"{E}_closed"), (f"{Q}_open", f"{Q}_closed"), (f"{e}_open", f"{e}_closed"),
                  (f"{q}_open", f"{q}_closed"), (f"{E}_closed", f"{e}_closed"), (f"{Q}_closed", f"{q}_closed"),
                  (f"{E}_open", f"{Q}_open"), (f"{E}_closed", f"{Q}_closed"), (f"{e}_closed", f"{q}_closed")]
-        pairs += [(f"{E}_open", s) for s in sides if s.startswith("public:")]
-        pairs += [(f"{E}_closed", s) for s in sides if s.startswith("public:")]
+        pub = [s for s in sides if s.startswith(("public:", "public_"))]    # public_<model>_closed.jsonl: compact
+        pairs += [(f"{E}_open", s) for s in pub] + [(f"{E}_closed", s) for s in pub]
     res = dict(metric="acc_norm (SciQ, ARC)", flagged=len(flagged), text_mismatches=mismatch, sides={}, pairs=[])
     for name, s in sides.items():
         res["sides"][name] = {t: round(sum(v[0] for k, v in s.items() if k[0] == t) /
