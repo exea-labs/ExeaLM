@@ -84,18 +84,21 @@ def main(argv=None):
                 sides["public:" + d] = got
     print("sides:", {k: len(v) for k, v in sides.items()})
     flagged, mismatch = set(), 0
-    if a.flags:
+    if a.flags:                       # matched by question text: ARC's benchmark ids are its own, not row numbers
+        norm = lambda s: " ".join(str(s).split()).lower()  # noqa: E731
+        ref = next(iter(sides.values()))
+        by_text = {}
+        for k, (_, q) in ref.items():
+            by_text.setdefault((k[0], norm(q)), []).append(k)
         fl = json.load(open(a.flags))["benchmarks"]
         for t in TASKS:
-            for i in fl.get(t, {}).get("ids", []):
-                flagged.add((t, int(i)))
-        ref = next(iter(sides.values()))                      # the doc ids are row numbers of the same test splits
-        for t in TASKS:
             for i, q in fl.get(t, {}).get("question_text", {}).items():
-                got = ref.get((t, int(i)), (None, None))[1]
-                if got is not None and " ".join(q.split()).lower() != " ".join(str(got).split()).lower():
+                keys = by_text.get((t, norm(q)))
+                if keys:
+                    flagged.update(keys)
+                else:
                     mismatch += 1
-        print(f"flagged questions: {len(flagged)}; text mismatches against the doc ids: {mismatch}")
+        print(f"flagged questions: {len(flagged)}; flagged questions not found by their text: {mismatch}")
     if a.pairs:
         pairs = [tuple(p.split(":")) for p in a.pairs.split(",")]
     else:

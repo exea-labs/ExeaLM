@@ -1,0 +1,91 @@
+{
+ "train": [
+  "data/library_v2/v2/rag2/train"
+ ],
+ "ngram": 13,
+ "rule": "a question is flagged when any 13-token window of any of its fields (question, choices, answer, support passage) appears inside one training document",
+ "benchmarks": {
+  "sciq": {
+   "questions": 1000,
+   "flagged": 7,
+   "flagged_by_field": {
+    "question": 1,
+    "support": 7
+   },
+   "ids": [
+    "202",
+    "341",
+    "539",
+    "545",
+    "625",
+    "642",
+    "978"
+   ],
+   "fields": {
+    "978": [
+     "support"
+    ],
+    "625": [
+     "support"
+    ],
+    "341": [
+     "support"
+    ],
+    "539": [
+     "question",
+     "support"
+    ],
+    "642": [
+     "support"
+    ],
+    "202": [
+     "support"
+    ],
+    "545": [
+     "support"
+    ]
+   },
+   "question_text": {
+    "978": "What functions in removing phosphorylated amino acids from proteins?",
+    "625": "Bursitis is the inflammation of a bursa near what?",
+    "341": "The building blocks of proteins are called what?",
+    "539": "Monosaccharides, disaccharides, and polysaccharides are types of what kind of macromolecule?",
+    "642": "In which constellation is the helix nebula located?",
+    "202": "Chitin, also found in the exoskeleton of insects, gives structural strength to the cell walls of fungi. the cell wall protects the cell from what?",
+    "545": "As the telencephalon enlarges and grows into the cranial cavity, it is limited by the space within what bone structure?"
+   }
+  },
+  "arc_easy": {
+   "questions": 2376,
+   "flagged": 2,
+   "flagged_by_field": {
+    "choice_1": 1,
+    "choice_3": 1
+   },
+   "ids": [
+    "ACTAAP_2013_5_13",
+    "Mercury_7108063"
+   ],
+   "fields": {
+    "ACTAAP_2013_5_13": [
+     "choice_3"
+    ],
+    "Mercury_7108063": [
+     "choice_1"
+    ]
+   },
+   "question_text": {
+    "ACTAAP_2013_5_13": "Which is the correct order of the planets from the Sun?",
+    "Mercury_7108063": "Which of these has been controlled in an attempt to reduce the depletion of ozone in Earth's atmosphere?"
+   }
+  },
+  "arc_challenge": {
+   "questions": 1172,
+   "flagged": 0,
+   "flagged_by_field": {},
+   "ids": [],
+   "fields": {},
+   "question_text": {}
+  }
+ }
+}
