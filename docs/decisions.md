@@ -3,6 +3,21 @@
 What ExeaLM is trained as, decided by Avneh Bhatia, and why. Newest first. Change an entry only with a new dated
 entry that says what replaced it.
 
+## 27 November 2026 (10:30 p.m.): what the funding case rests on, and the tests added for it
+
+Avneh's decisions, on the weak points listed that evening:
+
+- Plain-text bits per byte are not a claim the case leads with. The case rests on long memory, the library and cost.
+- The attention-only control matching ExeaLM on plain text is acceptable for the funding case (the 9B keeps TONN, entry
+  below).
+- The gap to released small models trained on 4T and 18T tokens is to be closed or put in proportion. Done by
+  measurement, not by leaving it out: released checkpoints at matched training tokens (Pythia-410M and OLMo-2-1B
+  checkpoints, `experiments/external/public_ckpts.sb`), so every comparison states the tokens and compute behind it.
+- The library's caveats need better tests: questions we did not write (QASPER, PubMedQA, BigCodeBench, DS-1000;
+  `experiments/external/indep_build.py`), Qwen3.5-9B shown worked examples of the library question format
+  (`score_hf.py --shots 3`), and the same at 3B when the pair finishes.
+- A code benchmark waits for the finished 3B.
+
 ## 27 November 2026 (2:30 p.m.): the 9B keeps its TONN layer
 
 Avneh's decision. The attention-only control (ExeaLM with its TONN layer replaced by attention) finished the long 0.1B
