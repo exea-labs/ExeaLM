@@ -639,7 +639,16 @@ Given the same library the 9B is ahead, 0.171 against 0.239; its score is 0.61 o
 Against the 9B without the worked examples these ratios read 0.78 and 0.92; the examples make the fairer test.
 ExeaLM had 3,000 steps of post-training on the library's training topics in this question format; Qwen3.5-9B-Base had only the three examples.
 
-\pendbox{The Qwen3.5-style 3B with the same post-training (training), the finished 3B pair, and held-out documents and questions from which no entry was written.}
+\paragraph{Questions written by people.}
+The library's own questions were written by the model that wrote its entries.
+We also scored research and code questions written by people (\sect{30}): QASPER (1,372 questions researchers asked about NLP papers, \citealp{dasigi2021qasper}), PubMedQA (1,000 expert-labelled, \citealp{jin2019pubmedqa}), BigCodeBench (1,140 functions, \citealp{zhuo2024bigcodebench}) and DS-1000 (1,000 data-science problems, \citealp{lai2023ds1000}), in bits per byte on the reference answer, with Qwen3.5-9B-Base on the same text.
+On equal terms the 9B is well ahead: our 3B checkpoint's bits per byte are 1.2 to 1.8 times its own on every set.
+With the paper in hand, as QASPER's own setting gives it, and the three paragraphs a keyword search inside the paper ranks first, the 3B ExeaLM scores 0.904 against 0.945 for the 9B without the paper (95\% interval of the ratio 0.93 to 0.99); given the same paragraphs the 9B scores 0.738.
+Same data and training, ExeaLM is ahead of the Qwen3.5-style model at 0.5B on all four sets, by 7\% to 9\% on BigCodeBench (958 of 1,140 functions) and 3\% to 5\% on DS-1000.
+The search is the weak link: our one-step search finds the asked-about paper for 31\% of QASPER questions and barely helps any model, a two-step search (the paper by its title, then its passage for the question) finds it for 53\% and cuts the 3B's bits per byte by 12\% and the 9B's by 11\%, and given the evidence paragraphs the 0.5B's fall 62\%.
+Library post-training on one writer's question format made the 0.5B models slightly worse on these questions (QASPER 1.228 to 1.283 with the library), while it helps on the library's own questions and on SciQ and ARC; the 9B's post-training needs questions from many sources.
+
+\pendbox{The Qwen3.5-style 3B with the same post-training (scoring), and the finished 3B pair on the same questions.}
 
 %=====================================================================================================
 \section{What a result costs}
@@ -833,6 +842,7 @@ Open-book rules: 13-token window, 14 benchmarks, 10 entries & \texttt{docs/decis
 Benchmarks at 0.5B, paired tests; 9 of 4,548 questions overlapping; 1.4 H100-hours & \sect{29}, \texttt{openbook\_paired\_500m.json}, \texttt{bench\_questions\_v2.json} \\
 Released models (Table~\ref{tab:public}); 13 and 38 H100-hours & \sect{29}, \texttt{public\_bench\_<model>.json}; job 56091937 \\
 Checkpoints at matched tokens (2.1B: 0.299; 16.8B: 0.410; OLMo-2-1B 21B: 0.493) & \sect{29}, \texttt{openbook\_paired\_matched\_tokens.json} \\
+Questions written by people: 0.904, 0.945, 0.738; 31\%, 53\%, 62\% & \sect{30}, \texttt{indep\_tests.json}, \texttt{qasper\_search\_check.json} \\
 0.5B run at 20 tokens per parameter: 38,173 steps, 10.0B tokens & \texttt{docs/decisions.md} (27 November, 1:45 a.m.) \\
 Speeds of the study's models (Table~\ref{tab:speed}); within 16\% & \texttt{throughput\_speed\_0.5B\_512\_c0.json}, \texttt{\_c1.json}, \texttt{throughput\_speed\_3B\_512\_c0.json}, \texttt{\_c1.json} (not yet written up in the record) \\
 Other speeds and compute (Appendix~\ref{app:compute}) & \sect{1}, \sect{2}, \sect{16}, \texttt{throughput\_h100.json}, \texttt{scaling\_500m.json}, \texttt{nine\_b.json}, \texttt{docs/decisions.md} \\

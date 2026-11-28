@@ -1,0 +1,14 @@
+{
+ "model": "qwen35_9b_base",
+ "sets": {},
+ "library": {
+  "qasper_paper/all": {
+   "none": 0.9446,
+   "bm25": 0.738
+  },
+  "qasper_paper/qasper_paper": {
+   "none": 0.9446,
+   "bm25": 0.738
+  }
+ }
+}

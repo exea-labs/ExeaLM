@@ -1038,8 +1038,70 @@ Pooled accuracy on the 4,548 SciQ and ARC questions:
   parameters and a modern recipe, after 21B tokens (0.495 against 0.493, p = 0.83), and behind it after 42B (0.528,
   p = 4e-6). OLMo-2-1B as released, after 4T tokens, scores 0.703.
 
-## 30. Next
+## 30. Research and code questions written by people, with and without the library (jobs 56108250-4, 56108301-4)
 
-The 0.5B three-way run at 20 tokens per parameter (Saturday morning), the 3B pair (around midnight, Sunday 29 November), library v2's check
-against the benchmarks and RAG post-training on it at 0.5B (jobs 56104634-9, running) and on a mid-run 3B checkpoint,
-then a scaling fit and the 9B projection against section 18's bar.
+Section 28's questions were written by the model that wrote the library's entries. These were not
+(`experiments/external/indep_build.py`): QASPER test (1,372 questions NLP researchers asked about a paper, answered from
+it by others; the first answerable annotation), PubMedQA expert-labelled (1,000; yes, no or maybe with the abstract's
+conclusion), BigCodeBench v0.1.4 (1,140 functions from signature and docstring) and DS-1000 (1,000 data-science
+problems). Bits per byte on the reference answer, every model on the same text and bytes; Qwen3.5-9B-Base through
+`score_hf.py`. Conditions:
+
+- **none**: the question alone.
+- **library**: the top passage of each library tier for the question, 384 tokens each, searched as the open-book
+  benchmarks search (section 29). A passage that shares a 13-token window with the reference answer is never given.
+- **two-step** (QASPER, `qasper_lib2.py`): the paper found by its title in the human tier, then the passage of that
+  document a keyword search ranks first for the question (at most 700 tokens).
+- **paper in hand** (QASPER, `qasper_paper.py`): the paper given, as QASPER's own setting does, and the three
+  paragraphs a keyword search inside it ranks first for the question, best last (at most 2,500 characters).
+- **evidence**: the annotator's evidence paragraphs (QASPER) or the abstract without its conclusion (PubMedQA's own
+  setting). An upper bound for a search.
+
+| Bits per byte (lower is better) | 0.5B ExeaLM, pretrained | 0.5B Qwen3.5-style, pretrained | 0.5B ExeaLM, library post-training | 0.5B Qwen3.5-style, library post-training | 3B ExeaLM (step 16,000), library post-training | Qwen3.5-9B-Base |
+|---|---|---|---|---|---|---|
+| QASPER, none | 1.258 | 1.264 | 1.295 | 1.313 | 1.211 | **0.945** |
+| QASPER, library | 1.228 | 1.243 | 1.283 | 1.307 | 1.176 | **0.928** |
+| QASPER, two-step | | | 1.141 | 1.160 | 1.063 | **0.845** |
+| QASPER, paper in hand | | | 0.978 | 1.011 | 0.904 | **0.738** |
+| QASPER, evidence (1,241 with evidence) | 0.475 | 0.512 | 0.493 | 0.525 | 0.454 | **0.323** |
+| PubMedQA, none | 0.832 | 0.834 | 0.912 | 0.922 | 0.871 | **0.617** |
+| PubMedQA, library | 0.830 | 0.836 | 0.899 | 0.905 | 0.826 | **0.616** |
+| PubMedQA, abstract | 0.672 | 0.691 | 0.708 | 0.714 | 0.658 | **0.477** |
+| BigCodeBench, none | 0.321 | 0.346 | 0.312 | 0.336 | 0.257 | **0.142** |
+| BigCodeBench, library | 0.327 | 0.354 | 0.320 | 0.351 | 0.267 | **0.146** |
+| DS-1000, none | 0.598 | 0.623 | 0.615 | 0.636 | 0.517 | **0.347** |
+| DS-1000, library | 0.594 | 0.625 | 0.613 | 0.643 | 0.521 | **0.347** |
+
+(`indep_tests.json`: every cell, and paired comparisons with 95% bootstrap intervals; `indep_tests_rows.jsonl`: every
+item's bits, without the benchmarks' text; `qasper_search_check.json`.)
+
+- **Qwen3.5-9B is well ahead on equal terms.** On every set and condition our 3B checkpoint's bits per byte are 1.2
+  to 1.8 times the 9B's. These questions test what a model knows and how well it writes code, and a released 9B has
+  trained far longer than a 3B a third of the way through 12B tokens.
+- **With the paper in hand, the 3B ExeaLM beats Qwen3.5-9B without it**: 0.904 against 0.945 on QASPER (ratio 0.957,
+  95% interval 0.928 to 0.985). Given the evidence paragraphs, 0.454 against 0.945. Given the same paragraphs, the 9B
+  is ahead (0.738).
+- **ExeaLM beats the Qwen3.5-style model on every set**, same data, same training, at 0.5B: BigCodeBench 7% to 9%
+  lower (958 of 1,140 functions, after library post-training), DS-1000 3% to 5% (734 of 1,000), QASPER 1% to 3% (936
+  of 1,372 with the paper in hand), PubMedQA about 1% (545 of 1,000). No 95% interval includes equality.
+- **The one-step library search barely helps on these questions** (QASPER 1.211 to 1.176 at 3B; code not at all, for
+  any model). It was built for the library's own questions, where it puts the right entry first for 70% of them. For
+  QASPER it puts a passage of the asked-about paper first for 31% of questions; searching the title alone, 49% (77% in
+  the top 100, so most of the papers are in the human tier). The two-step search finds the paper's passage for 53% and
+  cuts the 3B's bits per byte by 12% (1.211 to 1.063) and the 9B's by 11% (0.945 to 0.845); title search of the
+  first 300 questions in `qasper_search_check.json`. Search, not reading, is
+  the weak link: given the evidence, the 0.5B's bits per byte fall 62% on the same 1,241 questions (1.288 to 0.493),
+  as much as the 3B's (62%) and nearly the 9B's (66%).
+- **Library post-training made the 0.5B models worse on these questions** (QASPER library 1.228 to 1.283, PubMedQA 0.830
+  to 0.899, DS-1000 0.594 to 0.613; BigCodeBench 0.327 to 0.320 better), while it helps on the library's own questions
+  (section 28) and on SciQ and ARC (section 29). Three thousand steps on one writer's question format move the model
+  toward that format. Post-training for the 9B needs questions and answers from many sources.
+- One seed per model; the 3B is the step-16,000 checkpoint; the 0.5B pretrained models had no library post-training,
+  so their "library" rows read passages they were never trained to read.
+
+## 31. Next
+
+The 0.5B three-way run at 20 tokens per parameter (Saturday morning), the 3B pair (around midnight, Sunday 29
+November), the Qwen3.5-style 3B with library post-training (scoring), then a scaling fit and the 9B projection. The
+two-step search goes into the library's search for questions that name a paper; library post-training data from
+many sources.

@@ -1,0 +1,14 @@
+{
+ "model": "qwen35_9b_base",
+ "sets": {},
+ "library": {
+  "qasper_lib2/all": {
+   "none": 0.9446,
+   "bm25": 0.8451
+  },
+  "qasper_lib2/qasper_lib2": {
+   "none": 0.9446,
+   "bm25": 0.8451
+  }
+ }
+}

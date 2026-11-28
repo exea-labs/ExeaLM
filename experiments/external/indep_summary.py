@@ -24,13 +24,16 @@ def main(argv=None):
                     "ragpost_exealm_500m_v2:bm25/ragpost_qwen_500m_v2:bm25",
                     help="'model:cond/model:cond,...': first over second, per set")
     ap.add_argument("--out", required=True)
+    ap.add_argument("--rows_out", default=None, help="also write every item's bits and search notes, without the "
+                    "texts (the benchmarks' text stays out of the repository)")
     a = ap.parse_args(argv)
     items = {}
     for path in a.rows:
         for line in open(path, encoding="utf-8"):
             r = json.loads(line)
             key = (r["set"], r["id"])
-            it = items.setdefault(key, dict(set=r["set"], bytes=r["target_bytes"], bits={}))
+            it = items.setdefault(key, dict(set=r["set"], id=r["id"], bytes=r["target_bytes"], bits={},
+                                            meta=r.get("meta", {})))
             for m, row in r.get("bits", {}).items():
                 it["bits"].setdefault(m, {}).update(row)
     by_set = defaultdict(list)
@@ -69,6 +72,12 @@ def main(argv=None):
                   f"{rec['ci95'][1]}], first better on {rec['items_a_better']} of {rec['n']}")
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
     json.dump(res, open(a.out, "w"), indent=1)
+    if a.rows_out:
+        with open(a.rows_out, "w", encoding="utf-8") as f:
+            for it in items.values():
+                f.write(json.dumps(dict(set=it["set"], id=it["id"], target_bytes=it["bytes"], meta=it["meta"],
+                                        bits={m: {c: round(v, 3) for c, v in row.items()}
+                                              for m, row in it["bits"].items()})) + "\n")
     print("wrote", a.out)
 
 

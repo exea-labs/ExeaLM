@@ -1,0 +1,40 @@
+{
+ "model": "qwen35_9b_base",
+ "sets": {},
+ "library": {
+  "bigcodebench/all": {
+   "none": 0.1418,
+   "bm25": 0.1459
+  },
+  "bigcodebench/bigcodebench": {
+   "none": 0.1418,
+   "bm25": 0.1459
+  },
+  "ds1000/all": {
+   "none": 0.3473,
+   "bm25": 0.3466
+  },
+  "ds1000/ds1000": {
+   "none": 0.3473,
+   "bm25": 0.3466
+  },
+  "pubmedqa/all": {
+   "none": 0.617,
+   "pasted": 0.4773,
+   "bm25": 0.6159
+  },
+  "pubmedqa/pubmedqa": {
+   "none": 0.617,
+   "pasted": 0.4773,
+   "bm25": 0.6159
+  },
+  "qasper/all": {
+   "none": 0.9446,
+   "bm25": 0.9282
+  },
+  "qasper/qasper": {
+   "none": 0.9446,
+   "bm25": 0.9282
+  }
+ }
+}
