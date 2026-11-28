@@ -66,14 +66,15 @@ Lower is better.
 ExeaLM scored lower than the Qwen3.5-style model on all 18 held-out text sets with each of 3 seeds (independent runs), at both 0.1B and 0.25B parameters.
 Its lead was 2.8\% at 0.1B and 1.1\% at 0.25B.
 Most of the lead comes from published changes to attention and from ExeaLM's last 20\% of training, which reads streams.
-The one new layer type in ExeaLM adds about 0.1\%.
+The one new layer type in ExeaLM adds about 0.1\% on text, and it carries exact facts across windows: it finds a pass key placed one window back 28\% of the time, against 9\% for the same model with attention in its place (0.25B, 3 seeds).
+On long-context tasks scored as exact match, ExeaLM recalls 12\% to 14\% more text from far back than the Qwen3.5-style model at every size, and the lead does not shrink with size.
 
 \vspace{4pt}
 \noindent\colorbox{boxfill}{\begin{minipage}{\dimexpr\linewidth-2\fboxsep\relax}
 \vspace{5pt}
 \begin{tabularx}{\linewidth}{@{\hspace{4pt}}>{\raggedright\arraybackslash}p{0.29\linewidth}@{\hspace{10pt}}>{\raggedright\arraybackslash}p{0.29\linewidth}@{\hspace{10pt}}L@{}}
-{\huge\bfseries 5.4\%} & {\huge\bfseries 64\%} & {\huge\bfseries 75,000} \\[2pt]
-\small fewer bits per byte than the Qwen3.5-style model on 16,384-token documents, at 0.1B with 3 seeds. It is 4.9\% at 0.25B (1 seed). Trained without streams, ExeaLM still leads on 4,096-token documents by 2.2\% (0.1B, 3 seeds).
+{\huge\bfseries +12\%} & {\huge\bfseries 64\%} & {\huge\bfseries 75,000} \\[2pt]
+\small more exact recalls of text last seen over 512 tokens back than the Qwen3.5-style model, at 0.1B, 0.25B and 0.5B alike (14\%, 12\%, 12\%; p below $10^{-40}$ at each size). On a pass key in the same window: 0.86 against 0.19 at 0.5B.
 &
 \small fewer bits per byte on held-out research questions when the 0.1B ExeaLM searches its library (1.645 to 0.590, 3 seeds). The released Qwen3.5-9B-Base scores 1.031 with no library and 0.313 with the same library.
 &
@@ -93,6 +94,7 @@ We plan to release the weights, the code, the data and the library, each under i
 Our largest finished models have 0.5B parameters, and the 3B pair is due to finish on the evening of 29 November 2026.
 On windows read alone, ExeaLM's lead shrinks with size, from 2.8\% at 0.1B to 0.6\% at 0.5B, and with training length, to 0.6\% at 0.1B trained for 110 tokens per parameter (2 seeds). On long documents read as a stream it is 3.6\% to 5.3\% at every size and length tested.
 The library results are from 0.1B models only.
+No model we trained finds a pass key two or more windows back: exact retrieval from far back is not solved at these sizes.
 With no library, the released Qwen3.5-9B-Base is far ahead of our 0.25B model (0.674 against 1.011 bits per byte, seed 0).
 So the 9B claim is for the model with its library, and every benchmark will be reported with and without the library.
 
@@ -237,6 +239,38 @@ At 0.25B it grows along the document, from 0.043 bits per byte in windows 1 to 7
 \caption{ExeaLM's lead over the Qwen3.5-style model for each 512-token window of held-out documents 16,384 tokens long, as a percentage of the Qwen3.5-style model's bits per byte (\sect{19}). Fifteen of the 18 sets have such documents. The lead is smallest in the first window, which has nothing before it, and stays near 5\% to the end of the document.}
 \label{fig:position}
 \end{figure}
+
+\subsection{Long-context tasks}
+
+Bits per byte is a proxy. The tasks a research or code assistant does are exact: complete the next line of a file, recall a name or number from earlier in a paper, retrieve a fact placed far back.
+We scored every finished model on three such tasks over the first 4,096 tokens of held-out documents, read as a stream of 512-token windows (\sect{26}).
+Recall asks for a 4-token run whose earlier occurrence is more than a window back; code next line asks for a line that uses an identifier last seen more than a window back (RepoBench's next-line task within one file); the pass key is a 5-digit number placed in Wikipedia text and asked for at the end.
+A target counts only if the model's top token is right at every position.
+
+\begin{table}[!htb]
+\centering\small
+\begin{tabular}{@{}llcccc@{}}
+\toprule
+Size & Model & Recall & Code next line & Pass key, same window & One window back \\
+\midrule
+0.1B$^{*}$ & ExeaLM & 0.268 & 0.042 & \textbf{0.648} & \textbf{0.078} \\
+ & Qwen3.5-style & 0.235 & 0.038 & 0.047 & 0.000 \\
+0.25B & ExeaLM & 0.241 & 0.035 & \textbf{0.766} & \textbf{0.281} \\
+ & Attention in place of TONN & 0.243 & 0.035 & 0.635 & 0.094 \\
+ & Qwen3.5-style & 0.215 & 0.032 & 0.016 & 0.000 \\
+0.5B & ExeaLM & \textbf{0.282} & \textbf{0.045} & \textbf{0.859} & \textbf{0.266} \\
+ & Qwen3.5-style & 0.252 & 0.042 & 0.188 & 0.000 \\
+\bottomrule
+\end{tabular}
+\par\smallskip\raggedright\footnotesize Exact-match rate, mean over seeds (0.1B and 0.5B: 2 seeds; 0.25B: 3). $^{*}$The 0.1B pair trained to 111 tokens per parameter. Every target is scored by both models, and the differences are tested target by target (\sect{26}).
+\caption{Long-context tasks as exact match.}
+\label{tab:longctx}
+\end{table}
+
+Against the Qwen3.5-style model ExeaLM is ahead on every task at every size: 12\% to 14\% more recalls (p below $10^{-40}$ at each size), 7\% to 10\% more code lines (p at most 0.002), and the pass key four to fifty times as often.
+The recall lead holds as the models grow, while the lead in bits per byte on windows alone shrinks.
+Against the attention-only control, recall and code are even. The pass key one window back is not: 0.281 against 0.094 (p = $3\times10^{-8}$). Read window by window with nothing carried, the gap is small and not significant, so what the TONN layer adds is carried across windows.
+The Qwen3.5-style model never trained on streams, by our choice of baseline; the attention-only control did, and shares ExeaLM's recall lead.
 
 \subsection{The library}
 

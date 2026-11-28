@@ -37,8 +37,9 @@ Models for research and code read long documents, but a lead found on short text
 We train ExeaLM, a transformer with published attention changes, one layer of small signal circuits and a last phase reading consecutive windows.
 We compare it with our Qwen3.5-style model, which mixes attention and recurrent layers, at equal size and data.
 From 0.1 to 0.5 billion parameters, its lead on held-out text falls from 2.8 to 0.6 percent on short windows and 5.3 to 3.6 percent on long documents.
-At 0.1 billion parameters, swapping the circuit layer for attention changes results by 0.1 percent.
-The lead comes from the attention layers and, on long documents, from the last phase.
+On long-context tasks scored as exact match it does not fall: ExeaLM recalls 12 to 14 percent more text last seen over a window back at every size, completes 7 to 10 percent more lines of code that depend on distant definitions, and finds a planted pass key four to fifty times as often.
+Swapping the circuit layer for attention changes the text results by about 0.1 percent, but cuts retrieval of a pass key one window back from 28 to 9 percent.
+The lead on text comes from the attention layers and the last phase; the circuit layer carries exact facts across windows.
 \end{abstract}
 
 \begin{figure*}[t]
@@ -385,6 +386,40 @@ Every model keeps improving deeper into the document.
 At 0.25B (one seed) the lead is 0.043 in windows 1 to 7 and 0.048 in windows 24 to 31, though it dips in the last few windows.
 At 0.1B it stays between 5.0\% and 5.8\% from the second window to the last.
 
+\paragraph{Long-context tasks.}
+Bits per byte is a proxy for the tasks a research or code assistant does, which are exact.
+We score every finished model on three over the first 4,096 tokens of held-out documents read as a stream (\sect{26}).
+\emph{Recall} asks for the last 4 tokens of a 6-token run last seen more than a window back, so neither the window nor the carried keys and values hold it.
+\emph{Code next line} asks for a line that uses an identifier last seen more than a window back, the next-line task of RepoBench \citep{liu2023repobench} within one file.
+\emph{Pass key} plants a 5-digit number in Wikipedia text and asks for it in the last window, as in RULER \citep{hsieh2024ruler}.
+A target counts only if the top token is right at every position, which is what greedy decoding would write.
+Table~\ref{tab:longctx} gives the rates.
+Against the Qwen3.5-style model ExeaLM is ahead on every task at every size, and every difference holds target by target (McNemar's test, p at most 0.002).
+Its recall lead is 14\%, 12\% and 12\% at 0.1B, 0.25B and 0.5B: unlike the lead in bits per byte, it does not shrink with size.
+The Qwen3.5-style model also finds the pass key less often with nothing carried (0.30, 0.07 and 0.35 against 0.69, 0.68 and 0.80), so part of the gap is its three-in-four recurrent layers, not only the streams.
+No model finds the pass key two or more windows back.
+
+\begin{table}[t]
+\centering\small
+\setlength{\tabcolsep}{3pt}
+\caption{Long-context tasks, exact-match rate read as a stream, mean over seeds (0.1B and 0.5B: 2; 0.25B: 3). The 0.1B pair trained to 111 tokens per parameter. PK: pass key in the same window and one window back.}
+\label{tab:longctx}
+\begin{tabular}{@{}l cccc@{}}
+\toprule
+Model & Recall & Code line & PK same & PK back \\
+\midrule
+ExeaLM, 0.1B & 0.268 & 0.042 & \textbf{0.648} & \textbf{0.078} \\
+Qwen3.5-style, 0.1B & 0.235 & 0.038 & 0.047 & 0.000 \\
+ExeaLM, 0.25B & 0.241 & 0.035 & \textbf{0.766} & \textbf{0.281} \\
+Attention-only, 0.25B & 0.243 & 0.035 & 0.635 & 0.094 \\
+Qwen3.5-style, 0.25B & 0.215 & 0.032 & 0.016 & 0.000 \\
+ExeaLM, 0.5B & \textbf{0.282} & \textbf{0.045} & \textbf{0.859} & \textbf{0.266} \\
+Qwen3.5-style, 0.5B & 0.252 & 0.042 & 0.188 & 0.000 \\
+Plain Llama, 0.5B & 0.186 & 0.027 & 0.000 & 0.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 %=====================================================================================================
 \section{What each part adds}
 \label{sec:parts}
@@ -421,6 +456,10 @@ At 0.1B, ExeaLM scores 1.1566 against 1.1574 for the attention-only control on w
 It is ahead in 2 of 3 seeds and on 40 of 54 set-and-seed pairs.
 On 4,096-token documents it scores 1.0955 against 1.0969, and on 16,384-token documents 1.0726 against 1.0737, ahead in all 3 seeds on both (\sect{19}).
 The difference is about 0.1\%, and on windows alone it is inside the spread of ExeaLM's seeds (1.1549 to 1.1575).
+On exact retrieval across windows the TONN layer matters more (\sect{26}).
+With attention in its place, the 0.25B model finds a pass key one window back 0.094 of the time against ExeaLM's 0.281 (3 seeds; 38 trials only ExeaLM gets against 2, p = $3\times10^{-8}$), and in the last window of a stream 0.635 against 0.766 (p = $6\times10^{-4}$).
+Read window by window with nothing carried, the two are close (0.609 against 0.677, p = 0.10): what the layer adds is in the state it carries.
+On recall and code next line the two are even.
 The control leads the Qwen3.5-style model by nearly as much as ExeaLM does.
 The lead over the Qwen3.5-style model therefore comes from ExeaLM's attention layers, with their four changes.
 On long documents the stream phase adds to it, and on windows alone it takes some away (Section~\ref{sec:recipe}).

@@ -6,7 +6,7 @@ sections after it are the record, in the order results came in, with what each d
 [docs/decisions.md](../../docs/decisions.md). The finished models are public on Hugging Face:
 [exea-labs/exealm-nairr](https://huggingface.co/exea-labs/exealm-nairr).
 
-## Summary (27 November 2026, 2 a.m.; the 3B pair is training)
+## Summary (27 November 2026, 4:30 p.m.; the 3B pair is training)
 
 ExeaLM: attention layers with a gate, QK-norm, value residual and XSA, one TONN layer (searched signal-processing
 circuits) at the middle layer, and streams of four windows in the last 20% of training. Every comparison below is at
@@ -16,16 +16,17 @@ the same size, data, tokens and recipe; bits per byte on held-out text, lower is
 |---|---|---|---|
 | Ahead of the Qwen3.5 design | 0.1B: 1.157 against 1.190; 0.25B: 1.014 against 1.026 (plain Llama 1.200, 1.041); 0.5B: 0.933 against 0.939 (Llama 0.958) on windows alone, 0.873 against 0.906 on long documents | 0.1B and 0.25B: 3 seeds, all 54 set-and-seed pairs at each size; 0.5B: 2 seeds, all 36 pairs | 9, 13, 20 |
 | Long documents | 4,096 tokens read as a stream: 0.1B 1.096 against 1.157; 0.25B 0.955 against 0.997. 16,384 tokens (8 times the streams it trained on): 0.1B 1.073 against 1.134; 0.25B 0.947 against 0.996, the lead growing along the document | 4,096: 3 seeds, all 54 pairs at each size. 16,384: 3 seeds at 0.1B, 1 at 0.25B | 10, 15, 19 |
+| Long-context tasks, exact match | recall of text last seen more than a window back: 14%, 12% and 12% more targets than the Qwen3.5-style model at 0.1B, 0.25B and 0.5B; code next line 10%, 9% and 7% more; a pass key in the same window 0.65, 0.77 and 0.86 against 0.05, 0.02 and 0.19 | 2 or 3 seeds a size, every target scored by both models, p below 0.003 on every task at every size | 26 |
 | Learns more per token | at 111 tokens per parameter (the 9B's), the Qwen3.5-style model needs 1.34 and 1.41 times ExeaLM's steps to match it at step 20,000, rising through training, and never reaches its final score. Finished: 0.958 against 0.963 on windows alone, 0.902 against 0.946 on long documents | 2 seeds, 0.1B, both ahead on every reading | 12, 24 |
 | A library distilled from a larger model | held-out research questions 1.645 to 0.590 with the library and a BM25 search; 0.110 to 0.116 ahead of the Qwen3.5-style model with the same library | 3 seeds, 0.1B | 7, 8, 11 |
 | Against the released Qwen3.5-9B | 0.1B ExeaLM with its library 0.590 against Qwen3.5-9B without one 1.031 on held-out research questions (a system against a model; with the same library Qwen3.5-9B scores 0.313). On text alone Qwen3.5-9B is far ahead (0.674 against 1.011 for ExeaLM 0.25B) | 1 seed | 18 |
 | Where the TONN layer goes | one TONN layer at the middle layer beats one in every fourth layer (1.348 against 1.376, 54 of 54 pairs); one at layer 0 costs 0.038 | 12 layouts, 0.1B | 4, 5 |
-| What the TONN layer itself adds | about 0.1%: against the same model with attention in its place, at 0.1B, 1.1566 against 1.1574 on windows alone, 1.0955 against 1.0968 on 4,096-token streams, 1.0726 against 1.0737 on 16,384-token streams. The lead over the Qwen3.5 design comes from the attention changes and the streams | 3 seeds (ahead in 2, 3 and 3 of them); 0.25B and the long run are training | 5, 19 |
+| What the TONN layer itself adds | against the same model with attention in its place: on text, about 0.1% at 0.1B and 0.25B (0.25B: 1.0141 against 1.0154 on windows alone, 0.9545 against 0.9556 on 4,096-token streams; at 111 tokens per parameter the control is 0.2% ahead, 1 seed). On retrieval across windows it triples: a pass key one window back 0.281 against 0.094 (p = 3e-8). The lead over the Qwen3.5 design on text comes mostly from the attention changes and the streams | 0.1B and 0.25B: 3 seeds each; long run 1 seed | 5, 19, 24, 26 |
 | The 9B, priced | 206 effective TFLOP/s per H100 on one node; about 75,000 GPU-hours for 1T tokens | 1 node; 2 and 4 nodes measured, being written up | 16 |
 | Streams without most of their cost | mixing windows alone into the stream phase gives back half of what it cost on windows alone (1.1532 against 1.1566; none 1.1496) for 0.0014 of its long-document gain (1.0969 against 1.0955); now the recipe | 3 seeds, 0.1B | 21 |
 | Distillation into the weights | 30% teacher text (Qwen3.5-9B) in pretraining: worse, 1.1592 against 1.1549 | 1 seed, 0.1B | 22 |
 | Benchmarks at 0.5B | mean of 7 zero-shot tasks 0.429 against 0.421 (Llama 0.417), ahead in both seeds and on 5 of 7 tasks; small: two tasks near chance | 2 seeds | 20 |
-| Did not work | ExeaLM's own retrieval circuit (0.1% of questions find their entry); three 0.1B agents sharing a board lose to one model reading as a stream | | 7, 14 |
+| Did not work | ExeaLM's own retrieval circuit with its learned search (0.1% of questions find their entry); three 0.1B agents sharing a board lose to one model reading as a stream; the library as learned 32-byte codes keeps 6% to 8% of the text's gain (`docs/library_codes_proposal.md`); no model finds a pass key two or more windows back | | 7, 14, 26 |
 | Void | the first 0.5B runs and the 3B pair's first 1,100 steps: a multi-GPU bug skipped gradient averaging; rerun with the fix | | 17 |
 
 ## 1. The first job (job 56074172, 25 November 2026, 56 minutes on one node)
@@ -788,9 +789,62 @@ library with the same query. Accuracy, normalized where the task has it:
 - The largest change is closed-book SciQ after RAG post-training: +0.106 for ExeaLM and +0.107 for the Qwen3.5-style
   model, with no library at test time. It comes from post-training on the library's questions and answers. Their overlap
   with the benchmarks has not been checked yet (only the search's has), so we do not claim it.
-- The test that counts is the same reading at 0.5B and 3B after post-training on library v2 (section 26).
+- The test that counts is the same reading at 0.5B and 3B after post-training on library v2 (section 27).
 
-## 26. Next
+## 26. Long-context tasks as exact match (job 56105350, `longctx_all.json`, `longctx_all.npz`)
+
+`experiments/longctx_tasks.py`: does the lead on long documents in bits per byte become a lead on tasks? Every finished
+curve model reads the first 4,096 tokens of held-out documents (64 a set) as a stream of eight 512-token windows, and
+again window by window alone. Under teacher forcing a span is an exact match when the top token is right at every
+position, which is what greedy decoding would write. Three tasks:
+
+- **Recall** (all 9 code and prose sets, 11,614 targets): a 6-token run whose first 2 tokens are the cue and last 4
+  the target, last seen before the previous window, so neither the window nor the carried keys and values hold it.
+- **Code next line** (4 code sets, 12,092 targets): lines in window 2 or later that use an identifier last seen before
+  the previous window (RepoBench's next-line task, with the far context in the same file).
+- **Pass key** (64 trials at each depth): "The pass key is 48213. Remember it." placed in held-out Wikipedia text,
+  then "What is the pass key? The pass key is" in the last window.
+
+Exact-match rates, mean over seeds, read as a stream:
+
+| | Recall | Code next line | Pass key, same window | Pass key, one window back |
+|---|---|---|---|---|
+| **0.1B, 111 tokens per parameter** (2 seeds; control 1 seed) | | | | |
+| ExeaLM | 0.268 | 0.042 | **0.648** | **0.078** |
+| Attention in place of the TONN layer (seed 0) | **0.270** | **0.043** | 0.594 | 0.000 |
+| Qwen3.5-style | 0.235 | 0.038 | 0.047 | 0.000 |
+| **0.25B** (3 seeds; plain Llama 1 seed) | | | | |
+| ExeaLM | 0.241 | 0.035 | **0.766** | **0.281** |
+| Attention in place of the TONN layer | **0.243** | 0.035 | 0.635 | 0.094 |
+| Qwen3.5-style | 0.215 | 0.032 | 0.016 | 0.000 |
+| Plain Llama | 0.134 | 0.019 | 0.000 | 0.000 |
+| **0.5B** (2 seeds) | | | | |
+| ExeaLM | **0.282** | **0.045** | **0.859** | **0.266** |
+| Qwen3.5-style | 0.252 | 0.042 | 0.188 | 0.000 |
+| Plain Llama | 0.186 | 0.027 | 0.000 | 0.000 |
+
+Paired tests (McNemar, every target scored by both models, seeds pooled):
+
+- **Against the Qwen3.5-style model, ExeaLM is ahead on every task at every size.** Recall: 13.9%, 11.9% and 11.7%
+  more targets at 0.1B, 0.25B and 0.5B (p below 1e-40 at each size). Code next line: 10.2%, 8.5% and 6.5% more (p =
+  2e-5, 3e-5 and 0.002). Pass key in the same window: 0.65 against 0.05, 0.77 against 0.02, 0.86 against 0.19 (p below
+  1e-16). Read without a stream, the pass key still favors ExeaLM: 0.69 against 0.30, 0.68 against 0.07, 0.80 against
+  0.35 (p below 1e-9).
+- **The recall lead does not shrink with size** (14%, 12%, 12%), unlike the lead on windows alone in bits per byte
+  (sections 9, 13, 20).
+- **The TONN layer against attention in its place.** Recall and code next line are even (within 1.3%, p = 0.19 and
+  0.77 at 0.1B; 0.15 and 1.0 at 0.25B). The pass key is not: ExeaLM finds the key one window back 0.281 of the time
+  against 0.094 at 0.25B (3 seeds, 38 trials only ExeaLM gets against 2, p = 3e-8), and 0.109 against 0 at 0.1B
+  (seed 0, p = 0.02). In the same window, read as a stream, 0.766 against 0.635 (p = 6e-4) and 0.875 against 0.594
+  (p = 3e-4). Read window by window alone, the gap is small and not significant (0.677 against 0.609, p = 0.10): what
+  the TONN layer adds is carried across windows, the job it was built for.
+- No model finds the pass key two or more windows back (0 of 64 at every depth, every model). Exact retrieval from far
+  back is not solved at these sizes.
+- Read with care: the Qwen3.5-style model and the plain Llama never train on streams (docs/decisions.md, 25
+  November), so they gain little or lose from the carried state; the plain Llama does worse streamed than alone. The
+  attention-only control trains on streams like ExeaLM. Code exact-match rates are low at these sizes (3% to 5%).
+
+## 27. Next
 
 The 0.5B three-way run at 20 tokens per parameter (Saturday morning), the 3B pair (Sunday evening), library v2's check
 against the benchmarks and RAG post-training on it at 0.5B (jobs 56104634-9, running) and on a mid-run 3B checkpoint,
