@@ -39,7 +39,7 @@ We trained it against our implementation of the Qwen3.5 layer design at 0.1B, 0.
 On long-context tasks scored as exact match, ExeaLM recalls 12 to 14 percent more text from beyond its window at every size, completes 7 to 10 percent more lines of code that depend on distant definitions, and finds a planted pass key 4 to 50 times as often.
 Unlike its lead on short text, which shrinks from 2.8 to 0.6 percent in bits per byte, its recall lead does not shrink with size.
 Its memory layer triples retrieval of a pass key from the previous window over the same model with attention in its place.
-With its library, a 0.1B ExeaLM scores better on held-out research questions than the released Qwen3.5-9B without one, at about a sixth of the compute per answer.
+With its library, a 0.5B ExeaLM scores 65 percent lower in bits per byte on held-out research questions than the released Qwen3.5-9B without one, with 18 times fewer parameters.
 Trained as long per parameter as the planned 9B, it reaches the Qwen3.5-style model's quality in 25 to 29 percent fewer steps.
 A 3B pair finishes after this draft.
 \end{abstract}
@@ -75,7 +75,7 @@ What the study shows:
 \begin{itemize}
 \item \textbf{ExeaLM remembers more of a long document.} On held-out documents read as a stream, it recalls 14\%, 12\% and 12\% more text last seen beyond its window than the Qwen3.5-style model at 0.1B, 0.25B and 0.5B, completes 10\%, 9\% and 7\% more lines of code that depend on a distant definition, and finds a planted pass key 4 to 50 times as often. Every difference holds target by target ($p \le 0.002$), and the recall lead does not shrink with size (Section~\ref{sec:long}).
 \item \textbf{Its memory layer carries exact facts across windows.} With attention in place of the TONN layer, the model finds a pass key one window back 9\% of the time against ExeaLM's 28\% (0.25B, 3 seeds, $p = 3\times10^{-8}$) (Section~\ref{sec:parts}).
-\item \textbf{Its library turns a small model into a strong one on research questions.} A 0.1B ExeaLM that reads library entries found by a keyword search cuts its bits per byte on held-out research questions by 64\% (3 seeds), and with the second library, written by DeepSeek-V4-Flash, by 74\%. It then scores better than the released Qwen3.5-9B without a library, at about a sixth of the compute per answer (Sections~\ref{sec:library} and~\ref{sec:cost}).
+\item \textbf{Its library turns a small model into a strong one on research questions.} A 0.1B ExeaLM that reads library entries found by a keyword search cuts its bits per byte on held-out research questions by 64\% (3 seeds), and with the second library, written by DeepSeek-V4-Flash, by 74\%. At 0.5B with the second library it scores 65\% below the released Qwen3.5-9B without a library (0.282 against 0.811 bits per byte), with 18 times fewer parameters; given the same library the 9B still leads, by a margin that shrinks with size (Sections~\ref{sec:library} and~\ref{sec:cost}).
 \item \textbf{It learns more per token.} Trained to 111 tokens per parameter, the Qwen3.5-style model needs 34\% to 41\% more steps to match ExeaLM through step 20,000 (2 seeds), and never reaches its final score (Section~\ref{sec:length}).
 \item \textbf{It is ahead on every held-out set.} ExeaLM is ahead of the Qwen3.5-style model on all 54 set-and-seed pairs at 0.1B and 0.25B and all 36 at 0.5B, by 5.3\% to 3.6\% on long documents and 2.8\% to 0.6\% on short windows (Section~\ref{sec:size}).
 \item \textbf{The 9B is priced.} At the speed we measured for the 9B on one node, pretraining on 1T tokens takes about 75,000 GPU-hours, \$202,000 to \$299,000 at public prices (Section~\ref{sec:cost}).
@@ -582,7 +582,14 @@ Searching the two tiers apart keeps 0.72 for the written tier, and the model rea
 On one H100, a pruned GPU index that keeps each token's 100,000 best passages, merged into one table, answers a query over all the passages in 2.0 ms (median).
 Its top passage matches the full index's for 86\% of queries (Table~\ref{tab:search} in Appendix~\ref{app:extra}).
 
-\pendbox{Library v2 test: RAG post-training on v2 for ExeaLM and the Qwen3.5-style model with the same recipe, streams included for both, at 0.5B and on a mid-run 3B checkpoint. Fills 0.5B and 3B rows of a table like Table~\ref{tab:library}, and adds held-out documents and questions from which no entry was written.}
+\paragraph{Library v2 at 0.5B.}
+We post-trained the 0.5B ExeaLM and Qwen3.5-style models on library v2 with the same recipe, streams included for both, for 3,000 steps (one seed, \sect{28}).
+On the first 4,000 held-out questions, ExeaLM's bits per byte fall from 1.044 to 0.282 with the entry a keyword search picks, and the Qwen3.5-style model's from 1.028 to 0.320.
+The released Qwen3.5-9B-Base, scored on the same items, text and bytes, has 0.811 with no library and 0.220 with the same library.
+The 0.5B ExeaLM with its library is thus 65\% below the 9B without one, with 18 times fewer parameters, and the 9B's lead given the same library has narrowed from 0.53 of ExeaLM's score at 0.1B to 0.78 at 0.5B.
+On held-out tasks the 9B without a library stays ahead (0.545 against 0.592).
+
+\pendbox{Library v2 at 3B, from the mid-run 3B pair (ExeaLM post-trained; the Qwen3.5-style run is training). Held-out documents and questions from which no entry was written.}
 
 %=====================================================================================================
 \section{What a result costs}
@@ -609,6 +616,7 @@ The 0.1B model reads the entry (426 tokens on average) and the question and answ
 The small model with its library is ahead at about a sixth of the compute per answer, plus a keyword search that takes 0.4 ms on a CPU for this library.
 This is a system against a model on questions about topics the library covers, and the questions were written by the model that wrote the entries.
 Given the same library, Qwen3.5-9B scores 0.313.
+At 0.5B with library v2 the same comparison reads 0.282 against 0.811, 65\% below the 9B with 18 times fewer parameters, at about the same compute per answer: the 0.5B model reads the entry (510 tokens on average) and the question and answer (35), the 9B only the latter (\sect{28}).
 
 \paragraph{The 9B.}
 We timed the 9B ExeaLM's full training step on one node of four H100s (\sect{16}).

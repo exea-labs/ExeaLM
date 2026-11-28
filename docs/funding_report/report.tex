@@ -73,10 +73,10 @@ On long-context tasks scored as exact match, ExeaLM recalls 12\% to 14\% more te
 \noindent\colorbox{boxfill}{\begin{minipage}{\dimexpr\linewidth-2\fboxsep\relax}
 \vspace{5pt}
 \begin{tabularx}{\linewidth}{@{\hspace{4pt}}>{\raggedright\arraybackslash}p{0.29\linewidth}@{\hspace{10pt}}>{\raggedright\arraybackslash}p{0.29\linewidth}@{\hspace{10pt}}L@{}}
-{\huge\bfseries +12\%} & {\huge\bfseries 64\%} & {\huge\bfseries 75,000} \\[2pt]
+{\huge\bfseries +12\%} & {\huge\bfseries 65\%} & {\huge\bfseries 75,000} \\[2pt]
 \small more exact recalls of text last seen over 512 tokens back than the Qwen3.5-style model, at 0.1B, 0.25B and 0.5B alike (14\%, 12\%, 12\%; p below $10^{-40}$ at each size). On a pass key in the same window: 0.86 against 0.19 at 0.5B.
 &
-\small fewer bits per byte on held-out research questions when the 0.1B ExeaLM searches its library (1.645 to 0.590, 3 seeds). The released Qwen3.5-9B-Base scores 1.031 with no library and 0.313 with the same library.
+\small fewer bits per byte on held-out research questions for a 0.5B ExeaLM with its DeepSeek-written library (0.282) than for the released Qwen3.5-9B-Base without one (0.811): 18 times fewer parameters, about the same compute per answer. Given the same library the 9B leads, 0.220.
 &
 \small H100 GPU-hours to pretrain the 9B on 1T tokens, at the speed we measured for the 9B on one node of four H100s. That is \$202,000 to \$299,000 at public on-demand list prices of \$2.69 to \$3.99 per GPU-hour.
 \end{tabularx}
@@ -318,7 +318,7 @@ Given the same library, Qwen3.5-9B-Base scores 0.313, well ahead of our 0.1B mod
 What this test does not show: more than one model size, answer accuracy (it scores bits per byte), and questions from an independent writer.
 The model that wrote the entries also wrote the questions, and the post-training plan notes that such questions suit retrieval better than real ones.
 
-\subsection{Library v2, being built}
+\subsection{Library v2}
 
 Library v2 adds breadth and a larger writer (Table~\ref{tab:libv2}, from \texttt{docs/library.md}).
 The written tier is entries by DeepSeek-V4-Flash, an open mixture-of-experts model (284B parameters, of which 13B are used for each token) under the MIT license.
@@ -357,7 +357,13 @@ No single gain is beyond two standard errors, so this is a lead, not a result.
 Library v2 is built: 145,376 research and 48,936 code entries written by DeepSeek-V4-Flash, with 733,756 questions and tasks.
 Searched as one written tier with v1, the answer to a held-out v2 question is in the top passage for 70\% of queries, at 6.9 ms a query for both tiers.
 
-\pendbox{Library v2 test. Library post-training on v2 for ExeaLM and the Qwen3.5-style model, with the same recipe, at 0.5B (jobs 56104636--9, running since 27 November) and on a mid-run 3B checkpoint (\texttt{docs/library.md}). Fills the 0.5B and 3B rows of a table like Table~\ref{tab:library}.}
+\paragraph{Library v2 at 0.5B.}
+After the same library post-training with library v2, the 0.5B ExeaLM's bits per byte on held-out questions fall from 1.044 to 0.282 with the entry a keyword search picks (73\%), against 1.028 to 0.320 for the Qwen3.5-style model (one seed, \sect{28}).
+On the same items the released Qwen3.5-9B-Base scores 0.811 with no library: the 0.5B ExeaLM with its library is 65\% below it, with 18 times fewer parameters.
+Given the same library, Qwen3.5-9B scores 0.220. Its lead over ExeaLM with the library is shrinking with size: its score is 0.53 of ExeaLM's at 0.1B and 0.78 at 0.5B.
+On tasks, the 9B without a library is still ahead of the 0.5B with one (0.545 against 0.592).
+
+\pendbox{Library v2 at 3B: post-training from the mid-run 3B pair (ExeaLM done; the Qwen3.5-style run is training), then the same scoring.}
 
 \subsection{What a result costs}
 
