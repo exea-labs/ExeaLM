@@ -1,0 +1,23 @@
+{
+ "n": 300,
+ "papers": 91,
+ "rule": "a top-k human-tier passage shares a 13-token window with the paper's full text",
+ "title_and_question": {
+  "top1": 0.253,
+  "top5": 0.383,
+  "top20": 0.523,
+  "top100": 0.65
+ },
+ "title": {
+  "top1": 0.493,
+  "top5": 0.593,
+  "top20": 0.727,
+  "top100": 0.767
+ },
+ "question": {
+  "top1": 0.0,
+  "top5": 0.003,
+  "top20": 0.013,
+  "top100": 0.06
+ }
+}
