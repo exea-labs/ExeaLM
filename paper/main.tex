@@ -285,7 +285,18 @@ The post-trained Qwen3.5-style model loses with it (0.372 to 0.364), most on Sci
 MMLU stays at chance (0.23) for every model.
 This is one seed at 0.1B, and no single gain is beyond two standard errors, so we report it as a lead (\sect{25}).
 
-\pendbox{Benchmarks at 3B, from the finished 3B pair. Open-book benchmarks at 0.5B after RAG post-training on library v2 (running), with the 268 v2 entries that overlap a benchmark taken out of the post-training items before any benchmark is read.}
+\paragraph{Benchmarks with the library at 0.5B.}
+The same reading at 0.5B, after post-training on library v2 (Section~\ref{sec:library}), with every question's result kept so that each comparison is paired (exact McNemar tests on the 4,548 SciQ and ARC questions, \sect{29}).
+Library post-training raises closed-book accuracy, with no library at test time: ExeaLM's SciQ goes from 0.685 to 0.818, ARC-Easy from 0.396 to 0.455 and ARC-Challenge from 0.233 to 0.264 (pooled 0.418 to 0.486, $p = 6\times10^{-27}$).
+The Qwen3.5-style model gains about as much (0.423 to 0.480).
+The post-training took 1.4 H100-hours.
+To rule out leaked answers we checked every 13-token window of every SciQ and ARC question, choice, answer and support passage against all 1.24B tokens of post-training items with their entries and passages: 9 of the 4,548 questions share one, six of them only in SciQ's support passage, and without them the gain is the same.
+Open book adds 0.0095 for the post-trained ExeaLM ($p = 0.035$; SciQ 0.818 to 0.838) and 0.0057 for the post-trained Qwen3.5-style model ($p = 0.19$).
+Before post-training, the library helps ExeaLM (+0.0086) and hurts the Qwen3.5-style model ($-0.004$, and $-0.019$ on SciQ), a gap of 0.0125 ($p = 0.03$); that model never trained on streams, through which the passages arrive.
+Head to head the two architectures are even on these benchmarks, closed book and open book ($p \ge 0.13$): the gain comes from the library, which both read.
+MMLU stays near chance (0.24 to 0.25).
+
+\pendbox{Benchmarks at 3B, from the finished 3B pair.}
 
 %=====================================================================================================
 \section{Training length}
@@ -784,6 +795,7 @@ Data: 28.5B tokens, 7.3B research code & \texttt{docs/budget.md} (``The data'') 
 Anneal weights & \texttt{experiments/recipe/}\allowbreak\texttt{exealm\_recipe\_v2.json} \\
 Learning-rate checks and picks & \sect{17}, \texttt{experiments/expanse/plan.py}, \texttt{experiments/expanse/lr\_choice.json} \\
 Open-book rules: 13-token window, 14 benchmarks, 10 entries & \texttt{docs/decisions.md} (26 November, midnight) \\
+Benchmarks at 0.5B, paired tests; 9 of 4,548 questions overlapping; 1.4 H100-hours & \sect{29}, \texttt{openbook\_paired\_500m.json}, \texttt{bench\_questions\_v2.json} \\
 0.5B run at 20 tokens per parameter: 38,173 steps, 10.0B tokens & \texttt{docs/decisions.md} (27 November, 1:45 a.m.) \\
 Speeds of the study's models (Table~\ref{tab:speed}); within 16\% & \texttt{throughput\_speed\_0.5B\_512\_c0.json}, \texttt{\_c1.json}, \texttt{throughput\_speed\_3B\_512\_c0.json}, \texttt{\_c1.json} (not yet written up in the record) \\
 Other speeds and compute (Appendix~\ref{app:compute}) & \sect{1}, \sect{2}, \sect{16}, \texttt{throughput\_h100.json}, \texttt{scaling\_500m.json}, \texttt{nine\_b.json}, \texttt{docs/decisions.md} \\

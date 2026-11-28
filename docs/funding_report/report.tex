@@ -370,6 +370,14 @@ On tasks the 3B with its library is also below the 9B without one (0.523 against
 The 9B's score given the same library is 0.53, 0.78 and 0.92 of ExeaLM's at 0.1B, 0.5B and 3B.
 ExeaLM had 3,000 steps of library post-training in this question format and Qwen3.5-9B-Base had none, so part of the gain is that training.
 
+\paragraph{Benchmarks after library post-training at 0.5B.}
+The library post-training also lifts standard benchmarks with no library at test time (one seed, \sect{29}; every question scored, so each comparison is paired).
+ExeaLM's SciQ goes from 0.685 to 0.818, ARC-Easy from 0.396 to 0.455 and ARC-Challenge from 0.233 to 0.264: 575 more questions right and 266 fewer across the 4,548, $p = 6\times10^{-27}$.
+The post-training took 1.4 H100-hours.
+We checked that this is not leaked answers: of the 4,548 questions, 9 share a 13-token stretch with any of the 1.24B tokens of post-training text (six of them only in SciQ's support passage), and without them the gain is the same.
+With the library at test time the post-trained ExeaLM gains 0.0095 more ($p = 0.035$), most on SciQ (0.838).
+The Qwen3.5-style model gains about as much from the same post-training, so this benchmark gain belongs to the library, which the 9B will have, more than to the architecture.
+
 \pendbox{The Qwen3.5-style 3B with the same library post-training (training), and the finished 3B pair.}
 
 \subsection{What a result costs}
@@ -648,6 +656,7 @@ Long documents at 0.1B (1.096, 1.157); without streams 1.132, lead 0.025 & \sect
 0.25B windows alone (1.014, 1.026, 1.041; range 0.007 to 0.026) and long documents (0.955, 0.997) & \sect{13}, \sect{15}, \texttt{text\_250m.json}, \texttt{stream8\_250m.json} \\
 0.5B, 2 seeds (0.933, 0.939, 0.958; 0.873, 0.906; 3.6\%; 36 of 36 pairs); seed 0's in-run lead 0.011 to 0.004 & \sect{20}, \texttt{text\_500m\_all.json}, \texttt{stream8\_500m\_all.json} \\
 0.5B benchmarks, 2 seeds (0.429, 0.421, 0.417; SciQ 0.032, LAMBADA 0.020) & \sect{20}, \texttt{bench\_<model>\_500m\_4.1x\_s0.json} and \texttt{\_s1.json} \\
+0.5B benchmarks after library post-training, paired; 9 of 4,548 questions overlapping; 1.4 H100-hours & \sect{29}, \texttt{openbook\_paired\_500m.json}, \texttt{bench\_questions\_v2.json} \\
 3B in-run check at step 14,500 (0.806, 0.813, 0.007); 0.016 at step 7,500, 0.034 at step 3,000; finish on the evening of 29 November & \sect{23} \\
 Long pair, 2 seeds: step multiplier 1.18, 1.21 at step 5,000 and 1.34, 1.41 at step 20,000; finals 0.958, 0.963 and 0.902, 0.946; in-run leads 0.009 to 0.001 (seed 0) and 0.006 to 0.008 (seed 1) & \sect{24}, \texttt{text\_111x.json}, \texttt{stream8\_111x.json} \\
 Switch at step 31,788; second seed mixed from 28,400 & \texttt{docs/decisions.md}, 26 November (7 p.m.) \\

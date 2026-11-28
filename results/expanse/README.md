@@ -926,10 +926,54 @@ data/library_v2/v2 --limit 4000`, `score_hf.py`, `external_qwen35_9b_base_v2.jso
   Qwen3.5-9B without one (0.811); on tasks 0.523, below the 9B without a library (0.545). The 9B's score given the same
   library is 0.53, 0.78 and 0.92 of ExeaLM's at 0.1B, 0.5B and 3B: the gap closes with size. ExeaLM had 3,000 steps
   of post-training on the library's training topics in this question format; Qwen3.5-9B-Base had none.
-- The questions were written by the model that wrote the entries. Benchmarks with the library are in section 25 and
-  the open-book runs at 0.5B (running).
+- The questions were written by the model that wrote the entries. Benchmarks with the library are in section 25
+  (0.1B) and section 29 (0.5B).
 
-## 29. Next
+## 29. Benchmarks with the library at 0.5B, every question scored (jobs 56105889-90, 56107246-7)
+
+Section 25's reading at 0.5B: the curve models (seed 0) and the same two after RAG post-training on library v2
+(section 28), closed book and open book (`experiments/library/openbook.sh`, the written tier v1 and v2 searched as one
+plus the human tier; the 278 written entries of v1 and v2 that share a 13-token window with a benchmark never given).
+The runs were made again with each question's result kept (`SAMPLES=1`, `openbook_samples/`; the accuracies match the
+first runs, `openbook/`, to every digit), so every comparison below is paired, question by question
+(`experiments/library/openbook_paired.py`, `openbook_paired_500m.json`; exact McNemar tests). Accuracy, normalized;
+"pooled" is the share of the 4,548 SciQ and ARC questions right:
+
+| 0.5B, seed 0 | SciQ | ARC-Easy | ARC-Challenge | Pooled | MMLU |
+|---|---|---|---|---|---|
+| ExeaLM, closed | 0.685 | 0.396 | 0.233 | 0.418 | 0.249 |
+| ExeaLM, open | 0.691 | 0.409 | 0.234 | 0.426 | 0.241 |
+| Qwen3.5-style, closed | 0.677 | 0.409 | 0.233 | 0.423 | |
+| Qwen3.5-style, open | 0.658 | 0.410 | 0.232 | 0.419 | |
+| ExeaLM with library post-training, closed | 0.818 | 0.455 | 0.264 | 0.486 | 0.250 |
+| ExeaLM with library post-training, open | **0.838** | **0.464** | **0.265** | **0.495** | 0.248 |
+| Qwen3.5-style with library post-training, closed | 0.809 | 0.454 | 0.253 | 0.480 | 0.240 |
+| Qwen3.5-style with library post-training, open | 0.825 | 0.460 | 0.251 | 0.486 | |
+
+- **Library post-training raises closed-book accuracy.** ExeaLM gets 575 questions its pretrained self missed and
+  loses 266 (pooled 0.418 to 0.486, p = 6e-27): SciQ 0.685 to 0.818 (p = 5e-23), ARC-Easy 0.396 to 0.455 (p = 3e-10),
+  ARC-Challenge 0.233 to 0.264 (p = 0.005). The Qwen3.5-style model gains about as much (0.423 to 0.480, p = 2e-21).
+  The post-training cost 1.4 H100-hours for ExeaLM (3,000 steps, 197M tokens, half of them the pretraining mix).
+- **It is not overlap.** `experiments/library/bench_questions.py` checks every 13-token window of every SciQ and ARC
+  question, choice, answer and support passage against all of the post-training items with their entries and
+  passages (`data/library_v2/v2/rag2/train`, 1.24B tokens): 9 of 4,548 questions share one
+  (`bench_questions_v2.json`; SciQ 7, six of them only in the support passage; ARC-Easy 2, in an answer choice;
+  ARC-Challenge 0). Without them the gain is the same (+0.068, p = 1e-26). The pretraining half of the mix is the data
+  the pretrained models already saw.
+- **Open book after post-training.** ExeaLM gains 0.0095 pooled (221 questions against 178, p = 0.035), most on SciQ
+  (0.818 to 0.838, p = 0.014). The Qwen3.5-style model gains 0.0057 (p = 0.19; SciQ 0.809 to 0.825, p = 0.026). The
+  difference between the two gains is not significant (0.004, p = 0.51).
+- **Open book without post-training.** ExeaLM gains 0.0086 (p = 0.06); the Qwen3.5-style model loses 0.004, and 0.019
+  on SciQ (p = 0.04), as at 0.1B (section 25). ExeaLM's gain is larger by 0.0125 (per-question difference of the two
+  gains, p = 0.03). The passages come as earlier windows of a stream, and the pretrained Qwen3.5-style model never
+  trained on streams (docs/decisions.md, 25 November), so this measures stream training as much as the architecture.
+- **Head to head**, the two architectures are even closed book (pretrained: 0.418 against 0.423, p = 0.35; after
+  post-training 0.486 against 0.480, p = 0.39). With the library after post-training ExeaLM is ahead by 0.009 (0.495
+  against 0.486, p = 0.13), not significant. The benchmark gain at 0.5B comes from the library, which both models read.
+- MMLU stays near chance (0.24 to 0.25, 4 choices) for every model, open or closed.
+- One seed, at 0.5B trained to 4.1 tokens per parameter (2.1B tokens).
+
+## 30. Next
 
 The 0.5B three-way run at 20 tokens per parameter (Saturday morning), the 3B pair (Sunday evening), library v2's check
 against the benchmarks and RAG post-training on it at 0.5B (jobs 56104634-9, running) and on a mid-run 3B checkpoint,

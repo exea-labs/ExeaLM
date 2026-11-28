@@ -66,6 +66,26 @@ def compare(A, B, keep=None):
     return rows
 
 
+def gain_gap(Ao, Ac, Bo, Bc, keep=None):
+    """Does the library help model A more than model B? Per question, (A open - A closed) - (B open - B closed);
+    its mean with a normal-approximation two-sided p (the mean of n independent questions)."""
+    rows = {}
+    for t in TASKS + ("pooled",):
+        keys = [k for k in Ao if k in Ac and k in Bo and k in Bc and (t == "pooled" or k[0] == t)
+                and (keep is None or k in keep)]
+        if not keys:
+            continue
+        d = [(Ao[k][0] - Ac[k][0]) - (Bo[k][0] - Bc[k][0]) for k in keys]
+        n = len(d)
+        m = sum(d) / n
+        sd = math.sqrt(sum((x - m) ** 2 for x in d) / max(1, n - 1))
+        z = m / (sd / math.sqrt(n)) if sd > 0 else 0.0
+        rows[t] = dict(n=n, gain_a=round(sum(Ao[k][0] - Ac[k][0] for k in keys) / n, 4),
+                       gain_b=round(sum(Bo[k][0] - Bc[k][0] for k in keys) / n, 4), gap=round(m, 4),
+                       p=float("%.3g" % math.erfc(abs(z) / math.sqrt(2))))
+    return rows
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--ours", required=True, help="folder of <run>_<closed|open>.jsonl")
@@ -125,6 +145,13 @@ def main(argv=None):
         u = rec.get("unflagged", {}).get("pooled", {})
         print(f"{A} vs {B}: pooled {p.get('a')} vs {p.get('b')} ({p.get('diff'):+.4f}, {p.get('only_a')}/"
               f"{p.get('only_b')}, p={p.get('p')})" + (f"; unflagged {u.get('diff'):+.4f} p={u.get('p')}" if u else ""))
+    res["library_gain_gaps"] = []
+    for A, B in (("ragpost_exealm_500m_v2", "ragpost_qwen_500m_v2"), ("exealm_500m_4.1x_s0", "qwen_500m_4.1x_s0")):
+        need = [f"{A}_open", f"{A}_closed", f"{B}_open", f"{B}_closed"]
+        if all(x in sides for x in need):
+            g = gain_gap(*(sides[x] for x in need))
+            res["library_gain_gaps"].append(dict(a=A, b=B, rows=g))
+            print(f"library gain, {A} against {B}: {g['pooled']}")
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
     json.dump(res, open(a.out, "w"), indent=1)
     print(f"wrote {a.out}")
