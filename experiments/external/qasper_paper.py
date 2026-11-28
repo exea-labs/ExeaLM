@@ -3,9 +3,10 @@ for the question, and its top paragraphs before the question. QASPER's own setti
 the parts a search picks, so every model reads the same text in a short context.
 
 Writes items in indep_build.py's format (set "qasper_paper"): "bm25" holds the paragraphs the in-paper search picks
-(the top 3, at most 2,500 characters, best first), "pasted" the annotator's evidence (an upper bound). The best paragraph comes last, next to the question: our models read
-a long input as 512-token windows and keep little from two or more windows back (results/expanse/README.md, 26-27). Score our
-checkpoints with indep_build.py --texts and released models with score_hf.py --texts.
+(the top 3, at most 2,500 characters), "pasted" the annotator's evidence (an upper bound). The best paragraph comes
+last, next to the question: our models read a long input as 512-token windows and keep little from two or more windows
+back (results/expanse/README.md, sections 26-27). Score our checkpoints with indep_build.py --texts and released
+models with score_hf.py --texts.
 
     python experiments/external/qasper_paper.py --out /expanse/.../external/indep_qasper_paper.jsonl
 """
