@@ -27,6 +27,7 @@ def main(argv=None):
     ap.add_argument("--max_len", type=int, default=8192)
     ap.add_argument("--gpu_mem", type=float, default=0.85)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--rows_out", default=None, help="also write every item row with its bits under bits[<name>]")
     a = ap.parse_args(argv)
     from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams
@@ -45,6 +46,8 @@ def main(argv=None):
     items = [r for r in rows if r["kind"] == "item"]
     for r in items:
         for cond in ("none", "pasted", "bm25"):
+            if cond != "none" and not r.get(cond):              # sets without an oracle passage (code)
+                continue
             head = "" if cond == "none" else r[cond] + r["sep"]
             full = head + r["prefix"] + r["target"]
             enc = tok(full, add_special_tokens=False, return_offsets_mapping=True)
@@ -84,7 +87,12 @@ def main(argv=None):
         groups[(r["set"], r["type"])].append(r)
     for (s, t), rs in sorted(groups.items()):
         res["library"][f"{s}/{t}"] = {c: round(sum(r["hf"][c] for r in rs) / sum(r["target_bytes"] for r in rs), 4)
-                                      for c in ("none", "pasted", "bm25")}
+                                      for c in ("none", "pasted", "bm25") if all(c in r["hf"] for r in rs)}
+    if a.rows_out:
+        with open(a.rows_out, "w", encoding="utf-8") as f:
+            for r in items:
+                r.setdefault("bits", {})[name] = r.pop("hf")
+                f.write(json.dumps(r, ensure_ascii=False) + "\n")
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
     json.dump(res, open(a.out, "w"), indent=1)
     print(json.dumps(res.get("mean_of_sets", res["library"])), flush=True)
