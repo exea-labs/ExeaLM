@@ -1,0 +1,26 @@
+{
+ "model": "qwen35_9b_base_v2",
+ "sets": {},
+ "library": {
+  "qa/all": {
+   "none": 0.8114,
+   "pasted": 0.129,
+   "bm25": 0.2203
+  },
+  "qa/qa": {
+   "none": 0.8114,
+   "pasted": 0.129,
+   "bm25": 0.2203
+  },
+  "tasks/all": {
+   "none": 0.5446,
+   "pasted": 0.3085,
+   "bm25": 0.3826
+  },
+  "tasks/text": {
+   "none": 0.5446,
+   "pasted": 0.3085,
+   "bm25": 0.3826
+  }
+ }
+}

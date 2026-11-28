@@ -87,7 +87,7 @@ def main(argv=None):
                                       for c in ("none", "pasted", "bm25")}
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
     json.dump(res, open(a.out, "w"), indent=1)
-    print(json.dumps(res["mean_of_sets"]), flush=True)
+    print(json.dumps(res.get("mean_of_sets", res["library"])), flush=True)
     for k, v in res["library"].items():
         print(k, v, flush=True)
     print("wrote", a.out)

@@ -897,7 +897,32 @@ its smaller gain). Two windows back none keeps anything: every model scores wors
 passages must sit in the question's window or the one before, which is how the open-book benchmarks and the RAG
 post-training place them. One seed, 0.1B.
 
-## 28. Next
+## 28. Library v2 (DeepSeek-V4-Flash) at 0.5B, and against Qwen3.5-9B (jobs 56105274-6, 56105382, 56106520-42)
+
+`experiments/post/rag_post.sh` with library v2 (`LIB=data/library_v2/v2`, the top human-tier passage after the entry,
+streams for both models: `--stream 4 --stream_from 0 --stream_mix 0.5 --batch 8 --accum 4`), 3,000 steps from the
+0.5B curve models (seed 0); `score.py --limit 4000` (the first 4,000 held-out questions and tasks). The released
+Qwen3.5-9B-Base scored on the same items, text and bytes (`experiments/external/build_texts.py --library
+data/library_v2/v2 --limit 4000`, `score_hf.py`, `external_qwen35_9b_base_v2.json`). Bits per byte on the targets:
+
+| Model | Questions: nothing | BM25 entry | its own entry | Tasks: nothing | BM25 entry | its own entry |
+|---|---|---|---|---|---|---|
+| ExeaLM 0.5B, RAG post-training | 1.044 | 0.282 | 0.181 | 0.751 | 0.592 | 0.540 |
+| Qwen3.5-style 0.5B, RAG post-training | 1.028 | 0.320 | 0.225 | 0.762 | 0.621 | 0.574 |
+| Qwen3.5-9B-Base (released, no post-training) | 0.811 | **0.220** | **0.129** | **0.545** | **0.383** | **0.309** |
+
+- With the library, ExeaLM's bits per byte on held-out questions fall 73% (1.044 to 0.282) and it is 0.038 (12%)
+  ahead of the Qwen3.5-style model given the same library, search and post-training. One seed.
+- The 0.5B ExeaLM with its library scores 65% below Qwen3.5-9B without one on held-out questions (0.282 against
+  0.811), with 18 times fewer parameters and about the same compute per answer (it reads the entry, 510 tokens on
+  average; the 9B reads only the question and answer). On tasks the 9B without a library is still ahead (0.545
+  against 0.592).
+- Given the same library, Qwen3.5-9B is ahead (0.220 against 0.282), but the gap closes with size: its bits per byte
+  are 0.78 of ExeaLM's at 0.5B on v2, against 0.53 at 0.1B on v1 (0.313 against 0.590, section 18).
+- The questions were written by the model that wrote the entries. Benchmarks with the library are in section 25 and
+  the open-book runs at 0.5B (running).
+
+## 29. Next
 
 The 0.5B three-way run at 20 tokens per parameter (Saturday morning), the 3B pair (Sunday evening), library v2's check
 against the benchmarks and RAG post-training on it at 0.5B (jobs 56104634-9, running) and on a mid-run 3B checkpoint,
