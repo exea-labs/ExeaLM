@@ -634,7 +634,8 @@ The 0.5B ExeaLM with its library is thus 60\% below the 9B without one, with 18 
 On held-out tasks the 9B without a library stays ahead (0.536 against 0.592).
 
 \paragraph{Library v2 at 3B.}
-From the 3B ExeaLM checkpoint a third of the way through pretraining (4.2B tokens), the same post-training brings held-out questions to 0.239 bits per byte with the searched entry, 66\% below Qwen3.5-9B without a library (0.700), with a third of its parameters (\sect{28}).
+From the 3B ExeaLM checkpoint a third of the way through pretraining (4.3B tokens), the same post-training brings held-out questions to 0.239 bits per byte with the searched entry, 66\% below Qwen3.5-9B without a library (0.700), with a third of its parameters (\sect{28}).
+The Qwen3.5-style 3B, frozen at the same moment of pretraining (equal compute; ExeaLM's faster steps gave it 3.5\% more tokens, worth 0.35\% in held-out bits per byte), reaches 0.258 with the same library, search and post-training: ExeaLM is 7.4\% lower with the searched entry and 11.5\% with its own entry (0.147 against 0.166), and 4\% to 5\% lower on tasks.
 Given the same library the 9B is ahead, 0.171 against 0.239; its score is 0.61 of ExeaLM's at 0.5B and 0.72 at 3B.
 Against the 9B without the worked examples these ratios read 0.78 and 0.92; the examples make the fairer test.
 ExeaLM had 3,000 steps of post-training on the library's training topics in this question format; Qwen3.5-9B-Base had only the three examples.
@@ -644,11 +645,13 @@ The library's own questions were written by the model that wrote its entries.
 We also scored research and code questions written by people (\sect{30}): QASPER (1,372 questions researchers asked about NLP papers, \citealp{dasigi2021qasper}), PubMedQA (1,000 expert-labelled, \citealp{jin2019pubmedqa}), BigCodeBench (1,140 functions, \citealp{zhuo2024bigcodebench}) and DS-1000 (1,000 data-science problems, \citealp{lai2023ds1000}), in bits per byte on the reference answer, with Qwen3.5-9B-Base on the same text.
 On equal terms the 9B is well ahead: our 3B checkpoint's bits per byte are 1.2 to 1.8 times its own on every set.
 With the paper in hand, as QASPER's own setting gives it, and the three paragraphs a keyword search inside the paper ranks first, the 3B ExeaLM scores 0.904 against 0.945 for the 9B without the paper (95\% interval of the ratio 0.93 to 0.99); given the same paragraphs the 9B scores 0.738.
+The Qwen3.5-style 3B with the same post-training is even with the 9B there (0.937, interval 0.96 to 1.02), so at 3B only ExeaLM beats it.
 Same data and training, ExeaLM is ahead of the Qwen3.5-style model at 0.5B on all four sets, by 7\% to 9\% on BigCodeBench (958 of 1,140 functions) and 3\% to 5\% on DS-1000.
+At 3B, at equal compute, it is lower on 11 of 12 set-and-condition rows: BigCodeBench by 6.5\% and 8.5\% without and with the library, DS-1000 by 4.5\% and 5.1\%, QASPER by 1.7\% to 3.8\%; the exception is PubMedQA with no help, where the Qwen3.5-style 3B is 1.7\% lower.
 The search is the weak link: our one-step search finds the asked-about paper for 31\% of QASPER questions and barely helps any model, a two-step search (the paper by its title, then its passage for the question) finds it for 53\% and cuts the 3B's bits per byte by 12\% and the 9B's by 11\%, and given the evidence paragraphs the 0.5B's fall 62\%.
 Library post-training on one writer's question format made the 0.5B models slightly worse on these questions (QASPER 1.228 to 1.283 with the library), while it helps on the library's own questions and on SciQ and ARC; the 9B's post-training needs questions from many sources.
 
-\pendbox{The Qwen3.5-style 3B with the same post-training (scoring), and the finished 3B pair on the same questions.}
+\pendbox{The finished 3B pair on the same questions (due around midnight of 29 to 30 November 2026).}
 
 %=====================================================================================================
 \section{What a result costs}

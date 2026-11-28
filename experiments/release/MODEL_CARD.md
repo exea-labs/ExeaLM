@@ -35,7 +35,7 @@ Research notes: [blog.exealabs.org](https://blog.exealabs.org).
 | `qwen_` | our build of the Qwen3.5 design: Gated DeltaNet in 3 of every 4 layers, gated attention with QK-norm in the 4th |
 | `llama_` | a plain Llama |
 | `libpost_`, `ragpost_`, `boardpost_` | post-training tests: a distilled library with retrieval, and agents sharing a board |
-| `ragpost_*_v2` | 3,000 steps of post-training to read library v2 (an entry by DeepSeek-V4-Flash and a passage of real text, found by a keyword search, before each question). `ragpost_exealm_3b_v2` starts from the 3B ExeaLM a third of the way through pretraining (4.2B tokens) |
+| `ragpost_*_v2` | 3,000 steps of post-training to read library v2 (an entry by DeepSeek-V4-Flash and a passage of real text, found by a keyword search, before each question). `ragpost_exealm_3b_v2` and `ragpost_qwen_3b_v2` start from the 3B pair a third of the way through pretraining, frozen at the same moment (4.3B and 4.1B tokens) |
 
 Names end in the size (`100m`, `250m`, `500m`, `3b`), the tokens per parameter (`4.1x`, `111x`) and the seed (`s0` to
 `s2`).
@@ -62,6 +62,9 @@ Since then (one seed unless stated; the GitHub results page, sections 26 to 30, 
   Qwen3.5-9B-Base, shown three worked examples, scores 0.700 without the library and 0.171 with it. On research and
   code questions written by people (QASPER, PubMedQA, BigCodeBench, DS-1000), Qwen3.5-9B is well ahead of our 0.5B
   and 3B.
+- At 3B with the same library post-training and equal compute, ExeaLM is ahead of the Qwen3.5-style model on the
+  library's held-out questions (0.239 against 0.258) and on 11 of 12 rows of the questions written by people, most on
+  code (BigCodeBench 6.5% to 8.5% lower bits per byte).
 - Library post-training lifts the 0.5B ExeaLM's closed-book SciQ from 0.685 to 0.818 and ARC-Easy from 0.396 to
   0.455; 9 of the 4,548 SciQ and ARC questions share any 13-token window with the post-training data.
 

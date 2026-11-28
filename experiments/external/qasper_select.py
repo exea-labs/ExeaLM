@@ -54,23 +54,28 @@ def bm25_rank(query, paras, k1=1.2, b=0.75):
     return list(np.argsort(-np.asarray(scores), kind="stable"))
 
 
+BGE_Q = "Represent this sentence for searching relevant passages: "
+# pooling, query prefix, passage prefix: each model's documented usage
+STYLES = {"e5": ("mean", "query: ", "passage: "), "bge-m3": ("cls", "", ""), "arctic-embed": ("cls", "query: ", ""),
+          "bge": ("cls", BGE_Q, ""), "mxbai": ("cls", BGE_Q, "")}
+
+
 class Dense:
-    """A released embedding model through transformers: BGE (CLS, query instruction) or E5 (mean, query:/passage:)."""
+    """A released embedding model through transformers, pooled and prompted as its model card says (STYLES)."""
 
     def __init__(self, name, dev):
         from transformers import AutoModel, AutoTokenizer
         self.name, self.dev = name, dev
         self.tok = AutoTokenizer.from_pretrained(name)
-        self.model = AutoModel.from_pretrained(name, torch_dtype=torch.float16 if dev.type != "cpu" else torch.float32)
+        self.model = AutoModel.from_pretrained(name, dtype=torch.float16 if dev.type != "cpu" else torch.float32)
         self.model.to(dev).eval()
-        self.e5 = "e5" in name.lower()
+        key = next(k for k in STYLES if k in name.lower())
+        self.pool, self.qp, self.pp = STYLES[key]
+        self.e5 = self.pool == "mean"
 
     @torch.no_grad()
     def embed(self, texts, query=False, bs=64):
-        if self.e5:
-            texts = [("query: " if query else "passage: ") + t for t in texts]
-        elif query:
-            texts = ["Represent this sentence for searching relevant passages: " + t for t in texts]
+        texts = [(self.qp if query else self.pp) + t for t in texts]
         out = []
         for i in range(0, len(texts), bs):
             enc = self.tok(texts[i:i + bs], padding=True, truncation=True, max_length=512, return_tensors="pt").to(self.dev)
@@ -164,8 +169,9 @@ def main(argv=None):
     ap.add_argument("--upr_k", type=int, default=20)
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--device", default="auto")
-    ap.add_argument("--write", default=None, help="method whose picks are written as indep_build.py texts")
-    ap.add_argument("--texts_out", default=None)
+    ap.add_argument("--write", default=None, help='methods whose picks are written as indep_build.py texts ("all", '
+                    "or a comma list), one file each in --texts_dir")
+    ap.add_argument("--texts_dir", default="results/studio/qasper_texts")
     ap.add_argument("--out", required=True)
     a = ap.parse_args(argv)
     t0 = time.time()
@@ -203,6 +209,9 @@ def main(argv=None):
             r["ranks"][f"hybrid:{name}"] = rrf(r["ranks"]["bm25"], r["ranks"][f"dense:{name}"])
         print(f"dense {name} ranked ({time.time() - t0:.0f}s)", flush=True)
         del d
+    if len(dense) > 1:                                    # reciprocal-rank fusion of every embedding model
+        for r in rows:
+            r["ranks"]["fuse:dense"] = rrf(*(r["ranks"][f"dense:{n}"] for n in dense))
     for m in methods:
         kind, _, arg = m.partition(":")
         if kind != "upr":
@@ -231,16 +240,18 @@ def main(argv=None):
     json.dump(res, open(a.out, "w"), indent=1)
     print("wrote", a.out)
 
-    if a.write:
-        with open(a.texts_out, "w", encoding="utf-8") as f:
+    for m in (names if a.write == "all" else a.write.split(",") if a.write else []):
+        path = os.path.join(a.texts_dir, "qasper_select_" + m.replace(":", "_").replace("/", "_") + ".jsonl")
+        os.makedirs(a.texts_dir, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
             for r in rows:
                 it = dict(r["it"])
                 it.pop("source", None)
-                text = "".join(p + "\n\n" for p in reversed(pick(r["paras"], r["ranks"][a.write])))
+                text = "".join(p + "\n\n" for p in reversed(pick(r["paras"], r["ranks"][m])))
                 it.update(set="qasper_paper", type="qasper_paper", bm25=text, kind="item", sep="",
-                          target_bytes=len(it["target"].encode("utf-8")), bits={}, meta={"select": a.write})
+                          target_bytes=len(it["target"].encode("utf-8")), bits={}, meta={"select": m})
                 f.write(json.dumps(it, ensure_ascii=False) + "\n")
-        print("wrote", a.texts_out, f"({time.time() - t0:.0f}s)")
+        print("wrote", path, f"({time.time() - t0:.0f}s)")
 
 
 if __name__ == "__main__":

@@ -909,7 +909,8 @@ data/library_v2/v2 --limit 4000`, `score_hf.py`, `external_qwen35_9b_base_v2.jso
 |---|---|---|---|---|---|---|
 | ExeaLM 0.5B, RAG post-training | 1.044 | 0.282 | 0.181 | 0.751 | 0.592 | 0.540 |
 | Qwen3.5-style 0.5B, RAG post-training | 1.028 | 0.320 | 0.225 | 0.762 | 0.621 | 0.574 |
-| ExeaLM 3B (step 16,000 of 45,688, 4.2B tokens), RAG post-training (4 GPUs, `--zero 1`, lr 1e-4) | 0.910 | 0.239 | 0.147 | 0.666 | 0.523 | 0.472 |
+| ExeaLM 3B (step 16,265 of 45,688, 4.3B tokens), RAG post-training (4 GPUs, `--zero 1`, lr 1e-4) | **0.910** | **0.239** | **0.147** | **0.666** | **0.523** | **0.472** |
+| Qwen3.5-style 3B (step 15,717, 4.1B tokens, frozen at the same moment), the same RAG post-training | 0.916 | 0.258 | 0.166 | 0.682 | 0.546 | 0.498 |
 | Qwen3.5-9B-Base (released, no post-training) | 0.811 | 0.220 | 0.129 | 0.545 | 0.383 | 0.309 |
 | Qwen3.5-9B-Base, shown 3 worked examples of the format | 0.700 | **0.171** | **0.082** | **0.536** | **0.350** | **0.272** |
 
@@ -926,14 +927,25 @@ format our post-trained models learned. It is the fair comparison, and it replac
   library is ahead (0.536 against 0.592).
 - Given the same library and the format, Qwen3.5-9B is ahead: 0.171 against 0.282. Without the examples it read 0.220,
   and we first reported its lead closing to within 9% at 3B (below); with them its score is 0.61 of ExeaLM's at 0.5B.
-- **3B** (job 56106685; the mid-run 3B ExeaLM checkpoint frozen at step about 16,000, 4.2B tokens of pretraining,
-  then the same 3,000 steps of library post-training; the Qwen3.5-style 3B run is training): with the library its
+- **3B** (job 56106685; the mid-run 3B ExeaLM checkpoint frozen at step 16,265, 4.3B tokens of pretraining,
+  then the same 3,000 steps of library post-training): with the library its
   bits per byte on held-out questions are 0.239, 66% below Qwen3.5-9B without one (0.700, shown the format), and on
   tasks 0.523, below the 9B without a library (0.536). Given the same library and the format, the 9B is ahead, 0.171
   against 0.239: its score is 0.61 of ExeaLM's at 0.5B and 0.72 at 3B (0.78 and 0.92 against the 9B without
   examples, the figures first reported). The gap closes with size, but at 3B a third of the way through pretraining
   the 9B with the library is still 28% lower. ExeaLM had 3,000 steps of post-training on the library's training
   topics in this format; Qwen3.5-9B-Base had none, only the three examples.
+- **The Qwen3.5-style 3B with the same library** (jobs 56105444 and 56108615, scored by 56109126,
+  `library_rag_3b_v2_qwen.jsonl`): its checkpoint was frozen at the same moment of pretraining as ExeaLM's
+  (`runs/_mid/`, 27 November 15:11). ExeaLM's steps are faster, so it had reached step 16,265 and the Qwen3.5-style
+  model 15,717: equal compute, and 3.5% more tokens for ExeaLM. On the Qwen3.5-style run's own held-out text, 548
+  steps at that point are worth 0.003 bits per byte (0.35%; `qwen_3b_4.1x_s0/log.jsonl`, 0.8075 to 0.8050). With the
+  same library, search and post-training, ExeaLM is ahead in every condition: questions with the BM25 entry 0.239
+  against 0.258 (7.4% lower), with its own entry 0.147 against 0.166 (11.5%); tasks 0.523 against 0.546 (4.2%) and
+  0.472 against 0.498 (5.1%). Without the library the two are close (questions 0.910 against 0.916, tasks 0.666
+  against 0.682). At 0.5B ExeaLM's lead with the BM25 entry was 12%; at 3B it is 7%. One seed each. A first scoring
+  (job 56105445) read the Qwen3.5-style run's step-2,281 checkpoint after its job hit the time limit and restarted;
+  it was not used.
 - The questions were written by the model that wrote the entries. Section 30 tests the library on questions written
   by people. Benchmarks with the library are in section 25 (0.1B) and section 29 (0.5B).
 
@@ -1057,20 +1069,20 @@ problems). Bits per byte on the reference answer, every model on the same text a
 - **evidence**: the annotator's evidence paragraphs (QASPER) or the abstract without its conclusion (PubMedQA's own
   setting). An upper bound for a search.
 
-| Bits per byte (lower is better) | 0.5B ExeaLM, pretrained | 0.5B Qwen3.5-style, pretrained | 0.5B ExeaLM, library post-training | 0.5B Qwen3.5-style, library post-training | 3B ExeaLM (step 16,000), library post-training | Qwen3.5-9B-Base |
-|---|---|---|---|---|---|---|
-| QASPER, none | 1.258 | 1.264 | 1.295 | 1.313 | 1.211 | **0.945** |
-| QASPER, library | 1.228 | 1.243 | 1.283 | 1.307 | 1.176 | **0.928** |
-| QASPER, two-step | | | 1.141 | 1.160 | 1.063 | **0.845** |
-| QASPER, paper in hand | | | 0.978 | 1.011 | 0.904 | **0.738** |
-| QASPER, evidence (1,241 with evidence) | 0.475 | 0.512 | 0.493 | 0.525 | 0.454 | **0.323** |
-| PubMedQA, none | 0.832 | 0.834 | 0.912 | 0.922 | 0.871 | **0.617** |
-| PubMedQA, library | 0.830 | 0.836 | 0.899 | 0.905 | 0.826 | **0.616** |
-| PubMedQA, abstract | 0.672 | 0.691 | 0.708 | 0.714 | 0.658 | **0.477** |
-| BigCodeBench, none | 0.321 | 0.346 | 0.312 | 0.336 | 0.257 | **0.142** |
-| BigCodeBench, library | 0.327 | 0.354 | 0.320 | 0.351 | 0.267 | **0.146** |
-| DS-1000, none | 0.598 | 0.623 | 0.615 | 0.636 | 0.517 | **0.347** |
-| DS-1000, library | 0.594 | 0.625 | 0.613 | 0.643 | 0.521 | **0.347** |
+| Bits per byte (lower is better) | 0.5B ExeaLM, pretrained | 0.5B Qwen3.5-style, pretrained | 0.5B ExeaLM, library post-training | 0.5B Qwen3.5-style, library post-training | 3B ExeaLM (step 16,265), library post-training | 3B Qwen3.5-style (step 15,717), library post-training | Qwen3.5-9B-Base |
+|---|---|---|---|---|---|---|---|
+| QASPER, none | 1.258 | 1.264 | 1.295 | 1.313 | 1.211 | 1.231 | **0.945** |
+| QASPER, library | 1.228 | 1.243 | 1.283 | 1.307 | 1.176 | 1.210 | **0.928** |
+| QASPER, two-step | | | 1.141 | 1.160 | 1.063 | 1.085 | **0.845** |
+| QASPER, paper in hand | | | 0.978 | 1.011 | 0.904 | 0.937 | **0.738** |
+| QASPER, evidence (1,241 with evidence) | 0.475 | 0.512 | 0.493 | 0.525 | 0.454 | 0.472 | **0.323** |
+| PubMedQA, none | 0.832 | 0.834 | 0.912 | 0.922 | 0.871 | 0.857 | **0.617** |
+| PubMedQA, library | 0.830 | 0.836 | 0.899 | 0.905 | 0.826 | 0.842 | **0.616** |
+| PubMedQA, abstract | 0.672 | 0.691 | 0.708 | 0.714 | 0.658 | 0.662 | **0.477** |
+| BigCodeBench, none | 0.321 | 0.346 | 0.312 | 0.336 | 0.257 | 0.274 | **0.142** |
+| BigCodeBench, library | 0.327 | 0.354 | 0.320 | 0.351 | 0.267 | 0.291 | **0.146** |
+| DS-1000, none | 0.598 | 0.623 | 0.615 | 0.636 | 0.517 | 0.542 | **0.347** |
+| DS-1000, library | 0.594 | 0.625 | 0.613 | 0.643 | 0.521 | 0.549 | **0.347** |
 
 (`indep_tests.json`: every cell, and paired comparisons with 95% bootstrap intervals; `indep_tests_rows.jsonl`: every
 item's bits, without the benchmarks' text; `qasper_search_check.json`.)
@@ -1084,6 +1096,15 @@ item's bits, without the benchmarks' text; `qasper_search_check.json`.)
 - **ExeaLM beats the Qwen3.5-style model on every set**, same data, same training, at 0.5B: BigCodeBench 7% to 9%
   lower (958 of 1,140 functions, after library post-training), DS-1000 3% to 5% (734 of 1,000), QASPER 1% to 3% (936
   of 1,372 with the paper in hand), PubMedQA about 1% (545 of 1,000). No 95% interval includes equality.
+- **At 3B the lead holds** (job 56109126; the two library post-trained 3B models of section 28, frozen at the same
+  moment of pretraining, equal compute). ExeaLM is lower on 11 of the 12 rows: BigCodeBench 6.5% without the library
+  and 8.5% with it (ratios 0.935 and 0.915; 934 and 943 of 1,140 functions), DS-1000 4.5% and 5.1% (731 and 712 of
+  1,000), QASPER 1.7% with nothing, 2.8% with the library, 2.0% two-step, 3.5% with the paper in hand (896 of 1,372)
+  and 3.8% with the evidence. On PubMedQA it is ahead with the library (1.9%) and the abstract (0.6%), and behind with
+  nothing (0.871 against 0.857, ratio 1.017, 95% interval 1.014 to 1.020). Every other interval excludes equality
+  (`indep_tests.json`).
+- **Only ExeaLM's 3B beats Qwen3.5-9B with the paper in hand.** The Qwen3.5-style 3B reads 0.937 against the 9B's 0.945
+  without the paper (ratio 0.992, 95% interval 0.961 to 1.021: even); ExeaLM's 3B reads 0.904 (0.957, 0.928 to 0.985).
 - **The one-step library search barely helps on these questions** (QASPER 1.211 to 1.176 at 3B; code not at all, for
   any model). It was built for the library's own questions, where it puts the right entry first for 70% of them. For
   QASPER it puts a passage of the asked-about paper first for 31% of questions; searching the title alone, 49% (77% in
@@ -1096,7 +1117,8 @@ item's bits, without the benchmarks' text; `qasper_search_check.json`.)
   to 0.899, DS-1000 0.594 to 0.613; BigCodeBench 0.327 to 0.320 better), while it helps on the library's own questions
   (section 28) and on SciQ and ARC (section 29). Three thousand steps on one writer's question format move the model
   toward that format. Post-training for the 9B needs questions and answers from many sources.
-- One seed per model; the 3B is the step-16,000 checkpoint; the 0.5B pretrained models had no library post-training,
+- One seed per model; the 3B models start from checkpoints frozen a third of the way through pretraining (steps
+  16,265 and 15,717 of 45,688); the 0.5B pretrained models had no library post-training,
   so their "library" rows read passages they were never trained to read.
 
 ## 31. Next
