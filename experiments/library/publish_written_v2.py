@@ -47,6 +47,9 @@ def main(argv=None):
     ap.add_argument("--pack", default="data/library_v2/v2")
     ap.add_argument("--out", required=True)
     ap.add_argument("--copy_sample", type=int, default=3000)
+    ap.add_argument("--max_copied", type=float, default=0.25,
+                    help="leave out a research entry when more than this share of it is in 13-word windows shared "
+                         "with its topic's source excerpt (20 characters for Japanese)")
     a = ap.parse_args(argv)
     os.makedirs(a.out, exist_ok=True)
 
@@ -74,6 +77,7 @@ def main(argv=None):
     stats = dict(model=MODEL, left_out_for_benchmark_overlap=dict(entries=len(drop), by_benchmark=dict(drop_bench)))
     rng = random.Random(0)
     copy_rows = []
+    copied = Counter()
     for name, kind in (("entries.jsonl", "text"), ("code_entries.jsonl", "code")):
         kept = Counter()
         with open(os.path.join(a.raw, name), encoding="utf-8") as f, \
@@ -88,6 +92,15 @@ def main(argv=None):
                 if sp is None:
                     kept["not_packed"] += 1
                     continue
+                if kind == "text" and source.get(r["topic"]):
+                    lang = r.get("lang", "en")
+                    _, cov = shared_ngrams(words(r["entry"], lang), words(source[r["topic"]], lang),
+                                           20 if lang == "ja" else 13)
+                    if cov > a.max_copied:
+                        kept["dropped_copied"] += 1
+                        copied[origin.get(r["topic"])] += 1
+                        drop_topics.add(r["topic"])          # its tasks go too
+                        continue
                 out = dict(topic=r["topic"], origin=origin.get(r["topic"]) if kind == "text" else "code topic list",
                            lang=r.get("lang"), split=sp, entry=r["entry"], qa=r.get("qa", []), model=MODEL,
                            prompt_version=r.get("prompt_version"))
@@ -117,9 +130,10 @@ def main(argv=None):
             g.write(json.dumps(r, ensure_ascii=False) + "\n")
             kept[sp] += 1
     stats["tasks.jsonl"] = dict(kept)
+    stats["left_out_as_copied"] = dict(threshold=a.max_copied, by_origin=dict(copied))
     n = len(copy_rows)
     stats["copy_check"] = dict(
-        sample=n, rule="13-word windows (20 characters for Japanese) an entry shares with its topic's source excerpt",
+        sample=n, of_kept_entries=True, rule="13-word windows (20 characters for Japanese) an entry shares with its topic's source excerpt",
         entries_with_any_shared_window=round(sum(r["windows"] > 0 for r in copy_rows) / max(1, n), 4),
         mean_share_of_entry_covered=round(sum(r["covered"] for r in copy_rows) / max(1, n), 4),
         entries_over_10_percent_covered=round(sum(r["covered"] > 0.1 for r in copy_rows) / max(1, n), 4),
