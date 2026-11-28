@@ -39,7 +39,7 @@ We trained it against our implementation of the Qwen3.5 layer design at 0.1B, 0.
 On long-context tasks scored as exact match, ExeaLM recalls 12 to 14 percent more text from beyond its window at every size, completes 7 to 10 percent more lines of code that depend on distant definitions, and finds a planted pass key 4 to 50 times as often.
 Unlike its lead on short text, which shrinks from 2.8 to 0.6 percent in bits per byte, its recall lead does not shrink with size.
 Its memory layer triples retrieval of a pass key from the previous window over the same model with attention in its place.
-With its library, a 0.5B ExeaLM scores 65 percent lower in bits per byte on held-out research questions than the released Qwen3.5-9B without one, with 18 times fewer parameters.
+With its library, a 0.5B ExeaLM scores 65 percent lower in bits per byte on held-out research questions than the released Qwen3.5-9B without one, and a 3B ExeaLM a third of the way through pretraining comes within 9 percent of the 9B when both read the same library.
 Trained as long per parameter as the planned 9B, it reaches the Qwen3.5-style model's quality in 25 to 29 percent fewer steps.
 A 3B pair finishes after this draft.
 \end{abstract}
@@ -589,7 +589,12 @@ The released Qwen3.5-9B-Base, scored on the same items, text and bytes, has 0.81
 The 0.5B ExeaLM with its library is thus 65\% below the 9B without one, with 18 times fewer parameters, and the 9B's lead given the same library has narrowed from 0.53 of ExeaLM's score at 0.1B to 0.78 at 0.5B.
 On held-out tasks the 9B without a library stays ahead (0.545 against 0.592).
 
-\pendbox{Library v2 at 3B, from the mid-run 3B pair (ExeaLM post-trained; the Qwen3.5-style run is training). Held-out documents and questions from which no entry was written.}
+\paragraph{Library v2 at 3B.}
+From the 3B ExeaLM checkpoint a third of the way through pretraining (4.2B tokens), the same post-training brings held-out questions to 0.239 bits per byte with the searched entry: within 9\% of Qwen3.5-9B given the same library (0.220), with a third of its parameters, and 71\% below it without one (\sect{28}).
+Across 0.1B, 0.5B and 3B the 9B's score given the same library is 0.53, 0.78 and 0.92 of ExeaLM's.
+ExeaLM had 3,000 steps of post-training on the library's training topics in this question format; Qwen3.5-9B-Base had none.
+
+\pendbox{The Qwen3.5-style 3B with the same post-training (training), the finished 3B pair, and held-out documents and questions from which no entry was written.}
 
 %=====================================================================================================
 \section{What a result costs}

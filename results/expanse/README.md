@@ -909,6 +909,7 @@ data/library_v2/v2 --limit 4000`, `score_hf.py`, `external_qwen35_9b_base_v2.jso
 |---|---|---|---|---|---|---|
 | ExeaLM 0.5B, RAG post-training | 1.044 | 0.282 | 0.181 | 0.751 | 0.592 | 0.540 |
 | Qwen3.5-style 0.5B, RAG post-training | 1.028 | 0.320 | 0.225 | 0.762 | 0.621 | 0.574 |
+| ExeaLM 3B (step 16,000 of 45,688, 4.2B tokens), RAG post-training (4 GPUs, `--zero 1`, lr 1e-4) | 0.910 | 0.239 | 0.147 | 0.666 | 0.523 | 0.472 |
 | Qwen3.5-9B-Base (released, no post-training) | 0.811 | **0.220** | **0.129** | **0.545** | **0.383** | **0.309** |
 
 - With the library, ExeaLM's bits per byte on held-out questions fall 73% (1.044 to 0.282) and it is 0.038 (12%)
@@ -919,6 +920,12 @@ data/library_v2/v2 --limit 4000`, `score_hf.py`, `external_qwen35_9b_base_v2.jso
   against 0.592).
 - Given the same library, Qwen3.5-9B is ahead (0.220 against 0.282), but the gap closes with size: its bits per byte
   are 0.78 of ExeaLM's at 0.5B on v2, against 0.53 at 0.1B on v1 (0.313 against 0.590, section 18).
+- **3B** (job 56106685; the mid-run 3B ExeaLM checkpoint frozen at step about 16,000, 4.2B tokens of pretraining,
+  then the same 3,000 steps of library post-training; the Qwen3.5-style 3B run is training): with the library its
+  bits per byte on held-out questions are 0.239, within 9% of Qwen3.5-9B given the same library (0.220) and 71% below
+  Qwen3.5-9B without one (0.811); on tasks 0.523, below the 9B without a library (0.545). The 9B's score given the same
+  library is 0.53, 0.78 and 0.92 of ExeaLM's at 0.1B, 0.5B and 3B: the gap closes with size. ExeaLM had 3,000 steps
+  of post-training on the library's training topics in this question format; Qwen3.5-9B-Base had none.
 - The questions were written by the model that wrote the entries. Benchmarks with the library are in section 25 and
   the open-book runs at 0.5B (running).
 
