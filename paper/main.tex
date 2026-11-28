@@ -600,6 +600,8 @@ Before using a keyword search, we grafted a retrieval circuit into the trained 0
 It returned a chunk of the right entry first for 0.06\% of held-out questions and 7.8\% of tasks (one seed).
 Attaching the library moved the question score from 1.6741 to 1.6742.
 The entries reached the model only when a search outside it placed them in its context.
+Given BM25 candidates in place of its own search (\sect{27}), the circuit's top candidate held the right entry for 89\% of questions, yet the score with the library stayed at 1.725, the same as without it (600 steps, one seed).
+Its one attention read, in one slot of one layer, did not learn to use what it found; the same entries pasted into the context brought the score to 0.604.
 
 \paragraph{Agents sharing a board.}
 Three 0.1B ExeaLM agents shared a message board, grafted into their TONN layer, while each read one of three consecutive windows (\sect{14}).

@@ -421,7 +421,8 @@ The board is not part of the 9B plan.
 
 \paragraph{ExeaLM's own retrieval circuit (\sect{7}).}
 A retrieval circuit inside the model found the right entry for 0.1\% of questions, and attaching the library changed nothing.
-The library reaches the model through an ordinary search instead, as in Table~\ref{tab:library}.
+Given keyword-search candidates instead, it found the right entry for 89\% of questions, but reading them still changed nothing: 1.725 bits per byte with the library and without (0.1B, 600 steps, one seed, \sect{27}).
+The library reaches the model through its context and its stream instead, as in Table~\ref{tab:library}: the passage is read as the window before the question and carried in, the same path that carries a pass key across windows.
 
 %======================================================================== 4
 \section{The plan and the ask}

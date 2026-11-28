@@ -26,7 +26,7 @@ the same size, data, tokens and recipe; bits per byte on held-out text, lower is
 | Streams without most of their cost | mixing windows alone into the stream phase gives back half of what it cost on windows alone (1.1532 against 1.1566; none 1.1496) for 0.0014 of its long-document gain (1.0969 against 1.0955); now the recipe | 3 seeds, 0.1B | 21 |
 | Distillation into the weights | 30% teacher text (Qwen3.5-9B) in pretraining: worse, 1.1592 against 1.1549 | 1 seed, 0.1B | 22 |
 | Benchmarks at 0.5B | mean of 7 zero-shot tasks 0.429 against 0.421 (Llama 0.417), ahead in both seeds and on 5 of 7 tasks; small: two tasks near chance | 2 seeds | 20 |
-| Did not work | ExeaLM's own retrieval circuit with its learned search (0.1% of questions find their entry); three 0.1B agents sharing a board lose to one model reading as a stream; the library as learned 32-byte codes keeps 6% to 8% of the text's gain (`docs/library_codes_proposal.md`); no model finds a pass key two or more windows back | | 7, 14, 26 |
+| Did not work | ExeaLM's own retrieval circuit: with its learned search 0.1% of questions find their entry; with BM25 candidates 89% do, but reading them gains nothing (section 27); three 0.1B agents sharing a board lose to one model reading as a stream; the library as learned 32-byte codes keeps 6% to 8% of the text's gain (`docs/library_codes_proposal.md`); no model finds a pass key two or more windows back | | 7, 14, 26, 27 |
 | Void | the first 0.5B runs and the 3B pair's first 1,100 steps: a multi-GPU bug skipped gradient averaging; rerun with the fix | | 17 |
 
 ## 1. The first job (job 56074172, 25 November 2026, 56 minutes on one node)
@@ -789,7 +789,7 @@ library with the same query. Accuracy, normalized where the task has it:
 - The largest change is closed-book SciQ after RAG post-training: +0.106 for ExeaLM and +0.107 for the Qwen3.5-style
   model, with no library at test time. It comes from post-training on the library's questions and answers. Their overlap
   with the benchmarks has not been checked yet (only the search's has), so we do not claim it.
-- The test that counts is the same reading at 0.5B and 3B after post-training on library v2 (section 27).
+- The test that counts is the same reading at 0.5B and 3B after post-training on library v2 (section 28).
 
 ## 26. Long-context tasks as exact match (job 56105350, `longctx_all.json`, `longctx_all.npz`)
 
@@ -844,7 +844,29 @@ Paired tests (McNemar, every target scored by both models, seeds pooled):
   November), so they gain little or lose from the carried state; the plain Llama does worse streamed than alone. The
   attention-only control trains on streams like ExeaLM. Code exact-match rates are low at these sizes (3% to 5%).
 
-## 27. Next
+## 27. The library read inside the TONN layer, with a search that works (Mac Studio, 0.1B; `results/rgtest/`)
+
+`experiments/post/rg_lexical_test.sh`: section 7's RG circuit found its entry for 0.1% of questions with its own
+learned search. Here it takes its candidates from BM25 over the chunk just read (`--datastore_lexical`,
+`exealm/memory/lexical.py`) and still scores and reads them itself. Three post-training runs of 600 steps (32,768
+tokens a step, library v1's training items) from the seed-2 0.1B curve model, one seed, on the Mac Studio (MPS):
+the RG circuit grafted into the TONN layer with the BM25 candidates; ordinary RAG (half the items with the BM25 entry
+pasted before them); and the items alone. Bits per byte on the held-out topics:
+
+| Run | Questions: nothing | with its library | Tasks: nothing | with its library |
+|---|---|---|---|---|
+| RG circuit, BM25 candidates (entries never in the context) | 1.725 | 1.725 | 0.821 | 0.820 |
+| Ordinary RAG (the BM25 entry pasted) | 1.656 | **0.604** | 0.800 | **0.642** |
+| Items alone (the BM25 entry pasted only at test time) | 1.726 | 0.750 | 0.821 | 0.675 |
+
+- The search now works: the RG circuit's top candidate holds a chunk of the right entry for 89% of questions and 76%
+  of tasks (0.1% and 7.8% with its learned search, section 7).
+- The read does not: with the right chunks in hand, the circuit changes the held-out score by less than 0.001. Six
+  hundred steps did not teach its one attention read, inside one slot of one layer, to use what it finds.
+- The library reaches ExeaLM when the entry is in its context or in its stream (section 11, and the open-book
+  benchmarks read passages as earlier windows). That path works, and it is the one the 9B ships with.
+
+## 28. Next
 
 The 0.5B three-way run at 20 tokens per parameter (Saturday morning), the 3B pair (Sunday evening), library v2's check
 against the benchmarks and RAG post-training on it at 0.5B (jobs 56104634-9, running) and on a mid-run 3B checkpoint,
