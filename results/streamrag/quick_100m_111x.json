@@ -1,0 +1,77 @@
+{
+ "args": {
+  "runs": [
+   "runs/exealm_100m_111x_s0",
+   "runs/strongllama_100m_111x_s0",
+   "runs/qwen_100m_111x_s0"
+  ],
+  "library": "data/library/v1",
+  "filler": "data/exealm-pretrain/slice-30b-r2/packed/wikipedia_en/val",
+  "sets": "qa,tasks",
+  "limit": 600,
+  "entry": 448,
+  "seq": 512,
+  "max_item": 448,
+  "batch": 16,
+  "device": "mps",
+  "out": "results/streamrag/quick_100m_111x.json"
+ },
+ "items": 1195,
+ "bm25_top1": 0.8485,
+ "runs": [
+  {
+   "run": "exealm_100m_111x_s0",
+   "model": "tonn",
+   "rows": {
+    "qa/none": 1.4382,
+    "tasks/none": 1.0148,
+    "qa/same": 0.6745,
+    "tasks/same": 0.8184,
+    "qa/back1": 0.7418,
+    "tasks/back1": 0.8457,
+    "qa/back2": 1.5474,
+    "tasks/back2": 0.9782
+   },
+   "qa_kept_back1": 0.9119,
+   "qa_kept_back2": -0.143,
+   "tasks_kept_back1": 0.861,
+   "tasks_kept_back2": 0.1864
+  },
+  {
+   "run": "strongllama_100m_111x_s0",
+   "model": "llama",
+   "rows": {
+    "qa/none": 1.4579,
+    "tasks/none": 0.9982,
+    "qa/same": 0.6701,
+    "tasks/same": 0.8177,
+    "qa/back1": 0.7311,
+    "tasks/back1": 0.8403,
+    "qa/back2": 1.5205,
+    "tasks/back2": 0.9816
+   },
+   "qa_kept_back1": 0.9226,
+   "qa_kept_back2": -0.0795,
+   "tasks_kept_back1": 0.8748,
+   "tasks_kept_back2": 0.092
+  },
+  {
+   "run": "qwen_100m_111x_s0",
+   "model": "llama",
+   "rows": {
+    "qa/none": 1.472,
+    "tasks/none": 1.0047,
+    "qa/same": 0.7639,
+    "tasks/same": 0.859,
+    "qa/back1": 0.7681,
+    "tasks/back1": 0.8592,
+    "qa/back2": 1.528,
+    "tasks/back2": 0.9957
+   },
+   "qa_kept_back1": 0.9941,
+   "qa_kept_back2": -0.0791,
+   "tasks_kept_back1": 0.9986,
+   "tasks_kept_back2": 0.0618
+  }
+ ]
+}

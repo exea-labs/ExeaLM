@@ -866,6 +866,22 @@ pasted before them); and the items alone. Bits per byte on the held-out topics:
 - The library reaches ExeaLM when the entry is in its context or in its stream (section 11, and the open-book
   benchmarks read passages as earlier windows). That path works, and it is the one the 9B ships with.
 
+**The entry one or two windows before the question** (`experiments/library/stream_rag.py`, Mac Studio,
+`results/streamrag/quick_100m_111x.json`): the 0.1B models trained to 111 tokens per parameter, no library
+post-training, 1,195 held-out items of library v1, the BM25 entry (448 tokens) in the question's window, in the window
+before it, or two windows before with a window of held-out Wikipedia between. Bits per byte on held-out questions:
+
+| Model (seed 0) | Nothing | Entry in the window | One window back | Two windows back |
+|---|---|---|---|---|
+| ExeaLM | 1.438 | 0.675 | 0.742 | 1.547 |
+| Attention in place of the TONN layer | 1.458 | **0.670** | **0.731** | 1.521 |
+| Qwen3.5-style | 1.472 | 0.764 | 0.768 | 1.528 |
+
+One window back every model keeps about 90% of what the entry gives in the window (the Qwen3.5-style model all of
+its smaller gain). Two windows back none keeps anything: every model scores worse than with nothing. Retrieved
+passages must sit in the question's window or the one before, which is how the open-book benchmarks and the RAG
+post-training place them. One seed, 0.1B.
+
 ## 28. Next
 
 The 0.5B three-way run at 20 tokens per parameter (Saturday morning), the 3B pair (Sunday evening), library v2's check
