@@ -95,6 +95,7 @@ Our largest finished models have 0.5B parameters, and the 3B pair is due to fini
 On windows read alone, ExeaLM's lead shrinks with size, from 2.8\% at 0.1B to 0.6\% at 0.5B, and with training length, to 0.6\% at 0.1B trained for 110 tokens per parameter (2 seeds). On long documents read as a stream it is 3.6\% to 5.3\% at every size and length tested.
 The library results are from 0.1B models only.
 No model we trained finds a pass key two or more windows back: exact retrieval from far back is not solved at these sizes.
+At 3B in mid-training, before ExeaLM's stream phase, the two models are even on recall (0.281 against 0.286) while ExeaLM still leads on the pass key (0.48 against 0.17); at smaller sizes the recall lead came with the stream phase, which the 3B ExeaLM reaches on 29 November.
 With no library, the released Qwen3.5-9B-Base is far ahead of our 0.25B model (0.674 against 1.011 bits per byte, seed 0).
 So the 9B claim is for the model with its library, and every benchmark will be reported with and without the library.
 

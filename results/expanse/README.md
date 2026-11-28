@@ -844,6 +844,13 @@ Paired tests (McNemar, every target scored by both models, seeds pooled):
   November), so they gain little or lose from the carried state; the plain Llama does worse streamed than alone. The
   attention-only control trains on streams like ExeaLM. Code exact-match rates are low at these sizes (3% to 5%).
 
+**The 3B pair in mid-training** (job 56105900, `longctx_3b_mid.json`): the frozen checkpoints of step about 16,000 of
+45,688 (`runs/_mid`), before ExeaLM's stream phase (from step 36,550), so neither model has trained on streams yet.
+Read as a stream: recall 0.281 for ExeaLM against 0.286 for the Qwen3.5-style model, code next line 0.046 against
+0.048, pass key in the same window 0.48 against 0.17 (0.83 against 0.50 read alone), one window back 0 for both. At 3B,
+before the stream phase, ExeaLM keeps its lead on exact retrieval but not on recall and code: at the smaller sizes those
+leads came with the stream phase, which the 3B ExeaLM has not reached. The finished pair (29 November) settles it.
+
 ## 27. The library read inside the TONN layer, with a search that works (Mac Studio, 0.1B; `results/rgtest/`)
 
 `experiments/post/rg_lexical_test.sh`: section 7's RG circuit found its entry for 0.1% of questions with its own

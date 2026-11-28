@@ -82,7 +82,7 @@ What the study shows:
 \end{itemize}
 We also report what did not work, including a retrieval circuit inside the model and a gradient-averaging bug that voided our first multi-GPU runs (Section~\ref{sec:negative}).
 
-What this report does not show yet: results above 0.5B parameters (the 3B pair finishes after this draft and its results are marked pending), library results beyond bits per byte at 0.1B, and retrieval of exact facts from two or more windows back, which no model we trained can do.
+What this report does not show yet: results above 0.5B parameters (the 3B pair finishes after this draft; in mid-training, before ExeaLM's stream phase, the two are even on recall), library results beyond bits per byte at 0.1B, and retrieval of exact facts from two or more windows back, which no model we trained can do.
 On short windows read alone the lead shrinks with size, and on seven zero-shot benchmarks the 0.5B models differ by less than 0.01 in mean accuracy.
 
 %=====================================================================================================
@@ -390,6 +390,7 @@ Against the Qwen3.5-style model ExeaLM is ahead on every task at every size, and
 Its recall lead is 14\%, 12\% and 12\% at 0.1B, 0.25B and 0.5B: unlike the lead in bits per byte, it does not shrink with size.
 The Qwen3.5-style model also finds the pass key less often with nothing carried (0.30, 0.07 and 0.35 against 0.69, 0.68 and 0.80), so part of the gap is its three-in-four recurrent layers, not only the streams.
 No model finds the pass key two or more windows back.
+At 3B in mid-training (step about 16,000 of 45,688, before ExeaLM's stream phase), ExeaLM still finds the pass key far more often (0.48 against 0.17), but recall and code next line are even (0.281 against 0.286, 0.046 against 0.048, \sect{26}). At the smaller sizes those two leads came with the stream phase, which the 3B ExeaLM reaches near step 36,550.
 
 \begin{table}[t]
 \centering\small
