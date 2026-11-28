@@ -1,0 +1,1924 @@
+{
+ "args": {
+  "runs": [
+   "runs/exealm_100m_111x_s0",
+   "runs/qwen_100m_111x_s0",
+   "runs/strongllama_100m_111x_s0",
+   "runs/exealm_250m_4.1x_s0",
+   "runs/exealm_250m_4.1x_s1",
+   "runs/exealm_250m_4.1x_s2",
+   "runs/qwen_250m_4.1x_s0",
+   "runs/qwen_250m_4.1x_s1",
+   "runs/qwen_250m_4.1x_s2",
+   "runs/strongllama_250m_4.1x_s0",
+   "runs/strongllama_250m_4.1x_s1",
+   "runs/strongllama_250m_4.1x_s2",
+   "runs/exealm_500m_4.1x_s0",
+   "runs/exealm_500m_4.1x_s1",
+   "runs/qwen_500m_4.1x_s0",
+   "runs/qwen_500m_4.1x_s1"
+  ],
+  "mix": "data/mix_pretrain_val.json",
+  "tokenizer": "data/exealm-pretrain/slice-30b-r2/tokenizer",
+  "windows": 16,
+  "seq": 512,
+  "docs": 48,
+  "passkey": 32,
+  "batch": 16,
+  "device": "auto",
+  "seed": 0,
+  "out": "results/expanse/longctx16_all.json",
+  "save_targets": "results/expanse/longctx16_all.npz"
+ },
+ "tasks": {
+  "code_line/research_python": 6330,
+  "recall/research_python": 6843,
+  "code_line/code_reasoning": 7701,
+  "recall/code_reasoning": 3815,
+  "code_line/algebraic_stack": 4269,
+  "recall/algebraic_stack": 4435,
+  "code_line/starcoder": 2290,
+  "recall/starcoder": 5389,
+  "recall/pes2o": 2813,
+  "recall/arxiv": 3714,
+  "recall/wikipedia_en": 2246,
+  "recall/dclm": 855,
+  "recall/txt360_web": 2545,
+  "passkey": 512
+ },
+ "runs": [
+  {
+   "run": "exealm_100m_111x_s0",
+   "model": "tonn",
+   "step": 39735,
+   "tasks": {
+    "code_line/research_python": {
+     "streamed": 0.0314,
+     "alone": 0.0269,
+     "targets": 6330
+    },
+    "recall/research_python": {
+     "streamed": 0.2978,
+     "alone": 0.2388,
+     "targets": 6843
+    },
+    "code_line/code_reasoning": {
+     "streamed": 0.1108,
+     "alone": 0.083,
+     "targets": 7701
+    },
+    "recall/code_reasoning": {
+     "streamed": 0.5565,
+     "alone": 0.4716,
+     "targets": 3815
+    },
+    "code_line/algebraic_stack": {
+     "streamed": 0.0649,
+     "alone": 0.0607,
+     "targets": 4269
+    },
+    "recall/algebraic_stack": {
+     "streamed": 0.3127,
+     "alone": 0.274,
+     "targets": 4435
+    },
+    "code_line/starcoder": {
+     "streamed": 0.0319,
+     "alone": 0.0284,
+     "targets": 2290
+    },
+    "recall/starcoder": {
+     "streamed": 0.2036,
+     "alone": 0.1607,
+     "targets": 5389
+    },
+    "recall/pes2o": {
+     "streamed": 0.2062,
+     "alone": 0.1529,
+     "targets": 2813
+    },
+    "recall/arxiv": {
+     "streamed": 0.1567,
+     "alone": 0.1344,
+     "targets": 3714
+    },
+    "recall/wikipedia_en": {
+     "streamed": 0.1781,
+     "alone": 0.1309,
+     "targets": 2246
+    },
+    "recall/dclm": {
+     "streamed": 0.1696,
+     "alone": 0.1205,
+     "targets": 855
+    },
+    "recall/txt360_web": {
+     "streamed": 0.167,
+     "alone": 0.136,
+     "targets": 2545
+    },
+    "passkey": {
+     "streamed": 0.0488,
+     "streamed_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0938,
+      "0": 0.6875
+     },
+     "alone": 0.0449,
+     "alone_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.7188
+     },
+     "targets": 512
+    }
+   },
+   "code_line_streamed": 0.0681,
+   "code_line_alone": 0.055,
+   "recall_streamed": 0.2688,
+   "recall_alone": 0.2201
+  },
+  {
+   "run": "qwen_100m_111x_s0",
+   "model": "llama",
+   "step": 39735,
+   "tasks": {
+    "code_line/research_python": {
+     "streamed": 0.0281,
+     "alone": 0.0256,
+     "targets": 6330
+    },
+    "recall/research_python": {
+     "streamed": 0.2641,
+     "alone": 0.236,
+     "targets": 6843
+    },
+    "code_line/code_reasoning": {
+     "streamed": 0.0993,
+     "alone": 0.0883,
+     "targets": 7701
+    },
+    "recall/code_reasoning": {
+     "streamed": 0.5214,
+     "alone": 0.4823,
+     "targets": 3815
+    },
+    "code_line/algebraic_stack": {
+     "streamed": 0.0654,
+     "alone": 0.0586,
+     "targets": 4269
+    },
+    "recall/algebraic_stack": {
+     "streamed": 0.294,
+     "alone": 0.2731,
+     "targets": 4435
+    },
+    "code_line/starcoder": {
+     "streamed": 0.0306,
+     "alone": 0.0293,
+     "targets": 2290
+    },
+    "recall/starcoder": {
+     "streamed": 0.1891,
+     "alone": 0.169,
+     "targets": 5389
+    },
+    "recall/pes2o": {
+     "streamed": 0.1678,
+     "alone": 0.1486,
+     "targets": 2813
+    },
+    "recall/arxiv": {
+     "streamed": 0.1373,
+     "alone": 0.13,
+     "targets": 3714
+    },
+    "recall/wikipedia_en": {
+     "streamed": 0.1474,
+     "alone": 0.1327,
+     "targets": 2246
+    },
+    "recall/dclm": {
+     "streamed": 0.1322,
+     "alone": 0.1146,
+     "targets": 855
+    },
+    "recall/txt360_web": {
+     "streamed": 0.1426,
+     "alone": 0.1238,
+     "targets": 2545
+    },
+    "passkey": {
+     "streamed": 0.002,
+     "streamed_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.0312
+     },
+     "alone": 0.0137,
+     "alone_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.2188
+     },
+     "targets": 512
+    }
+   },
+   "code_line_streamed": 0.0627,
+   "code_line_alone": 0.0563,
+   "recall_streamed": 0.2422,
+   "recall_alone": 0.2202
+  },
+  {
+   "run": "strongllama_100m_111x_s0",
+   "model": "llama",
+   "step": 39735,
+   "tasks": {
+    "code_line/research_python": {
+     "streamed": 0.0325,
+     "alone": 0.0265,
+     "targets": 6330
+    },
+    "recall/research_python": {
+     "streamed": 0.3047,
+     "alone": 0.2357,
+     "targets": 6843
+    },
+    "code_line/code_reasoning": {
+     "streamed": 0.1051,
+     "alone": 0.0831,
+     "targets": 7701
+    },
+    "recall/code_reasoning": {
+     "streamed": 0.5463,
+     "alone": 0.4663,
+     "targets": 3815
+    },
+    "code_line/algebraic_stack": {
+     "streamed": 0.0682,
+     "alone": 0.0611,
+     "targets": 4269
+    },
+    "recall/algebraic_stack": {
+     "streamed": 0.3247,
+     "alone": 0.2825,
+     "targets": 4435
+    },
+    "code_line/starcoder": {
+     "streamed": 0.0332,
+     "alone": 0.0271,
+     "targets": 2290
+    },
+    "recall/starcoder": {
+     "streamed": 0.208,
+     "alone": 0.1626,
+     "targets": 5389
+    },
+    "recall/pes2o": {
+     "streamed": 0.2126,
+     "alone": 0.1536,
+     "targets": 2813
+    },
+    "recall/arxiv": {
+     "streamed": 0.1605,
+     "alone": 0.1352,
+     "targets": 3714
+    },
+    "recall/wikipedia_en": {
+     "streamed": 0.179,
+     "alone": 0.134,
+     "targets": 2246
+    },
+    "recall/dclm": {
+     "streamed": 0.1813,
+     "alone": 0.1275,
+     "targets": 855
+    },
+    "recall/txt360_web": {
+     "streamed": 0.1682,
+     "alone": 0.1324,
+     "targets": 2545
+    },
+    "passkey": {
+     "streamed": 0.0312,
+     "streamed_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.5
+     },
+     "alone": 0.0352,
+     "alone_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.5625
+     },
+     "targets": 512
+    }
+   },
+   "code_line_streamed": 0.0671,
+   "code_line_alone": 0.0549,
+   "recall_streamed": 0.2728,
+   "recall_alone": 0.2205
+  },
+  {
+   "run": "exealm_250m_4.1x_s0",
+   "model": "tonn",
+   "step": 3869,
+   "tasks": {
+    "code_line/research_python": {
+     "streamed": 0.024,
+     "alone": 0.0218,
+     "targets": 6330
+    },
+    "recall/research_python": {
+     "streamed": 0.2841,
+     "alone": 0.2236,
+     "targets": 6843
+    },
+    "code_line/code_reasoning": {
+     "streamed": 0.0556,
+     "alone": 0.0479,
+     "targets": 7701
+    },
+    "recall/code_reasoning": {
+     "streamed": 0.4412,
+     "alone": 0.3717,
+     "targets": 3815
+    },
+    "code_line/algebraic_stack": {
+     "streamed": 0.0609,
+     "alone": 0.0553,
+     "targets": 4269
+    },
+    "recall/algebraic_stack": {
+     "streamed": 0.2938,
+     "alone": 0.2604,
+     "targets": 4435
+    },
+    "code_line/starcoder": {
+     "streamed": 0.0223,
+     "alone": 0.0223,
+     "targets": 2290
+    },
+    "recall/starcoder": {
+     "streamed": 0.1876,
+     "alone": 0.1423,
+     "targets": 5389
+    },
+    "recall/pes2o": {
+     "streamed": 0.1909,
+     "alone": 0.1422,
+     "targets": 2813
+    },
+    "recall/arxiv": {
+     "streamed": 0.1346,
+     "alone": 0.1125,
+     "targets": 3714
+    },
+    "recall/wikipedia_en": {
+     "streamed": 0.1598,
+     "alone": 0.1126,
+     "targets": 2246
+    },
+    "recall/dclm": {
+     "streamed": 0.1556,
+     "alone": 0.0971,
+     "targets": 855
+    },
+    "recall/txt360_web": {
+     "streamed": 0.1532,
+     "alone": 0.1088,
+     "targets": 2545
+    },
+    "passkey": {
+     "streamed": 0.0957,
+     "streamed_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.6875,
+      "0": 0.8438
+     },
+     "alone": 0.0508,
+     "alone_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.8125
+     },
+     "targets": 512
+    }
+   },
+   "code_line_streamed": 0.0433,
+   "code_line_alone": 0.0386,
+   "recall_streamed": 0.2407,
+   "recall_alone": 0.193
+  },
+  {
+   "run": "exealm_250m_4.1x_s1",
+   "model": "tonn",
+   "step": 3869,
+   "tasks": {
+    "code_line/research_python": {
+     "streamed": 0.0258,
+     "alone": 0.0223,
+     "targets": 6330
+    },
+    "recall/research_python": {
+     "streamed": 0.281,
+     "alone": 0.2158,
+     "targets": 6843
+    },
+    "code_line/code_reasoning": {
+     "streamed": 0.0578,
+     "alone": 0.0504,
+     "targets": 7701
+    },
+    "recall/code_reasoning": {
+     "streamed": 0.4364,
+     "alone": 0.3751,
+     "targets": 3815
+    },
+    "code_line/algebraic_stack": {
+     "streamed": 0.0611,
+     "alone": 0.0534,
+     "targets": 4269
+    },
+    "recall/algebraic_stack": {
+     "streamed": 0.2947,
+     "alone": 0.2598,
+     "targets": 4435
+    },
+    "code_line/starcoder": {
+     "streamed": 0.0214,
+     "alone": 0.0201,
+     "targets": 2290
+    },
+    "recall/starcoder": {
+     "streamed": 0.1861,
+     "alone": 0.1472,
+     "targets": 5389
+    },
+    "recall/pes2o": {
+     "streamed": 0.1888,
+     "alone": 0.1379,
+     "targets": 2813
+    },
+    "recall/arxiv": {
+     "streamed": 0.1333,
+     "alone": 0.1093,
+     "targets": 3714
+    },
+    "recall/wikipedia_en": {
+     "streamed": 0.1683,
+     "alone": 0.1215,
+     "targets": 2246
+    },
+    "recall/dclm": {
+     "streamed": 0.1439,
+     "alone": 0.1088,
+     "targets": 855
+    },
+    "recall/txt360_web": {
+     "streamed": 0.1509,
+     "alone": 0.112,
+     "targets": 2545
+    },
+    "passkey": {
+     "streamed": 0.0234,
+     "streamed_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.375
+     },
+     "alone": 0.0234,
+     "alone_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.375
+     },
+     "targets": 512
+    }
+   },
+   "code_line_streamed": 0.0446,
+   "code_line_alone": 0.039,
+   "recall_streamed": 0.2391,
+   "recall_alone": 0.1929
+  },
+  {
+   "run": "exealm_250m_4.1x_s2",
+   "model": "tonn",
+   "step": 3869,
+   "tasks": {
+    "code_line/research_python": {
+     "streamed": 0.027,
+     "alone": 0.0205,
+     "targets": 6330
+    },
+    "recall/research_python": {
+     "streamed": 0.288,
+     "alone": 0.2224,
+     "targets": 6843
+    },
+    "code_line/code_reasoning": {
+     "streamed": 0.0634,
+     "alone": 0.0527,
+     "targets": 7701
+    },
+    "recall/code_reasoning": {
+     "streamed": 0.4524,
+     "alone": 0.3772,
+     "targets": 3815
+    },
+    "code_line/algebraic_stack": {
+     "streamed": 0.0579,
+     "alone": 0.0534,
+     "targets": 4269
+    },
+    "recall/algebraic_stack": {
+     "streamed": 0.297,
+     "alone": 0.2552,
+     "targets": 4435
+    },
+    "code_line/starcoder": {
+     "streamed": 0.0245,
+     "alone": 0.0205,
+     "targets": 2290
+    },
+    "recall/starcoder": {
+     "streamed": 0.1889,
+     "alone": 0.1403,
+     "targets": 5389
+    },
+    "recall/pes2o": {
+     "streamed": 0.1937,
+     "alone": 0.1433,
+     "targets": 2813
+    },
+    "recall/arxiv": {
+     "streamed": 0.1327,
+     "alone": 0.1107,
+     "targets": 3714
+    },
+    "recall/wikipedia_en": {
+     "streamed": 0.167,
+     "alone": 0.1175,
+     "targets": 2246
+    },
+    "recall/dclm": {
+     "streamed": 0.1497,
+     "alone": 0.1076,
+     "targets": 855
+    },
+    "recall/txt360_web": {
+     "streamed": 0.143,
+     "alone": 0.1128,
+     "targets": 2545
+    },
+    "passkey": {
+     "streamed": 0.0293,
+     "streamed_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0625,
+      "0": 0.4062
+     },
+     "alone": 0.0176,
+     "alone_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.2812
+     },
+     "targets": 512
+    }
+   },
+   "code_line_streamed": 0.0467,
+   "code_line_alone": 0.0394,
+   "recall_streamed": 0.2431,
+   "recall_alone": 0.1931
+  },
+  {
+   "run": "qwen_250m_4.1x_s0",
+   "model": "llama",
+   "step": 3869,
+   "tasks": {
+    "code_line/research_python": {
+     "streamed": 0.0224,
+     "alone": 0.0209,
+     "targets": 6330
+    },
+    "recall/research_python": {
+     "streamed": 0.2398,
+     "alone": 0.2141,
+     "targets": 6843
+    },
+    "code_line/code_reasoning": {
+     "streamed": 0.0535,
+     "alone": 0.0484,
+     "targets": 7701
+    },
+    "recall/code_reasoning": {
+     "streamed": 0.41,
+     "alone": 0.3688,
+     "targets": 3815
+    },
+    "code_line/algebraic_stack": {
+     "streamed": 0.0567,
+     "alone": 0.0511,
+     "targets": 4269
+    },
+    "recall/algebraic_stack": {
+     "streamed": 0.269,
+     "alone": 0.2512,
+     "targets": 4435
+    },
+    "code_line/starcoder": {
+     "streamed": 0.0297,
+     "alone": 0.0249,
+     "targets": 2290
+    },
+    "recall/starcoder": {
+     "streamed": 0.1709,
+     "alone": 0.1479,
+     "targets": 5389
+    },
+    "recall/pes2o": {
+     "streamed": 0.1536,
+     "alone": 0.1298,
+     "targets": 2813
+    },
+    "recall/arxiv": {
+     "streamed": 0.1206,
+     "alone": 0.1128,
+     "targets": 3714
+    },
+    "recall/wikipedia_en": {
+     "streamed": 0.126,
+     "alone": 0.1095,
+     "targets": 2246
+    },
+    "recall/dclm": {
+     "streamed": 0.1251,
+     "alone": 0.1029,
+     "targets": 855
+    },
+    "recall/txt360_web": {
+     "streamed": 0.1206,
+     "alone": 0.1112,
+     "targets": 2545
+    },
+    "passkey": {
+     "streamed": 0.0,
+     "streamed_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.0
+     },
+     "alone": 0.0,
+     "alone_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.0
+     },
+     "targets": 512
+    }
+   },
+   "code_line_streamed": 0.042,
+   "code_line_alone": 0.0379,
+   "recall_streamed": 0.2112,
+   "recall_alone": 0.1894
+  },
+  {
+   "run": "qwen_250m_4.1x_s1",
+   "model": "llama",
+   "step": 3869,
+   "tasks": {
+    "code_line/research_python": {
+     "streamed": 0.0215,
+     "alone": 0.0199,
+     "targets": 6330
+    },
+    "recall/research_python": {
+     "streamed": 0.2347,
+     "alone": 0.2068,
+     "targets": 6843
+    },
+    "code_line/code_reasoning": {
+     "streamed": 0.0531,
+     "alone": 0.0482,
+     "targets": 7701
+    },
+    "recall/code_reasoning": {
+     "streamed": 0.4102,
+     "alone": 0.3733,
+     "targets": 3815
+    },
+    "code_line/algebraic_stack": {
+     "streamed": 0.0562,
+     "alone": 0.0541,
+     "targets": 4269
+    },
+    "recall/algebraic_stack": {
+     "streamed": 0.271,
+     "alone": 0.2521,
+     "targets": 4435
+    },
+    "code_line/starcoder": {
+     "streamed": 0.0223,
+     "alone": 0.0223,
+     "targets": 2290
+    },
+    "recall/starcoder": {
+     "streamed": 0.1594,
+     "alone": 0.142,
+     "targets": 5389
+    },
+    "recall/pes2o": {
+     "streamed": 0.1504,
+     "alone": 0.1322,
+     "targets": 2813
+    },
+    "recall/arxiv": {
+     "streamed": 0.1117,
+     "alone": 0.1031,
+     "targets": 3714
+    },
+    "recall/wikipedia_en": {
+     "streamed": 0.138,
+     "alone": 0.114,
+     "targets": 2246
+    },
+    "recall/dclm": {
+     "streamed": 0.1251,
+     "alone": 0.1018,
+     "targets": 855
+    },
+    "recall/txt360_web": {
+     "streamed": 0.1238,
+     "alone": 0.1053,
+     "targets": 2545
+    },
+    "passkey": {
+     "streamed": 0.002,
+     "streamed_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.0312
+     },
+     "alone": 0.002,
+     "alone_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.0312
+     },
+     "targets": 512
+    }
+   },
+   "code_line_streamed": 0.0406,
+   "code_line_alone": 0.0378,
+   "recall_streamed": 0.2083,
+   "recall_alone": 0.1864
+  },
+  {
+   "run": "qwen_250m_4.1x_s2",
+   "model": "llama",
+   "step": 3869,
+   "tasks": {
+    "code_line/research_python": {
+     "streamed": 0.0227,
+     "alone": 0.0209,
+     "targets": 6330
+    },
+    "recall/research_python": {
+     "streamed": 0.2464,
+     "alone": 0.212,
+     "targets": 6843
+    },
+    "code_line/code_reasoning": {
+     "streamed": 0.0571,
+     "alone": 0.0514,
+     "targets": 7701
+    },
+    "recall/code_reasoning": {
+     "streamed": 0.41,
+     "alone": 0.3748,
+     "targets": 3815
+    },
+    "code_line/algebraic_stack": {
+     "streamed": 0.0574,
+     "alone": 0.0546,
+     "targets": 4269
+    },
+    "recall/algebraic_stack": {
+     "streamed": 0.2749,
+     "alone": 0.2528,
+     "targets": 4435
+    },
+    "code_line/starcoder": {
+     "streamed": 0.0214,
+     "alone": 0.0175,
+     "targets": 2290
+    },
+    "recall/starcoder": {
+     "streamed": 0.1716,
+     "alone": 0.1421,
+     "targets": 5389
+    },
+    "recall/pes2o": {
+     "streamed": 0.1557,
+     "alone": 0.1273,
+     "targets": 2813
+    },
+    "recall/arxiv": {
+     "streamed": 0.1228,
+     "alone": 0.1072,
+     "targets": 3714
+    },
+    "recall/wikipedia_en": {
+     "streamed": 0.1327,
+     "alone": 0.1118,
+     "targets": 2246
+    },
+    "recall/dclm": {
+     "streamed": 0.1298,
+     "alone": 0.1064,
+     "targets": 855
+    },
+    "recall/txt360_web": {
+     "streamed": 0.1281,
+     "alone": 0.11,
+     "targets": 2545
+    },
+    "passkey": {
+     "streamed": 0.0039,
+     "streamed_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.0625
+     },
+     "alone": 0.0039,
+     "alone_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.0625
+     },
+     "targets": 512
+    }
+   },
+   "code_line_streamed": 0.0426,
+   "code_line_alone": 0.0389,
+   "recall_streamed": 0.2151,
+   "recall_alone": 0.1882
+  },
+  {
+   "run": "strongllama_250m_4.1x_s0",
+   "model": "llama",
+   "step": 3869,
+   "tasks": {
+    "code_line/research_python": {
+     "streamed": 0.0243,
+     "alone": 0.0209,
+     "targets": 6330
+    },
+    "recall/research_python": {
+     "streamed": 0.285,
+     "alone": 0.2224,
+     "targets": 6843
+    },
+    "code_line/code_reasoning": {
+     "streamed": 0.0596,
+     "alone": 0.051,
+     "targets": 7701
+    },
+    "recall/code_reasoning": {
+     "streamed": 0.4427,
+     "alone": 0.372,
+     "targets": 3815
+    },
+    "code_line/algebraic_stack": {
+     "streamed": 0.0602,
+     "alone": 0.055,
+     "targets": 4269
+    },
+    "recall/algebraic_stack": {
+     "streamed": 0.299,
+     "alone": 0.262,
+     "targets": 4435
+    },
+    "code_line/starcoder": {
+     "streamed": 0.021,
+     "alone": 0.0183,
+     "targets": 2290
+    },
+    "recall/starcoder": {
+     "streamed": 0.1854,
+     "alone": 0.147,
+     "targets": 5389
+    },
+    "recall/pes2o": {
+     "streamed": 0.1902,
+     "alone": 0.1358,
+     "targets": 2813
+    },
+    "recall/arxiv": {
+     "streamed": 0.137,
+     "alone": 0.1077,
+     "targets": 3714
+    },
+    "recall/wikipedia_en": {
+     "streamed": 0.1607,
+     "alone": 0.1109,
+     "targets": 2246
+    },
+    "recall/dclm": {
+     "streamed": 0.1532,
+     "alone": 0.0982,
+     "targets": 855
+    },
+    "recall/txt360_web": {
+     "streamed": 0.1505,
+     "alone": 0.1147,
+     "targets": 2545
+    },
+    "passkey": {
+     "streamed": 0.0527,
+     "streamed_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.1562,
+      "0": 0.6875
+     },
+     "alone": 0.041,
+     "alone_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.6562
+     },
+     "targets": 512
+    }
+   },
+   "code_line_streamed": 0.0446,
+   "code_line_alone": 0.039,
+   "recall_streamed": 0.2414,
+   "recall_alone": 0.193
+  },
+  {
+   "run": "strongllama_250m_4.1x_s1",
+   "model": "llama",
+   "step": 3869,
+   "tasks": {
+    "code_line/research_python": {
+     "streamed": 0.0269,
+     "alone": 0.0231,
+     "targets": 6330
+    },
+    "recall/research_python": {
+     "streamed": 0.2844,
+     "alone": 0.2237,
+     "targets": 6843
+    },
+    "code_line/code_reasoning": {
+     "streamed": 0.058,
+     "alone": 0.0478,
+     "targets": 7701
+    },
+    "recall/code_reasoning": {
+     "streamed": 0.4325,
+     "alone": 0.3725,
+     "targets": 3815
+    },
+    "code_line/algebraic_stack": {
+     "streamed": 0.0609,
+     "alone": 0.0541,
+     "targets": 4269
+    },
+    "recall/algebraic_stack": {
+     "streamed": 0.2965,
+     "alone": 0.2555,
+     "targets": 4435
+    },
+    "code_line/starcoder": {
+     "streamed": 0.0245,
+     "alone": 0.0214,
+     "targets": 2290
+    },
+    "recall/starcoder": {
+     "streamed": 0.1885,
+     "alone": 0.1505,
+     "targets": 5389
+    },
+    "recall/pes2o": {
+     "streamed": 0.1845,
+     "alone": 0.1443,
+     "targets": 2813
+    },
+    "recall/arxiv": {
+     "streamed": 0.1333,
+     "alone": 0.1096,
+     "targets": 3714
+    },
+    "recall/wikipedia_en": {
+     "streamed": 0.1665,
+     "alone": 0.1162,
+     "targets": 2246
+    },
+    "recall/dclm": {
+     "streamed": 0.1556,
+     "alone": 0.1006,
+     "targets": 855
+    },
+    "recall/txt360_web": {
+     "streamed": 0.1532,
+     "alone": 0.1179,
+     "targets": 2545
+    },
+    "passkey": {
+     "streamed": 0.0195,
+     "streamed_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.3125
+     },
+     "alone": 0.0234,
+     "alone_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.375
+     },
+     "targets": 512
+    }
+   },
+   "code_line_streamed": 0.0453,
+   "code_line_alone": 0.0386,
+   "recall_streamed": 0.24,
+   "recall_alone": 0.1946
+  },
+  {
+   "run": "strongllama_250m_4.1x_s2",
+   "model": "llama",
+   "step": 3869,
+   "tasks": {
+    "code_line/research_python": {
+     "streamed": 0.0264,
+     "alone": 0.0215,
+     "targets": 6330
+    },
+    "recall/research_python": {
+     "streamed": 0.2908,
+     "alone": 0.2312,
+     "targets": 6843
+    },
+    "code_line/code_reasoning": {
+     "streamed": 0.0627,
+     "alone": 0.0532,
+     "targets": 7701
+    },
+    "recall/code_reasoning": {
+     "streamed": 0.4443,
+     "alone": 0.373,
+     "targets": 3815
+    },
+    "code_line/algebraic_stack": {
+     "streamed": 0.0593,
+     "alone": 0.0539,
+     "targets": 4269
+    },
+    "recall/algebraic_stack": {
+     "streamed": 0.292,
+     "alone": 0.2543,
+     "targets": 4435
+    },
+    "code_line/starcoder": {
+     "streamed": 0.0205,
+     "alone": 0.0162,
+     "targets": 2290
+    },
+    "recall/starcoder": {
+     "streamed": 0.1843,
+     "alone": 0.1421,
+     "targets": 5389
+    },
+    "recall/pes2o": {
+     "streamed": 0.1877,
+     "alone": 0.1408,
+     "targets": 2813
+    },
+    "recall/arxiv": {
+     "streamed": 0.1274,
+     "alone": 0.1104,
+     "targets": 3714
+    },
+    "recall/wikipedia_en": {
+     "streamed": 0.1603,
+     "alone": 0.1171,
+     "targets": 2246
+    },
+    "recall/dclm": {
+     "streamed": 0.152,
+     "alone": 0.1076,
+     "targets": 855
+    },
+    "recall/txt360_web": {
+     "streamed": 0.1473,
+     "alone": 0.1065,
+     "targets": 2545
+    },
+    "passkey": {
+     "streamed": 0.0234,
+     "streamed_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.375
+     },
+     "alone": 0.0195,
+     "alone_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.3125
+     },
+     "targets": 512
+    }
+   },
+   "code_line_streamed": 0.0461,
+   "code_line_alone": 0.0395,
+   "recall_streamed": 0.2401,
+   "recall_alone": 0.1939
+  },
+  {
+   "run": "exealm_500m_4.1x_s0",
+   "model": "tonn",
+   "step": 7825,
+   "tasks": {
+    "code_line/research_python": {
+     "streamed": 0.0324,
+     "alone": 0.0272,
+     "targets": 6330
+    },
+    "recall/research_python": {
+     "streamed": 0.3176,
+     "alone": 0.2468,
+     "targets": 6843
+    },
+    "code_line/code_reasoning": {
+     "streamed": 0.1054,
+     "alone": 0.0865,
+     "targets": 7701
+    },
+    "recall/code_reasoning": {
+     "streamed": 0.563,
+     "alone": 0.4852,
+     "targets": 3815
+    },
+    "code_line/algebraic_stack": {
+     "streamed": 0.0684,
+     "alone": 0.0637,
+     "targets": 4269
+    },
+    "recall/algebraic_stack": {
+     "streamed": 0.3285,
+     "alone": 0.2841,
+     "targets": 4435
+    },
+    "code_line/starcoder": {
+     "streamed": 0.0323,
+     "alone": 0.0271,
+     "targets": 2290
+    },
+    "recall/starcoder": {
+     "streamed": 0.2162,
+     "alone": 0.1685,
+     "targets": 5389
+    },
+    "recall/pes2o": {
+     "streamed": 0.2229,
+     "alone": 0.1678,
+     "targets": 2813
+    },
+    "recall/arxiv": {
+     "streamed": 0.1672,
+     "alone": 0.1354,
+     "targets": 3714
+    },
+    "recall/wikipedia_en": {
+     "streamed": 0.1937,
+     "alone": 0.1443,
+     "targets": 2246
+    },
+    "recall/dclm": {
+     "streamed": 0.1743,
+     "alone": 0.117,
+     "targets": 855
+    },
+    "recall/txt360_web": {
+     "streamed": 0.1772,
+     "alone": 0.1403,
+     "targets": 2545
+    },
+    "passkey": {
+     "streamed": 0.0684,
+     "streamed_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.1562,
+      "0": 0.9375
+     },
+     "alone": 0.0586,
+     "alone_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.9375
+     },
+     "targets": 512
+    }
+   },
+   "code_line_streamed": 0.0672,
+   "code_line_alone": 0.0569,
+   "recall_streamed": 0.2825,
+   "recall_alone": 0.2286
+  },
+  {
+   "run": "exealm_500m_4.1x_s1",
+   "model": "tonn",
+   "step": 7825,
+   "tasks": {
+    "code_line/research_python": {
+     "streamed": 0.0321,
+     "alone": 0.0269,
+     "targets": 6330
+    },
+    "recall/research_python": {
+     "streamed": 0.3205,
+     "alone": 0.2473,
+     "targets": 6843
+    },
+    "code_line/code_reasoning": {
+     "streamed": 0.101,
+     "alone": 0.0827,
+     "targets": 7701
+    },
+    "recall/code_reasoning": {
+     "streamed": 0.5565,
+     "alone": 0.4716,
+     "targets": 3815
+    },
+    "code_line/algebraic_stack": {
+     "streamed": 0.0705,
+     "alone": 0.0628,
+     "targets": 4269
+    },
+    "recall/algebraic_stack": {
+     "streamed": 0.3328,
+     "alone": 0.2857,
+     "targets": 4435
+    },
+    "code_line/starcoder": {
+     "streamed": 0.0384,
+     "alone": 0.0349,
+     "targets": 2290
+    },
+    "recall/starcoder": {
+     "streamed": 0.2251,
+     "alone": 0.1806,
+     "targets": 5389
+    },
+    "recall/pes2o": {
+     "streamed": 0.2183,
+     "alone": 0.1639,
+     "targets": 2813
+    },
+    "recall/arxiv": {
+     "streamed": 0.1669,
+     "alone": 0.1357,
+     "targets": 3714
+    },
+    "recall/wikipedia_en": {
+     "streamed": 0.1923,
+     "alone": 0.1429,
+     "targets": 2246
+    },
+    "recall/dclm": {
+     "streamed": 0.1871,
+     "alone": 0.1146,
+     "targets": 855
+    },
+    "recall/txt360_web": {
+     "streamed": 0.1776,
+     "alone": 0.1348,
+     "targets": 2545
+    },
+    "passkey": {
+     "streamed": 0.0605,
+     "streamed_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.4062,
+      "0": 0.5625
+     },
+     "alone": 0.0312,
+     "alone_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.5
+     },
+     "targets": 512
+    }
+   },
+   "code_line_streamed": 0.0665,
+   "code_line_alone": 0.0561,
+   "recall_streamed": 0.2843,
+   "recall_alone": 0.2284
+  },
+  {
+   "run": "qwen_500m_4.1x_s0",
+   "model": "llama",
+   "step": 7825,
+   "tasks": {
+    "code_line/research_python": {
+     "streamed": 0.0311,
+     "alone": 0.0276,
+     "targets": 6330
+    },
+    "recall/research_python": {
+     "streamed": 0.2823,
+     "alone": 0.2411,
+     "targets": 6843
+    },
+    "code_line/code_reasoning": {
+     "streamed": 0.1044,
+     "alone": 0.0921,
+     "targets": 7701
+    },
+    "recall/code_reasoning": {
+     "streamed": 0.5347,
+     "alone": 0.4923,
+     "targets": 3815
+    },
+    "code_line/algebraic_stack": {
+     "streamed": 0.0651,
+     "alone": 0.0611,
+     "targets": 4269
+    },
+    "recall/algebraic_stack": {
+     "streamed": 0.3037,
+     "alone": 0.2805,
+     "targets": 4435
+    },
+    "code_line/starcoder": {
+     "streamed": 0.0336,
+     "alone": 0.0266,
+     "targets": 2290
+    },
+    "recall/starcoder": {
+     "streamed": 0.193,
+     "alone": 0.1681,
+     "targets": 5389
+    },
+    "recall/pes2o": {
+     "streamed": 0.1913,
+     "alone": 0.1664,
+     "targets": 2813
+    },
+    "recall/arxiv": {
+     "streamed": 0.1454,
+     "alone": 0.1311,
+     "targets": 3714
+    },
+    "recall/wikipedia_en": {
+     "streamed": 0.1696,
+     "alone": 0.1398,
+     "targets": 2246
+    },
+    "recall/dclm": {
+     "streamed": 0.1474,
+     "alone": 0.1146,
+     "targets": 855
+    },
+    "recall/txt360_web": {
+     "streamed": 0.1639,
+     "alone": 0.1367,
+     "targets": 2545
+    },
+    "passkey": {
+     "streamed": 0.0059,
+     "streamed_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.0938
+     },
+     "alone": 0.0098,
+     "alone_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.1562
+     },
+     "targets": 512
+    }
+   },
+   "code_line_streamed": 0.0659,
+   "code_line_alone": 0.0586,
+   "recall_streamed": 0.256,
+   "recall_alone": 0.2264
+  },
+  {
+   "run": "qwen_500m_4.1x_s1",
+   "model": "llama",
+   "step": 7825,
+   "tasks": {
+    "code_line/research_python": {
+     "streamed": 0.0294,
+     "alone": 0.0265,
+     "targets": 6330
+    },
+    "recall/research_python": {
+     "streamed": 0.2809,
+     "alone": 0.2408,
+     "targets": 6843
+    },
+    "code_line/code_reasoning": {
+     "streamed": 0.1009,
+     "alone": 0.0891,
+     "targets": 7701
+    },
+    "recall/code_reasoning": {
+     "streamed": 0.5316,
+     "alone": 0.4896,
+     "targets": 3815
+    },
+    "code_line/algebraic_stack": {
+     "streamed": 0.0656,
+     "alone": 0.063,
+     "targets": 4269
+    },
+    "recall/algebraic_stack": {
+     "streamed": 0.3033,
+     "alone": 0.2877,
+     "targets": 4435
+    },
+    "code_line/starcoder": {
+     "streamed": 0.0345,
+     "alone": 0.0306,
+     "targets": 2290
+    },
+    "recall/starcoder": {
+     "streamed": 0.2023,
+     "alone": 0.1833,
+     "targets": 5389
+    },
+    "recall/pes2o": {
+     "streamed": 0.1955,
+     "alone": 0.1639,
+     "targets": 2813
+    },
+    "recall/arxiv": {
+     "streamed": 0.1475,
+     "alone": 0.1365,
+     "targets": 3714
+    },
+    "recall/wikipedia_en": {
+     "streamed": 0.1656,
+     "alone": 0.146,
+     "targets": 2246
+    },
+    "recall/dclm": {
+     "streamed": 0.1462,
+     "alone": 0.1193,
+     "targets": 855
+    },
+    "recall/txt360_web": {
+     "streamed": 0.1564,
+     "alone": 0.136,
+     "targets": 2545
+    },
+    "passkey": {
+     "streamed": 0.0039,
+     "streamed_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.0625
+     },
+     "alone": 0.0215,
+     "alone_by_distance": {
+      "15": 0.0,
+      "14": 0.0,
+      "13": 0.0,
+      "12": 0.0,
+      "11": 0.0,
+      "10": 0.0,
+      "9": 0.0,
+      "8": 0.0,
+      "7": 0.0,
+      "6": 0.0,
+      "5": 0.0,
+      "4": 0.0,
+      "3": 0.0,
+      "2": 0.0,
+      "1": 0.0,
+      "0": 0.3438
+     },
+     "targets": 512
+    }
+   },
+   "code_line_streamed": 0.0642,
+   "code_line_alone": 0.0579,
+   "recall_streamed": 0.2566,
+   "recall_alone": 0.2304
+  }
+ ],
+ "seconds": 4582.7
+}

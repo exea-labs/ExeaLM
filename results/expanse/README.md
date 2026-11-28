@@ -844,6 +844,14 @@ Paired tests (McNemar, every target scored by both models, seeds pooled):
   November), so they gain little or lose from the carried state; the plain Llama does worse streamed than alone. The
   attention-only control trains on streams like ExeaLM. Code exact-match rates are low at these sizes (3% to 5%).
 
+**On 8,192-token documents** (job 56105899, `longctx16_all.json`; 16 windows, 48 documents a set, 32 pass-key trials
+at each depth): the same picture with three times the targets. Against the Qwen3.5-style model ExeaLM recalls 11.0%,
+13.9% and 10.6% more at 0.1B (111 tokens per parameter, seed 0), 0.25B (3 seeds) and 0.5B (2 seeds), p below 1e-50 at
+each size; it completes 8.5%, 7.5% and 2.8% more code lines (p = 6e-6, 6e-8, 0.03); it finds the pass key in the window
+it reads 0.69, 0.54 and 0.75 of the time against 0.03, 0.03 and 0.08, and one window back 0.09, 0.25 and 0.28 against
+0. Against attention in place of the TONN layer, recall and code are even again, and the pass key one window back is
+0.250 against 0.052 at 0.25B. Nothing finds it two or more windows back.
+
 **The 3B pair in mid-training** (job 56105900, `longctx_3b_mid.json`): the frozen checkpoints of step about 16,000 of
 45,688 (`runs/_mid`), before ExeaLM's stream phase (from step 36,550), so neither model has trained on streams yet.
 Read as a stream: recall 0.281 for ExeaLM against 0.286 for the Qwen3.5-style model, code next line 0.046 against
