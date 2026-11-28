@@ -267,6 +267,13 @@ Size & Model & Recall & Code next line & Pass key, same window & One window back
 \label{tab:longctx}
 \end{table}
 
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=0.95\linewidth]{figs/longctx_tasks.pdf}
+\caption{Two long-context tasks, exact-match rate on held-out documents of 4,096 tokens read as a stream, mean over seeds (\sect{26}). Left: recalling a 4-token run last seen more than 512 tokens back. ExeaLM is ahead of the Qwen3.5-style model by 12\% to 14\% at every size, and level with the attention-only control. Right: a 5-digit pass key placed in the window before the question. Only ExeaLM and, less often, the attention-only control find it; the Qwen3.5-style model and the plain Llama score zero.}
+\label{fig:longctx}
+\end{figure}
+
 Against the Qwen3.5-style model ExeaLM is ahead on every task at every size: 12\% to 14\% more recalls (p below $10^{-40}$ at each size), 7\% to 10\% more code lines (p at most 0.002), and the pass key four to fifty times as often.
 The recall lead holds as the models grow, while the lead in bits per byte on windows alone shrinks.
 Against the attention-only control, recall and code are even. The pass key one window back is not: 0.281 against 0.094 (p = $3\times10^{-8}$). Read window by window with nothing carried, the gap is small and not significant, so what the TONN layer adds is carried across windows.

@@ -126,3 +126,47 @@ fig.tight_layout()
 fig.savefig(OUT / "lead_by_position.pdf")
 plt.close(fig)
 print("wrote", OUT / "lead_by_size.pdf", OUT / "lead_by_position.pdf")
+
+
+# ---------------------------------------------------------------- long-context tasks (results section 26)
+def longctx_means(name):
+    """{(size, model): {"recall", "code", "pk0", "pk1"}} averaged over seeds, read as a stream."""
+    d = load(name)
+    groups = {}
+    for r in d["runs"]:
+        model, rest = r["run"].split("_", 1)
+        size = rest.rsplit("_s", 1)[0]
+        groups.setdefault((size, model), []).append(r)
+    out = {}
+    for k, rs in groups.items():
+        pk = [r["tasks"]["passkey"]["streamed_by_distance"] for r in rs]
+        out[k] = dict(recall=sum(r["recall_streamed"] for r in rs) / len(rs),
+                      code=sum(r["code_line_streamed"] for r in rs) / len(rs),
+                      pk0=sum(p["0"] for p in pk) / len(pk), pk1=sum(p["1"] for p in pk) / len(pk), seeds=len(rs))
+    return out
+
+
+lc = longctx_means("longctx_all.json")
+sizes = [("100m_111x", "0.1B"), ("250m_4.1x", "0.25B"), ("500m_4.1x", "0.5B")]
+models = [("exealm", "ExeaLM", BLUE), ("strongllama", "Attention in place of TONN", "#8c8a84"),
+          ("qwen", "Qwen3.5-style", ORANGE), ("llama", "Plain Llama", "#cfcdc6")]
+fig, axes = plt.subplots(1, 2, figsize=(6.6, 2.5))
+for ax, key, title in ((axes[0], "recall", "Recall of text last seen over a window back"),
+                       (axes[1], "pk1", "Pass key placed one window back")):
+    width = 0.2
+    for j, (m, label, color) in enumerate(models):
+        xs, ys = [], []
+        for i, (s, _) in enumerate(sizes):
+            if (s, m) in lc:
+                xs.append(i + (j - 1.5) * width)
+                ys.append(lc[(s, m)][key])
+        ax.bar(xs, ys, width=width, color=color, label=label, edgecolor="none")
+    ax.set_xticks(range(len(sizes)))
+    ax.set_xticklabels([n for _, n in sizes])
+    ax.set_title(title, fontsize=9, color=INK)
+    ax.set_ylabel("exact-match rate")
+    ax.yaxis.grid(True, color=GRID, linewidth=0.6)
+    ax.set_axisbelow(True)
+axes[0].legend(frameon=False, fontsize=7, loc="upper left", ncol=2, bbox_to_anchor=(0.0, -0.18))
+fig.tight_layout()
+fig.savefig(OUT / "longctx_tasks.pdf", bbox_inches="tight")
