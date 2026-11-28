@@ -16,8 +16,8 @@ tags:
 Exea Labs trains ExeaLM, a language model for research and code, on H100 hours from the National AI Research Resource
 (NAIRR) Pilot at the San Diego Supercomputer Center (Expanse). This repository holds the study's finished models:
 ExeaLM and the baselines it is compared with, trained on the same data, the same tokens and the same recipe, so the
-comparison is between designs. They are small research models (0.1B to 0.5B parameters so far, 0.4B to 10B training
-tokens; the 3B pair is training), base language models that continue text. They are not chat assistants and not tuned for safety.
+comparison is between designs. They are small research models (0.1B to 3B parameters, 0.4B to 10B training tokens;
+the 3B pair finishes pretraining on 29 November), base language models that continue text. They are not chat assistants and not tuned for safety.
 
 Code, data recipe, every result and its caveats: [github.com/exea-labs/ExeaLM](https://github.com/exea-labs/ExeaLM/tree/nairr)
 (`results/expanse/README.md`). Training data: [exea-labs/exealm-pretrain](https://huggingface.co/datasets/exea-labs/exealm-pretrain).
@@ -35,8 +35,10 @@ Research notes: [blog.exealabs.org](https://blog.exealabs.org).
 | `qwen_` | our build of the Qwen3.5 design: Gated DeltaNet in 3 of every 4 layers, gated attention with QK-norm in the 4th |
 | `llama_` | a plain Llama |
 | `libpost_`, `ragpost_`, `boardpost_` | post-training tests: a distilled library with retrieval, and agents sharing a board |
+| `ragpost_*_v2` | 3,000 steps of post-training to read library v2 (an entry by DeepSeek-V4-Flash and a passage of real text, found by a keyword search, before each question). `ragpost_exealm_3b_v2` starts from the 3B ExeaLM a third of the way through pretraining (4.2B tokens) |
 
-Names end in the size (`100m`, `250m`), the tokens per parameter (`4.1x`, `111x`) and the seed (`s0` to `s2`).
+Names end in the size (`100m`, `250m`, `500m`, `3b`), the tokens per parameter (`4.1x`, `111x`) and the seed (`s0` to
+`s2`).
 
 ## Results so far (bits per byte on 18 held-out sets, lower is better, 3 seeds)
 
@@ -51,6 +53,17 @@ ExeaLM is ahead of both baselines on all 54 set-and-seed pairs at each size. Wit
 and a keyword search, the 0.1B ExeaLM's bits per byte on held-out research questions fall from 1.645 to 0.590. The
 GitHub results page has the controls, the failures and what these numbers do not show (among them: the strong-attention
 baseline, which matches ExeaLM closely on windows read alone).
+
+Since then (one seed unless stated; the GitHub results page, sections 26 to 30, has every number and its caveats):
+
+- On held-out documents read as a stream, ExeaLM recalls 14%, 12% and 12% more text last seen more than a window back
+  than the Qwen3.5-style model at 0.1B, 0.25B and 0.5B (2 to 3 seeds, p below 1e-40 at each size).
+- With library v2, the 0.5B ExeaLM scores 0.282 bits per byte on held-out research questions; the released
+  Qwen3.5-9B-Base, shown three worked examples, scores 0.700 without the library and 0.171 with it. On research and
+  code questions written by people (QASPER, PubMedQA, BigCodeBench, DS-1000), Qwen3.5-9B is well ahead of our 0.5B
+  and 3B.
+- Library post-training lifts the 0.5B ExeaLM's closed-book SciQ from 0.685 to 0.818 and ARC-Easy from 0.396 to
+  0.455; 9 of the 4,548 SciQ and ARC questions share any 13-token window with the post-training data.
 
 ## Try the 0.1B model with its library
 
