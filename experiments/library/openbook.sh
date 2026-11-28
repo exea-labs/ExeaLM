@@ -8,7 +8,7 @@
 set -uo pipefail
 source experiments/expanse/env.sh
 export PYTHONUNBUFFERED=1 TOKENIZERS_PARALLELISM=false
-TASKS=${TASKS:-sciq,arc_easy,arc_challenge,mmlu,pubmedqa}
+TASKS=${TASKS:-sciq,arc_easy,arc_challenge,mmlu}   # pubmedqa: lm-eval loads it through a dataset script, which datasets no longer runs
 HUMAN=${HUMAN:-/expanse/lustre/projects/fli100/abhatia7/library_v2/bm25_pool_p100000}
 OUT=results/expanse/openbook
 mkdir -p "$OUT"
