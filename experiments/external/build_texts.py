@@ -61,6 +61,8 @@ def main(argv=None):
     ap.add_argument("--tokenizer", default="data/exealm-pretrain/slice-30b-r2/tokenizer")
     ap.add_argument("--ckpts", nargs="*", default=[], help="our checkpoints to score on the same windows")
     ap.add_argument("--device", default="auto")
+    ap.add_argument("--limit", type=int, default=0, help="library items of each set (score.py's --limit; 0: all)")
+    ap.add_argument("--windows", type=int, default=1, help="0: library items only")
     ap.add_argument("--out", required=True)
     a = ap.parse_args(argv)
     from tokenizers import Tokenizer
@@ -69,7 +71,7 @@ def main(argv=None):
     dev = pick_device(a.device)
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
     rows = []
-    sets = {name: windows(TokenShards(path)) for name, path in mix_sets(a.mix).items()}
+    sets = {name: windows(TokenShards(path)) for name, path in mix_sets(a.mix).items()} if a.windows else {}
     for name, w in sets.items():
         for i, ids in enumerate(w.tolist()):
             text = dec(ids)
@@ -88,7 +90,10 @@ def main(argv=None):
         print(f"scored {name}", flush=True)
         del model
     lib = TokenShards(a.library)
-    items, eot, sep = load_items(a.library, ["qa", "tasks"], "heldout")
+    items, eot, sep = [], None, None
+    for s_ in ("qa", "tasks"):                                # first --limit of each, as score.py --limit takes them
+        it, eot, sep = load_items(a.library, [s_], "heldout", a.limit)
+        items += it
     picked, top1, _ = bm25_pick(lib, items, eot, sep, dev=dev)
     for it, d, hit in zip(items, picked, top1):
         rows.append(dict(kind="item", set=it["set"], type=it["kind"], prefix=dec(it["prefix"]),
